@@ -4,6 +4,13 @@ date: "2026-04-09"
 excerpt: "SketchUp transformed my carpentry workflow. Here's how I use it to plan projects, reduce mistakes, and impress clients with 3D visualisations."
 category: "SketchUp"
 image: "/images/blog/sketchup-planning.jpg"
+tools:
+  - name: "SketchUp Pro"
+    link: "#"
+  - name: "Bosch Laser Measure"
+    link: "#"
+  - name: "Stanley FatMax Tape 5m"
+    link: "#"
 ---
 
 ## Why Every Carpenter Should Learn SketchUp

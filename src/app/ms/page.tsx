@@ -24,7 +24,7 @@ const links = [
     icon: '🛠️',
     title: 'My Carpentry Tools',
     subtitle: 'Affiliate links for all the tools I use daily.',
-    href: '#',
+    href: '/tools',
   },
   {
     icon: '✏️',

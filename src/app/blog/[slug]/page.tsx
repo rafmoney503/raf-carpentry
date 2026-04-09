@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getPostBySlug, getAllPosts } from '@/lib/blog';
 import { notFound } from 'next/navigation';
+import ToolsUsed from '@/components/ToolsUsed';
 
 export async function generateStaticParams() {
   const posts = getAllPosts();
@@ -40,6 +41,8 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
           className="prose-custom"
           dangerouslySetInnerHTML={{ __html: post.content || '' }}
         />
+
+        {post.tools && <ToolsUsed tools={post.tools} />}
       </article>
 
       {/* CTA */}

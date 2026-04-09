@@ -4,6 +4,13 @@ date: "2026-04-05"
 excerpt: "Most carpenters waste 15-20% of sheet materials through poor planning. Here's how board optimisation can dramatically reduce your waste."
 category: "Cabinetos"
 image: "/images/blog/cut-list.jpg"
+tools:
+  - name: "Cabinetos App"
+    link: "/cabinetos"
+  - name: "Makita Track Saw"
+    link: "#"
+  - name: "Shinwa Combination Square"
+    link: "#"
 ---
 
 ## The Hidden Cost of Poor Cut Planning

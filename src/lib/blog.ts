@@ -6,6 +6,11 @@ import html from 'remark-html';
 
 const postsDir = path.join(process.cwd(), 'content/blog');
 
+export interface PostTool {
+  name: string;
+  link: string;
+}
+
 export interface Post {
   slug: string;
   title: string;
@@ -14,6 +19,7 @@ export interface Post {
   category: string;
   image?: string;
   content?: string;
+  tools?: PostTool[];
 }
 
 export function getAllPosts(): Post[] {
@@ -49,5 +55,6 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
     category: data.category || 'General',
     image: data.image || undefined,
     content: processed.toString(),
+    tools: data.tools || undefined,
   };
 }

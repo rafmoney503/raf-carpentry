@@ -10,6 +10,7 @@ const links = [
   { href: '/cabinetos', label: 'Cabinetos' },
   { href: '/sketchup', label: 'SketchUp' },
   { href: '/blog', label: 'Blog' },
+  { href: '/tools', label: 'Tools' },
   { href: '/about', label: 'About' },
   { href: '/contact', label: 'Contact' },
 ];
