@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 const services = [
   {
@@ -25,10 +26,10 @@ const services = [
 ];
 
 const projects = [
-  { title: 'Kitchen Remodel', category: 'Kitchens', img: '/images/projects/placeholder-1.jpg' },
-  { title: 'Outdoor Gym', category: 'Outdoor', img: '/images/projects/placeholder-2.jpg' },
-  { title: 'Built-in Wardrobes', category: 'Cabinets', img: '/images/projects/placeholder-3.jpg' },
-  { title: 'Bespoke Shelving', category: 'Custom', img: '/images/projects/placeholder-4.jpg' },
+  { title: 'Bespoke Kitchen Pantry', category: 'Kitchens', img: '/images/projects/IMG_8984.jpg', hasPhoto: true },
+  { title: 'Outdoor Gym', category: 'Outdoor', img: '', hasPhoto: false },
+  { title: 'Built-in Wardrobes', category: 'Cabinets', img: '', hasPhoto: false },
+  { title: 'Bespoke Shelving', category: 'Custom', img: '', hasPhoto: false },
 ];
 
 export default function Home() {
@@ -111,8 +112,12 @@ export default function Home() {
           {projects.map((p, i) => (
             <div key={i} className="card-hover group rounded-2xl overflow-hidden border border-[--border] bg-[--bg-card]">
               <div className="aspect-[4/3] bg-[--bg-card-hover] flex items-center justify-center text-[--text-muted] text-sm relative overflow-hidden">
+                {p.hasPhoto ? (
+                  <Image src={p.img} alt={p.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                ) : (
+                  <span className="text-4xl opacity-20">📷</span>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-[--bg-card] via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-10" />
-                <span className="text-4xl opacity-20">📷</span>
               </div>
               <div className="p-4">
                 <span className="text-xs text-[--gold] font-medium uppercase tracking-wider">{p.category}</span>
