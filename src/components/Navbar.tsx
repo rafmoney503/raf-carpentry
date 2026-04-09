@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 
@@ -21,8 +22,8 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-[#0f1114]/80 border-b border-[--border]">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[--gold] to-[--gold-light] flex items-center justify-center text-[--bg] font-bold text-sm">
-            RC
+          <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-[--gold] bg-[--cream] flex items-center justify-center">
+            <Image src="/images/r-logo.png" alt="R" width={36} height={36} className="w-full h-full object-cover" />
           </div>
           <span className="font-bold text-lg tracking-tight">Raf Carpentry</span>
         </Link>
