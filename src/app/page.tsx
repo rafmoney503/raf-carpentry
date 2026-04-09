@@ -27,7 +27,7 @@ const services = [
 
 const projects = [
   { title: 'Bespoke Kitchen Pantry', category: 'Kitchens', img: '/images/projects/IMG_8984.jpg', hasPhoto: true },
-  { title: 'Outdoor Gym', category: 'Outdoor', img: '', hasPhoto: false },
+  { title: 'Garden Office Units', category: 'Outdoor', img: '/images/projects/IMG_9245.jpg', hasPhoto: true },
   { title: 'Built-in Wardrobes', category: 'Cabinets', img: '/images/projects/IMG_8172.jpg', hasPhoto: true },
   { title: 'Birch Ply Wardrobe', category: 'Custom', img: '/images/projects/IMG_8405.jpg', hasPhoto: true },
 ];
