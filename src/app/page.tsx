@@ -175,13 +175,17 @@ export default function Home() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
-            { title: 'How I Use SketchUp to Plan Every Build', tag: 'SketchUp', date: 'Coming Soon' },
-            { title: 'Cut List Optimisation: Save 15% on Materials', tag: 'Cabinetos', date: 'Coming Soon' },
-            { title: 'Building an Outdoor Gym During Lockdown', tag: 'Projects', date: 'Coming Soon' },
+            { title: 'How I Use SketchUp to Plan Every Build', tag: 'SketchUp', date: '9 Apr 2026', img: '/images/blog/sketchup-planning.jpg', slug: '/blog/sketchup-planning' },
+            { title: 'Cut List Optimisation: Save 15% on Materials', tag: 'Cabinetos', date: '5 Apr 2026', img: '', slug: '/blog/cut-list-optimisation' },
+            { title: 'Building an Outdoor Gym During Lockdown', tag: 'Projects', date: '20 Mar 2026', img: '', slug: '/blog/outdoor-gym-lockdown' },
           ].map((post, i) => (
-            <div key={i} className="card-hover bg-[--bg-card] border border-[--border] rounded-2xl overflow-hidden group">
-              <div className="aspect-video bg-[--bg-card-hover] flex items-center justify-center">
-                <span className="text-3xl opacity-20">📝</span>
+            <Link key={i} href={post.slug} className="card-hover bg-[--bg-card] border border-[--border] rounded-2xl overflow-hidden group">
+              <div className="aspect-video bg-[--bg-card-hover] flex items-center justify-center relative overflow-hidden">
+                {post.img ? (
+                  <Image src={post.img} alt={post.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                ) : (
+                  <span className="text-3xl opacity-20">📝</span>
+                )}
               </div>
               <div className="p-5">
                 <div className="flex items-center gap-2 mb-2">
@@ -190,7 +194,7 @@ export default function Home() {
                 </div>
                 <h4 className="font-bold group-hover:text-[--gold] transition-colors">{post.title}</h4>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
