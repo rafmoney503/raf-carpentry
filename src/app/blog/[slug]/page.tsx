@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { getPostBySlug, getAllPosts } from '@/lib/blog';
 import { notFound } from 'next/navigation';
 
@@ -30,8 +31,8 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
         <h1 className="text-3xl md:text-4xl font-bold mb-6 leading-tight">{post.title}</h1>
 
         {post.image && (
-          <div className="aspect-video rounded-2xl border border-[--border] bg-[--bg-card] mb-10 flex items-center justify-center">
-            <span className="text-5xl opacity-20">📷</span>
+          <div className="aspect-video rounded-2xl border border-[--border] bg-[--bg-card] mb-10 relative overflow-hidden">
+            <Image src={post.image} alt={post.title} fill className="object-cover" />
           </div>
         )}
 
