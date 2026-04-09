@@ -22,8 +22,8 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-[#0f1114]/80 border-b border-[--border]">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-9 h-9 flex items-center justify-center">
-            <Image src="/images/r-logo-gold.png" alt="R" width={32} height={32} className="w-8 h-8 object-contain" />
+          <div className="w-9 h-9 rounded-full overflow-hidden bg-white flex items-center justify-center">
+            <Image src="/images/r-logo-white.png" alt="R" width={36} height={36} className="w-full h-full object-cover" />
           </div>
           <span className="font-bold text-lg tracking-tight">Raf Carpentry</span>
         </Link>
