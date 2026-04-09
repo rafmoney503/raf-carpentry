@@ -23,7 +23,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-full overflow-hidden bg-white flex items-center justify-center">
-            <Image src="/images/r-logo-white.png" alt="R" width={36} height={36} className="w-full h-full object-cover" />
+            <Image src="/images/r-logo-final.png" alt="R" width={36} height={36} className="w-full h-full object-cover" />
           </div>
           <span className="font-bold text-lg tracking-tight">Raf Carpentry</span>
         </Link>

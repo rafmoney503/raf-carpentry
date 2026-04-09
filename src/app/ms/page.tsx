@@ -59,7 +59,7 @@ export default function MiniSite() {
       <div className="flex flex-col items-center mb-8">
         <div className="w-24 h-24 rounded-full overflow-hidden border-[3px] border-[--gold] mb-4 bg-white flex items-center justify-center">
           <Image
-            src="/images/r-logo-white.png"
+            src="/images/r-logo-final.png"
             alt="Raf Carpentry Logo"
             width={96}
             height={96}

@@ -9,7 +9,7 @@ export default function Footer() {
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-9 h-9 rounded-full overflow-hidden bg-white flex items-center justify-center">
-                <Image src="/images/r-logo-white.png" alt="R" width={36} height={36} className="w-full h-full object-cover" />
+                <Image src="/images/r-logo-final.png" alt="R" width={36} height={36} className="w-full h-full object-cover" />
               </div>
               <span className="font-bold text-lg">Raf Carpentry</span>
             </div>
