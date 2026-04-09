@@ -28,8 +28,8 @@ const services = [
 const projects = [
   { title: 'Bespoke Kitchen Pantry', category: 'Kitchens', img: '/images/projects/IMG_8984.jpg', hasPhoto: true },
   { title: 'Outdoor Gym', category: 'Outdoor', img: '', hasPhoto: false },
-  { title: 'Built-in Wardrobes', category: 'Cabinets', img: '', hasPhoto: false },
-  { title: 'Bespoke Shelving', category: 'Custom', img: '', hasPhoto: false },
+  { title: 'Built-in Wardrobes', category: 'Cabinets', img: '/images/projects/IMG_8172.jpg', hasPhoto: true },
+  { title: 'Birch Ply Wardrobe', category: 'Custom', img: '/images/projects/IMG_8405.jpg', hasPhoto: true },
 ];
 
 export default function Home() {
@@ -41,28 +41,36 @@ export default function Home() {
         <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(212,168,83,0.08)_0%,transparent_70%)] pointer-events-none" />
         
         <div className="max-w-6xl mx-auto px-6 pt-24 pb-20 md:pt-32 md:pb-28 relative">
-          <div className="max-w-3xl">
-            <div className="gold-line mb-6 animate-fade-in-up" />
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black leading-[1.1] mb-6 animate-fade-in-up delay-1">
-              Craftsmanship<br />
-              <span className="gold-text">Meets Technology</span>
-            </h1>
-            <p className="text-lg md:text-xl text-[--text-muted] max-w-xl mb-10 leading-relaxed animate-fade-in-up delay-2">
-              Bespoke carpentry, smart tools for cabinet makers, and decades of hands-on expertise — all under one roof.
-            </p>
-            <div className="flex flex-wrap gap-4 animate-fade-in-up delay-3">
-              <Link
-                href="/portfolio"
-                className="px-7 py-3.5 rounded-xl bg-gradient-to-r from-[--gold] to-[--gold-light] text-[--bg] font-bold text-sm hover:opacity-90 transition-opacity"
-              >
-                View My Work
-              </Link>
-              <Link
-                href="/cabinetos"
-                className="px-7 py-3.5 rounded-xl border border-[--border] text-[--text] font-bold text-sm hover:border-[--gold] hover:text-[--gold] transition-colors"
-              >
-                Try Cabinetos
-              </Link>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+            <div>
+              <div className="gold-line mb-6 animate-fade-in-up" />
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-[1.1] mb-6 animate-fade-in-up delay-1">
+                Craftsmanship<br />
+                <span className="gold-text">Meets Technology</span>
+              </h1>
+              <p className="text-lg md:text-xl text-[--text-muted] max-w-xl mb-10 leading-relaxed animate-fade-in-up delay-2">
+                Bespoke carpentry, smart tools for cabinet makers, and decades of hands-on expertise — all under one roof.
+              </p>
+              <div className="flex flex-wrap gap-4 animate-fade-in-up delay-3">
+                <Link
+                  href="/portfolio"
+                  className="px-7 py-3.5 rounded-xl bg-gradient-to-r from-[--gold] to-[--gold-light] text-[--bg] font-bold text-sm hover:opacity-90 transition-opacity"
+                >
+                  View My Work
+                </Link>
+                <Link
+                  href="/cabinetos"
+                  className="px-7 py-3.5 rounded-xl border border-[--border] text-[--text] font-bold text-sm hover:border-[--gold] hover:text-[--gold] transition-colors"
+                >
+                  Try Cabinetos
+                </Link>
+              </div>
+            </div>
+            <div className="hidden md:block relative animate-fade-in-up delay-3">
+              <div className="rounded-2xl overflow-hidden border border-[--border] aspect-[3/4] relative">
+                <Image src="/images/raf-at-work.jpg" alt="Rafal measuring timber on site" fill className="object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[--bg] via-transparent to-transparent opacity-40" />
+              </div>
             </div>
           </div>
         </div>
