@@ -1,70 +1,116 @@
-import Link from 'next/link';
-
-const categories = ['All', 'Kitchens', 'Cabinets', 'Outdoor', 'Custom'];
+import Image from "next/image";
 
 const projects = [
-  { title: 'Modern Kitchen Remodel', category: 'Kitchens', desc: 'Full kitchen design and build with bespoke oak cabinets and quartz worktops.' },
-  { title: 'Outdoor Gym Structure', category: 'Outdoor', desc: 'Built during lockdown — a full timber frame outdoor gym with corner bracing for stability.' },
-  { title: 'Built-in Wardrobes', category: 'Cabinets', desc: 'Floor to ceiling fitted wardrobes with soft-close hinges and internal organisers.' },
-  { title: 'Bespoke Shelving Unit', category: 'Custom', desc: 'Floating shelves with hidden brackets, designed in SketchUp and precision-cut.' },
-  { title: 'Kitchen Island', category: 'Kitchens', desc: 'Freestanding kitchen island with integrated storage and breakfast bar.' },
-  { title: 'Garden Office', category: 'Outdoor', desc: 'Insulated timber-frame garden office with full electrics and custom desk.' },
+  {
+    id: 1,
+    title: "Modern Kitchen Remodel",
+    description:
+      "Bespoke shaker-style kitchen in navy blue with brass handles and quartz worktops.",
+    category: "Kitchens",
+    image: "/images/projects/kitchen-remodel.jpg",
+  },
+  {
+    id: 2,
+    title: "Kitchen Island with Skylight",
+    description:
+      "Open-plan kitchen featuring a large island with integrated hob and bifold garden doors.",
+    category: "Kitchens",
+    image: "/images/projects/kitchen-island.jpg",
+  },
+  {
+    id: 3,
+    title: "Built-in Wardrobes",
+    description:
+      "Floor to ceiling fitted wardrobes with soft-close hinges and internal organisers.",
+    category: "Cabinets",
+    image: "/images/projects/built-in-wardrobes.jpg",
+  },
+  {
+    id: 4,
+    title: "Bespoke Alcove Shelving",
+    description:
+      "Custom alcove unit with floating shelves and panelled cupboard doors below.",
+    category: "Cabinets",
+    image: "/images/projects/bespoke-shelving.jpg",
+  },
+  {
+    id: 5,
+    title: "Garden Office Interior",
+    description:
+      "Fully fitted garden office with oak shelving, built-in desk area and AC unit.",
+    category: "Outdoor",
+    image: "/images/projects/garden-office.jpg",
+  },
+  {
+    id: 6,
+    title: "Outdoor Gym Structure",
+    description:
+      "Built during lockdown — a full timber frame outdoor gym with corner bracing for stability.",
+    category: "Outdoor",
+    image: "/images/projects/outdoor-gym.jpg",
+  },
 ];
 
-export default function Portfolio() {
-  return (
-    <>
-      <section className="max-w-6xl mx-auto px-6 pt-24 pb-10">
-        <div className="gold-line mb-6" />
-        <h1 className="text-4xl md:text-5xl font-bold mb-4">
-          Built With <span className="gold-text">Precision</span>
-        </h1>
-        <p className="text-[--text-muted] max-w-lg text-lg">
-          From kitchens to outdoor structures — browse projects that show the standard of work you'll get.
-        </p>
-      </section>
+const categories = ["All", "Kitchens", "Cabinets", "Outdoor"];
 
-      <section className="max-w-6xl mx-auto px-6 pb-6">
-        <div className="flex gap-2 flex-wrap">
-          {categories.map(c => (
+export default function PortfolioPage() {
+  return (
+    <main className="min-h-screen bg-[#0f1114] text-white">
+      <section className="max-w-6xl mx-auto px-6 py-20">
+        {/* Header */}
+        <div className="mb-12">
+          <div className="w-12 h-1 bg-[#d4a853] mb-6"></div>
+          <h1 className="text-4xl md:text-5xl font-serif mb-4">
+            Built With <span className="text-[#d4a853]">Precision</span>
+          </h1>
+          <p className="text-gray-400 max-w-xl">
+            From kitchens to outdoor structures — browse projects that show the
+            standard of work you&apos;ll get.
+          </p>
+        </div>
+
+        {/* Filter Buttons */}
+        <div className="flex flex-wrap gap-3 mb-12">
+          {categories.map((cat) => (
             <button
-              key={c}
-              className="px-4 py-2 rounded-full text-sm border border-[--border] text-[--text-muted] hover:border-[--gold] hover:text-[--gold] transition-colors first:bg-[rgba(212,168,83,0.1)] first:text-[--gold] first:border-[--gold]"
+              key={cat}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition ${
+                cat === "All"
+                  ? "bg-[#d4a853] text-black"
+                  : "bg-zinc-800 text-gray-300 hover:bg-zinc-700"
+              }`}
             >
-              {c}
+              {cat}
             </button>
           ))}
         </div>
-      </section>
 
-      <section className="max-w-6xl mx-auto px-6 pb-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((p, i) => (
-            <div key={i} className="card-hover bg-[--bg-card] border border-[--border] rounded-2xl overflow-hidden group">
-              <div className="aspect-[4/3] bg-[--bg-card-hover] flex items-center justify-center relative">
-                <span className="text-5xl opacity-15">📷</span>
-                <div className="absolute bottom-3 left-3">
-                  <span className="text-xs font-bold uppercase tracking-wider bg-[rgba(212,168,83,0.9)] text-[--bg] px-2.5 py-1 rounded-md">{p.category}</span>
-                </div>
+        {/* Project Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {projects.map((project) => (
+            <article
+              key={project.id}
+              className="group bg-zinc-900 rounded-lg overflow-hidden hover:ring-1 hover:ring-[#d4a853]/50 transition"
+            >
+              <div className="relative h-56 overflow-hidden">
+                <Image
+                  src={project.image}
+                  alt={project.title}
+                  fill
+                  className="object-cover group-hover:scale-105 transition duration-500"
+                />
               </div>
               <div className="p-5">
-                <h3 className="font-bold text-lg mb-2 group-hover:text-[--gold] transition-colors">{p.title}</h3>
-                <p className="text-sm text-[--text-muted] leading-relaxed">{p.desc}</p>
+                <span className="inline-block px-3 py-1 text-xs font-semibold uppercase tracking-wide bg-[#d4a853]/20 text-[#d4a853] rounded mb-3">
+                  {project.category}
+                </span>
+                <h3 className="text-lg font-semibold mb-2">{project.title}</h3>
+                <p className="text-gray-400 text-sm">{project.description}</p>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       </section>
-
-      <section className="max-w-6xl mx-auto px-6 pb-20">
-        <div className="text-center py-14 rounded-2xl border border-[--border] bg-[--bg-card]">
-          <h2 className="text-2xl md:text-3xl font-bold mb-3">Let&apos;s Build <span className="gold-text">Something Together</span></h2>
-          <p className="text-[--text-muted] max-w-md mx-auto mb-6">Have a project in mind? I&apos;d love to discuss it.</p>
-          <Link href="/contact" className="inline-block px-7 py-3.5 rounded-xl bg-gradient-to-r from-[--gold] to-[--gold-light] text-[--bg] font-bold text-sm hover:opacity-90 transition-opacity">
-            Get a Quote
-          </Link>
-        </div>
-      </section>
-    </>
+    </main>
   );
 }
