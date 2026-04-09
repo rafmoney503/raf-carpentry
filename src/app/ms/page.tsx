@@ -57,13 +57,13 @@ export default function MiniSite() {
     <div className="min-h-screen flex flex-col items-center px-5 py-10 max-w-lg mx-auto">
       {/* Profile */}
       <div className="flex flex-col items-center mb-8">
-        <div className="w-24 h-24 rounded-full overflow-hidden border-[3px] border-[--gold] mb-4 bg-[--cream] flex items-center justify-center">
+        <div className="w-24 h-24 rounded-full overflow-hidden border-[3px] border-[--gold] mb-4 bg-[--bg-card] flex items-center justify-center p-4">
           <Image
-            src="/images/r-logo.png"
+            src="/images/r-logo-gold.png"
             alt="Raf Carpentry Logo"
-            width={96}
-            height={96}
-            className="w-full h-full object-cover"
+            width={64}
+            height={64}
+            className="w-full h-full object-contain"
           />
         </div>
         <h1 className="text-xl font-bold">Rafal Janczy</h1>

@@ -8,8 +8,8 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-[--gold] bg-[--cream] flex items-center justify-center">
-                <Image src="/images/r-logo.png" alt="R" width={36} height={36} className="w-full h-full object-cover" />
+              <div className="w-9 h-9 flex items-center justify-center">
+                <Image src="/images/r-logo-gold.png" alt="R" width={32} height={32} className="w-8 h-8 object-contain" />
               </div>
               <span className="font-bold text-lg">Raf Carpentry</span>
             </div>
