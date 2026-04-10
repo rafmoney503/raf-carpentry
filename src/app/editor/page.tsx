@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
 const EDITOR_PASSWORD = "raf2024"; // Change this!
@@ -15,6 +15,7 @@ export default function EditorPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
 
   const pageList = ["homepage", "about", "sketchup", "contact", "portfolio"];
 
@@ -83,6 +84,87 @@ export default function EditorPage() {
     setSaved(false);
   };
 
+  // Add item to array
+  const addArrayItem = (path: string, template: Record<string, unknown>) => {
+    setPages((prev) => {
+      const newPages = JSON.parse(JSON.stringify(prev));
+      const keys = path.split(".");
+      let obj = newPages[activePage];
+      for (const key of keys) {
+        obj = obj[key];
+      }
+      obj.push({ ...template, id: Date.now() });
+      return newPages;
+    });
+    setSaved(false);
+  };
+
+  // Remove item from array
+  const removeArrayItem = (path: string, index: number) => {
+    setPages((prev) => {
+      const newPages = JSON.parse(JSON.stringify(prev));
+      const keys = path.split(".");
+      let obj = newPages[activePage];
+      for (const key of keys) {
+        obj = obj[key];
+      }
+      obj.splice(index, 1);
+      return newPages;
+    });
+    setSaved(false);
+  };
+
+  // Move item up/down in array
+  const moveArrayItem = (path: string, index: number, direction: "up" | "down") => {
+    setPages((prev) => {
+      const newPages = JSON.parse(JSON.stringify(prev));
+      const keys = path.split(".");
+      let obj = newPages[activePage];
+      for (const key of keys) {
+        obj = obj[key];
+      }
+      const newIndex = direction === "up" ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= obj.length) return prev;
+      [obj[index], obj[newIndex]] = [obj[newIndex], obj[index]];
+      return newPages;
+    });
+    setSaved(false);
+  };
+
+  // Upload image
+  const uploadImage = async (file: File, path: string, index?: number, field?: string): Promise<string | null> => {
+    setUploading(true);
+    
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `images/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("website-images")
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error("Upload error:", uploadError);
+      // If bucket doesn't exist, use a placeholder approach
+      alert("Image upload requires Supabase Storage setup. For now, add images via GitHub.");
+      setUploading(false);
+      return null;
+    }
+
+    const { data } = supabase.storage.from("website-images").getPublicUrl(filePath);
+    
+    if (data?.publicUrl) {
+      if (index !== undefined && field) {
+        updateArrayField(path, index, field, data.publicUrl);
+      } else {
+        updateField(path, data.publicUrl);
+      }
+    }
+
+    setUploading(false);
+    return data?.publicUrl || null;
+  };
+
   // Login screen
   if (!isAuthenticated) {
     return (
@@ -139,6 +221,7 @@ export default function EditorPage() {
             <h1 className="text-xl font-serif">
               <span className="text-[#d4a853]">Raf Carpentry</span> Editor
             </h1>
+            {uploading && <span className="text-sm text-blue-400">Uploading...</span>}
           </div>
           <div className="flex items-center gap-3">
             {saved && (
@@ -223,9 +306,20 @@ export default function EditorPage() {
                   />
                 </Section>
 
-                <Section title="Services">
+                <Section 
+                  title="Services"
+                  onAdd={() => addArrayItem("services", { icon: "🔨", title: "New Service", description: "Description here" })}
+                  addLabel="Add Service"
+                >
                   {((currentContent as any).services || []).map((service: any, i: number) => (
-                    <div key={i} className="bg-zinc-800 rounded-lg p-4 space-y-3">
+                    <ArrayItemCard
+                      key={i}
+                      index={i}
+                      total={((currentContent as any).services || []).length}
+                      onMoveUp={() => moveArrayItem("services", i, "up")}
+                      onMoveDown={() => moveArrayItem("services", i, "down")}
+                      onRemove={() => removeArrayItem("services", i)}
+                    >
                       <div className="flex gap-3">
                         <div className="w-20">
                           <label className="block text-xs text-gray-500 mb-1">Icon</label>
@@ -255,7 +349,7 @@ export default function EditorPage() {
                           className="w-full bg-zinc-700 border border-zinc-600 rounded px-3 py-2 text-white focus:border-[#d4a853] focus:outline-none resize-none"
                         />
                       </div>
-                    </div>
+                    </ArrayItemCard>
                   ))}
                 </Section>
 
@@ -313,28 +407,41 @@ export default function EditorPage() {
                   />
                 </Section>
 
-                <Section title="Stats">
+                <Section 
+                  title="Stats"
+                  onAdd={() => addArrayItem("stats", { number: "0+", label: "New Stat" })}
+                  addLabel="Add Stat"
+                >
                   {((currentContent as any).stats || []).map((stat: any, i: number) => (
-                    <div key={i} className="flex gap-4">
-                      <div className="w-24">
-                        <label className="block text-xs text-gray-500 mb-1">Number</label>
-                        <input
-                          type="text"
-                          value={stat.number}
-                          onChange={(e) => updateArrayField("stats", i, "number", e.target.value)}
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-[#d4a853] font-bold focus:border-[#d4a853] focus:outline-none"
-                        />
+                    <ArrayItemCard
+                      key={i}
+                      index={i}
+                      total={((currentContent as any).stats || []).length}
+                      onMoveUp={() => moveArrayItem("stats", i, "up")}
+                      onMoveDown={() => moveArrayItem("stats", i, "down")}
+                      onRemove={() => removeArrayItem("stats", i)}
+                    >
+                      <div className="flex gap-4">
+                        <div className="w-24">
+                          <label className="block text-xs text-gray-500 mb-1">Number</label>
+                          <input
+                            type="text"
+                            value={stat.number}
+                            onChange={(e) => updateArrayField("stats", i, "number", e.target.value)}
+                            className="w-full bg-zinc-700 border border-zinc-600 rounded px-3 py-2 text-[#d4a853] font-bold focus:border-[#d4a853] focus:outline-none"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-xs text-gray-500 mb-1">Label</label>
+                          <input
+                            type="text"
+                            value={stat.label}
+                            onChange={(e) => updateArrayField("stats", i, "label", e.target.value)}
+                            className="w-full bg-zinc-700 border border-zinc-600 rounded px-3 py-2 text-white focus:border-[#d4a853] focus:outline-none"
+                          />
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <label className="block text-xs text-gray-500 mb-1">Label</label>
-                        <input
-                          type="text"
-                          value={stat.label}
-                          onChange={(e) => updateArrayField("stats", i, "label", e.target.value)}
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-white focus:border-[#d4a853] focus:outline-none"
-                        />
-                      </div>
-                    </div>
+                    </ArrayItemCard>
                   ))}
                 </Section>
               </div>
@@ -364,9 +471,20 @@ export default function EditorPage() {
                   </div>
                 </Section>
 
-                <Section title="Benefits">
+                <Section 
+                  title="Benefits"
+                  onAdd={() => addArrayItem("benefits", { icon: "✨", title: "New Benefit", description: "Description here" })}
+                  addLabel="Add Benefit"
+                >
                   {((currentContent as any).benefits || []).map((benefit: any, i: number) => (
-                    <div key={i} className="bg-zinc-800 rounded-lg p-4 space-y-3">
+                    <ArrayItemCard
+                      key={i}
+                      index={i}
+                      total={((currentContent as any).benefits || []).length}
+                      onMoveUp={() => moveArrayItem("benefits", i, "up")}
+                      onMoveDown={() => moveArrayItem("benefits", i, "down")}
+                      onRemove={() => removeArrayItem("benefits", i)}
+                    >
                       <div className="flex gap-3">
                         <div className="w-20">
                           <label className="block text-xs text-gray-500 mb-1">Icon</label>
@@ -396,32 +514,45 @@ export default function EditorPage() {
                           className="w-full bg-zinc-700 border border-zinc-600 rounded px-3 py-2 text-white focus:border-[#d4a853] focus:outline-none resize-none"
                         />
                       </div>
-                    </div>
+                    </ArrayItemCard>
                   ))}
                 </Section>
 
-                <Section title="Stats">
+                <Section 
+                  title="Stats"
+                  onAdd={() => addArrayItem("stats", { number: "0+", label: "New Stat" })}
+                  addLabel="Add Stat"
+                >
                   {((currentContent as any).stats || []).map((stat: any, i: number) => (
-                    <div key={i} className="flex gap-4">
-                      <div className="w-24">
-                        <label className="block text-xs text-gray-500 mb-1">Number</label>
-                        <input
-                          type="text"
-                          value={stat.number}
-                          onChange={(e) => updateArrayField("stats", i, "number", e.target.value)}
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-[#d4a853] font-bold focus:border-[#d4a853] focus:outline-none"
-                        />
+                    <ArrayItemCard
+                      key={i}
+                      index={i}
+                      total={((currentContent as any).stats || []).length}
+                      onMoveUp={() => moveArrayItem("stats", i, "up")}
+                      onMoveDown={() => moveArrayItem("stats", i, "down")}
+                      onRemove={() => removeArrayItem("stats", i)}
+                    >
+                      <div className="flex gap-4">
+                        <div className="w-24">
+                          <label className="block text-xs text-gray-500 mb-1">Number</label>
+                          <input
+                            type="text"
+                            value={stat.number}
+                            onChange={(e) => updateArrayField("stats", i, "number", e.target.value)}
+                            className="w-full bg-zinc-700 border border-zinc-600 rounded px-3 py-2 text-[#d4a853] font-bold focus:border-[#d4a853] focus:outline-none"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-xs text-gray-500 mb-1">Label</label>
+                          <input
+                            type="text"
+                            value={stat.label}
+                            onChange={(e) => updateArrayField("stats", i, "label", e.target.value)}
+                            className="w-full bg-zinc-700 border border-zinc-600 rounded px-3 py-2 text-white focus:border-[#d4a853] focus:outline-none"
+                          />
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <label className="block text-xs text-gray-500 mb-1">Label</label>
-                        <input
-                          type="text"
-                          value={stat.label}
-                          onChange={(e) => updateArrayField("stats", i, "label", e.target.value)}
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-white focus:border-[#d4a853] focus:outline-none"
-                        />
-                      </div>
-                    </div>
+                    </ArrayItemCard>
                   ))}
                 </Section>
               </div>
@@ -494,9 +625,26 @@ export default function EditorPage() {
                   />
                 </Section>
 
-                <Section title="Projects">
+                <Section 
+                  title="Projects"
+                  onAdd={() => addArrayItem("projects", { 
+                    id: Date.now(), 
+                    title: "New Project", 
+                    description: "Project description", 
+                    category: "Carpentry",
+                    image: "/images/projects/placeholder.jpg"
+                  })}
+                  addLabel="Add Project"
+                >
                   {((currentContent as any).projects || []).map((project: any, i: number) => (
-                    <div key={i} className="bg-zinc-800 rounded-lg p-4 space-y-3">
+                    <ArrayItemCard
+                      key={i}
+                      index={i}
+                      total={((currentContent as any).projects || []).length}
+                      onMoveUp={() => moveArrayItem("projects", i, "up")}
+                      onMoveDown={() => moveArrayItem("projects", i, "down")}
+                      onRemove={() => removeArrayItem("projects", i)}
+                    >
                       <Field
                         label="Title"
                         value={project.title}
@@ -514,13 +662,14 @@ export default function EditorPage() {
                           value={project.category}
                           onChange={(v) => updateArrayField("projects", i, "category", v)}
                         />
-                        <Field
-                          label="Image Path"
+                        <ImageField
+                          label="Image"
                           value={project.image}
                           onChange={(v) => updateArrayField("projects", i, "image", v)}
+                          onUpload={(file) => uploadImage(file, "projects", i, "image")}
                         />
                       </div>
-                    </div>
+                    </ArrayItemCard>
                   ))}
                 </Section>
               </div>
@@ -541,10 +690,83 @@ export default function EditorPage() {
 }
 
 // Helper components
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ 
+  title, 
+  children, 
+  onAdd, 
+  addLabel 
+}: { 
+  title: string; 
+  children: React.ReactNode;
+  onAdd?: () => void;
+  addLabel?: string;
+}) {
   return (
     <div className="bg-zinc-900 rounded-xl p-6 space-y-4">
-      <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide">{title}</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide">{title}</h3>
+        {onAdd && (
+          <button
+            onClick={onAdd}
+            className="text-xs px-3 py-1.5 bg-[#d4a853]/20 text-[#d4a853] rounded-lg hover:bg-[#d4a853]/30 transition flex items-center gap-1"
+          >
+            <span>+</span> {addLabel || "Add"}
+          </button>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function ArrayItemCard({
+  children,
+  index,
+  total,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+}: {
+  children: React.ReactNode;
+  index: number;
+  total: number;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="bg-zinc-800 rounded-lg p-4 space-y-3 relative group">
+      <div className="absolute right-2 top-2 flex gap-1 opacity-0 group-hover:opacity-100 transition">
+        <button
+          onClick={onMoveUp}
+          disabled={index === 0}
+          className="p-1.5 bg-zinc-700 rounded hover:bg-zinc-600 disabled:opacity-30 disabled:cursor-not-allowed"
+          title="Move up"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+        <button
+          onClick={onMoveDown}
+          disabled={index === total - 1}
+          className="p-1.5 bg-zinc-700 rounded hover:bg-zinc-600 disabled:opacity-30 disabled:cursor-not-allowed"
+          title="Move down"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <button
+          onClick={onRemove}
+          className="p-1.5 bg-red-900/50 rounded hover:bg-red-800/50 text-red-400"
+          title="Remove"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
       {children}
     </div>
   );
@@ -574,6 +796,59 @@ function Field({
         <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} className={className} />
       ) : (
         <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className={className} />
+      )}
+    </div>
+  );
+}
+
+function ImageField({
+  label,
+  value,
+  onChange,
+  onUpload,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  onUpload: (file: File) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div>
+      <label className="block text-sm text-gray-400 mb-1.5">{label}</label>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="/images/projects/..."
+          className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white focus:border-[#d4a853] focus:outline-none text-sm"
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="px-3 py-2 bg-zinc-700 rounded-lg hover:bg-zinc-600 transition"
+          title="Upload image"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </button>
+      </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onUpload(file);
+        }}
+      />
+      {value && (
+        <div className="mt-2 h-16 w-24 rounded overflow-hidden bg-zinc-800">
+          <img src={value} alt="Preview" className="w-full h-full object-cover" />
+        </div>
       )}
     </div>
   );
