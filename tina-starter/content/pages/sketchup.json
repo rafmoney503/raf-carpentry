@@ -1,0 +1,43 @@
+{
+  "heroTitle": "Your topic ",
+  "heroTitleAccent": "headline",
+  "heroParagraphs": [
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Introduce the main idea — why this topic matters to your audience.",
+    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Add a second paragraph with more detail or social proof."
+  ],
+  "subtitle": "",
+  "heroImage": "",
+  "heroImageAlt": "Describe the hero image",
+  "heroImageCaption": "Optional caption under the hero image",
+  "benefitsSectionTitle": "Benefits for ",
+  "benefitsSectionTitleAccent": "your clients",
+  "benefits": [
+    {
+      "title": "Benefit one",
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "icon": "🎯"
+    },
+    {
+      "title": "Benefit two",
+      "description": "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "icon": "📐"
+    },
+    {
+      "title": "Benefit three",
+      "description": "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
+      "icon": "💰"
+    }
+  ],
+  "comparisonTitle": "Before and ",
+  "comparisonTitleAccent": "after",
+  "comparisonSubtitle": "Lorem ipsum dolor sit amet. Explain what the two images or columns represent.",
+  "comparisonModelImage": "",
+  "comparisonModelAlt": "Left or concept image alt text",
+  "comparisonModelLabel": "Planning / design",
+  "comparisonBuildImage": "",
+  "comparisonBuildAlt": "Right or result image alt text",
+  "comparisonBuildLabel": "Finished result",
+  "ctaTitle": "Your closing headline",
+  "ctaSubtitle": "Lorem ipsum dolor sit amet. Invite the reader to take the next step.",
+  "ctaButtonLabel": "Contact us"
+}

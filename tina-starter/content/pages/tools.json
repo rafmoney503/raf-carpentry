@@ -1,0 +1,80 @@
+{
+  "metaTitle": "Recommended tools — Your Business Name",
+  "metaDescription": "Lorem ipsum dolor sit amet. Short meta description for search and social previews.",
+  "title": "Tools we ",
+  "titleAccent": "recommend",
+  "intro": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Explain how you pick tools and that recommendations are honest.",
+  "disclosure": "Some links may be affiliate links. Lorem ipsum disclosure text at no extra cost to the reader.",
+  "categories": [
+    {
+      "name": "Category A",
+      "icon": "⚡",
+      "tools": [
+        {
+          "name": "Example tool one",
+          "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+          "url": "#",
+          "image": "",
+          "price": "$$"
+        },
+        {
+          "name": "Example tool two",
+          "description": "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+          "url": "#",
+          "image": "",
+          "price": "$$$"
+        }
+      ]
+    },
+    {
+      "name": "Category B",
+      "icon": "🪚",
+      "tools": [
+        {
+          "name": "Example tool three",
+          "description": "Ut enim ad minim veniam, quis nostrud exercitation.",
+          "url": "#",
+          "image": "",
+          "price": "$"
+        },
+        {
+          "name": "Example tool four",
+          "description": "Duis aute irure dolor in reprehenderit in voluptate.",
+          "url": "#",
+          "image": "",
+          "price": "$$"
+        }
+      ]
+    },
+    {
+      "name": "Category C",
+      "icon": "📏",
+      "tools": [
+        {
+          "name": "Example tool five",
+          "description": "Excepteur sint occaecat cupidatat non proident.",
+          "url": "#",
+          "image": "",
+          "price": "$$"
+        }
+      ]
+    },
+    {
+      "name": "Category D",
+      "icon": "💻",
+      "tools": [
+        {
+          "name": "Example software",
+          "description": "Nemo enim ipsam voluptatem quia voluptas sit aspernatur.",
+          "url": "#",
+          "image": "",
+          "price": "$$$"
+        }
+      ]
+    }
+  ],
+  "footerCtaTitle": "Want more ",
+  "footerCtaTitleAccent": "tips?",
+  "footerCtaSubtitle": "Lorem ipsum dolor sit amet. Point readers to your blog or newsletter.",
+  "footerCtaButtonLabel": "Read the blog"
+}

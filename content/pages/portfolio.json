@@ -1,0 +1,44 @@
+{
+  "title": "Built With ",
+  "titleAccent": "Precision",
+  "subtitle": "From kitchens to outdoor structures — browse projects that show the standard of work you'll get.",
+  "categories": ["All", "Kitchens", "Cabinets", "Outdoor"],
+  "projects": [
+    {
+      "title": "Modern Kitchen Remodel",
+      "description": "Bespoke shaker-style kitchen in navy blue with brass handles and quartz worktops.",
+      "category": "Kitchens",
+      "image": "/images/projects/kitchen-remodel.jpg"
+    },
+    {
+      "title": "Kitchen Island with Skylight",
+      "description": "Open-plan kitchen featuring a large island with integrated hob and bifold garden doors.",
+      "category": "Kitchens",
+      "image": "/images/projects/kitchen-island.jpg"
+    },
+    {
+      "title": "Built-in Wardrobes",
+      "description": "Floor to ceiling fitted wardrobes with soft-close hinges and internal organisers.",
+      "category": "Cabinets",
+      "image": "/images/projects/built-in-wardrobes.jpg"
+    },
+    {
+      "title": "Bespoke Alcove Shelving",
+      "description": "Custom alcove unit with floating shelves and panelled cupboard doors below.",
+      "category": "Cabinets",
+      "image": "/images/projects/bespoke-shelving.jpg"
+    },
+    {
+      "title": "Garden Office Interior",
+      "description": "Fully fitted garden office with oak shelving, built-in desk area and AC unit.",
+      "category": "Outdoor",
+      "image": "/images/projects/garden-office.jpg"
+    },
+    {
+      "title": "Outdoor Gym Structure",
+      "description": "Built during lockdown — a full timber frame outdoor gym with corner bracing for stability.",
+      "category": "Outdoor",
+      "image": "/images/projects/outdoor-gym.jpg"
+    }
+  ]
+}

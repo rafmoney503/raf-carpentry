@@ -1,0 +1,60 @@
+{
+  "metaTitle": "Rafal Janczy — Links",
+  "metaDescription": "All my links in one place. Carpentry services, CabinetOS app, tools, and more.",
+  "title": "Rafal Janczy",
+  "subtitle": "Where Ideas Take Shape",
+  "links": [
+    {
+      "label": "CabinetOS App Waitlist",
+      "subtitle": "Cutlists. Boards. Done. A carpenter built this — join free.",
+      "url": "/cabinetos",
+      "icon": "⚡",
+      "highlight": true
+    },
+    {
+      "label": "Book a Service in London",
+      "subtitle": "Let's make your dream project a reality!",
+      "url": "/contact",
+      "icon": "🪚",
+      "highlight": false
+    },
+    {
+      "label": "My Carpentry Tools",
+      "subtitle": "Affiliate links for all the tools I use daily.",
+      "url": "/tools",
+      "icon": "🛠️",
+      "highlight": false
+    },
+    {
+      "label": "SketchUp for Carpenters",
+      "subtitle": "How I design every project in 3D before building.",
+      "url": "/sketchup",
+      "icon": "✏️",
+      "highlight": false
+    },
+    {
+      "label": "The Workshop Journal",
+      "subtitle": "Blog — tips, tutorials, and behind-the-scenes.",
+      "url": "/blog",
+      "icon": "📝",
+      "highlight": false
+    },
+    {
+      "label": "Get to Know Me",
+      "subtitle": "My story — from carpentry to code.",
+      "url": "/about",
+      "icon": "👤",
+      "highlight": false
+    },
+    {
+      "label": "Full Website",
+      "subtitle": "Explore everything at rafcarpentry.com",
+      "url": "/",
+      "icon": "🌐",
+      "highlight": false
+    }
+  ],
+  "instagramUrl": "https://www.instagram.com/rafcarpentry/",
+  "tiktokUrl": "https://www.tiktok.com/@rafcarpentry",
+  "facebookUrl": "https://www.facebook.com/rafcarpentry/"
+}

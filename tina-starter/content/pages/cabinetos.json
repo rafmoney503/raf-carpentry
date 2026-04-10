@@ -1,0 +1,83 @@
+{
+  "eyebrow": "Product or app",
+  "title": "Your Product Headline.",
+  "titleAccent": "Supporting line here.",
+  "subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Explain what this product does in one or two sentences.",
+  "primaryCtaLabel": "Primary action",
+  "secondaryCtaLabel": "Learn more",
+  "heroImage": "",
+  "heroImageAlt": "Screenshot or hero visual for your product",
+  "mockupEmoji": "📱",
+  "mockupPlaceholder": "App screenshot or demo placeholder",
+  "featuresSectionTitle": "How it ",
+  "featuresSectionTitleAccent": "works",
+  "featuresSectionSubtitle": "Lorem ipsum dolor sit amet — four steps, features, or pillars.",
+  "features": [
+    {
+      "title": "Feature one",
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "icon": "📋"
+    },
+    {
+      "title": "Feature two",
+      "description": "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "icon": "✂"
+    },
+    {
+      "title": "Feature three",
+      "description": "Ut enim ad minim veniam, quis nostrud exercitation ullamco.",
+      "icon": "📐"
+    },
+    {
+      "title": "Feature four",
+      "description": "Duis aute irure dolor in reprehenderit in voluptate velit esse.",
+      "icon": "🖨"
+    }
+  ],
+  "beforeAfterItems": [
+    {
+      "beforeImage": "",
+      "afterImage": "",
+      "beforeAlt": "Before state description",
+      "afterAlt": "After state description"
+    }
+  ],
+  "withoutTitle": "Without your product",
+  "withoutBullets": [
+    "Lorem ipsum pain point one",
+    "Lorem ipsum pain point two",
+    "Lorem ipsum pain point three",
+    "Lorem ipsum pain point four"
+  ],
+  "withTitle": "With your product",
+  "withBullets": [
+    "Lorem ipsum benefit one",
+    "Lorem ipsum benefit two",
+    "Lorem ipsum benefit three",
+    "Lorem ipsum benefit four"
+  ],
+  "faqSectionTitle": "Frequently ",
+  "faqSectionTitleAccent": "asked",
+  "faq": [
+    {
+      "question": "Who is this for?",
+      "answer": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Describe your ideal customer."
+    },
+    {
+      "question": "How do I get started?",
+      "answer": "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+    },
+    {
+      "question": "Is there a free trial?",
+      "answer": "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris."
+    },
+    {
+      "question": "What support do you offer?",
+      "answer": "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore."
+    }
+  ],
+  "bottomCtaTitle": "Ready to ",
+  "bottomCtaTitleAccent": "get started?",
+  "bottomCtaSubtitle": "Lorem ipsum dolor sit amet. Final call to action.",
+  "bottomCtaButtonLabel": "Sign up"
+}

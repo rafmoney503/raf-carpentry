@@ -1,0 +1,64 @@
+{
+  "heroEyebrow": "YOUR BUSINESS TAGLINE OR LOCATION",
+  "heroTitle": "Your Hero Headline",
+  "heroTitleAccent": "Here",
+  "heroSubtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Replace this with a short value proposition for Your Business Name.",
+  "heroImage": "",
+  "heroImageAlt": "Describe your hero image for accessibility",
+  "servicesEyebrow": "SERVICES",
+  "servicesHeading": "What We Offer",
+  "services": [
+    {
+      "title": "Service One",
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero.",
+      "icon": "🍳"
+    },
+    {
+      "title": "Service Two",
+      "description": "Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet.",
+      "icon": "👔"
+    },
+    {
+      "title": "Service Three",
+      "description": "Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta.",
+      "icon": "⭐"
+    }
+  ],
+  "featuredEyebrow": "WORK",
+  "featuredHeading": "Featured Projects",
+  "featuredProjects": [
+    {
+      "title": "Sample Project Alpha",
+      "category": "Category A",
+      "image": ""
+    },
+    {
+      "title": "Sample Project Beta",
+      "category": "Category B",
+      "image": ""
+    },
+    {
+      "title": "Sample Project Gamma",
+      "category": "Category C",
+      "image": ""
+    },
+    {
+      "title": "Sample Project Delta",
+      "category": "Category D",
+      "image": ""
+    }
+  ],
+  "viewAllProjectsLabel": "View all work",
+  "sketchupImage": "",
+  "sketchupImageAlt": "Placeholder alt text for process section image",
+  "sketchupEyebrow": "PROCESS",
+  "sketchupHeadingLine1": "Your process headline",
+  "sketchupHeadingAccent": "Second line accent",
+  "cabinetosCTA": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Explain how you work, what clients can expect, and why they should trust Your Business Name.",
+  "sketchupLearnMoreLabel": "Learn more",
+  "sketchupCabinetosLinkLabel": "Your product link →",
+  "contactHeadingLine1": "Ready to start",
+  "contactHeadingAccent": "your project?",
+  "contactCTA": "Lorem ipsum dolor sit amet. Add a short call-to-action inviting visitors to get in touch.",
+  "contactButtonLabel": "Contact us"
+}

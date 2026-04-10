@@ -1,0 +1,64 @@
+{
+  "heroEyebrow": "BESPOKE CARPENTRY IN LONDON",
+  "heroTitle": "Crafted With",
+  "heroTitleAccent": "Precision",
+  "heroSubtitle": "Kitchens, wardrobes, and garden offices — designed in SketchUp, built to last.",
+  "heroImage": "/images/raf-at-work.jpg",
+  "heroImageAlt": "Raf measuring timber",
+  "servicesEyebrow": "WHAT I DO",
+  "servicesHeading": "Built Around Your Life",
+  "services": [
+    {
+      "title": "Bespoke Kitchens",
+      "description": "Custom-designed kitchens built to fit your space perfectly. From shaker-style to modern handleless.",
+      "icon": "🍳"
+    },
+    {
+      "title": "Fitted Wardrobes",
+      "description": "Maximise storage with floor-to-ceiling wardrobes. Internal layouts designed around your needs.",
+      "icon": "👔"
+    },
+    {
+      "title": "Garden Offices",
+      "description": "Work from home in style. Fully insulated, wired, and fitted to your specification.",
+      "icon": "🏡"
+    }
+  ],
+  "featuredEyebrow": "PORTFOLIO",
+  "featuredHeading": "Recent Projects",
+  "featuredProjects": [
+    {
+      "title": "Navy Shaker Kitchen",
+      "category": "Kitchen",
+      "image": "/images/projects/kitchen-remodel.jpg"
+    },
+    {
+      "title": "Fitted Wardrobes",
+      "category": "Bedroom",
+      "image": "/images/projects/built-in-wardrobes.jpg"
+    },
+    {
+      "title": "Garden Office",
+      "category": "Outdoor",
+      "image": "/images/projects/garden-office.jpg"
+    },
+    {
+      "title": "Alcove Shelving",
+      "category": "Living Room",
+      "image": "/images/projects/bespoke-shelving.jpg"
+    }
+  ],
+  "viewAllProjectsLabel": "View All Projects",
+  "sketchupImage": "/images/sketchup/wardrobe-model.png",
+  "sketchupImageAlt": "SketchUp 3D model",
+  "sketchupEyebrow": "THE PROCESS",
+  "sketchupHeadingLine1": "Designed in SketchUp,",
+  "sketchupHeadingAccent": "Built to Perfection",
+  "cabinetosCTA": "Every project starts with a detailed 3D model. You see exactly what you're getting before a single cut is made. No surprises, no mistakes — just precision craftsmanship.",
+  "sketchupLearnMoreLabel": "Learn More",
+  "sketchupCabinetosLinkLabel": "Try Cabinetos →",
+  "contactHeadingLine1": "Ready to Start",
+  "contactHeadingAccent": "Your Project?",
+  "contactCTA": "From initial design to final installation — let's build something beautiful together.",
+  "contactButtonLabel": "Get a Free Quote"
+}

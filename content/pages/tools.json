@@ -1,0 +1,130 @@
+{
+  "metaTitle": "My Carpentry Tools — Raf Carpentry",
+  "metaDescription": "The tools I use daily for carpentry, cabinet making, and woodworking. Honest recommendations from a working carpenter.",
+  "title": "My Carpentry ",
+  "titleAccent": "Tools",
+  "intro": "Every tool here is something I personally use and recommend. No fluff — just the gear that makes my work better.",
+  "disclosure": "🔗 Some links are affiliate links. I earn a small commission if you buy through them — at no extra cost to you. This helps support my content.",
+  "categories": [
+    {
+      "name": "Power Tools",
+      "icon": "⚡",
+      "tools": [
+        {
+          "name": "Makita Track Saw",
+          "description": "My go-to for clean, straight cuts on sheet materials. Essential for cabinet work.",
+          "url": "#",
+          "image": "",
+          "price": "£££"
+        },
+        {
+          "name": "Festool Domino Joiner",
+          "description": "Game-changer for strong, fast joinery. Worth every penny.",
+          "url": "#",
+          "image": "",
+          "price": "££££"
+        },
+        {
+          "name": "Makita Cordless Drill",
+          "description": "Reliable everyday driver. I own three of these.",
+          "url": "#",
+          "image": "",
+          "price": "££"
+        },
+        {
+          "name": "Makita Cordless Jigsaw",
+          "description": "For curved cuts and quick scribing on site.",
+          "url": "#",
+          "image": "",
+          "price": "££"
+        }
+      ]
+    },
+    {
+      "name": "Hand Tools",
+      "icon": "🪚",
+      "tools": [
+        {
+          "name": "Stanley FatMax Tape Measure 5m",
+          "description": "The yellow tape you see in every photo. Accurate and durable.",
+          "url": "#",
+          "image": "",
+          "price": "£"
+        },
+        {
+          "name": "Irwin Marples Chisels",
+          "description": "Great edge retention, comfortable grip. Use them daily.",
+          "url": "#",
+          "image": "",
+          "price": "££"
+        },
+        {
+          "name": "Bahco Hand Saw",
+          "description": "For quick cuts where setting up a power tool isn't worth it.",
+          "url": "#",
+          "image": "",
+          "price": "£"
+        },
+        {
+          "name": "Stabila Spirit Level",
+          "description": "Accurate and built to survive a building site.",
+          "url": "#",
+          "image": "",
+          "price": "££"
+        }
+      ]
+    },
+    {
+      "name": "Measuring & Layout",
+      "icon": "📏",
+      "tools": [
+        {
+          "name": "Bosch Laser Measure",
+          "description": "Instant room measurements. Saves hours on site surveys.",
+          "url": "#",
+          "image": "",
+          "price": "££"
+        },
+        {
+          "name": "Shinwa Combination Square",
+          "description": "Precision marking for joinery and cabinet work.",
+          "url": "#",
+          "image": "",
+          "price": "£"
+        },
+        {
+          "name": "Incra T-Rule",
+          "description": "Dead accurate for marking out cuts on boards.",
+          "url": "#",
+          "image": "",
+          "price": "£"
+        }
+      ]
+    },
+    {
+      "name": "Software & Digital",
+      "icon": "💻",
+      "tools": [
+        {
+          "name": "SketchUp Pro",
+          "description": "I design every project in 3D before building. Non-negotiable.",
+          "url": "#",
+          "image": "",
+          "price": "£££"
+        },
+        {
+          "name": "Cabinetos",
+          "description": "My own app — automatic cut lists, parts lists, and board optimisation.",
+          "url": "/cabinetos",
+          "image": "",
+          "price": "Free"
+        }
+      ]
+    },
+    {}
+  ],
+  "footerCtaTitle": "Need Help ",
+  "footerCtaTitleAccent": "Choosing Tools?",
+  "footerCtaSubtitle": "I write about tools and techniques on my blog. Check it out for honest reviews and tips.",
+  "footerCtaButtonLabel": "Read the Blog"
+}

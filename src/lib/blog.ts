@@ -8,7 +8,8 @@ const postsDir = path.join(process.cwd(), 'content/blog');
 
 export interface PostTool {
   name: string;
-  link: string;
+  link?: string;
+  url?: string;
 }
 
 export interface Post {

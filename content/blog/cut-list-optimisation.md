@@ -1,16 +1,16 @@
 ---
-title: "Cut List Optimisation: Save 15% on Materials"
-date: "2026-04-05"
-excerpt: "Most carpenters waste 15-20% of sheet materials through poor planning. Here's how board optimisation can dramatically reduce your waste."
-category: "Cabinetos"
-image: "/images/blog/cut-list.jpg"
+category: Cabinetos
+title: 'Cut List Optimisation: Save 15% on Materials'
+excerpt: Most carpenters waste 15-20% of sheet materials through poor planning. Here's how board optimisation can dramatically reduce your waste.
+date: 2026-04-05T00:00:00.000Z
+image: /images/Screenshot 2026-04-10 at 08.00.59.png
 tools:
-  - name: "Cabinetos App"
-    link: "/cabinetos"
-  - name: "Makita Track Saw"
-    link: "#"
-  - name: "Shinwa Combination Square"
-    link: "#"
+  - name: Cabinetos App
+    link: 'https://cabinetos.com'
+  - name: Makita Track Saw
+    link: 'https://amazon.co.uk'
+  - name: Shinwa Combination Square
+    link: 'https://amazon.co.uk'
 ---
 
 ## The Hidden Cost of Poor Cut Planning
@@ -25,11 +25,11 @@ When you plan cuts by hand or in your head, you're optimising for speed, not eff
 
 Professional cut list optimisation software uses nesting algorithms to arrange all your parts on the fewest possible boards. It considers:
 
-- **Part dimensions** and grain direction
-- **Board sizes** available from your supplier
-- **Saw kerf** width
-- **Edge banding** requirements
-- **Offcut reuse** across projects
+* **Part dimensions** and grain direction
+* **Board sizes** available from your supplier
+* **Saw kerf** width
+* **Edge banding** requirements
+* **Offcut reuse** across projects
 
 ## Real-World Savings
 

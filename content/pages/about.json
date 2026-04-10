@@ -1,0 +1,61 @@
+{
+  "title": "A Carpenter Who",
+  "titleAccent": "Thinks in Code",
+  "storyParagraphs": [
+    "From building outdoor gyms during lockdown to creating apps that help carpenters work smarter — my journey has always been about combining hands-on craft with digital innovation.",
+    "I've spent years honing my carpentry skills across kitchens, bespoke furniture, and structural builds. Along the way, I discovered SketchUp and it transformed how I plan and present work to clients."
+  ],
+  "storyClosingLead": "That same drive to work smarter led me to build ",
+  "storyClosingBold": "Cabinetos",
+  "storyClosingRest": " — an app that automates the tedious calculations every cabinet maker deals with daily. Parts lists, cut lists, board optimisation — done in seconds instead of hours.",
+  "stats": [
+    {
+      "label": "Years Experience",
+      "value": "20+"
+    },
+    {
+      "label": "Projects Completed",
+      "value": "100+"
+    },
+    {
+      "label": "App Built",
+      "value": "1"
+    },
+    {
+      "label": "Passion for Craft",
+      "value": "∞"
+    }
+  ],
+  "differentiators": [
+    {
+      "title": "I design before I build",
+      "description": "Every project starts in SketchUp. You see a 3D model before I pick up a saw."
+    },
+    {
+      "title": "I build tools for builders",
+      "description": "Cabinetos was born from my own frustrations with manual calculations. It solves real problems."
+    },
+    {
+      "title": "I share what I learn",
+      "description": "Through my blog, social media, and tutorials — I help other carpenters level up their workflow."
+    }
+  ],
+  "profileImage": "",
+  "profileImageStyle": "rounded",
+  "socialLinks": [
+    {
+      "label": "Instagram",
+      "url": "https://www.instagram.com/raf_carpentry/"
+    },
+    {
+      "label": "TikTok",
+      "url": "https://www.tiktok.com/@rafcarpentry"
+    },
+    {
+      "label": "Facebook",
+      "url": "https://www.facebook.com/rafcarpentry/"
+    }
+  ],
+  "photoPlaceholderEmoji": "👤",
+  "photoPlaceholderText": "Your photo goes here"
+}

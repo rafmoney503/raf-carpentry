@@ -1,0 +1,44 @@
+{
+  "title": "Our ",
+  "titleAccent": "Portfolio",
+  "subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Brief intro to your work samples.",
+  "categories": ["All", "Category A", "Category B", "Category C"],
+  "projects": [
+    {
+      "title": "Portfolio item one",
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Short description of the project.",
+      "category": "Category A",
+      "image": ""
+    },
+    {
+      "title": "Portfolio item two",
+      "description": "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "category": "Category A",
+      "image": ""
+    },
+    {
+      "title": "Portfolio item three",
+      "description": "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.",
+      "category": "Category B",
+      "image": ""
+    },
+    {
+      "title": "Portfolio item four",
+      "description": "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore.",
+      "category": "Category B",
+      "image": ""
+    },
+    {
+      "title": "Portfolio item five",
+      "description": "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia.",
+      "category": "Category C",
+      "image": ""
+    },
+    {
+      "title": "Portfolio item six",
+      "description": "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.",
+      "category": "Category C",
+      "image": ""
+    }
+  ]
+}

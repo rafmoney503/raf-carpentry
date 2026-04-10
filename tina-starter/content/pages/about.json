@@ -1,0 +1,40 @@
+{
+  "title": "About",
+  "titleAccent": "Your Business Name",
+  "storyParagraphs": [
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Tell your story in plain language — who you are, what you do, and why it matters.",
+    "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris."
+  ],
+  "storyClosingLead": "Add a closing thought before a bold highlight: ",
+  "storyClosingBold": "Your keyword",
+  "storyClosingRest": " — then continue with lorem ipsum or real copy about your values and approach.",
+  "stats": [
+    { "label": "Years in business", "value": "10+" },
+    { "label": "Happy clients", "value": "100+" },
+    { "label": "Projects", "value": "250+" },
+    { "label": "Coffee consumed", "value": "∞" }
+  ],
+  "differentiators": [
+    {
+      "title": "Differentiator one",
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Explain what makes you different."
+    },
+    {
+      "title": "Differentiator two",
+      "description": "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque."
+    },
+    {
+      "title": "Differentiator three",
+      "description": "Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit."
+    }
+  ],
+  "profileImage": "",
+  "profileImageStyle": "rounded",
+  "socialLinks": [
+    { "label": "Social link A", "url": "https://example.com" },
+    { "label": "Social link B", "url": "https://example.com" },
+    { "label": "Social link C", "url": "https://example.com" }
+  ],
+  "photoPlaceholderEmoji": "\uD83D\uDC64",
+  "photoPlaceholderText": "Add a profile photo in Tina"
+}

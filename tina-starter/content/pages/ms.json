@@ -1,0 +1,60 @@
+{
+  "metaTitle": "Your Name — Links",
+  "metaDescription": "Lorem ipsum dolor sit amet. All your important links in one place.",
+  "title": "Your Name",
+  "subtitle": "Your tagline here",
+  "links": [
+    {
+      "label": "Featured link",
+      "subtitle": "Lorem ipsum short subtitle for this button.",
+      "url": "/",
+      "icon": "⚡",
+      "highlight": true
+    },
+    {
+      "label": "Book or contact",
+      "subtitle": "Lorem ipsum dolor sit amet.",
+      "url": "/contact",
+      "icon": "🪚",
+      "highlight": false
+    },
+    {
+      "label": "Resources",
+      "subtitle": "Lorem ipsum helpful links.",
+      "url": "/tools",
+      "icon": "🛠",
+      "highlight": false
+    },
+    {
+      "label": "Topic page",
+      "subtitle": "Lorem ipsum description.",
+      "url": "/about",
+      "icon": "✏",
+      "highlight": false
+    },
+    {
+      "label": "Blog",
+      "subtitle": "Lorem ipsum articles and updates.",
+      "url": "/blog",
+      "icon": "📝",
+      "highlight": false
+    },
+    {
+      "label": "About",
+      "subtitle": "Lorem ipsum your story.",
+      "url": "/about",
+      "icon": "👤",
+      "highlight": false
+    },
+    {
+      "label": "Full website",
+      "subtitle": "Lorem ipsum visit the main site.",
+      "url": "/",
+      "icon": "🌐",
+      "highlight": false
+    }
+  ],
+  "instagramUrl": "https://example.com/your-profile",
+  "tiktokUrl": "https://example.com/your-profile",
+  "facebookUrl": "https://example.com/your-profile"
+}

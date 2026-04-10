@@ -1,0 +1,83 @@
+{
+  "eyebrow": "Cabinet Making App",
+  "title": "Stop Wasting Material.",
+  "titleAccent": "Start Cutting Smarter.",
+  "subtitle": "Cabinetos automates your parts list, cut list, board optimisation and printing — so you can focus on building, not calculating.",
+  "primaryCtaLabel": "See Features",
+  "secondaryCtaLabel": "FAQs",
+  "heroImage": "/images/Screenshot 2026-04-10 at 07.59.22.png",
+  "heroImageAlt": "Cabinetos app screenshot",
+  "mockupEmoji": "📱",
+  "mockupPlaceholder": "App screenshot / demo video goes here",
+  "featuresSectionTitle": "How Cabinetos ",
+  "featuresSectionTitleAccent": "Works",
+  "featuresSectionSubtitle": "Four steps from design to workshop-ready cut sheets.",
+  "features": [
+    {
+      "title": "Parts List",
+      "description": "Automatically generate complete parts lists from your cabinet designs. No more manual counting.",
+      "icon": "📋"
+    },
+    {
+      "title": "Cut List",
+      "description": "Optimised cut lists that tell you exactly what to cut, in what order, from which board.",
+      "icon": "✂️"
+    },
+    {
+      "title": "Board Optimisation",
+      "description": "Intelligent nesting algorithms that minimise waste and save you up to 15% on materials.",
+      "icon": "📐"
+    },
+    {
+      "title": "Print Ready",
+      "description": "Export professional cut sheets and labels ready for the workshop floor.",
+      "icon": "🖨️"
+    }
+  ],
+  "beforeAfterItems": [
+    {
+      "beforeImage": "",
+      "afterImage": "",
+      "beforeAlt": "Workflow without Cabinetos",
+      "afterAlt": "Workflow with Cabinetos"
+    }
+  ],
+  "withoutTitle": "Without Cabinetos",
+  "withoutBullets": [
+    "Hours of manual calculations",
+    "Material waste from poor nesting",
+    "Errors in part dimensions",
+    "Handwritten cut sheets"
+  ],
+  "withTitle": "With Cabinetos",
+  "withBullets": [
+    "Instant parts and cut lists",
+    "Up to 15% less material waste",
+    "Zero calculation errors",
+    "Professional print-ready outputs"
+  ],
+  "faqSectionTitle": "Frequently ",
+  "faqSectionTitleAccent": "Asked",
+  "faq": [
+    {
+      "question": "Who is Cabinetos for?",
+      "answer": "Cabinet makers, carpenters, kitchen fitters, and anyone who builds furniture from sheet materials."
+    },
+    {
+      "question": "Does it work with any board size?",
+      "answer": "Yes — you can set custom board dimensions, thickness, and even grain direction preferences."
+    },
+    {
+      "question": "Can I save and reuse projects?",
+      "answer": "Absolutely. Save templates for common cabinet types and reuse them across projects."
+    },
+    {
+      "question": "What makes it different from other cut list tools?",
+      "answer": "Cabinetos is built by a working carpenter who understands the real workshop workflow — it's practical, not theoretical."
+    }
+  ],
+  "bottomCtaTitle": "Ready to ",
+  "bottomCtaTitleAccent": "Cut Smarter?",
+  "bottomCtaSubtitle": "Join carpenters who are saving time and materials with Cabinetos.",
+  "bottomCtaButtonLabel": "Get Early Access"
+}

@@ -1,0 +1,43 @@
+{
+  "heroTitle": "Why I Use ",
+  "heroTitleAccent": "SketchUp",
+  "heroParagraphs": [
+    "When I started using SketchUp, it completely transformed my workflow. Clients could see exactly what they were getting before I ordered a single board. Mistakes dropped to almost zero. Material waste went down. And quoting became faster because I could measure everything digitally.",
+    "Today, every project I take on starts in SketchUp. It's become as essential as my tape measure."
+  ],
+  "subtitle": "",
+  "heroImage": "/images/sketchup/wardrobe-model.png",
+  "heroImageAlt": "SketchUp wardrobe design with dimensions",
+  "heroImageCaption": "Fitted wardrobe — designed in SketchUp with precise dimensions",
+  "benefitsSectionTitle": "Benefits for ",
+  "benefitsSectionTitleAccent": "Carpenters",
+  "benefits": [
+    {
+      "title": "Client Visualisation",
+      "description": "Show clients photorealistic renders. Get sign-off before you start — no surprises, no disputes.",
+      "icon": "🎯"
+    },
+    {
+      "title": "Precision Planning",
+      "description": "Every measurement is accurate. Export dimensions directly to your cut list or Cabinetos.",
+      "icon": "📐"
+    },
+    {
+      "title": "Better Quotes",
+      "description": "Measure materials from the model, price accurately, and win more jobs with professional presentations.",
+      "icon": "💰"
+    }
+  ],
+  "comparisonTitle": "3D Designs ",
+  "comparisonTitleAccent": "vs Real Builds",
+  "comparisonSubtitle": "See how my SketchUp models translate into finished projects. Every detail planned digitally, then built to perfection.",
+  "comparisonModelImage": "/images/sketchup/wardrobe-model.png",
+  "comparisonModelAlt": "SketchUp wardrobe design",
+  "comparisonModelLabel": "SketchUp Design",
+  "comparisonBuildImage": "/images/projects/built-in-wardrobes.jpg",
+  "comparisonBuildAlt": "Finished fitted wardrobes",
+  "comparisonBuildLabel": "Finished Build",
+  "ctaTitle": "Want a 3D Design for Your Project?",
+  "ctaSubtitle": "I create detailed SketchUp models for every bespoke project. See exactly what you're getting before a single cut is made.",
+  "ctaButtonLabel": "Get in Touch"
+}

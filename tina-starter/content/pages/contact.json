@@ -1,0 +1,13 @@
+{
+  "title": "Get in",
+  "titleAccent": "Touch",
+  "subtitle": "Lorem ipsum dolor sit amet. Replace with how you prefer to be contacted and what kinds of projects you take on.",
+  "email": "hello@yourbusiness.com",
+  "phone": "+1 (000) 000-0000",
+  "address": "Your City, Your Country",
+  "responseTimeLabel": "Typical response",
+  "responseTimeValue": "Within 1–2 business days",
+  "formEnabled": true,
+  "formHeading": "Send a message",
+  "formSubmitLabel": "Submit"
+}
