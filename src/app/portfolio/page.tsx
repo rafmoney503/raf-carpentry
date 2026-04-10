@@ -1,132 +1,73 @@
 import Image from "next/image";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { readPageJson } from "@/lib/pages";
 
-const defaultContent = {
-  title: "My",
-  titleHighlight: "Work",
-  subtitle: "A selection of recent projects showcasing bespoke carpentry across London.",
-  projects: [
-    { id: 1, title: "Navy Shaker Kitchen", description: "Custom kitchen with brass handles and integrated appliances", category: "Kitchens", image: "/images/projects/kitchen-remodel.jpg" },
-    { id: 2, title: "Kitchen Island", description: "Dark statement island with skylight above", category: "Kitchens", image: "/images/projects/kitchen-island.jpg" },
-    { id: 3, title: "Built-in Wardrobes", description: "Floor-to-ceiling fitted wardrobes with internal lighting", category: "Cabinets", image: "/images/projects/built-in-wardrobes.jpg" },
-    { id: 4, title: "Alcove Shelving", description: "Bespoke shelving unit with cupboards below", category: "Cabinets", image: "/images/projects/bespoke-shelving.jpg" },
-    { id: 5, title: "Garden Office", description: "Insulated garden office with oak interior", category: "Outdoor", image: "/images/projects/garden-office.jpg" },
-    { id: 6, title: "Outdoor Gym", description: "Timber frame outdoor gym structure", category: "Outdoor", image: "/images/projects/outdoor-gym.jpg" },
-  ],
+type PortfolioPageData = {
+  title: string;
+  titleAccent: string;
+  subtitle: string;
+  categories: string[];
+  projects: {
+    title: string;
+    description: string;
+    category: string;
+    image: string;
+  }[];
 };
 
-async function getContent() {
-  try {
-    const { data, error } = await supabase
-      .from("pages")
-      .select("content")
-      .eq("id", "portfolio")
-      .single();
-
-    if (error || !data) {
-      return defaultContent;
-    }
-
-    return data.content as typeof defaultContent;
-  } catch {
-    return defaultContent;
-  }
-}
-
-export const revalidate = 60;
-
-export default async function PortfolioPage() {
-  const content = await getContent();
-
-  // Get unique categories
-  const categories = ["All", ...new Set(content.projects.map((p) => p.category))];
+export default function PortfolioPage() {
+  const d = readPageJson<PortfolioPageData>("portfolio.json");
 
   return (
-    <main className="min-h-screen bg-[#0f1114]">
-      {/* Header */}
-      <section className="py-24 px-6">
-        <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-serif text-white mb-6">
-            {content.title}{" "}
-            <span className="text-[#d4a853]">{content.titleHighlight}</span>
+    <main className="min-h-screen bg-[#0f1114] text-white">
+      <section className="max-w-6xl mx-auto px-6 py-20">
+        <div className="mb-12">
+          <div className="w-12 h-1 bg-[#d4a853] mb-6"></div>
+          <h1 className="text-4xl md:text-5xl font-serif mb-4">
+            {d.title}<span className="text-[#d4a853]">{d.titleAccent}</span>
           </h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            {content.subtitle}
+          <p className="text-gray-400 max-w-xl">
+            {d.subtitle}
           </p>
         </div>
-      </section>
 
-      {/* Filter (visual only for now) */}
-      <section className="px-6 pb-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-wrap gap-3 justify-center">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                className={`px-5 py-2 rounded-full text-sm transition ${
-                  cat === "All"
-                    ? "bg-[#d4a853] text-black"
-                    : "bg-zinc-800 text-gray-300 hover:bg-zinc-700"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-3 mb-12">
+          {d.categories.map((cat) => (
+            <button
+              key={cat}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition ${
+                cat === "All"
+                  ? "bg-[#d4a853] text-black"
+                  : "bg-zinc-800 text-gray-300 hover:bg-zinc-700"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
-      </section>
 
-      {/* Projects Grid */}
-      <section className="py-12 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {content.projects.map((project) => (
-              <div
-                key={project.id}
-                className="group bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-[#d4a853]/30 transition"
-              >
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <Image
-                    src={project.image}
-                    alt={project.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <span className="absolute top-4 left-4 px-3 py-1 bg-[#d4a853] text-black text-xs font-semibold rounded-full">
-                    {project.category}
-                  </span>
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-serif text-white mb-2 group-hover:text-[#d4a853] transition">
-                    {project.title}
-                  </h3>
-                  <p className="text-gray-400 text-sm">
-                    {project.description}
-                  </p>
-                </div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {d.projects.map((project, idx) => (
+            <article
+              key={`${project.title}-${idx}`}
+              className="group bg-zinc-900 rounded-lg overflow-hidden hover:ring-1 hover:ring-[#d4a853]/50 transition"
+            >
+              <div className="relative h-56 overflow-hidden">
+                <Image
+                  src={project.image}
+                  alt={project.title}
+                  fill
+                  className="object-cover group-hover:scale-105 transition duration-500"
+                />
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-24 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-serif text-white mb-4">
-            Like What You <span className="text-[#d4a853]">See?</span>
-          </h2>
-          <p className="text-gray-400 text-lg mb-10">
-            Let's create something amazing for your space
-          </p>
-          <Link
-            href="/contact"
-            className="inline-block px-10 py-4 bg-[#d4a853] text-black font-semibold rounded-lg hover:bg-[#c49843] transition"
-          >
-            Start Your Project
-          </Link>
+              <div className="p-5">
+                <span className="inline-block px-3 py-1 text-xs font-semibold uppercase tracking-wide bg-[#d4a853]/20 text-[#d4a853] rounded mb-3">
+                  {project.category}
+                </span>
+                <h3 className="text-lg font-semibold mb-2">{project.title}</h3>
+                <p className="text-gray-400 text-sm">{project.description}</p>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
     </main>

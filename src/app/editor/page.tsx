@@ -1,10 +1,6 @@
 "use client";
 
-<<<<<<< HEAD
 import { useState, useEffect, useRef } from "react";
-=======
-import { useState, useEffect } from "react";
->>>>>>> a5a1fa065a6c9597e4d3e764fd096fa0beaefc2e
 import { supabase } from "@/lib/supabase";
 
 const EDITOR_PASSWORD = "raf2024"; // Change this!
@@ -19,10 +15,7 @@ export default function EditorPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
-<<<<<<< HEAD
   const [uploading, setUploading] = useState(false);
-=======
->>>>>>> a5a1fa065a6c9597e4d3e764fd096fa0beaefc2e
 
   const pageList = ["homepage", "about", "sketchup", "contact", "portfolio"];
 
@@ -91,7 +84,6 @@ export default function EditorPage() {
     setSaved(false);
   };
 
-<<<<<<< HEAD
   // Add item to array
   const addArrayItem = (path: string, template: Record<string, unknown>) => {
     setPages((prev) => {
@@ -173,8 +165,6 @@ export default function EditorPage() {
     return data?.publicUrl || null;
   };
 
-=======
->>>>>>> a5a1fa065a6c9597e4d3e764fd096fa0beaefc2e
   // Login screen
   if (!isAuthenticated) {
     return (
@@ -231,10 +221,7 @@ export default function EditorPage() {
             <h1 className="text-xl font-serif">
               <span className="text-[#d4a853]">Raf Carpentry</span> Editor
             </h1>
-<<<<<<< HEAD
             {uploading && <span className="text-sm text-blue-400">Uploading...</span>}
-=======
->>>>>>> a5a1fa065a6c9597e4d3e764fd096fa0beaefc2e
           </div>
           <div className="flex items-center gap-3">
             {saved && (
@@ -319,7 +306,6 @@ export default function EditorPage() {
                   />
                 </Section>
 
-<<<<<<< HEAD
                 <Section 
                   title="Services"
                   onAdd={() => addArrayItem("services", { icon: "🔨", title: "New Service", description: "Description here" })}
@@ -334,11 +320,6 @@ export default function EditorPage() {
                       onMoveDown={() => moveArrayItem("services", i, "down")}
                       onRemove={() => removeArrayItem("services", i)}
                     >
-=======
-                <Section title="Services">
-                  {((currentContent as any).services || []).map((service: any, i: number) => (
-                    <div key={i} className="bg-zinc-800 rounded-lg p-4 space-y-3">
->>>>>>> a5a1fa065a6c9597e4d3e764fd096fa0beaefc2e
                       <div className="flex gap-3">
                         <div className="w-20">
                           <label className="block text-xs text-gray-500 mb-1">Icon</label>
@@ -368,11 +349,7 @@ export default function EditorPage() {
                           className="w-full bg-zinc-700 border border-zinc-600 rounded px-3 py-2 text-white focus:border-[#d4a853] focus:outline-none resize-none"
                         />
                       </div>
-<<<<<<< HEAD
                     </ArrayItemCard>
-=======
-                    </div>
->>>>>>> a5a1fa065a6c9597e4d3e764fd096fa0beaefc2e
                   ))}
                 </Section>
 
@@ -430,7 +407,6 @@ export default function EditorPage() {
                   />
                 </Section>
 
-<<<<<<< HEAD
                 <Section 
                   title="Stats"
                   onAdd={() => addArrayItem("stats", { number: "0+", label: "New Stat" })}
@@ -466,30 +442,6 @@ export default function EditorPage() {
                         </div>
                       </div>
                     </ArrayItemCard>
-=======
-                <Section title="Stats">
-                  {((currentContent as any).stats || []).map((stat: any, i: number) => (
-                    <div key={i} className="flex gap-4">
-                      <div className="w-24">
-                        <label className="block text-xs text-gray-500 mb-1">Number</label>
-                        <input
-                          type="text"
-                          value={stat.number}
-                          onChange={(e) => updateArrayField("stats", i, "number", e.target.value)}
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-[#d4a853] font-bold focus:border-[#d4a853] focus:outline-none"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <label className="block text-xs text-gray-500 mb-1">Label</label>
-                        <input
-                          type="text"
-                          value={stat.label}
-                          onChange={(e) => updateArrayField("stats", i, "label", e.target.value)}
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-white focus:border-[#d4a853] focus:outline-none"
-                        />
-                      </div>
-                    </div>
->>>>>>> a5a1fa065a6c9597e4d3e764fd096fa0beaefc2e
                   ))}
                 </Section>
               </div>
@@ -519,7 +471,6 @@ export default function EditorPage() {
                   </div>
                 </Section>
 
-<<<<<<< HEAD
                 <Section 
                   title="Benefits"
                   onAdd={() => addArrayItem("benefits", { icon: "✨", title: "New Benefit", description: "Description here" })}
@@ -534,11 +485,6 @@ export default function EditorPage() {
                       onMoveDown={() => moveArrayItem("benefits", i, "down")}
                       onRemove={() => removeArrayItem("benefits", i)}
                     >
-=======
-                <Section title="Benefits">
-                  {((currentContent as any).benefits || []).map((benefit: any, i: number) => (
-                    <div key={i} className="bg-zinc-800 rounded-lg p-4 space-y-3">
->>>>>>> a5a1fa065a6c9597e4d3e764fd096fa0beaefc2e
                       <div className="flex gap-3">
                         <div className="w-20">
                           <label className="block text-xs text-gray-500 mb-1">Icon</label>
@@ -568,7 +514,6 @@ export default function EditorPage() {
                           className="w-full bg-zinc-700 border border-zinc-600 rounded px-3 py-2 text-white focus:border-[#d4a853] focus:outline-none resize-none"
                         />
                       </div>
-<<<<<<< HEAD
                     </ArrayItemCard>
                   ))}
                 </Section>
@@ -608,34 +553,6 @@ export default function EditorPage() {
                         </div>
                       </div>
                     </ArrayItemCard>
-=======
-                    </div>
-                  ))}
-                </Section>
-
-                <Section title="Stats">
-                  {((currentContent as any).stats || []).map((stat: any, i: number) => (
-                    <div key={i} className="flex gap-4">
-                      <div className="w-24">
-                        <label className="block text-xs text-gray-500 mb-1">Number</label>
-                        <input
-                          type="text"
-                          value={stat.number}
-                          onChange={(e) => updateArrayField("stats", i, "number", e.target.value)}
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-[#d4a853] font-bold focus:border-[#d4a853] focus:outline-none"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <label className="block text-xs text-gray-500 mb-1">Label</label>
-                        <input
-                          type="text"
-                          value={stat.label}
-                          onChange={(e) => updateArrayField("stats", i, "label", e.target.value)}
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-white focus:border-[#d4a853] focus:outline-none"
-                        />
-                      </div>
-                    </div>
->>>>>>> a5a1fa065a6c9597e4d3e764fd096fa0beaefc2e
                   ))}
                 </Section>
               </div>
@@ -708,7 +625,6 @@ export default function EditorPage() {
                   />
                 </Section>
 
-<<<<<<< HEAD
                 <Section 
                   title="Projects"
                   onAdd={() => addArrayItem("projects", { 
@@ -729,11 +645,6 @@ export default function EditorPage() {
                       onMoveDown={() => moveArrayItem("projects", i, "down")}
                       onRemove={() => removeArrayItem("projects", i)}
                     >
-=======
-                <Section title="Projects">
-                  {((currentContent as any).projects || []).map((project: any, i: number) => (
-                    <div key={i} className="bg-zinc-800 rounded-lg p-4 space-y-3">
->>>>>>> a5a1fa065a6c9597e4d3e764fd096fa0beaefc2e
                       <Field
                         label="Title"
                         value={project.title}
@@ -751,7 +662,6 @@ export default function EditorPage() {
                           value={project.category}
                           onChange={(v) => updateArrayField("projects", i, "category", v)}
                         />
-<<<<<<< HEAD
                         <ImageField
                           label="Image"
                           value={project.image}
@@ -760,15 +670,6 @@ export default function EditorPage() {
                         />
                       </div>
                     </ArrayItemCard>
-=======
-                        <Field
-                          label="Image Path"
-                          value={project.image}
-                          onChange={(v) => updateArrayField("projects", i, "image", v)}
-                        />
-                      </div>
-                    </div>
->>>>>>> a5a1fa065a6c9597e4d3e764fd096fa0beaefc2e
                   ))}
                 </Section>
               </div>
@@ -789,7 +690,6 @@ export default function EditorPage() {
 }
 
 // Helper components
-<<<<<<< HEAD
 function Section({ 
   title, 
   children, 
@@ -867,12 +767,6 @@ function ArrayItemCard({
           </svg>
         </button>
       </div>
-=======
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-zinc-900 rounded-xl p-6 space-y-4">
-      <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide">{title}</h3>
->>>>>>> a5a1fa065a6c9597e4d3e764fd096fa0beaefc2e
       {children}
     </div>
   );
@@ -907,7 +801,6 @@ function Field({
   );
 }
 
-<<<<<<< HEAD
 function ImageField({
   label,
   value,
@@ -961,8 +854,6 @@ function ImageField({
   );
 }
 
-=======
->>>>>>> a5a1fa065a6c9597e4d3e764fd096fa0beaefc2e
 function Preview({ page, content }: { page: string; content: any }) {
   if (!content) return <div className="text-gray-500">Loading...</div>;
 
