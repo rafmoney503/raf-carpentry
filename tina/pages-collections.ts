@@ -112,8 +112,10 @@ export const pageCollections: Collection[] = [
       { type: "string", name: "quoteBody", label: "Quote: text", ui: { component: "textarea" } },
       { type: "string", name: "phone", label: "Phone number" },
       { type: "string", name: "email", label: "Email address" },
-      { type: "string", name: "serviceOptions", label: "Quote form: 'What do you need?' options", list: true },
-      { type: "string", name: "formNote", label: "Quote form: note next to the button" },
+      { type: "string", name: "quotePanelHeading", label: "Quote box: heading" },
+      { type: "string", name: "quotePanelBody", label: "Quote box: text", ui: { component: "textarea" } },
+      { type: "string", name: "quoteNextSteps", label: "Quote box: what happens next", list: true },
+      { type: "string", name: "quoteNote", label: "Quote box: small note under the button" },
     ],
   },
   {

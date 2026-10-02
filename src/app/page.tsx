@@ -2,7 +2,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { readPageJson } from '@/lib/pages';
 import { getAllPosts } from '@/lib/blog';
-import QuoteForm from '@/components/QuoteForm';
+import QuoteCta from '@/components/QuoteCta';
+import { QUOTE_URL } from '@/lib/site';
 import './home.css';
 
 export type HomePageData = {
@@ -35,8 +36,10 @@ export type HomePageData = {
   quoteBody: string;
   phone: string;
   email: string;
-  serviceOptions: string[];
-  formNote: string;
+  quotePanelHeading: string;
+  quotePanelBody: string;
+  quoteNextSteps: string[];
+  quoteNote: string;
 };
 
 function formatDate(value: unknown): string {
@@ -63,7 +66,7 @@ export default function HomePage() {
           </h1>
           <p className="hero-sub anim d2">{d.heroSubtitle}</p>
           <div className="hero-ctas anim d3">
-            <a className="btn btn-primary" href="#quote">{d.primaryCtaLabel}</a>
+            <a className="btn btn-primary" href={QUOTE_URL} target="_blank" rel="noopener">{d.primaryCtaLabel}</a>
             <Link className="btn btn-ghost" href="/portfolio">{d.secondaryCtaLabel}</Link>
           </div>
         </div>
@@ -199,13 +202,12 @@ export default function HomePage() {
             </div>
           </div>
           <div className="quote-form reveal">
-            <QuoteForm
-              email={d.email}
-              phone={d.phone}
-              serviceOptions={d.serviceOptions}
-              submitLabel={d.primaryCtaLabel}
-              note={d.formNote}
-              idPrefix="home-q"
+            <QuoteCta
+              heading={d.quotePanelHeading}
+              body={d.quotePanelBody}
+              steps={d.quoteNextSteps}
+              buttonLabel={d.primaryCtaLabel}
+              note={d.quoteNote}
             />
           </div>
         </div>

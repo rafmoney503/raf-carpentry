@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { PHONE_DISPLAY, PHONE_HREF, QUOTE_URL } from '@/lib/site';
 
 const links = [
   { href: '/portfolio', label: 'My Work' },
@@ -13,13 +14,10 @@ const links = [
   { href: '/about', label: 'About' },
 ];
 
-export const PHONE_DISPLAY = '07792 860221';
-export const PHONE_HREF = 'tel:07792860221';
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const quoteHref = pathname === '/' ? '#quote' : '/contact';
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-paper/90 backdrop-blur-md">
@@ -48,9 +46,9 @@ export default function Navbar() {
           <a href={PHONE_HREF} className="hidden whitespace-nowrap font-mono text-sm text-ink xl:inline">
             {PHONE_DISPLAY}
           </a>
-          <Link href={quoteHref} className="btn btn-primary btn-sm">
+          <a href={QUOTE_URL} target="_blank" rel="noopener" className="btn btn-primary btn-sm">
             Get a quote
-          </Link>
+          </a>
           <button
             type="button"
             onClick={() => setOpen(!open)}

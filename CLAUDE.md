@@ -5,8 +5,8 @@
 Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrobes, cabinets, garden offices. Also building an app called Cabinetos and is a SketchUp expert. Active on Instagram (@rafcarpentry), TikTok (@rafcarpentry), Facebook.
 
 ## Project
-- **Site**: rafcarpentry.com (currently still pointed at old systeme.io — needs domain transfer to Vercel)
-- **Live preview**: https://raf-carpentry.vercel.app
+- **Site**: https://www.rafcarpentry.com (main address). DNS at GoDaddy points to Vercel; rafcarpentry.com and raf-carpentry.vercel.app redirect to www (set in Vercel > Domains, not in code)
+- **Vercel address**: https://raf-carpentry.vercel.app
 - **GitHub**: https://github.com/rafmoney503/raf-carpentry
 - **Stack**: Next.js 16 + Tailwind CSS v4 + TypeScript + TinaCMS
 - **Hosting**: Vercel (free tier, auto-deploys from GitHub main branch)
@@ -16,22 +16,22 @@ Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrob
 - **Look**: light paper background, pencil-grey text, one blueprint-blue accent, square 2px corners, photos on a white mount with a hairline border and soft shadow.
 - **Colours** (Tailwind tokens in src/app/globals.css `@theme`): paper #f1f2ef, raised #e6e7e2, mount #fbfbf9, ink #16191c, muted #4f555b, faint #5e646a, accent #2547d0 (hover #1b38ad). Use `bg-paper`, `bg-raised`, `text-ink`, `text-muted`, `text-faint`, `border-line`, `border-line-strong`, `bg-accent`, `text-accent`, `text-on-accent`. Do not use hex colours or zinc/gray classes in pages.
 - **Fonts** (self-hosted in src/fonts, loaded in src/app/layout.tsx with next/font/local): Bricolage Grotesque for headings (`font-display`), Geist for body (`font-sans`), Geist Mono for small labels and measurements (`font-mono`).
-- **Shared pieces**: `.btn .btn-primary .btn-ghost .btn-sm`, `.link-more`, `.kicker`, `.mount` (globals.css); `Container`, `PageHeader`, `SectionHeading`, `MountedImage` (src/components/ui.tsx); `QuoteForm` (src/components/QuoteForm.tsx, used on home and contact).
+- **Shared pieces**: `.btn .btn-primary .btn-ghost .btn-sm`, `.link-more`, `.kicker`, `.mount` (globals.css); `Container`, `PageHeader`, `SectionHeading`, `MountedImage` (src/components/ui.tsx); `QuoteCta` (src/components/QuoteCta.tsx, quote panel used on home and contact).
 - **Homepage**: src/app/page.tsx + src/app/home.css, content from content/pages/home.json (editable in TinaCMS).
 - **Rules (taste-skill)**: no em-dashes in new copy, no emoji icons, one accent colour, one "Get a quote" label for every quote button, max 20 words under the hero headline.
 - **Logo**: Crisp black R on white circle (public/images/r-logo-final.png).
-- **Quote form**: not connected to a mail service yet. It opens the visitor's email app with the enquiry written out to info@rafcarpentry.com. Swap handleSubmit in QuoteForm.tsx for Formspree or Resend when ready.
+- **Quotes go through ServiceM8**: every "Get a quote" button (navbar, hero, quote panels) opens the ServiceM8 booking page in a new tab. The link, phone and email live in src/lib/site.ts (QUOTE_URL).
 - **/editor**: old Supabase editor, not restyled. It needs NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY at build time. TinaCMS (/admin) is the editor to use.
 
 ## Pages Built (all working)
-1. **/** — Homepage: split hero (birch wardrobe photo), facts strip, 'What I build' (3 photo tiles), SketchUp process with the drawing, CabinetOS band, 3 newest blog posts, quote form
+1. **/** — Homepage: split hero (birch wardrobe photo), facts strip, 'What I build' (3 photo tiles), SketchUp process with the drawing, CabinetOS band, 3 newest blog posts, quote panel (ServiceM8)
 2. **/portfolio** — Gallery with working category filters
 3. **/cabinetos** — Product landing page: features, before/after comparison, FAQ
 4. **/sketchup** — Authority page: benefits, 3D vs real build comparison slots
 5. **/blog** — Blog listing from markdown files
 6. **/blog/[slug]** — Individual posts with prose styling, ToolsUsed component at bottom
 7. **/about** — Story, stats, differentiators, social links
-8. **/contact** — Form (not yet connected to backend) + contact info
+8. **/contact** — Contact details + ServiceM8 quote panel
 9. **/tools** — Affiliate tools page with categories and disclosure
 10. **/ms** — Instagram mini-site (link-in-bio), no navbar/footer, mobile optimised
 
@@ -70,8 +70,8 @@ Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrob
 - [x] Mobile hamburger menu fixed (white lines)
 
 ## What's TODO
-- [ ] Connect the quote form to a backend (Formspree or Resend); it currently opens the email app
-- [ ] Point rafcarpentry.com domain to Vercel
+- [x] Quote buttons connected to ServiceM8 online booking
+- [x] rafcarpentry.com DNS moved from systeme.io to Vercel (October 2026)
 - [ ] Add real Amazon affiliate URLs to src/lib/affiliates.ts
 - [ ] Connect affiliates.ts config to the Tools page (currently Tools page has hardcoded links)
 - [ ] Add more blog posts with images

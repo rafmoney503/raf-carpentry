@@ -8,10 +8,26 @@
   "primaryCtaLabel": "Get a quote",
   "secondaryCtaLabel": "See the work",
   "facts": [
-    { "value": "22", "unit": "", "label": "years on the tools" },
-    { "value": "100+", "unit": "", "label": "projects finished" },
-    { "value": "18", "unit": "mm", "label": "board on every wardrobe back. No thin 8 mm sheets." },
-    { "value": "24", "unit": "h", "label": "to reply to every enquiry" }
+    {
+      "value": "22",
+      "unit": "",
+      "label": "years on the tools"
+    },
+    {
+      "value": "100+",
+      "unit": "",
+      "label": "projects finished"
+    },
+    {
+      "value": "18",
+      "unit": "mm",
+      "label": "board on every wardrobe back. No thin 8 mm sheets."
+    },
+    {
+      "value": "24",
+      "unit": "h",
+      "label": "to reply to every enquiry"
+    }
   ],
   "buildHeading": "What I build",
   "buildIntro": "Wardrobes, alcove units, cupboards and garden-office fit-outs. Each piece is made for one room and fitted to its walls.",
@@ -40,10 +56,22 @@
   "processImageAlt": "SketchUp drawing of a four-section wardrobe with shelves, hanging space and dimension lines",
   "processCaption": "Wardrobe drawn in SketchUp: 2160 mm wide, 2150 mm high.",
   "steps": [
-    { "title": "Survey", "description": "I visit, measure every wall and talk through how you'll use the space." },
-    { "title": "Draw", "description": "You get a 3D drawing with real measurements. We adjust it until it's right, then you sign it off." },
-    { "title": "Build", "description": "Every panel is cut to that drawing, in 18 mm board throughout, backs included." },
-    { "title": "Fit", "description": "I fit it on site, scribed to your walls, floor and ceiling, and leave the room clean." }
+    {
+      "title": "Survey",
+      "description": "I visit, measure every wall and talk through how you'll use the space."
+    },
+    {
+      "title": "Draw",
+      "description": "You get a 3D drawing with real measurements. We adjust it until it's right, then you sign it off."
+    },
+    {
+      "title": "Build",
+      "description": "Every panel is cut to that drawing, in 18 mm board throughout, backs included."
+    },
+    {
+      "title": "Fit",
+      "description": "I fit it on site, scribed to your walls, floor and ceiling, and leave the room clean."
+    }
   ],
   "processLinkLabel": "How I use SketchUp",
   "appKicker": "CabinetOS",
@@ -54,15 +82,15 @@
   "appLinkLabel": "Try CabinetOS",
   "blogHeading": "From the blog",
   "quoteHeading": "Tell me about the space.",
-  "quoteBody": "Send a few details and I'll reply within 24 hours to arrange a visit. Quotes are free.",
+  "quoteBody": "Book online and I'll reply within 24 hours to arrange a visit. Quotes are free.",
   "phone": "07792 860221",
   "email": "info@rafcarpentry.com",
-  "serviceOptions": [
-    "Fitted wardrobes",
-    "Alcove units",
-    "Cupboards or a pantry",
-    "Garden office fit-out",
-    "Something else"
+  "quotePanelHeading": "Book a free quote",
+  "quotePanelBody": "Tell me what you need and where the job is. It goes straight into my booking system.",
+  "quoteNextSteps": [
+    "I reply within 24 hours to arrange a visit.",
+    "I measure up and talk through the space.",
+    "You get a 3D drawing to approve before anything is cut."
   ],
-  "formNote": "I'll only use your details to reply about this job."
+  "quoteNote": "Opens my booking page in a new tab."
 }

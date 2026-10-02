@@ -1,4 +1,4 @@
-import QuoteForm from '@/components/QuoteForm';
+import QuoteCta from '@/components/QuoteCta';
 import { Container } from '@/components/ui';
 
 export type ContactPageData = {
@@ -55,8 +55,7 @@ export default function ContactClient({ d }: { d: ContactPageData }) {
 
         {d.formEnabled ? (
           <div className="md:col-span-6 md:col-start-7">
-            <h2 className="mb-5 text-[25px] font-[620] leading-tight">{d.formHeading}</h2>
-            <QuoteForm email={d.email} phone={phone} submitLabel={d.formSubmitLabel} idPrefix="contact-q" />
+            <QuoteCta />
           </div>
         ) : null}
       </div>
