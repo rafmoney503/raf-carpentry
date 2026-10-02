@@ -7,7 +7,8 @@ import CompareSlider from '@/components/project/CompareSlider';
 import ProjectVideo from '@/components/project/ProjectVideo';
 import ProjectGallery from '@/components/project/ProjectGallery';
 import ToolsUsed from '@/components/ToolsUsed';
-import { formatMonth, getAllProjects, getProject } from '@/lib/projects';
+import { formatMonth, getAllProjects, getProject, isPlanReady } from '@/lib/projects';
+import PlanCard from '@/components/project/PlanCard';
 import { QUOTE_URL } from '@/lib/site';
 import '../project.css';
 
@@ -170,21 +171,24 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         </Container>
       </section>
 
-      {/* Free plan, the write-up and tools: only shown once they exist */}
-      {p.planFile || p.blogSlug || (p.tools && p.tools.length > 0) ? (
+      {/* Plans for this job: free preview of the drawings, then buy or download */}
+      {isPlanReady(p) ? (
         <section className="border-t border-line">
-          <Container className="grid grid-cols-1 gap-10 py-16 md:grid-cols-12 md:gap-6 md:py-20">
-            {p.planFile ? (
-              <div className="md:col-span-5">
-                <SectionHeading>Free SketchUp plan</SectionHeading>
-                <p className="mt-4 max-w-[44ch] text-muted">The drawing I built this from. Free to download and use for your own project.</p>
-                <a href={p.planFile.href} download className="btn btn-ghost mt-6">
-                  {p.planFile.label}
-                  {p.planFile.size ? <span className="ml-2 font-mono text-[13px] text-faint">{p.planFile.size}</span> : null}
-                </a>
-              </div>
-            ) : null}
-            <div className={p.planFile ? 'md:col-span-6 md:col-start-7' : 'md:col-span-8'}>
+          <Container className="py-16 md:py-24">
+            <p className="kicker">Build it yourself</p>
+            <SectionHeading className="mt-3">The plans for this job</SectionHeading>
+            <div className="mt-10">
+              <PlanCard plan={p.planSale} title={p.title} meta={`${p.area}, ${formatMonth(p.finished)}`} wide />
+            </div>
+          </Container>
+        </section>
+      ) : null}
+
+      {/* The write-up and tools: only shown once they exist */}
+      {p.blogSlug || (p.tools && p.tools.length > 0) ? (
+        <section className="border-t border-line">
+          <Container className="py-16 md:py-20">
+            <div className="max-w-[760px]">
               {p.blogSlug ? (
                 <Link href={`/blog/${p.blogSlug}`} className="link-more text-[18px]">
                   Read the full story on the blog <span aria-hidden="true">→</span>

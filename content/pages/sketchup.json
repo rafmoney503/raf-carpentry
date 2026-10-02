@@ -8,13 +8,13 @@
   "subtitle": "",
   "heroImage": "/images/sketchup/wardrobe-model.png",
   "heroImageAlt": "SketchUp wardrobe design with dimensions",
-  "heroImageCaption": "Fitted wardrobe — designed in SketchUp with precise dimensions",
+  "heroImageCaption": "Fitted wardrobe, drawn in SketchUp with every size on it",
   "benefitsSectionTitle": "Benefits for ",
   "benefitsSectionTitleAccent": "Carpenters",
   "benefits": [
     {
       "title": "Client Visualisation",
-      "description": "Show clients photorealistic renders. Get sign-off before you start — no surprises, no disputes.",
+      "description": "Show clients exactly what they are getting and get sign-off before you start. No surprises, no disputes.",
       "icon": "🎯"
     },
     {
@@ -37,6 +37,49 @@
   "comparisonBuildImage": "/images/projects/built-in-wardrobes.jpg",
   "comparisonBuildAlt": "Finished fitted wardrobes",
   "comparisonBuildLabel": "Finished Build",
+  "plansTitle": "Plans from real jobs",
+  "plansIntro": "SketchUp files and cut lists from wardrobes and units I've built and fitted. Look inside for free before you buy.",
+  "plansBundle": {
+    "label": "",
+    "price": "",
+    "url": "",
+    "note": ""
+  },
+  "learnKicker": "Learn SketchUp with me",
+  "learnTitle": "Draw your own furniture before you build it.",
+  "learnBody": "I'm starting a small group for carpenters and keen DIYers who want to draw fitted furniture properly in SketchUp: real sizes, parts you can cut from, and drawings a client will sign off.",
+  "learnPoints": [
+    "Drawing a wardrobe to the millimetre, from the survey to the finished model",
+    "Components that resize, so one cabinet drawing becomes a whole run",
+    "Turning the model into a cut list and board layout",
+    "Drawings a client understands and signs off"
+  ],
+  "learnImages": [
+    {
+      "src": "/images/blog/sketchup-planning.jpg",
+      "alt": "SketchUp window with a run of units drawn to size and the components panel open",
+      "caption": "Inside SketchUp: a run of units drawn to real sizes.",
+      "w": 1400,
+      "h": 788
+    },
+    {
+      "src": "/images/sketchup/wardrobe-model.png",
+      "alt": "SketchUp drawing of a four-section wardrobe with dimensions",
+      "caption": "Every part with its size: 2160 wide, 2150 high.",
+      "w": 1286,
+      "h": 1168
+    },
+    {
+      "src": "/images/cabinetos/optimise.webp",
+      "alt": "CabinetOS board layout with parts on a 2440 by 1220 sheet",
+      "caption": "Then into CabinetOS: every part laid out on 2440 x 1220 boards.",
+      "w": 1600,
+      "h": 1053
+    }
+  ],
+  "learnButtonLabel": "Email me to join",
+  "learnButtonUrl": "mailto:info@rafcarpentry.com?subject=SketchUp%20group&body=Hi%20Raf%2C%0A%0AI%27d%20like%20to%20join%20the%20SketchUp%20group.%0A%0AMy%20SketchUp%20level%20(new%20%2F%20some%20%2F%20confident)%3A%20",
+  "learnNote": "The first group starts soon. Email me and I'll tell you as soon as it opens.",
   "ctaTitle": "Want a 3D Design for Your Project?",
   "ctaSubtitle": "I create detailed SketchUp models for every bespoke project. See exactly what you're getting before a single cut is made.",
   "ctaButtonLabel": "Get in Touch"

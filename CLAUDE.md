@@ -27,7 +27,7 @@ Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrob
 1. **/** — Homepage: split hero (birch wardrobe photo), facts strip, 'What I build' (3 photo tiles), SketchUp process with the drawing, CabinetOS band, 3 newest blog posts, quote panel (ServiceM8)
 2. **/portfolio** — My Work: search box plus quick-filter buttons (Wardrobes, IKEA PAX, MDF, Alcoves...), job cards linking to /portfolio/[slug], Earlier work strip
 3. **/cabinetos** — Product landing page: features, before/after comparison, FAQ
-4. **/sketchup** — Authority page: benefits, 3D vs real build comparison slots
+4. **/sketchup** — Authority page: benefits, 3D vs real build comparison, Plans from real jobs (shows itself once a job has planSale ready; optional bundle box from sketchup.json plansBundle), Learn SketchUp with me (screenshots, points, button: mailto now, Skool link later; all in sketchup.json and TinaCMS)
 5. **/blog** — Blog listing from markdown files
 6. **/blog/[slug]** — Individual posts with prose styling, ToolsUsed component at bottom
 7. **/about** — Story, stats, differentiators, social links
@@ -52,9 +52,10 @@ Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrob
 ## Project pages (added October 2026)
 - **Source photos**: Raf drops each job into a folder on his Mac: Documents/Raf Carpentry Projects/<YYYY-MM what area>/ with subfolders 1 Finished, 2 Build steps, 3 Drawings, 4 Free plan, plus notes.txt (template folder inside; area only, never client names).
 - **Processing**: photos are rotated, stripped of all EXIF/GPS, resized to 1600 px and lightly corrected (white balance, levels). Short iPhone clips give stills; longer clips become muted web videos (720 px wide, H.264) in public/videos/.
-- **Data**: one JSON per job in content/projects/<slug>.json (title, area, finished YYYY-MM, type, tags (search words and filter buttons), summary, intro, cover, facts, steps, gallery, optional compare / plan / video / planFile / blogSlug / tools). Loader: src/lib/projects.ts.
+- **Data**: one JSON per job in content/projects/<slug>.json (title, area, finished YYYY-MM, type, tags (search words and filter buttons), summary, intro, cover, facts, steps, gallery, optional compare / plan / video / planSale (previews, includes, price, buyUrl Payhip link or freeDownload) / blogSlug / tools). Loader: src/lib/projects.ts.
 - **Pages**: /portfolio lists jobs (newest first) plus an "Earlier work" strip from content/pages/portfolio.json; /portfolio/[slug] shows main photo with a title-block of facts, one interactive piece (before/after slider, plan vs real, or video), numbered build steps, photo grid with a full-screen viewer, optional free SketchUp plan / blog link / tools, quote band and next job.
-- **Components**: src/components/project/CompareSlider.tsx, ProjectVideo.tsx, ProjectGallery.tsx; styles in src/app/portfolio/project.css.
+- **Components**: src/components/project/CompareSlider.tsx, ProjectVideo.tsx, ProjectGallery.tsx, Lightbox.tsx (+ lightbox.css, shared full-screen viewer), PlanCard.tsx (free preview + buy/download), ScreenGrid.tsx (SketchUp screenshots); styles in src/app/portfolio/project.css.
+- **Selling plans**: Payhip (London, free plan 5% + Stripe 1.5% + 20p). Each plan £4.99, bundle planned at £12.99. Add `planSale` to the job JSON with preview images (no dimensions) and the Payhip link; the job page and /sketchup pick it up.
 - **Live jobs**: pax-wardrobe-finchley, loft-wardrobes-palmers-green, chimney-breast-wardrobes-palmers-green, alcove-units-palmers-green (notes.txt were empty, so text is written from the photos only; no sizes or timings claimed).
 
 ## Key Files

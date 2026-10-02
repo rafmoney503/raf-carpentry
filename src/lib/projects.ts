@@ -5,6 +5,15 @@ import path from 'path';
    Documents/Raf Carpentry Projects on Raf's Mac (photos are resized and stripped of GPS first). */
 
 export type Photo = { src: string; w: number; h: number; alt: string };
+/* A plan for sale (or free) from a job: SketchUp previews without sizes, plus the Payhip link
+   (or a free download). Shown on the job's page and in the Plans section of /sketchup. */
+export type PlanSale = {
+  previews: Photo[];
+  includes: string; // e.g. "SketchUp file and PDF cut list, all sizes in mm"
+  price?: string; // e.g. "£4.99"
+  buyUrl?: string; // Payhip product link
+  freeDownload?: string; // e.g. /plans/alcove-units.zip, when the plan is given away
+};
 export type Step = { title: string; text: string; image: Photo };
 export type Project = {
   slug: string;
@@ -23,7 +32,7 @@ export type Project = {
   plan?: { image: Photo; real: Photo; title: string; text: string };
   steps: Step[];
   gallery: Photo[];
-  planFile?: { href: string; label: string; size?: string };
+  planSale?: PlanSale;
   blogSlug?: string;
   tools?: { name: string; link: string }[];
 };
@@ -46,4 +55,9 @@ export function getProject(slug: string): Project | undefined {
 export function formatMonth(ym: string): string {
   const [y, m] = ym.split('-').map(Number);
   return new Date(Date.UTC(y, (m || 1) - 1, 1)).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+}
+
+/* Plans that are ready to show: at least one preview and somewhere to buy or download. */
+export function isPlanReady(p: Project): p is Project & { planSale: PlanSale } {
+  return Boolean(p.planSale && p.planSale.previews.length > 0 && (p.planSale.buyUrl || p.planSale.freeDownload));
 }

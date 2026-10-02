@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { readPageJson } from '@/lib/pages';
 import { Container, MountedImage, SectionHeading } from '@/components/ui';
+import PlanCard from '@/components/project/PlanCard';
+import ScreenGrid from '@/components/project/ScreenGrid';
+import { formatMonth, getAllProjects, isPlanReady } from '@/lib/projects';
 
 type SketchupPageData = {
   heroTitle: string;
@@ -21,6 +24,17 @@ type SketchupPageData = {
   comparisonBuildImage: string;
   comparisonBuildAlt: string;
   comparisonBuildLabel: string;
+  plansTitle: string;
+  plansIntro: string;
+  plansBundle?: { label: string; price: string; url: string; note: string };
+  learnKicker: string;
+  learnTitle: string;
+  learnBody: string;
+  learnPoints: string[];
+  learnImages: { src: string; alt: string; caption: string; w: number; h: number }[];
+  learnButtonLabel: string;
+  learnButtonUrl: string;
+  learnNote: string;
   ctaTitle: string;
   ctaSubtitle: string;
   ctaButtonLabel: string;
@@ -28,6 +42,9 @@ type SketchupPageData = {
 
 export default function SketchUpPage() {
   const d = readPageJson<SketchupPageData>('sketchup.json');
+  // Plans appear here by themselves once a job has preview drawings and a Payhip link (or a free download).
+  const plans = getAllProjects().filter(isPlanReady);
+  const bundle = d.plansBundle?.url ? d.plansBundle : null;
 
   return (
     <>
@@ -87,6 +104,61 @@ export default function SketchUpPage() {
           </figure>
         </div>
       </Container>
+
+      {plans.length > 0 ? (
+        <section id="plans" className="scroll-mt-24 border-t border-line">
+          <Container className="py-20 md:py-28">
+            <div className="grid grid-cols-1 items-end gap-8 md:grid-cols-12 md:gap-6">
+              <div className="md:col-span-7">
+                <p className="kicker">Plans</p>
+                <SectionHeading className="mt-3">{d.plansTitle}</SectionHeading>
+                <p className="mt-4 max-w-[56ch] text-muted">{d.plansIntro}</p>
+              </div>
+              {bundle ? (
+                <div className="mount md:col-span-5 md:justify-self-end">
+                  <div className="flex flex-wrap items-center justify-between gap-4 p-3">
+                    <div>
+                      <p className="text-[18px] font-[640] leading-tight">{bundle.label}</p>
+                      {bundle.note ? <p className="mt-1 text-[14px] text-muted">{bundle.note}</p> : null}
+                    </div>
+                    <a href={bundle.url} target="_blank" rel="noopener" className="btn btn-primary btn-sm">
+                      Buy all, {bundle.price}
+                    </a>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            <div className="mt-14 grid grid-cols-1 gap-x-6 gap-y-14 md:grid-cols-2 lg:grid-cols-3">
+              {plans.map((p) => (
+                <PlanCard key={p.slug} plan={p.planSale} title={p.title} meta={`${p.area}, ${formatMonth(p.finished)}`} href={`/portfolio/${p.slug}`} />
+              ))}
+            </div>
+          </Container>
+        </section>
+      ) : null}
+
+      <section id="learn" className="scroll-mt-24 border-t border-line bg-raised">
+        <Container className="grid grid-cols-1 gap-12 py-20 md:grid-cols-12 md:gap-6 md:py-28">
+          <div className="md:col-span-5">
+            <p className="kicker">{d.learnKicker}</p>
+            <SectionHeading className="mt-3">{d.learnTitle}</SectionHeading>
+            <p className="mt-5 max-w-[48ch] text-[17px] leading-relaxed text-muted">{d.learnBody}</p>
+            <ol className="mt-8 border-t border-line-strong">
+              {d.learnPoints.map((pt, i) => (
+                <li key={pt} className="grid grid-cols-[2.5rem_1fr] gap-2 border-b border-line py-3.5">
+                  <span className="font-mono text-[13px] leading-[1.6] text-accent">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="text-[16px] leading-snug text-ink">{pt}</span>
+                </li>
+              ))}
+            </ol>
+            <a href={d.learnButtonUrl} className="btn btn-primary mt-9">{d.learnButtonLabel}</a>
+            <p className="mt-4 max-w-[44ch] text-[14.5px] text-muted">{d.learnNote}</p>
+          </div>
+          <div className="md:col-span-6 md:col-start-7">
+            <ScreenGrid shots={d.learnImages} />
+          </div>
+        </Container>
+      </section>
 
       <section className="border-t border-line">
         <Container className="grid grid-cols-1 items-end gap-8 py-20 md:grid-cols-12 md:gap-6 md:py-24">
