@@ -1,0 +1,142 @@
+{
+  "slug": "birch-ply-room-chiswick",
+  "order": 9,
+  "title": "Birch ply wardrobe, desk and cupboards",
+  "area": "Chiswick",
+  "finished": "2026-03",
+  "type": "Fitted furniture",
+  "tags": [
+    "Birch ply",
+    "Wardrobes",
+    "Desks",
+    "Home office",
+    "Storage"
+  ],
+  "summary": "A small room fitted out in birch ply: tall wardrobe, cupboards overhead and a wall-hung desk.",
+  "intro": "A small room in Chiswick, fitted out wall to wall in birch ply. A tall wardrobe on one side, cupboards running overhead, and a wall-hung desk with a drawer under the window, lit by a wall lamp. The outside wall was insulated and lined first, so everything fixes to something solid.",
+  "cover": {
+    "src": "/images/projects/birch-ply-room-chiswick/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Birch ply room with a tall wardrobe, overhead cupboards and a wall-hung desk lit by a wall lamp"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Chiswick"
+    },
+    {
+      "label": "Finished",
+      "value": "March 2026"
+    },
+    {
+      "label": "Room",
+      "value": "Small bedroom and study"
+    },
+    {
+      "label": "Built from",
+      "value": "Birch ply"
+    },
+    {
+      "label": "Includes",
+      "value": "Wardrobe, overhead cupboards, desk"
+    }
+  ],
+  "video": {
+    "src": "/videos/birch-ply-room-chiswick.mp4",
+    "poster": {
+      "src": "/images/projects/birch-ply-room-chiswick/video-poster.jpg",
+      "w": 720,
+      "h": 1280,
+      "alt": "Eight minutes in sixteen seconds"
+    },
+    "title": "Eight minutes in sixteen seconds",
+    "text": "The wardrobe going together, sped up."
+  },
+  "steps": [
+    {
+      "title": "Wall insulated",
+      "text": "Insulation boards fitted between battens on the outside wall.",
+      "image": {
+        "src": "/images/projects/birch-ply-room-chiswick/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Insulation boards fitted between battens on the outside wall"
+      }
+    },
+    {
+      "title": "Cut on site",
+      "text": "Birch ply cut to size on a bench in the room.",
+      "image": {
+        "src": "/images/projects/birch-ply-room-chiswick/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Birch ply board on a bench being cut"
+      }
+    },
+    {
+      "title": "Lined in ply",
+      "text": "The walls lined with birch ply.",
+      "image": {
+        "src": "/images/projects/birch-ply-room-chiswick/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Walls lined with birch ply"
+      }
+    },
+    {
+      "title": "Cupboards and desk",
+      "text": "Overhead cupboards and the desk go in.",
+      "image": {
+        "src": "/images/projects/birch-ply-room-chiswick/s4.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Overhead cupboards and desk fitted"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Wardrobe and overhead cupboards in birch ply"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The desk under the window with cupboards above"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Wardrobe open: hanging space, shelves and drawers"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/g4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Overhead cupboards and desk by the window"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/g5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Desk with its drawer pulled out"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/g6.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Inside the tall wardrobe"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/g7.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The whole room from the doorway"
+    }
+  ]
+}

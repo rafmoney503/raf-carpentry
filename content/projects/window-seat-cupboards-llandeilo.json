@@ -1,0 +1,91 @@
+{
+  "slug": "window-seat-cupboards-llandeilo",
+  "order": 8,
+  "title": "Window seat cupboards",
+  "area": "Llandeilo, Wales",
+  "finished": "2026-02",
+  "type": "Window seats",
+  "tags": [
+    "Window seats",
+    "Cupboards",
+    "Storage"
+  ],
+  "summary": "A run of cupboards under a window, with a seat across the top.",
+  "intro": "A run of cupboards built in under a window, with a seat across the top. The window becomes somewhere to sit and the space underneath becomes storage. Plain flat doors keep it simple.",
+  "cover": {
+    "src": "/images/projects/window-seat-cupboards-llandeilo/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Painted window seat cupboards with flat doors under a window"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Llandeilo, Wales"
+    },
+    {
+      "label": "Finished",
+      "value": "February 2026"
+    },
+    {
+      "label": "Doors",
+      "value": "Flat, painted"
+    },
+    {
+      "label": "Inside",
+      "value": "Shelves"
+    }
+  ],
+  "steps": [
+    {
+      "title": "Carcass in",
+      "text": "Cupboards built in under the window.",
+      "image": {
+        "src": "/images/projects/window-seat-cupboards-llandeilo/s1.jpg",
+        "w": 1600,
+        "h": 1200,
+        "alt": "Cupboards with doors open and shelves inside"
+      }
+    },
+    {
+      "title": "Shelves",
+      "text": "Shelves fitted inside.",
+      "image": {
+        "src": "/images/projects/window-seat-cupboards-llandeilo/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Shelves inside the cupboards"
+      }
+    },
+    {
+      "title": "Doors on",
+      "text": "Doors hung and lined up.",
+      "image": {
+        "src": "/images/projects/window-seat-cupboards-llandeilo/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Doors on the cupboards"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/window-seat-cupboards-llandeilo/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Window seat cupboards from the side"
+    },
+    {
+      "src": "/images/projects/window-seat-cupboards-llandeilo/g2.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Window seat under the window"
+    },
+    {
+      "src": "/images/projects/window-seat-cupboards-llandeilo/g3.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "The seat and cupboards from across the room"
+    }
+  ]
+}

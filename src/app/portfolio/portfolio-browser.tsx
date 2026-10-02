@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Container, SectionHeading } from '@/components/ui';
+import { matches } from '@/lib/search';
 
 export type JobCard = {
   slug: string;
@@ -16,23 +17,6 @@ export type JobCard = {
   searchText: string;
 };
 export type ArchiveCard = { title: string; description: string; category: string; image: string };
-
-/* Turn a typed word into something that matches plurals and near spellings:
-   "wardrobe" finds "wardrobes", "shelves" finds "shelving", "cupboard" finds "cupboards". */
-function stem(word: string) {
-  const w = word.toLowerCase().replace(/[^a-z0-9]/g, '');
-  if (w.startsWith('shel')) return 'shel';
-  if (w.length > 4 && w.endsWith('es') && !w.endsWith('ves')) return w.slice(0, -2);
-  if (w.length > 3 && w.endsWith('s')) return w.slice(0, -1);
-  return w;
-}
-
-function matches(text: string, query: string) {
-  const words = query.split(/\s+/).map(stem).filter(Boolean);
-  if (words.length === 0) return true;
-  const hay = text.toLowerCase();
-  return words.every((w) => hay.includes(w));
-}
 
 export default function PortfolioBrowser({ jobs, archive, chips }: { jobs: JobCard[]; archive: ArchiveCard[]; chips: string[] }) {
   const [query, setQuery] = useState('');

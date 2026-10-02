@@ -1,6 +1,7 @@
 import { readPageJson } from '@/lib/pages';
 import { PageHeader } from '@/components/ui';
 import { formatMonth, getAllProjects } from '@/lib/projects';
+import { matches } from '@/lib/search';
 import PortfolioBrowser, { type ArchiveCard, type JobCard } from './portfolio-browser';
 import './project.css';
 
@@ -30,16 +31,16 @@ export default function PortfolioPage() {
       summary: p.summary,
       cover: { src: p.cover.src, alt: p.cover.alt },
       tags: p.tags ?? [],
-      meta: `${p.steps.length} build steps, ${p.gallery.length + 1} photos${p.video ? ', video' : ''}`,
+      meta: [p.steps.length ? `${p.steps.length} build steps` : '', `${p.gallery.length + 1} photos`, p.video ? 'video' : '', p.compare ? 'before and after' : ''].filter(Boolean).join(', '),
       // Everything a visitor might type: title, area, tags, facts, words from the write-up.
       searchText: [p.title, p.area, month, p.type, ...(p.tags ?? []), p.summary, p.intro, ...p.facts.map((f) => f.value), ...p.steps.map((s) => s.title)].join(' '),
     };
   });
 
-  // Quick-filter buttons, in this order, shown only when at least one job uses them.
-  const used = new Set([...jobs.flatMap((j) => j.tags), ...d.projects.map((a) => a.category)].map((t) => t.toLowerCase()));
-  const chips = ['Wardrobes', 'IKEA PAX', 'MDF', 'Alcoves', 'Shelving', 'Chimney breast', 'Loft', 'Outdoor'].filter(
-    (c) => used.has(c.toLowerCase()) || (c === 'Alcoves' && used.has('alcove units')),
+  // Quick-filter buttons, in this order, shown only when at least one job matches them.
+  const archiveText = d.projects.map((a) => `${a.title} ${a.description} ${a.category}`);
+  const chips = ['Wardrobes', 'IKEA PAX', 'Window seats', 'Alcoves', 'Desks', 'Storage', 'Wall panelling', 'Birch ply', 'MDF', 'Loft', 'Outdoor'].filter(
+    (c) => jobs.some((j) => matches(j.searchText, c)) || archiveText.some((t) => matches(t, c)),
   );
 
   return (

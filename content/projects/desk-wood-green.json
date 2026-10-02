@@ -1,0 +1,124 @@
+{
+  "slug": "desk-wood-green",
+  "order": 10,
+  "title": "Desk top with shaped birch ply stands",
+  "area": "Wood Green",
+  "finished": "2026-03",
+  "type": "Desks",
+  "tags": [
+    "Desks",
+    "Birch ply",
+    "Home office"
+  ],
+  "summary": "A new desk top with cable slots, and two shaped stands built up from layers of birch ply.",
+  "intro": "A desk for a home office in Wood Green: a new top with cable slots, and two shaped stands that sit on it. The stands were built up from layers of birch ply and routed to a template, so the curves come out clean and matching.",
+  "cover": {
+    "src": "/images/projects/desk-wood-green/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Desk with a pale top and two shaped birch ply stands in a home office"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Wood Green"
+    },
+    {
+      "label": "Finished",
+      "value": "March 2026"
+    },
+    {
+      "label": "Room",
+      "value": "Home office"
+    },
+    {
+      "label": "Built from",
+      "value": "Birch ply"
+    }
+  ],
+  "video": {
+    "src": "/videos/desk-wood-green.mp4",
+    "poster": {
+      "src": "/images/projects/desk-wood-green/video-poster.jpg",
+      "w": 720,
+      "h": 1280,
+      "alt": "A look round the desk"
+    },
+    "title": "A look round the desk",
+    "text": "The finished desk, sped up a little."
+  },
+  "steps": [
+    {
+      "title": "Marked out",
+      "text": "The shapes drawn out on the board.",
+      "image": {
+        "src": "/images/projects/desk-wood-green/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Shapes marked out on a board"
+      }
+    },
+    {
+      "title": "Template on",
+      "text": "A template clamped over the glued-up layers.",
+      "image": {
+        "src": "/images/projects/desk-wood-green/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Template clamped over layers of birch ply"
+      }
+    },
+    {
+      "title": "Routed",
+      "text": "The router follows the template for a clean curve.",
+      "image": {
+        "src": "/images/projects/desk-wood-green/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Router following the template"
+      }
+    },
+    {
+      "title": "Sanded",
+      "text": "Every edge sanded smooth.",
+      "image": {
+        "src": "/images/projects/desk-wood-green/s4.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Shaped piece next to a sander"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/desk-wood-green/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The desk top with cable slots and the two stands"
+    },
+    {
+      "src": "/images/projects/desk-wood-green/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Desk seen from the window side"
+    },
+    {
+      "src": "/images/projects/desk-wood-green/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Close-up of the curved stand"
+    },
+    {
+      "src": "/images/projects/desk-wood-green/g4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Desk top and stands from above"
+    },
+    {
+      "src": "/images/projects/desk-wood-green/g5.jpg",
+      "w": 900,
+      "h": 1200,
+      "alt": "The finished desk in the room"
+    }
+  ]
+}

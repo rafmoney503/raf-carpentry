@@ -1,0 +1,142 @@
+{
+  "slug": "reception-desk-brentwood",
+  "order": 3,
+  "title": "Office reception desk",
+  "area": "Brentwood",
+  "finished": "2026-01",
+  "type": "Commercial",
+  "tags": [
+    "Reception desk",
+    "Desks",
+    "Office",
+    "Commercial",
+    "MDF"
+  ],
+  "summary": "An L-shaped reception desk with a raised counter, a slatted front and a painted finish.",
+  "intro": "A reception desk for an office in Brentwood. It is L-shaped, with a raised counter for visitors, a slatted front and a matching unit to one side. Everything was built and fitted in MDF first, then finished in a dark painted colour.",
+  "cover": {
+    "src": "/images/projects/reception-desk-brentwood/cover.jpg",
+    "w": 1600,
+    "h": 1200,
+    "alt": "Dark painted L-shaped reception desk with a slatted front in front of a world map wall"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Brentwood"
+    },
+    {
+      "label": "Finished",
+      "value": "January 2026"
+    },
+    {
+      "label": "Room",
+      "value": "Office reception"
+    },
+    {
+      "label": "Built from",
+      "value": "MDF"
+    },
+    {
+      "label": "Finish",
+      "value": "Painted, slatted front"
+    }
+  ],
+  "compare": {
+    "before": {
+      "src": "/images/projects/reception-desk-brentwood/before.jpg",
+      "w": 975,
+      "h": 1151,
+      "alt": "The desk in plain MDF before painting"
+    },
+    "after": {
+      "src": "/images/projects/reception-desk-brentwood/after.jpg",
+      "w": 975,
+      "h": 1151,
+      "alt": "The finished desk, painted with a slatted front"
+    },
+    "beforeLabel": "Built in MDF",
+    "afterLabel": "Painted and slatted",
+    "caption": "Same corner of the office, before and after the finish went on. Drag the handle to compare."
+  },
+  "steps": [
+    {
+      "title": "Plinths first",
+      "text": "Plinth frames built and set out on the floor, so the desk sits level.",
+      "image": {
+        "src": "/images/projects/reception-desk-brentwood/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Plinth frames laid out on the office floor"
+      }
+    },
+    {
+      "title": "Carcasses on",
+      "text": "Carcasses fixed on the plinths, following the line marked on the carpet.",
+      "image": {
+        "src": "/images/projects/reception-desk-brentwood/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "MDF carcasses standing on the plinths"
+      }
+    },
+    {
+      "title": "The L-shaped top",
+      "text": "The top fitted across both runs.",
+      "image": {
+        "src": "/images/projects/reception-desk-brentwood/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "L-shaped top fitted across the carcasses"
+      }
+    },
+    {
+      "title": "Painted",
+      "text": "Panels and slats painted before the final fit.",
+      "image": {
+        "src": "/images/projects/reception-desk-brentwood/s4.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Painted panels laid out on a protected floor"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/reception-desk-brentwood/g1.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Reception desk and side unit"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/g2.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Slatted front of the reception desk"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/g3.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "The desk top and the inside of the L"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/g4.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Shelves on the staff side of the desk"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/g5.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Reception desk seen from the door"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/g6.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Side unit with slatted panel"
+    }
+  ]
+}

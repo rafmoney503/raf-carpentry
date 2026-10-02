@@ -1,0 +1,150 @@
+{
+  "slug": "curved-seat-kennington",
+  "order": 15,
+  "title": "Curved storage seat",
+  "area": "Kennington",
+  "finished": "2026-08",
+  "type": "Seating",
+  "tags": [
+    "Seating",
+    "Curved",
+    "Storage",
+    "Kitchen",
+    "MDF"
+  ],
+  "summary": "A curved bench seat with storage under lift-up lids, made to sit in a kitchen bay.",
+  "intro": "A curved bench for a kitchen bay, next to a round table. It was drawn by hand first, then built in MDF: curved frames, storage boxes underneath and lift-up lids on top, with panelled fronts.",
+  "cover": {
+    "src": "/images/projects/curved-seat-kennington/cover.jpg",
+    "w": 860,
+    "h": 1147,
+    "alt": "Curved MDF storage bench in a kitchen bay next to a round table"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Kennington"
+    },
+    {
+      "label": "Finished",
+      "value": "August 2026"
+    },
+    {
+      "label": "Room",
+      "value": "Kitchen"
+    },
+    {
+      "label": "Built from",
+      "value": "MDF"
+    },
+    {
+      "label": "Storage",
+      "value": "Lift-up lids"
+    }
+  ],
+  "video": {
+    "src": "/videos/curved-seat-kennington.mp4",
+    "poster": {
+      "src": "/images/projects/curved-seat-kennington/video-poster.jpg",
+      "w": 720,
+      "h": 1280,
+      "alt": "Lids up"
+    },
+    "title": "Lids up",
+    "text": "The lids lifting to show the storage underneath."
+  },
+  "plan": {
+    "image": {
+      "src": "/images/projects/curved-seat-kennington/plan.jpg",
+      "w": 900,
+      "h": 1600,
+      "alt": "Hand sketch of the curved seat"
+    },
+    "real": {
+      "src": "/images/projects/curved-seat-kennington/plan-real.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The finished curved bench"
+    },
+    "title": "Drawn by hand first",
+    "text": "The first sketch of the seat, and the bench it turned into."
+  },
+  "steps": [
+    {
+      "title": "Curve marked out",
+      "text": "The curve drawn out full size on the board.",
+      "image": {
+        "src": "/images/projects/curved-seat-kennington/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Curve marked out on an MDF board"
+      }
+    },
+    {
+      "title": "Curved frames",
+      "text": "Curved frames cut to match.",
+      "image": {
+        "src": "/images/projects/curved-seat-kennington/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Curved frames cut out"
+      }
+    },
+    {
+      "title": "Boxes built",
+      "text": "The storage boxes built between the frames.",
+      "image": {
+        "src": "/images/projects/curved-seat-kennington/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Storage boxes taking shape"
+      }
+    },
+    {
+      "title": "Shape checked",
+      "text": "The whole curve checked on the ground.",
+      "image": {
+        "src": "/images/projects/curved-seat-kennington/s4.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Curved bench box on the ground"
+      }
+    },
+    {
+      "title": "Panelled fronts",
+      "text": "Panelled fronts fitted round the curve.",
+      "image": {
+        "src": "/images/projects/curved-seat-kennington/s5.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Panelled front on the curved bench"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/curved-seat-kennington/g1.jpg",
+      "w": 870,
+      "h": 1160,
+      "alt": "Curved bench and table by the window"
+    },
+    {
+      "src": "/images/projects/curved-seat-kennington/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The finished bench with its panelled front"
+    },
+    {
+      "src": "/images/projects/curved-seat-kennington/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Curved bench from the front"
+    },
+    {
+      "src": "/images/projects/curved-seat-kennington/g4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Bench with the lids on"
+    }
+  ]
+}

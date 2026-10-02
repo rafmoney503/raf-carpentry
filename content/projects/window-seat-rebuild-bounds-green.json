@@ -1,0 +1,101 @@
+{
+  "slug": "window-seat-rebuild-bounds-green",
+  "order": 11,
+  "title": "Window seat rebuilt in a glass box window",
+  "area": "Bounds Green",
+  "finished": "2026-03",
+  "type": "Window seats",
+  "tags": [
+    "Window seats",
+    "Repair",
+    "Insulation"
+  ],
+  "summary": "The seat in a glass box window stripped out and rebuilt: new timbers, insulation and a new level top.",
+  "intro": "The old seat in this glass box window came out completely. Underneath I put in new timbers, packed the gaps with insulation, boarded over and fitted a new top, checked level along its length.",
+  "cover": {
+    "src": "/images/projects/window-seat-rebuild-bounds-green/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Glass box window with a new grey window seat"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Bounds Green"
+    },
+    {
+      "label": "Finished",
+      "value": "March 2026"
+    },
+    {
+      "label": "Work",
+      "value": "Strip out, new timbers, insulation, new top"
+    }
+  ],
+  "steps": [
+    {
+      "title": "Old seat out",
+      "text": "The old seat taken out down to the base.",
+      "image": {
+        "src": "/images/projects/window-seat-rebuild-bounds-green/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Old window seat removed, exposing the base"
+      }
+    },
+    {
+      "title": "New timbers",
+      "text": "New timbers fitted underneath.",
+      "image": {
+        "src": "/images/projects/window-seat-rebuild-bounds-green/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Old timbers and new framing under the seat"
+      }
+    },
+    {
+      "title": "Insulated",
+      "text": "Insulation packed between the timbers.",
+      "image": {
+        "src": "/images/projects/window-seat-rebuild-bounds-green/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Insulation between the new timbers"
+      }
+    },
+    {
+      "title": "Boarded",
+      "text": "Boarded over, ready for the top.",
+      "image": {
+        "src": "/images/projects/window-seat-rebuild-bounds-green/s4.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Boarded base in the window"
+      }
+    },
+    {
+      "title": "Top on, level",
+      "text": "The new top fitted and checked level.",
+      "image": {
+        "src": "/images/projects/window-seat-rebuild-bounds-green/s5.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Level on the new window seat top"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/window-seat-rebuild-bounds-green/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The new seat in the glass box window"
+    },
+    {
+      "src": "/images/projects/window-seat-rebuild-bounds-green/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Window seat from the room"
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "slug": "shoe-storage-palmers-green",
+  "order": 16,
+  "title": "Porch shoe storage and bench",
+  "area": "Palmers Green",
+  "finished": "2026-08",
+  "type": "Storage",
+  "tags": [
+    "Storage",
+    "Porch",
+    "Shoe storage",
+    "Seating",
+    "MDF"
+  ],
+  "summary": "A porch fitted with a tall shoe cupboard, open shoe shelves and a bench seat.",
+  "intro": "An entrance porch turned into proper storage: a tall cupboard with panelled doors, open shelves for everyday shoes and a bench to sit on while you take them off.",
+  "cover": {
+    "src": "/images/projects/shoe-storage-palmers-green/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Porch with a tall panelled cupboard and a bench seat"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Palmers Green"
+    },
+    {
+      "label": "Finished",
+      "value": "August 2026"
+    },
+    {
+      "label": "Room",
+      "value": "Porch"
+    },
+    {
+      "label": "Built from",
+      "value": "MDF"
+    }
+  ],
+  "steps": [],
+  "gallery": [
+    {
+      "src": "/images/projects/shoe-storage-palmers-green/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Tall cupboard with panelled doors"
+    },
+    {
+      "src": "/images/projects/shoe-storage-palmers-green/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Bench seat in the porch"
+    },
+    {
+      "src": "/images/projects/shoe-storage-palmers-green/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Porch storage from the front door"
+    },
+    {
+      "src": "/images/projects/shoe-storage-palmers-green/g4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Cupboard and bench together"
+    },
+    {
+      "src": "/images/projects/shoe-storage-palmers-green/g5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Open shoe shelves"
+    },
+    {
+      "src": "/images/projects/shoe-storage-palmers-green/g6.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Shoe shelves from the side"
+    }
+  ]
+}

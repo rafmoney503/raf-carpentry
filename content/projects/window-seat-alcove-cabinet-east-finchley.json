@@ -1,0 +1,102 @@
+{
+  "slug": "window-seat-alcove-cabinet-east-finchley",
+  "order": 0,
+  "title": "Window seat and alcove cabinet",
+  "area": "East Finchley",
+  "finished": "2025-12",
+  "type": "Window seats",
+  "tags": [
+    "Window seats",
+    "Alcoves",
+    "Chimney breast",
+    "Storage",
+    "MDF",
+    "Living room"
+  ],
+  "summary": "A storage window seat across a bay, and a tall cabinet in the alcove beside the chimney breast.",
+  "intro": "A living room with a bay window and an empty alcove. The bay got a window seat with lift-up lids and grilles along the front, and the alcove got a tall cabinet with framed doors at the top and panelled doors below. Both built in MDF.",
+  "cover": {
+    "src": "/images/projects/window-seat-alcove-cabinet-east-finchley/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Living room with a tall MDF alcove cabinet and a window seat across the bay window"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "East Finchley"
+    },
+    {
+      "label": "Finished",
+      "value": "December 2025"
+    },
+    {
+      "label": "Room",
+      "value": "Living room"
+    },
+    {
+      "label": "Built from",
+      "value": "MDF"
+    },
+    {
+      "label": "Storage",
+      "value": "Lift-up seat lids, cabinet"
+    }
+  ],
+  "video": {
+    "src": "/videos/window-seat-alcove-cabinet-east-finchley.mp4",
+    "poster": {
+      "src": "/images/projects/window-seat-alcove-cabinet-east-finchley/video-poster.jpg",
+      "w": 720,
+      "h": 1280,
+      "alt": "Lids up, doors open"
+    },
+    "title": "Lids up, doors open",
+    "text": "A look inside the seat and the cabinet, sped up a little."
+  },
+  "steps": [],
+  "gallery": [
+    {
+      "src": "/images/projects/window-seat-alcove-cabinet-east-finchley/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Tall alcove cabinet with framed upper doors and panelled lower doors"
+    },
+    {
+      "src": "/images/projects/window-seat-alcove-cabinet-east-finchley/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Alcove cabinet beside the chimney breast"
+    },
+    {
+      "src": "/images/projects/window-seat-alcove-cabinet-east-finchley/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Window seat across the bay with panelled front"
+    },
+    {
+      "src": "/images/projects/window-seat-alcove-cabinet-east-finchley/g4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Window seat lid lifted to show the storage inside"
+    },
+    {
+      "src": "/images/projects/window-seat-alcove-cabinet-east-finchley/g5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Window seat under the bay windows"
+    },
+    {
+      "src": "/images/projects/window-seat-alcove-cabinet-east-finchley/g6.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Top of the window seat with the grille along the window"
+    },
+    {
+      "src": "/images/projects/window-seat-alcove-cabinet-east-finchley/g7.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The bay and the alcove cabinet together"
+    }
+  ]
+}

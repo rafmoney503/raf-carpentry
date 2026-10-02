@@ -1,0 +1,132 @@
+{
+  "slug": "decking-camden-town",
+  "order": 12,
+  "title": "Courtyard decking",
+  "area": "Camden Town",
+  "finished": "2026-04",
+  "type": "Outdoor",
+  "tags": [
+    "Outdoor",
+    "Decking",
+    "Garden"
+  ],
+  "summary": "A timber deck across a walled courtyard garden, laid on a new frame.",
+  "intro": "A small walled garden in Camden Town, decked from the back doors to the far wall. Membrane down first, then a timber frame set level, then the boards, cut in neatly round the walls and the doors.",
+  "cover": {
+    "src": "/images/projects/decking-camden-town/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Timber decking across a walled courtyard garden"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Camden Town"
+    },
+    {
+      "label": "Finished",
+      "value": "April 2026"
+    },
+    {
+      "label": "Built from",
+      "value": "Timber frame and deck boards"
+    }
+  ],
+  "compare": {
+    "before": {
+      "src": "/images/projects/decking-camden-town/before.jpg",
+      "w": 1011,
+      "h": 1413,
+      "alt": "Garden covered in weed membrane before the deck"
+    },
+    "after": {
+      "src": "/images/projects/decking-camden-town/after.jpg",
+      "w": 1011,
+      "h": 1413,
+      "alt": "The finished deck in the same corner"
+    },
+    "beforeLabel": "Membrane down",
+    "afterLabel": "Deck down",
+    "caption": "Same corner of the garden before and after. Drag the handle to compare."
+  },
+  "steps": [
+    {
+      "title": "Membrane down",
+      "text": "Weed membrane laid across the whole garden.",
+      "image": {
+        "src": "/images/projects/decking-camden-town/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Weed membrane laid across the garden"
+      }
+    },
+    {
+      "title": "Frame laid",
+      "text": "A timber frame set out and levelled.",
+      "image": {
+        "src": "/images/projects/decking-camden-town/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Timber frame laid across the garden"
+      }
+    },
+    {
+      "title": "Up to the doors",
+      "text": "The frame taken right up to the doors.",
+      "image": {
+        "src": "/images/projects/decking-camden-town/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Frame running up to the doors"
+      }
+    },
+    {
+      "title": "Boards on",
+      "text": "Boards fixed down and cut in round the walls.",
+      "image": {
+        "src": "/images/projects/decking-camden-town/s4.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Deck boards going down on the frame"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/decking-camden-town/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Deck running to the back fence"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Deck along the brick wall"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Boards meeting the back doors"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/g4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Deck with plants along the edge"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/g5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Deck seen from the far wall"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/g6.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Deck at the doors to the house"
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "slug": "loft-sliding-door-storage-east-finchley",
+  "order": 2,
+  "title": "Sliding-door storage in a loft",
+  "area": "East Finchley",
+  "finished": "2026-01",
+  "type": "Loft storage",
+  "tags": [
+    "Loft",
+    "Sliding doors",
+    "Storage",
+    "Eaves"
+  ],
+  "summary": "Low storage with two sliding doors, built along the wall under a sloping loft ceiling.",
+  "intro": "In a loft room the space under the roof slope usually goes to waste. This run of storage fills it, with two sliding doors so nothing swings out into the room.",
+  "cover": {
+    "src": "/images/projects/loft-sliding-door-storage-east-finchley/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Low storage with two sliding doors under the skylights of a loft room"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "East Finchley"
+    },
+    {
+      "label": "Finished",
+      "value": "January 2026"
+    },
+    {
+      "label": "Room",
+      "value": "Loft room"
+    },
+    {
+      "label": "Doors",
+      "value": "2 sliding"
+    }
+  ],
+  "video": {
+    "src": "/videos/loft-sliding-door-storage-east-finchley.mp4",
+    "poster": {
+      "src": "/images/projects/loft-sliding-door-storage-east-finchley/video-poster.jpg",
+      "w": 720,
+      "h": 1280,
+      "alt": "The doors in use"
+    },
+    "title": "The doors in use",
+    "text": "The sliding doors opening and closing."
+  },
+  "steps": [],
+  "gallery": [
+    {
+      "src": "/images/projects/loft-sliding-door-storage-east-finchley/g1.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "The storage seen across the loft floor"
+    },
+    {
+      "src": "/images/projects/loft-sliding-door-storage-east-finchley/g2.jpg",
+      "w": 900,
+      "h": 1200,
+      "alt": "Sliding door along the low wall"
+    },
+    {
+      "src": "/images/projects/loft-sliding-door-storage-east-finchley/g3.jpg",
+      "w": 900,
+      "h": 1200,
+      "alt": "End of the storage run by the door"
+    }
+  ]
+}

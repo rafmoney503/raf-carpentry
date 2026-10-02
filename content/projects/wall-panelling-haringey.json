@@ -1,0 +1,74 @@
+{
+  "slug": "wall-panelling-haringey",
+  "order": 7,
+  "title": "Dark panelled wall with lit strips",
+  "area": "Haringey",
+  "finished": "2026-02",
+  "type": "Wall panelling",
+  "tags": [
+    "Wall panelling",
+    "Lighting"
+  ],
+  "summary": "A dark panelled wall with two tall lit brass strips, fitted beside a bookcase.",
+  "intro": "A feature wall in dark panels, fitted floor to ceiling beside a tall bookcase, with two tall brass strips that light up.",
+  "cover": {
+    "src": "/images/projects/wall-panelling-haringey/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Dark panelled wall with two glowing vertical brass light strips beside a bookcase"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Haringey"
+    },
+    {
+      "label": "Finished",
+      "value": "February 2026"
+    },
+    {
+      "label": "Finish",
+      "value": "Dark panels, lit brass strips"
+    }
+  ],
+  "steps": [
+    {
+      "title": "First panels",
+      "text": "The first panels go up in the corner.",
+      "image": {
+        "src": "/images/projects/wall-panelling-haringey/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "First dark panels fitted in the corner"
+      }
+    },
+    {
+      "title": "Up to the bookcase",
+      "text": "Panels fitted tight to the bookcase.",
+      "image": {
+        "src": "/images/projects/wall-panelling-haringey/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Panels fitted next to the bookcase"
+      }
+    },
+    {
+      "title": "Strips set in",
+      "text": "The two brass strips set into the panels.",
+      "image": {
+        "src": "/images/projects/wall-panelling-haringey/s3.jpg",
+        "w": 1600,
+        "h": 1200,
+        "alt": "Brass strips set into the panels"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/wall-panelling-haringey/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The panelled wall with the lights off"
+    }
+  ]
+}

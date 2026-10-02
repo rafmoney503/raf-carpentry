@@ -1,0 +1,136 @@
+{
+  "slug": "kitchen-panelling-crouch-end",
+  "order": 14,
+  "title": "Kitchen panelling and cooker hood surround",
+  "area": "Crouch End",
+  "finished": "2026-06",
+  "type": "Wall panelling",
+  "tags": [
+    "Wall panelling",
+    "Kitchen",
+    "MDF",
+    "Cooker hood"
+  ],
+  "summary": "V-groove panelling round a kitchen, a boxed-in cooker hood and a tall panelled unit.",
+  "intro": "A kitchen in Crouch End, panelled in V-groove MDF above the worktops and at dado height round the dining side. The cooker hood is boxed in to match, and a tall panelled unit stands at the end of the run, so the whole room hangs together.",
+  "cover": {
+    "src": "/images/projects/kitchen-panelling-crouch-end/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Kitchen with V-groove wall panelling and a boxed-in cooker hood above the hob"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Crouch End"
+    },
+    {
+      "label": "Finished",
+      "value": "June 2026"
+    },
+    {
+      "label": "Room",
+      "value": "Kitchen"
+    },
+    {
+      "label": "Built from",
+      "value": "V-groove MDF"
+    }
+  ],
+  "steps": [
+    {
+      "title": "Battens up",
+      "text": "Battens fixed to the wall to take the panels.",
+      "image": {
+        "src": "/images/projects/kitchen-panelling-crouch-end/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Battens fixed to the kitchen wall"
+      }
+    },
+    {
+      "title": "Panels on",
+      "text": "V-groove panels go up behind the worktop.",
+      "image": {
+        "src": "/images/projects/kitchen-panelling-crouch-end/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "V-groove panels going up behind the sink"
+      }
+    },
+    {
+      "title": "Hood frame",
+      "text": "A frame built round the extractor.",
+      "image": {
+        "src": "/images/projects/kitchen-panelling-crouch-end/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Frame built round the extractor"
+      }
+    },
+    {
+      "title": "Hood boxed in",
+      "text": "The hood boxed in to match the panelling.",
+      "image": {
+        "src": "/images/projects/kitchen-panelling-crouch-end/s4.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Cooker hood boxed in with MDF"
+      }
+    },
+    {
+      "title": "Tall unit",
+      "text": "The tall unit and its panelled door made up.",
+      "image": {
+        "src": "/images/projects/kitchen-panelling-crouch-end/s5.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Tall panelled door being made"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Panelled kitchen wall by the window"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Cooker hood and tall unit"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Tall panelled unit at the end of the run"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/g4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Panelling, hood and tall unit together"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/g5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The boxed-in cooker hood"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/g6.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Dado-height panelling on the dining side"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/g7.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Dining side with the panelling"
+    }
+  ]
+}

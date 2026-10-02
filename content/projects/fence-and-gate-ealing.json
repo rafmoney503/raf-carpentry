@@ -1,0 +1,92 @@
+{
+  "slug": "fence-and-gate-ealing",
+  "order": 6,
+  "title": "Fence and gate",
+  "area": "Ealing",
+  "finished": "2026-02",
+  "type": "Outdoor",
+  "tags": [
+    "Outdoor",
+    "Fence",
+    "Gate",
+    "Garden"
+  ],
+  "summary": "A new close-board fence and a matching gate across the back of a patio.",
+  "intro": "The old fence and trellis came down and a new close-board fence went up across the back of the patio, with a matching gate. It is finished in a warm brown stain.",
+  "cover": {
+    "src": "/images/projects/fence-and-gate-ealing/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "New close-board fence with a gate across the back of a patio"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Ealing"
+    },
+    {
+      "label": "Finished",
+      "value": "February 2026"
+    },
+    {
+      "label": "Built from",
+      "value": "Timber"
+    },
+    {
+      "label": "Includes",
+      "value": "Fence and gate"
+    }
+  ],
+  "steps": [
+    {
+      "title": "Old fence out",
+      "text": "The old panels and trellis came down first.",
+      "image": {
+        "src": "/images/projects/fence-and-gate-ealing/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Old fence and trellis before work started"
+      }
+    },
+    {
+      "title": "Posts in",
+      "text": "New posts set and the first boards on.",
+      "image": {
+        "src": "/images/projects/fence-and-gate-ealing/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "New post and boarding going up"
+      }
+    },
+    {
+      "title": "Rails up",
+      "text": "Rails fixed between the posts, ready for boarding.",
+      "image": {
+        "src": "/images/projects/fence-and-gate-ealing/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "New posts and rails across the garden"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/fence-and-gate-ealing/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Fence along the side of the garden"
+    },
+    {
+      "src": "/images/projects/fence-and-gate-ealing/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Close-board fence panels"
+    },
+    {
+      "src": "/images/projects/fence-and-gate-ealing/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Fence and gate across the patio"
+    }
+  ]
+}

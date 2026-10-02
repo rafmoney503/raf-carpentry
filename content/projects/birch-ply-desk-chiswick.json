@@ -1,0 +1,114 @@
+{
+  "slug": "birch-ply-desk-chiswick",
+  "order": 4,
+  "title": "Long birch ply desk",
+  "area": "Chiswick",
+  "finished": "2026-02",
+  "type": "Desks",
+  "tags": [
+    "Desks",
+    "Birch ply",
+    "Home office",
+    "Garden room"
+  ],
+  "summary": "A long birch ply desk with a shelf underneath, running along the wall of a garden room.",
+  "intro": "A long work surface for a garden room in Chiswick: a birch ply desk with a shelf underneath, on steel legs. The boards were cut to size in the room, so the desk fits the wall it runs along.",
+  "cover": {
+    "src": "/images/projects/birch-ply-desk-chiswick/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Long birch ply desk with a shelf underneath along the wall of a garden room"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Chiswick"
+    },
+    {
+      "label": "Finished",
+      "value": "February 2026"
+    },
+    {
+      "label": "Room",
+      "value": "Garden room"
+    },
+    {
+      "label": "Built from",
+      "value": "Birch ply, steel legs"
+    }
+  ],
+  "steps": [
+    {
+      "title": "Set up in the room",
+      "text": "Boards on trestles in the room, ready to cut.",
+      "image": {
+        "src": "/images/projects/birch-ply-desk-chiswick/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Birch ply boards on trestles in the garden room"
+      }
+    },
+    {
+      "title": "Cut to size",
+      "text": "Each board cut to fit the wall it runs along.",
+      "image": {
+        "src": "/images/projects/birch-ply-desk-chiswick/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Birch ply board being cut to size"
+      }
+    },
+    {
+      "title": "Cut to fit",
+      "text": "The top cut and notched to fit the room.",
+      "image": {
+        "src": "/images/projects/birch-ply-desk-chiswick/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Notch cut into the edge of the desk top"
+      }
+    },
+    {
+      "title": "Top on",
+      "text": "The top set on its steel legs and levelled.",
+      "image": {
+        "src": "/images/projects/birch-ply-desk-chiswick/s4.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Desk top fitted on steel legs"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/birch-ply-desk-chiswick/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Desk and shelf beside the glazed doors"
+    },
+    {
+      "src": "/images/projects/birch-ply-desk-chiswick/g2.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "The desk running the length of the room"
+    },
+    {
+      "src": "/images/projects/birch-ply-desk-chiswick/g3.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Birch ply desk top and shelf"
+    },
+    {
+      "src": "/images/projects/birch-ply-desk-chiswick/g4.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Desk seen from the end of the room"
+    },
+    {
+      "src": "/images/projects/birch-ply-desk-chiswick/g5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Desk on its steel legs by the window"
+    }
+  ]
+}

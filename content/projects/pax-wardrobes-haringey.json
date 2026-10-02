@@ -1,0 +1,111 @@
+{
+  "slug": "pax-wardrobes-haringey",
+  "order": 13,
+  "title": "Full wall of PAX wardrobes with painted doors",
+  "area": "Haringey",
+  "finished": "2026-06",
+  "type": "Fitted wardrobes",
+  "tags": [
+    "Wardrobes",
+    "IKEA PAX",
+    "Painted doors",
+    "Bedroom"
+  ],
+  "summary": "IKEA PAX frames with boxes on top to the ceiling, and painted panelled doors across the front.",
+  "intro": "A full wall of wardrobes for a bedroom. IKEA PAX frames along the wall, boxes on top to take them up to the ceiling, and painted panelled doors across the front, so it reads as one built-in piece rather than flat-pack.",
+  "cover": {
+    "src": "/images/projects/pax-wardrobes-haringey/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Full wall of wardrobes with painted panelled doors up to the ceiling"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Haringey"
+    },
+    {
+      "label": "Finished",
+      "value": "June 2026"
+    },
+    {
+      "label": "Room",
+      "value": "Bedroom"
+    },
+    {
+      "label": "Built from",
+      "value": "IKEA PAX frames, top boxes"
+    },
+    {
+      "label": "Doors",
+      "value": "Panelled, painted"
+    }
+  ],
+  "video": {
+    "src": "/videos/pax-wardrobes-haringey.mp4",
+    "poster": {
+      "src": "/images/projects/pax-wardrobes-haringey/video-poster.jpg",
+      "w": 720,
+      "h": 1280,
+      "alt": "Doors open, inside and out"
+    },
+    "title": "Doors open, inside and out",
+    "text": "A walk along the finished wall, sped up a little."
+  },
+  "steps": [
+    {
+      "title": "Frames up",
+      "text": "PAX frames built and stood against the wall.",
+      "image": {
+        "src": "/images/projects/pax-wardrobes-haringey/s1.jpg",
+        "w": 900,
+        "h": 1200,
+        "alt": "PAX frame standing against the wall"
+      }
+    },
+    {
+      "title": "Boxes on top",
+      "text": "Boxes fitted on top to reach the ceiling.",
+      "image": {
+        "src": "/images/projects/pax-wardrobes-haringey/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Top boxes fitted above the PAX frames"
+      }
+    },
+    {
+      "title": "Doors painted",
+      "text": "The panelled doors painted.",
+      "image": {
+        "src": "/images/projects/pax-wardrobes-haringey/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Panelled doors laid out for painting"
+      }
+    },
+    {
+      "title": "Ready for doors",
+      "text": "Everything painted and ready for the doors.",
+      "image": {
+        "src": "/images/projects/pax-wardrobes-haringey/s4.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Frames and boxes painted, ready for doors"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/pax-wardrobes-haringey/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The wardrobe wall from the side"
+    },
+    {
+      "src": "/images/projects/pax-wardrobes-haringey/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Wardrobes beside the doorway"
+    }
+  ]
+}

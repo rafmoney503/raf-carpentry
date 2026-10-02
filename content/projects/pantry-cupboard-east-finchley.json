@@ -1,0 +1,72 @@
+{
+  "slug": "pantry-cupboard-east-finchley",
+  "order": 1,
+  "title": "Pantry cupboard with tray dividers",
+  "area": "East Finchley",
+  "finished": "2026-01",
+  "type": "Cupboards",
+  "tags": [
+    "Pantry",
+    "Cupboards",
+    "Storage",
+    "Kitchen",
+    "MDF"
+  ],
+  "summary": "A freestanding pantry cupboard with shelves, tray dividers and two open cubbies at the bottom.",
+  "intro": "A tall pantry cupboard for a kitchen that needed more storage. Shelves for jars and tins at the top, upright dividers for trays and boards, and two open cubbies at the bottom. Two framed doors close it all away, and it stands on legs.",
+  "cover": {
+    "src": "/images/projects/pantry-cupboard-east-finchley/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "MDF pantry cupboard with both doors open, shelves and tray dividers inside"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "East Finchley"
+    },
+    {
+      "label": "Finished",
+      "value": "January 2026"
+    },
+    {
+      "label": "Room",
+      "value": "Kitchen"
+    },
+    {
+      "label": "Built from",
+      "value": "MDF"
+    },
+    {
+      "label": "Inside",
+      "value": "Shelves, tray dividers, cubbies"
+    }
+  ],
+  "steps": [],
+  "gallery": [
+    {
+      "src": "/images/projects/pantry-cupboard-east-finchley/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Pantry cupboard with the two framed doors closed"
+    },
+    {
+      "src": "/images/projects/pantry-cupboard-east-finchley/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "One door open showing shelves and upright dividers"
+    },
+    {
+      "src": "/images/projects/pantry-cupboard-east-finchley/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Pantry cupboard before the doors went on"
+    },
+    {
+      "src": "/images/projects/pantry-cupboard-east-finchley/g4.jpg",
+      "w": 900,
+      "h": 1200,
+      "alt": "Close-up of the tray dividers and cubbies"
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "slug": "glass-sliding-doors-haringey",
+  "order": 5,
+  "title": "Black-framed glass sliding doors",
+  "area": "Haringey",
+  "finished": "2026-02",
+  "type": "Doors",
+  "tags": [
+    "Doors",
+    "Sliding doors",
+    "Glass doors",
+    "Fitting"
+  ],
+  "summary": "Black-framed glass sliding doors, hung from new timber fixed into the ceiling.",
+  "intro": "Black-framed glass doors that slide to close off a room without losing the light. The track needed something solid to hang from, so I opened the ceiling along the line of the doors, fixed timber between the joists and closed it up again before the doors went in.",
+  "cover": {
+    "src": "/images/projects/glass-sliding-doors-haringey/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Black-framed glass sliding doors looking through to a living room"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Haringey"
+    },
+    {
+      "label": "Finished",
+      "value": "February 2026"
+    },
+    {
+      "label": "Doors",
+      "value": "Black-framed glass, sliding"
+    },
+    {
+      "label": "Work",
+      "value": "Ceiling opened, timber added for the track"
+    }
+  ],
+  "steps": [
+    {
+      "title": "Ceiling opened",
+      "text": "The ceiling opened along the line of the doors.",
+      "image": {
+        "src": "/images/projects/glass-sliding-doors-haringey/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Ceiling opened to show metal joists and insulation"
+      }
+    },
+    {
+      "title": "Timber added",
+      "text": "Timber fitted between the joists to carry the track.",
+      "image": {
+        "src": "/images/projects/glass-sliding-doors-haringey/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Timber pieces fixed between the joists"
+      }
+    },
+    {
+      "title": "Ready to close up",
+      "text": "The whole run done, ready to board over.",
+      "image": {
+        "src": "/images/projects/glass-sliding-doors-haringey/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Full run of timber along the opened ceiling"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/glass-sliding-doors-haringey/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The glass doors from the hallway side"
+    },
+    {
+      "src": "/images/projects/glass-sliding-doors-haringey/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Doors with shelving to one side"
+    },
+    {
+      "src": "/images/projects/glass-sliding-doors-haringey/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Doors from the room side"
+    },
+    {
+      "src": "/images/projects/glass-sliding-doors-haringey/g4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Glass doors with the room behind"
+    },
+    {
+      "src": "/images/projects/glass-sliding-doors-haringey/g5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The full run of glass doors"
+    }
+  ]
+}
