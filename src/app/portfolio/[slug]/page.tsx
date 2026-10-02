@@ -7,8 +7,9 @@ import CompareSlider from '@/components/project/CompareSlider';
 import ProjectVideo from '@/components/project/ProjectVideo';
 import ProjectGallery from '@/components/project/ProjectGallery';
 import ToolsUsed from '@/components/ToolsUsed';
-import { formatMonth, getAllProjects, getProject, isPlanReady } from '@/lib/projects';
+import { formatMonth, getAllProjects, getKit, getProject, isPlanReady } from '@/lib/projects';
 import PlanCard from '@/components/project/PlanCard';
+import ProjectKit from '@/components/project/ProjectKit';
 import PlanDrawings from '@/components/project/PlanDrawings';
 import { QUOTE_URL } from '@/lib/site';
 import '../project.css';
@@ -36,6 +37,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   const all = getAllProjects();
   const next = all[(all.findIndex((x) => x.slug === p.slug) + 1) % all.length];
   const stepCount = p.steps.length;
+  const kit = getKit(p.slug);
 
   return (
     <>
@@ -154,6 +156,15 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           </div>
         </Container>
       </section>
+
+      {/* Materials and tools, once Raf has confirmed them in his sheet */}
+      {kit ? (
+        <section className="border-t border-line">
+          <Container className="py-16 md:py-24">
+            <ProjectKit kit={kit} />
+          </Container>
+        </section>
+      ) : null}
 
       {/* Plans for this job: free preview of the drawings, then buy or download */}
       {isPlanReady(p) ? (

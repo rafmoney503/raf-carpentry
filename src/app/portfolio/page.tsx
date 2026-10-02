@@ -1,6 +1,6 @@
 import { readPageJson } from '@/lib/pages';
 import { PageHeader } from '@/components/ui';
-import { formatMonth, getAllProjects } from '@/lib/projects';
+import { formatMonth, getAllProjects, getKit } from '@/lib/projects';
 import { matches } from '@/lib/search';
 import PortfolioBrowser, { type ArchiveCard, type JobCard } from './portfolio-browser';
 import './project.css';
@@ -23,6 +23,8 @@ export default function PortfolioPage() {
 
   const jobs: JobCard[] = projects.map((p) => {
     const month = formatMonth(p.finished);
+    const kit = getKit(p.slug);
+    const kitWords = kit ? [...kit.materials, ...kit.tools].map((k) => [k.name, k.brand, k.model].filter(Boolean).join(' ')) : [];
     return {
       slug: p.slug,
       title: p.title,
@@ -33,7 +35,7 @@ export default function PortfolioPage() {
       tags: p.tags ?? [],
       meta: [p.steps.length ? `${p.steps.length} build steps` : '', `${p.gallery.length + 1} photos`, p.video ? 'video' : '', p.compare ? 'before and after' : ''].filter(Boolean).join(', '),
       // Everything a visitor might type: title, area, tags, facts, words from the write-up.
-      searchText: [p.title, p.area, month, p.type, ...(p.tags ?? []), p.summary, p.intro, ...p.facts.map((f) => f.value), ...p.steps.map((s) => s.title)].join(' '),
+      searchText: [p.title, p.area, month, p.type, ...(p.tags ?? []), p.summary, p.intro, ...p.facts.map((f) => f.value), ...p.steps.map((s) => s.title), ...kitWords].join(' '),
     };
   });
 

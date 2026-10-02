@@ -7,7 +7,7 @@ image: /images/Screenshot 2026-04-10 at 08.00.59.png
 tools:
   - name: Cabinetos App
     link: 'https://www.cabinetos.co.uk'
-  - name: Makita Track Saw
+  - name: Festool Track Saw
     link: 'https://amazon.co.uk'
   - name: Shinwa Combination Square
     link: 'https://amazon.co.uk'

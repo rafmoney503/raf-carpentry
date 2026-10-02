@@ -11,7 +11,7 @@
       "icon": "⚡",
       "tools": [
         {
-          "name": "Makita Track Saw",
+          "name": "Festool TSC 55 KEB Track Saw",
           "description": "My go-to for clean, straight cuts on sheet materials. Essential for cabinet work.",
           "url": "#",
           "image": "",
@@ -25,14 +25,14 @@
           "price": "££££"
         },
         {
-          "name": "Makita Cordless Drill",
-          "description": "Reliable everyday driver. I own three of these.",
+          "name": "DeWalt Cordless Drill",
+          "description": "Reliable everyday driver. It comes to almost every job.",
           "url": "#",
           "image": "",
           "price": "££"
         },
         {
-          "name": "Makita Cordless Jigsaw",
+          "name": "DeWalt Cordless Jigsaw",
           "description": "For curved cuts and quick scribing on site.",
           "url": "#",
           "image": "",

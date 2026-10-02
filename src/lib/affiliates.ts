@@ -4,10 +4,10 @@
 
 export const affiliateLinks: Record<string, { name: string; url: string; category: string }> = {
   // Power Tools
-  'makita-track-saw':     { name: 'Makita Track Saw',           url: '#', category: 'Power Tools' },
+  'festool-track-saw':    { name: 'Festool TSC 55 KEB Track Saw', url: '#', category: 'Power Tools' },
   'festool-domino':       { name: 'Festool Domino Joiner',      url: '#', category: 'Power Tools' },
-  'makita-drill':         { name: 'Makita Cordless Drill',       url: '#', category: 'Power Tools' },
-  'makita-jigsaw':        { name: 'Makita Cordless Jigsaw',      url: '#', category: 'Power Tools' },
+  'dewalt-drill':         { name: 'DeWalt Cordless Drill',       url: '#', category: 'Power Tools' },
+  'dewalt-jigsaw':        { name: 'DeWalt Cordless Jigsaw',      url: '#', category: 'Power Tools' },
 
   // Hand Tools
   'stanley-tape':         { name: 'Stanley FatMax Tape 5m',      url: '#', category: 'Hand Tools' },

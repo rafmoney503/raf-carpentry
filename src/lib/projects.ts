@@ -68,6 +68,21 @@ export function formatMonth(ym: string): string {
   return new Date(Date.UTC(y, (m || 1) - 1, 1)).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 }
 
+/* Materials and tools per job. Made from the "Project kit" tab of Raf's Google Sheet by
+   scripts/kit-from-sheet.py: only rows Raf has checked, and an Amazon link only once that
+   product is Confirmed on the Products tab. Kept apart from the job JSONs so re-processing
+   photos never wipes it. */
+export type KitItem = { name: string; brand?: string; model?: string; link?: string };
+export type Kit = { materials: KitItem[]; tools: KitItem[] };
+
+export function getKit(slug: string): Kit | undefined {
+  const file = path.join(process.cwd(), 'content/project-kit.json');
+  if (!fs.existsSync(file)) return undefined;
+  const all = JSON.parse(fs.readFileSync(file, 'utf-8')) as { jobs?: Record<string, Kit> };
+  const kit = all.jobs?.[slug];
+  return kit && (kit.materials.length > 0 || kit.tools.length > 0) ? kit : undefined;
+}
+
 /* Plans that are ready to show: at least one preview and somewhere to buy or download. */
 export function isPlanReady(p: Project): p is Project & { planSale: PlanSale } {
   return Boolean(p.planSale && p.planSale.previews.length > 0 && (p.planSale.buyUrl || p.planSale.freeDownload));
