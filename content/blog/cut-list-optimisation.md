@@ -10,7 +10,7 @@ tools:
   - name: Festool TSC 55 KEB Track Saw
     link: 'https://link.amazon/B09cZDeJP'
   - name: Shinwa Combination Square
-    link: '#'
+    link: 'https://link.amazon/B0gkMe7Ck'
 ---
 
 ## The Hidden Cost of Poor Cut Planning

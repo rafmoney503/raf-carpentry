@@ -18,6 +18,13 @@
           "price": "££££"
         },
         {
+          "name": "Festool Guide Rail 1400 mm",
+          "description": "The everyday rail for cutting boards to size with the track saw.",
+          "url": "https://link.amazon/B00f2gVpW",
+          "image": "",
+          "price": "££"
+        },
+        {
           "name": "Festool Guide Rail 2400 mm",
           "description": "The long rail for cuts down full-size sheets with the track saw.",
           "url": "https://link.amazon/B02jNHys2",
@@ -110,7 +117,7 @@
         {
           "name": "Bahco Hand Saw",
           "description": "For quick cuts where setting up a power tool isn't worth it.",
-          "url": "#",
+          "url": "https://link.amazon/B00MEzZ6I",
           "image": "",
           "price": "£"
         },
@@ -151,14 +158,14 @@
         {
           "name": "Shinwa Combination Square",
           "description": "Precision marking for joinery and cabinet work.",
-          "url": "#",
+          "url": "https://link.amazon/B0gkMe7Ck",
           "image": "",
           "price": "£"
         },
         {
           "name": "Incra T-Rule",
           "description": "Dead accurate for marking out cuts on boards.",
-          "url": "#",
+          "url": "https://link.amazon/B0iFfa9R3",
           "image": "",
           "price": "£"
         }

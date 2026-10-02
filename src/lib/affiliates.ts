@@ -7,7 +7,7 @@ export const affiliateLinks: Record<string, { name: string; url: string; categor
   "festool-domino": { name: "Festool Domino Joiner", url: "https://link.amazon/B0fjrVzgM", category: "Power Tools" },
   "dewalt-drill": { name: "DeWalt Cordless Drill", url: "#", category: "Power Tools" },
   "dewalt-jigsaw": { name: "DeWalt Cordless Jigsaw", url: "https://link.amazon/B0i0c5CMu", category: "Power Tools" },
-  "festool-guide-rail": { name: "Festool Guide Rail 1400 mm", url: "#", category: "Power Tools" },
+  "festool-guide-rail": { name: "Festool Guide Rail 1400 mm", url: "https://link.amazon/B00f2gVpW", category: "Power Tools" },
   "dewalt-impact-driver": { name: "DeWalt Impact Driver", url: "https://link.amazon/B0dwGcKYq", category: "Power Tools" },
   "dewalt-mitre-saw": { name: "DeWalt Mitre Saw", url: "https://link.amazon/B05c5GsFX", category: "Power Tools" },
   "dewalt-sander": { name: "DeWalt Random Orbital Sander", url: "https://link.amazon/B031DQY1u", category: "Power Tools" },
@@ -19,14 +19,14 @@ export const affiliateLinks: Record<string, { name: string; url: string; categor
   // Hand Tools
   "stanley-tape": { name: "Stanley FatMax Tape Measure 5m", url: "https://link.amazon/B0gnYBmMd", category: "Hand Tools" },
   "irwin-chisels": { name: "Irwin Marples Chisels", url: "https://link.amazon/B0d24xz9j", category: "Hand Tools" },
-  "bahco-saw": { name: "Bahco Hand Saw", url: "#", category: "Hand Tools" },
+  "bahco-saw": { name: "Bahco Hand Saw", url: "https://link.amazon/B00MEzZ6I", category: "Hand Tools" },
   "stabila-level": { name: "Stabila Spirit Level", url: "https://link.amazon/B01e0FQsL", category: "Hand Tools" },
   "stabila-electronic-level": { name: "Stabila Digital Level", url: "https://link.amazon/B01AH95gQ", category: "Hand Tools" },
 
   // Measuring & Layout
   "bosch-laser": { name: "Bosch Laser Measure", url: "https://link.amazon/B0a1GvdVU", category: "Measuring & Layout" },
-  "shinwa-square": { name: "Shinwa Combination Square", url: "#", category: "Measuring & Layout" },
-  "incra-rule": { name: "Incra T-Rule", url: "#", category: "Measuring & Layout" },
+  "shinwa-square": { name: "Shinwa Combination Square", url: "https://link.amazon/B0gkMe7Ck", category: "Measuring & Layout" },
+  "incra-rule": { name: "Incra T-Rule", url: "https://link.amazon/B0iFfa9R3", category: "Measuring & Layout" },
   "dewalt-laser-level": { name: "DeWalt Laser Level", url: "https://link.amazon/B0elL28Zc", category: "Measuring & Layout" },
 
   // Software & Digital
