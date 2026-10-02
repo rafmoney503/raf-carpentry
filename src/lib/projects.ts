@@ -13,6 +13,7 @@ export type Project = {
   area: string;
   finished: string; // YYYY-MM
   type: string;
+  tags?: string[]; // quick-filter chips and search words on My Work
   summary: string;
   intro: string;
   cover: Photo;
