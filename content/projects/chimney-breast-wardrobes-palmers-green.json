@@ -1,0 +1,139 @@
+{
+  "slug": "chimney-breast-wardrobes-palmers-green",
+  "order": 2,
+  "title": "Wardrobes built around a chimney breast",
+  "area": "Palmers Green",
+  "finished": "2026-09",
+  "type": "Fitted wardrobes",
+  "summary": "IKEA PAX frames either side, joined by an MDF bridge with cupboards over the fireplace.",
+  "intro": "A full wall of storage that keeps the old fireplace on show. IKEA PAX frames sit either side of the chimney breast, an MDF bridge with overhead cupboards joins them across the top, and flat MDF doors face the lot, so it reads as one piece of furniture.",
+  "cover": {
+    "src": "/images/projects/chimney-breast-wardrobes-palmers-green/cover.jpg",
+    "w": 1080,
+    "h": 1440,
+    "alt": "Wall of MDF wardrobes built around a chimney breast, with cupboards over the fireplace"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Palmers Green"
+    },
+    {
+      "label": "Finished",
+      "value": "September 2026"
+    },
+    {
+      "label": "Room",
+      "value": "Bedroom"
+    },
+    {
+      "label": "Built from",
+      "value": "IKEA PAX frames, MDF"
+    },
+    {
+      "label": "Doors",
+      "value": "Flat MDF, wooden knobs"
+    }
+  ],
+  "video": {
+    "src": "/videos/chimney-breast-wardrobes-palmers-green.mp4",
+    "poster": {
+      "src": "/images/projects/chimney-breast-wardrobes-palmers-green/video-poster.jpg",
+      "w": 960,
+      "h": 1280,
+      "alt": "Finished wardrobes around the chimney breast"
+    },
+    "title": "Walk round the finished wall",
+    "text": "A walk past the whole wall and inside the cupboards, sped up a little."
+  },
+  "steps": [
+    {
+      "title": "Boxes made up",
+      "text": "The overhead boxes glued and clamped on the bench, right there in the room.",
+      "image": {
+        "src": "/images/projects/chimney-breast-wardrobes-palmers-green/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "MDF box held with clamps on a workbench"
+      }
+    },
+    {
+      "title": "Frames in",
+      "text": "IKEA PAX frames set in place, with an MDF box on top to take them up to the ceiling.",
+      "image": {
+        "src": "/images/projects/chimney-breast-wardrobes-palmers-green/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "White PAX frame with an MDF box fitted above it"
+      }
+    },
+    {
+      "title": "Bridge over the chimney",
+      "text": "An MDF frame spans the chimney breast and ties both sides together.",
+      "image": {
+        "src": "/images/projects/chimney-breast-wardrobes-palmers-green/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "MDF frame around the chimney breast joining the two wardrobes"
+      }
+    },
+    {
+      "title": "Faced in MDF",
+      "text": "Face frames and top boxes in, ready for doors.",
+      "image": {
+        "src": "/images/projects/chimney-breast-wardrobes-palmers-green/s4.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "MDF face frames and open top boxes across the whole wall"
+      }
+    },
+    {
+      "title": "Doors on",
+      "text": "Tall doors hung on both sides, with the top doors to follow.",
+      "image": {
+        "src": "/images/projects/chimney-breast-wardrobes-palmers-green/s5.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Tall MDF doors fitted either side of the chimney breast"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/chimney-breast-wardrobes-palmers-green/g1.jpg",
+      "w": 1080,
+      "h": 1440,
+      "alt": "The whole wall of wardrobes with the fireplace in the middle"
+    },
+    {
+      "src": "/images/projects/chimney-breast-wardrobes-palmers-green/g2.jpg",
+      "w": 1080,
+      "h": 1440,
+      "alt": "Left-hand wardrobe and the bridge over the fireplace"
+    },
+    {
+      "src": "/images/projects/chimney-breast-wardrobes-palmers-green/g3.jpg",
+      "w": 1080,
+      "h": 1440,
+      "alt": "Tall two-door wardrobe with cupboards above"
+    },
+    {
+      "src": "/images/projects/chimney-breast-wardrobes-palmers-green/g4.jpg",
+      "w": 1080,
+      "h": 1440,
+      "alt": "Doors and overhead cupboards seen from the side"
+    },
+    {
+      "src": "/images/projects/chimney-breast-wardrobes-palmers-green/g5.jpg",
+      "w": 1080,
+      "h": 1440,
+      "alt": "Inside one wardrobe: drawers and hanging space"
+    },
+    {
+      "src": "/images/projects/chimney-breast-wardrobes-palmers-green/g6.jpg",
+      "w": 1080,
+      "h": 1440,
+      "alt": "Overhead cupboards running towards the bay window"
+    }
+  ]
+}

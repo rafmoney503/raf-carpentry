@@ -49,6 +49,14 @@ Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrob
 - blog/sketchup-planning.jpg — SketchUp bathroom units screenshot
 - r-logo-final.png — V1 crisp R logo (black on white)
 
+## Project pages (added October 2026)
+- **Source photos**: Raf drops each job into a folder on his Mac: Documents/Raf Carpentry Projects/<YYYY-MM what area>/ with subfolders 1 Finished, 2 Build steps, 3 Drawings, 4 Free plan, plus notes.txt (template folder inside; area only, never client names).
+- **Processing**: photos are rotated, stripped of all EXIF/GPS, resized to 1600 px and lightly corrected (white balance, levels). Short iPhone clips give stills; longer clips become muted web videos (720 px wide, H.264) in public/videos/.
+- **Data**: one JSON per job in content/projects/<slug>.json (title, area, finished YYYY-MM, type, summary, intro, cover, facts, steps, gallery, optional compare / plan / video / planFile / blogSlug / tools). Loader: src/lib/projects.ts.
+- **Pages**: /portfolio lists jobs (newest first) plus an "Earlier work" strip from content/pages/portfolio.json; /portfolio/[slug] shows main photo with a title-block of facts, one interactive piece (before/after slider, plan vs real, or video), numbered build steps, photo grid with a full-screen viewer, optional free SketchUp plan / blog link / tools, quote band and next job.
+- **Components**: src/components/project/CompareSlider.tsx, ProjectVideo.tsx, ProjectGallery.tsx; styles in src/app/portfolio/project.css.
+- **Live jobs**: pax-wardrobe-finchley, loft-wardrobes-palmers-green, chimney-breast-wardrobes-palmers-green, alcove-units-palmers-green (notes.txt were empty, so text is written from the photos only; no sizes or timings claimed).
+
 ## Key Files
 - src/lib/affiliates.ts — Central affiliate links config (all Amazon links in one place)
 - src/lib/blog.ts — Blog utility (reads markdown, supports tools frontmatter)
@@ -75,7 +83,7 @@ Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrob
 - [ ] Add real Amazon affiliate URLs to src/lib/affiliates.ts
 - [ ] Connect affiliates.ts config to the Tools page (currently Tools page has hardcoded links)
 - [ ] Add more blog posts with images
-- [ ] Add photos to portfolio page (currently has placeholder structure)
+- [x] Portfolio rebuilt from real jobs with project pages (October 2026)
 - [ ] Add SketchUp 3D model screenshots alongside real build photos
 - [ ] SEO: meta tags, Open Graph images for social sharing
 - [ ] Google Analytics + Search Console setup

@@ -1,0 +1,123 @@
+{
+  "slug": "pax-wardrobe-finchley",
+  "order": 0,
+  "title": "Five-door wardrobe, built in",
+  "area": "Finchley",
+  "finished": "2026-09",
+  "type": "Fitted wardrobes",
+  "summary": "IKEA PAX frames and panelled doors, filled to the ceiling and walls so it looks made to measure.",
+  "intro": "A white five-door wardrobe for a bedroom in Finchley. It started as IKEA PAX frames and panelled doors. Fillers to the ceiling and the side wall, plus gold handles, turn it into a built-in.",
+  "cover": {
+    "src": "/images/projects/pax-wardrobe-finchley/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "White five-door panelled wardrobe with gold handles, built in to the ceiling"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Finchley"
+    },
+    {
+      "label": "Finished",
+      "value": "September 2026"
+    },
+    {
+      "label": "Room",
+      "value": "Bedroom"
+    },
+    {
+      "label": "Built from",
+      "value": "IKEA PAX frames"
+    },
+    {
+      "label": "Doors",
+      "value": "5 panelled, gold handles"
+    }
+  ],
+  "video": {
+    "src": "/videos/pax-wardrobe-finchley.mp4",
+    "poster": {
+      "src": "/images/projects/pax-wardrobe-finchley/video-poster.jpg",
+      "w": 960,
+      "h": 1280,
+      "alt": "Raf putting up a PAX frame"
+    },
+    "title": "Five minutes in twenty seconds",
+    "text": "The frames going up, sped up."
+  },
+  "steps": [
+    {
+      "title": "Frames up",
+      "text": "Each PAX frame built and stood up against the wall.",
+      "image": {
+        "src": "/images/projects/pax-wardrobe-finchley/s1.jpg",
+        "w": 1080,
+        "h": 1440,
+        "alt": "Raf standing a PAX frame up against the wall"
+      }
+    },
+    {
+      "title": "Levelled and fixed",
+      "text": "Frames levelled and fixed to the wall before the doors go on.",
+      "image": {
+        "src": "/images/projects/pax-wardrobe-finchley/s2.jpg",
+        "w": 1080,
+        "h": 1440,
+        "alt": "Raf kneeling at the base of a PAX frame by the wall"
+      }
+    },
+    {
+      "title": "Doors hung",
+      "text": "Doors on and lined up.",
+      "image": {
+        "src": "/images/projects/pax-wardrobe-finchley/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Five panelled doors hung on the frames"
+      }
+    },
+    {
+      "title": "Filled in",
+      "text": "Fillers close the gaps to the ceiling and wall, then the handles go on.",
+      "image": {
+        "src": "/images/projects/pax-wardrobe-finchley/s4.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Finished wardrobe with fillers and gold handles"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/pax-wardrobe-finchley/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Finished wardrobe seen from the end of the bed"
+    },
+    {
+      "src": "/images/projects/pax-wardrobe-finchley/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Side of the wardrobe, filled to the wall"
+    },
+    {
+      "src": "/images/projects/pax-wardrobe-finchley/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Doors open: hanging rails and drawers"
+    },
+    {
+      "src": "/images/projects/pax-wardrobe-finchley/g4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Doors open from a different angle"
+    },
+    {
+      "src": "/images/projects/pax-wardrobe-finchley/g5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Wardrobe front beside the bedroom window"
+    }
+  ]
+}

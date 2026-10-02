@@ -1,0 +1,227 @@
+import type { Metadata } from 'next';
+import Image from 'next/image';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { Container, SectionHeading } from '@/components/ui';
+import CompareSlider from '@/components/project/CompareSlider';
+import ProjectVideo from '@/components/project/ProjectVideo';
+import ProjectGallery from '@/components/project/ProjectGallery';
+import ToolsUsed from '@/components/ToolsUsed';
+import { formatMonth, getAllProjects, getProject } from '@/lib/projects';
+import { QUOTE_URL } from '@/lib/site';
+import '../project.css';
+
+export function generateStaticParams() {
+  return getAllProjects().map((p) => ({ slug: p.slug }));
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const p = getProject(slug);
+  if (!p) return {};
+  return {
+    title: `${p.title}, ${p.area} | Raf Carpentry`,
+    description: p.summary,
+    openGraph: { title: `${p.title}, ${p.area}`, description: p.summary, images: [{ url: p.cover.src, width: p.cover.w, height: p.cover.h }] },
+  };
+}
+
+export default async function ProjectPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const p = getProject(slug);
+  if (!p) notFound();
+
+  const all = getAllProjects();
+  const next = all[(all.findIndex((x) => x.slug === p.slug) + 1) % all.length];
+  const stepCount = p.steps.length;
+
+  return (
+    <>
+      {/* Header: main photo and the job's title block */}
+      <Container className="pb-16 pt-8 md:pb-24 md:pt-12">
+        <nav aria-label="Breadcrumb" className="mb-8 font-mono text-[13px] text-faint">
+          <Link href="/portfolio" className="transition-colors hover:text-accent">My work</Link>
+          <span className="px-2 text-line-strong">/</span>
+          <span>{p.area}</span>
+        </nav>
+
+        <div className="grid grid-cols-1 items-start gap-10 md:grid-cols-12 md:gap-6">
+          <figure className="md:col-span-7">
+            <div className="mount">
+              <div className="relative overflow-hidden bg-raised" style={{ aspectRatio: `${p.cover.w} / ${p.cover.h}` }}>
+                <Image src={p.cover.src} alt={p.cover.alt} fill priority sizes="(max-width: 768px) 100vw, 700px" className="object-cover" />
+              </div>
+            </div>
+          </figure>
+
+          <div className="md:sticky md:top-28 md:col-span-5">
+            <p className="kicker">{p.type}</p>
+            <h1 className="mt-3 font-display text-[36px] font-[680] leading-[1.05] tracking-[-0.03em] md:text-[48px]">{p.title}</h1>
+            <p className="mt-5 max-w-[52ch] text-pretty text-[17px] leading-relaxed text-muted">{p.intro}</p>
+
+            <dl className="title-block mt-8">
+              {p.facts.map((f) => (
+                <div key={f.label}>
+                  <dt>{f.label}</dt>
+                  <dd>{f.value}</dd>
+                </div>
+              ))}
+            </dl>
+
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
+              <a href={QUOTE_URL} target="_blank" rel="noopener" className="btn btn-primary">Get a quote</a>
+              <a href="#photos" className="link-more">
+                All {p.gallery.length + 1} photos <span aria-hidden="true">↓</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </Container>
+
+      {/* The one interactive piece each job has: before/after, the plan, or a clip */}
+      {p.compare ? (
+        <section className="border-t border-line">
+          <Container className="grid grid-cols-1 items-start gap-10 py-16 md:grid-cols-12 md:gap-6 md:py-24">
+            <div className="md:sticky md:top-28 md:col-span-4">
+              <SectionHeading>Before and after</SectionHeading>
+              <p className="mt-4 max-w-[40ch] text-muted">{p.compare.caption}</p>
+            </div>
+            <div className="md:col-span-6 md:col-start-6">
+              <CompareSlider before={p.compare.before} after={p.compare.after} beforeLabel={p.compare.beforeLabel} afterLabel={p.compare.afterLabel} />
+            </div>
+          </Container>
+        </section>
+      ) : null}
+
+      {p.plan ? (
+        <section className="border-t border-line">
+          <Container className="py-16 md:py-24">
+            <SectionHeading>{p.plan.title}</SectionHeading>
+            <p className="mt-4 max-w-[56ch] text-muted">{p.plan.text}</p>
+            <div className="mt-12 grid grid-cols-1 gap-x-6 gap-y-10 md:grid-cols-2">
+              <figure>
+                <div className="mount">
+                  <div className="relative overflow-hidden bg-white" style={{ aspectRatio: `${p.plan.image.w} / ${p.plan.image.h}` }}>
+                    <Image src={p.plan.image.src} alt={p.plan.image.alt} fill sizes="(max-width: 768px) 100vw, 600px" className="object-contain" />
+                  </div>
+                </div>
+                <figcaption className="mt-4 font-mono text-[13px] text-faint">The plan</figcaption>
+              </figure>
+              <figure>
+                <div className="mount">
+                  <div className="relative overflow-hidden bg-raised" style={{ aspectRatio: `${p.plan.image.w} / ${p.plan.image.h}` }}>
+                    <Image src={p.plan.real.src} alt={p.plan.real.alt} fill sizes="(max-width: 768px) 100vw, 600px" className="object-cover" />
+                  </div>
+                </div>
+                <figcaption className="mt-4 font-mono text-[13px] text-faint">The real thing</figcaption>
+              </figure>
+            </div>
+          </Container>
+        </section>
+      ) : null}
+
+      {p.video ? (
+        <section className="border-t border-line">
+          <Container className="grid grid-cols-1 items-center gap-10 py-16 md:grid-cols-12 md:gap-6 md:py-24">
+            <div className="mx-auto w-full max-w-[340px] md:col-span-4 md:mx-0">
+              <ProjectVideo src={p.video.src} poster={p.video.poster.src} label={p.video.title} />
+            </div>
+            <div className="md:col-span-6 md:col-start-6">
+              <SectionHeading>{p.video.title}</SectionHeading>
+              <p className="mt-4 max-w-[46ch] text-muted">{p.video.text}</p>
+            </div>
+          </Container>
+        </section>
+      ) : null}
+
+      {/* How it went together */}
+      {stepCount > 0 ? (
+        <section className="border-t border-line">
+          <Container className="py-16 md:py-24">
+            <SectionHeading>How it went together</SectionHeading>
+            <ol className="steps-row mt-10" style={{ ['--steps' as string]: stepCount }}>
+              {p.steps.map((s, i) => (
+                <li key={s.title}>
+                  <div className="mount">
+                    <div className="relative aspect-[3/4] overflow-hidden bg-raised">
+                      <Image src={s.image.src} alt={s.image.alt} fill sizes="(max-width: 768px) 72vw, 300px" className="object-cover" />
+                    </div>
+                  </div>
+                  <p className="step-no mt-5">{String(i + 1).padStart(2, '0')}</p>
+                  <h3 className="mt-1 text-[19px] font-[620] leading-snug">{s.title}</h3>
+                  <p className="mt-2 text-[15.5px] leading-relaxed text-muted">{s.text}</p>
+                </li>
+              ))}
+            </ol>
+          </Container>
+        </section>
+      ) : null}
+
+      {/* All photos */}
+      <section id="photos" className="scroll-mt-24 border-t border-line">
+        <Container className="py-16 md:py-24">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <SectionHeading>Photos</SectionHeading>
+            <p className="font-mono text-[13px] text-faint">Tap a photo to see it full size</p>
+          </div>
+          <div className="mt-10">
+            <ProjectGallery photos={[p.cover, ...p.gallery]} title={p.title} />
+          </div>
+        </Container>
+      </section>
+
+      {/* Free plan, the write-up and tools: only shown once they exist */}
+      {p.planFile || p.blogSlug || (p.tools && p.tools.length > 0) ? (
+        <section className="border-t border-line">
+          <Container className="grid grid-cols-1 gap-10 py-16 md:grid-cols-12 md:gap-6 md:py-20">
+            {p.planFile ? (
+              <div className="md:col-span-5">
+                <SectionHeading>Free SketchUp plan</SectionHeading>
+                <p className="mt-4 max-w-[44ch] text-muted">The drawing I built this from. Free to download and use for your own project.</p>
+                <a href={p.planFile.href} download className="btn btn-ghost mt-6">
+                  {p.planFile.label}
+                  {p.planFile.size ? <span className="ml-2 font-mono text-[13px] text-faint">{p.planFile.size}</span> : null}
+                </a>
+              </div>
+            ) : null}
+            <div className={p.planFile ? 'md:col-span-6 md:col-start-7' : 'md:col-span-8'}>
+              {p.blogSlug ? (
+                <Link href={`/blog/${p.blogSlug}`} className="link-more text-[18px]">
+                  Read the full story on the blog <span aria-hidden="true">→</span>
+                </Link>
+              ) : null}
+              {p.tools && p.tools.length > 0 ? <ToolsUsed tools={p.tools} /> : null}
+            </div>
+          </Container>
+        </section>
+      ) : null}
+
+      {/* Quote and next job */}
+      <section className="border-t border-line bg-raised">
+        <Container className="grid grid-cols-1 items-end gap-10 py-16 md:grid-cols-12 md:gap-6 md:py-20">
+          <div className="md:col-span-7">
+            <SectionHeading>Want something like this?</SectionHeading>
+            <p className="mt-4 max-w-[52ch] text-muted">Tell me about the room. I&apos;ll come and measure up, then draw it before anything is cut.</p>
+            <a href={QUOTE_URL} target="_blank" rel="noopener" className="btn btn-primary mt-8">Get a quote</a>
+          </div>
+          {next && next.slug !== p.slug ? (
+            <Link href={`/portfolio/${next.slug}`} className="group md:col-span-4 md:col-start-9">
+              <p className="font-mono text-[13px] text-faint">Next job</p>
+              <div className="mt-3 flex items-center gap-4">
+                <div className="mount w-24 shrink-0 p-1.5 transition-colors group-hover:border-accent">
+                  <div className="relative aspect-[3/4] overflow-hidden bg-raised">
+                    <Image src={next.cover.src} alt="" fill sizes="96px" className="object-cover" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[18px] font-[620] leading-snug transition-colors group-hover:text-accent">{next.title}</p>
+                  <p className="mt-1 font-mono text-[13px] text-faint">{next.area}, {formatMonth(next.finished)}</p>
+                </div>
+              </div>
+            </Link>
+          ) : null}
+        </Container>
+      </section>
+    </>
+  );
+}

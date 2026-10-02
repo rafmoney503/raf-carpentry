@@ -1,0 +1,134 @@
+{
+  "slug": "loft-wardrobes-palmers-green",
+  "order": 1,
+  "title": "Two wardrobes in a loft room",
+  "area": "Palmers Green",
+  "finished": "2026-09",
+  "type": "Fitted wardrobes",
+  "summary": "IKEA PAX wardrobes boxed in with MDF, one on each side of a loft room.",
+  "intro": "A loft room with a window at one end and a wardrobe down each side. Each is a run of IKEA PAX frames, planned in IKEA's planner first, then boxed in with MDF panels and closed with full-height MDF doors.",
+  "cover": {
+    "src": "/images/projects/loft-wardrobes-palmers-green/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Loft room with MDF wardrobes along both sides and a window at the end"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Palmers Green"
+    },
+    {
+      "label": "Finished",
+      "value": "September 2026"
+    },
+    {
+      "label": "Room",
+      "value": "Loft room"
+    },
+    {
+      "label": "Built from",
+      "value": "IKEA PAX frames, MDF"
+    },
+    {
+      "label": "Wardrobes",
+      "value": "2, facing each other"
+    }
+  ],
+  "plan": {
+    "image": {
+      "src": "/images/projects/loft-wardrobes-palmers-green/plan.jpg",
+      "w": 1105,
+      "h": 1220,
+      "alt": "IKEA planner drawing of a two-section PAX wardrobe with drawers and hanging rails"
+    },
+    "real": {
+      "src": "/images/projects/loft-wardrobes-palmers-green/plan-real.jpg",
+      "w": 1080,
+      "h": 1440,
+      "alt": "The finished wardrobe open, with drawers and hanging rails as planned"
+    },
+    "title": "Planned first, then built",
+    "text": "The inside was laid out in the IKEA PAX planner: 199.8 cm wide, 201.2 cm high and 58 cm deep. The finished wardrobe matches it, drawers and all."
+  },
+  "steps": [
+    {
+      "title": "Frames in",
+      "text": "PAX frames built and stood against the wall, drawers fitted inside.",
+      "image": {
+        "src": "/images/projects/loft-wardrobes-palmers-green/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "White PAX frames with wire drawers, tools on the floor"
+      }
+    },
+    {
+      "title": "Second side",
+      "text": "The second run goes in on the other side of the room.",
+      "image": {
+        "src": "/images/projects/loft-wardrobes-palmers-green/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "PAX frames beside the window on the second side"
+      }
+    },
+    {
+      "title": "Both sides up",
+      "text": "Frames in on both sides, with the window between them.",
+      "image": {
+        "src": "/images/projects/loft-wardrobes-palmers-green/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "PAX frames along both walls with the window in the middle"
+      }
+    },
+    {
+      "title": "Boxed in and doors on",
+      "text": "MDF panels close the gaps to the ceiling and walls, then full-height MDF doors go on.",
+      "image": {
+        "src": "/images/projects/loft-wardrobes-palmers-green/s4.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Finished MDF wardrobe with three doors and knobs"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/loft-wardrobes-palmers-green/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Three-door MDF wardrobe next to the window"
+    },
+    {
+      "src": "/images/projects/loft-wardrobes-palmers-green/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Wardrobe boxed in beside the sloping wall"
+    },
+    {
+      "src": "/images/projects/loft-wardrobes-palmers-green/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Wardrobe seen from the doorway"
+    },
+    {
+      "src": "/images/projects/loft-wardrobes-palmers-green/g4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Wardrobe by the window with the easel in front"
+    },
+    {
+      "src": "/images/projects/loft-wardrobes-palmers-green/g5.jpg",
+      "w": 1080,
+      "h": 1440,
+      "alt": "Open wardrobe with clothes and drawers inside"
+    },
+    {
+      "src": "/images/projects/loft-wardrobes-palmers-green/g6.jpg",
+      "w": 1080,
+      "h": 1440,
+      "alt": "Three doors closed, built in to the ceiling"
+    }
+  ]
+}

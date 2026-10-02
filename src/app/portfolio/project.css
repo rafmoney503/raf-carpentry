@@ -1,0 +1,68 @@
+/* Project pages and the My Work grid. Colours come from the theme tokens in globals.css. */
+
+/* Facts set out like the title block in the corner of a technical drawing. */
+.title-block { border: 1px solid var(--color-line-strong); background: var(--color-mount); }
+.title-block > div { display: grid; grid-template-columns: 9.5rem 1fr; border-top: 1px solid var(--color-line); }
+.title-block > div:first-child { border-top: 0; }
+.title-block dt, .title-block dd { padding: 11px 14px; }
+.title-block dt { font-family: var(--font-mono); font-size: 12.5px; color: var(--color-faint); border-right: 1px solid var(--color-line); }
+.title-block dd { font-size: 15.5px; color: var(--color-ink); }
+
+/* Before/after slider */
+.compare { touch-action: pan-y; cursor: ew-resize; }
+.compare-tag {
+  position: absolute; z-index: 2; padding: 5px 9px; border-radius: 2px;
+  background: rgb(251 251 249 / 0.92); color: var(--color-ink);
+  font-family: var(--font-mono); font-size: 12.5px; pointer-events: none;
+}
+.compare-knob {
+  position: absolute; top: 50%; left: 0; width: 44px; height: 44px; margin: -22px 0 0 -22px;
+  display: flex; align-items: center; justify-content: center; border-radius: 9999px;
+  background: var(--color-mount); color: var(--color-accent);
+  border: 1px solid var(--color-line-strong); box-shadow: 0 6px 18px -6px rgb(22 25 28 / 0.45);
+}
+.compare-range {
+  position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: ew-resize; margin: 0;
+  -webkit-appearance: none; appearance: none; background: transparent;
+}
+.compare:has(.compare-range:focus-visible) .compare-knob { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+
+/* Build steps scroll sideways on phones, sit in a row on wide screens. */
+.steps-row {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(240px, 72%);
+  gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 12px;
+  margin-inline: -20px; padding-inline: 20px; scroll-padding-inline: 20px; scrollbar-width: thin;
+}
+.steps-row > li { scroll-snap-align: start; }
+@media (min-width: 768px) {
+  .steps-row { grid-auto-flow: row; grid-template-columns: repeat(var(--steps, 4), minmax(0, 1fr)); overflow: visible; margin-inline: 0; padding-inline: 0; }
+}
+.step-no { font-family: var(--font-mono); font-size: 13px; color: var(--color-accent); }
+
+/* Photo grid: two columns on phones, three on wider screens, photos keep their shape. */
+.gallery-grid { columns: 2; column-gap: 14px; }
+.gallery-grid > .gallery-item { break-inside: avoid; margin-bottom: 14px; }
+@media (min-width: 900px) { .gallery-grid { columns: 3; column-gap: 20px; } .gallery-grid > .gallery-item { margin-bottom: 20px; } }
+.gallery-grid .mount { padding: 6px; }
+
+/* Full-screen photo viewer */
+.lightbox {
+  position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
+  background: rgb(14 16 18 / 0.95); color: #fff; padding: 64px 16px 32px; touch-action: pan-y;
+  animation: lb-in 0.18s ease-out;
+}
+@keyframes lb-in { from { opacity: 0; } to { opacity: 1; } }
+.lightbox-bar { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; }
+.lightbox-figure { margin: 0; display: flex; flex-direction: column; align-items: center; max-width: min(1100px, 100%); }
+.lightbox-img { max-height: calc(100dvh - 140px); width: auto; max-width: 100%; object-fit: contain; border-radius: 2px; }
+.lightbox-btn {
+  display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 9999px;
+  background: rgb(255 255 255 / 0.1); color: #fff; transition: background-color 0.2s;
+}
+.lightbox-btn:hover { background: rgb(255 255 255 / 0.2); }
+.lightbox-prev, .lightbox-next { position: absolute; top: 50%; margin-top: -22px; }
+.lightbox-prev { left: 12px; }
+.lightbox-next { right: 12px; }
+@media (max-width: 640px) { .lightbox-prev, .lightbox-next { top: auto; bottom: 18px; margin-top: 0; } }
+
+@media (prefers-reduced-motion: reduce) { .lightbox { animation: none; } }

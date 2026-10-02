@@ -1,0 +1,129 @@
+{
+  "slug": "alcove-units-palmers-green",
+  "order": 3,
+  "title": "Alcove units either side of a chimney breast",
+  "area": "Palmers Green",
+  "finished": "2026-09",
+  "type": "Alcove units",
+  "summary": "Full-height shelving in one alcove, shelves over a cupboard in the other.",
+  "intro": "A living room with a cast-iron fireplace and two empty alcoves. One side became full-height shelving, the other shelves over a two-door cupboard. Both are lined and built in MDF and run right up to the cornice, so they look like they were always there.",
+  "cover": {
+    "src": "/images/projects/alcove-units-palmers-green/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "MDF alcove unit with open shelves above a two-door cupboard, beside a fireplace and a palm"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Palmers Green"
+    },
+    {
+      "label": "Finished",
+      "value": "September 2026"
+    },
+    {
+      "label": "Room",
+      "value": "Living room"
+    },
+    {
+      "label": "Built from",
+      "value": "MDF"
+    },
+    {
+      "label": "Units",
+      "value": "2 alcoves"
+    }
+  ],
+  "compare": {
+    "before": {
+      "src": "/images/projects/alcove-units-palmers-green/before.jpg",
+      "w": 1184,
+      "h": 1600,
+      "alt": "Empty alcove lined with MDF, building materials on the floor"
+    },
+    "after": {
+      "src": "/images/projects/alcove-units-palmers-green/after.jpg",
+      "w": 1184,
+      "h": 1600,
+      "alt": "The same alcove with full-height MDF shelves fitted"
+    },
+    "beforeLabel": "Alcove lined",
+    "afterLabel": "Shelves in",
+    "caption": "Same alcove, photographed from the same spot. Drag the handle to compare."
+  },
+  "steps": [
+    {
+      "title": "Alcoves lined",
+      "text": "Both alcoves lined with MDF first, giving a square box to build into.",
+      "image": {
+        "src": "/images/projects/alcove-units-palmers-green/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Both alcoves lined with MDF, saw set up on dust sheets in the room"
+      }
+    },
+    {
+      "title": "Base and cupboard",
+      "text": "The base goes in next, with the cupboard section at the bottom of one alcove.",
+      "image": {
+        "src": "/images/projects/alcove-units-palmers-green/s2.jpg",
+        "w": 900,
+        "h": 1600,
+        "alt": "MDF base and cupboard section fitted in the alcove"
+      }
+    },
+    {
+      "title": "Cut in the room",
+      "text": "Shelves and panels cut to size on site, so every piece fits the alcove it goes in.",
+      "image": {
+        "src": "/images/projects/alcove-units-palmers-green/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "MDF boards and a saw rail leaning in the alcove"
+      }
+    },
+    {
+      "title": "Shelves in",
+      "text": "Full-height shelving on one side, shelves over a cupboard on the other.",
+      "image": {
+        "src": "/images/projects/alcove-units-palmers-green/s4.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Finished full-height MDF shelving in the alcove"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/alcove-units-palmers-green/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Left alcove with full-height MDF shelving"
+    },
+    {
+      "src": "/images/projects/alcove-units-palmers-green/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Right alcove unit with shelves over a cupboard, next to the fireplace"
+    },
+    {
+      "src": "/images/projects/alcove-units-palmers-green/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Alcove unit seen across the room by the bay window"
+    },
+    {
+      "src": "/images/projects/alcove-units-palmers-green/g4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Alcove unit with a cupboard, beside the TV and fireplace"
+    },
+    {
+      "src": "/images/projects/alcove-units-palmers-green/g5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Full-height shelving beside the fireplace"
+    }
+  ]
+}
