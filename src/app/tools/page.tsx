@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { readPageJson } from '@/lib/pages';
@@ -59,18 +60,32 @@ export default function ToolsPage() {
                 const cls =
                   'group block border-t border-line py-6 sm:[&:nth-child(-n+2)]:border-t-0 sm:[&:nth-child(-n+2)]:pt-0 [&:first-child]:border-t-0 [&:first-child]:pt-0';
                 const inner = (
-                  <>
-                    <div className="flex items-baseline justify-between gap-4">
-                      <h3 className={`text-[21px] font-[620] leading-snug transition-colors ${href ? 'group-hover:text-accent' : ''}`}>{tool.name}</h3>
-                      {tool.price ? (
-                        <span className="flex-none font-mono text-sm text-muted" aria-label={`Price band ${tool.price.length} of 4`}>{tool.price}</span>
+                  <div className="flex items-start gap-4 sm:gap-5">
+                    {/* Small photo of Raf's own tool, so visitors see what it is before clicking */}
+                    <div className={`mount w-[76px] shrink-0 p-1 sm:w-[88px] ${href ? 'group-hover:border-accent' : ''}`}>
+                      <div className="relative aspect-square overflow-hidden bg-raised">
+                        {tool.image ? (
+                          <Image src={tool.image} alt={`Raf's ${tool.name} on a job`} fill sizes="88px" className="object-cover" />
+                        ) : (
+                          <span className="absolute inset-0 flex items-center justify-center px-1 text-center font-mono text-[10px] uppercase tracking-wider text-faint" aria-hidden="true">
+                            {tool.name.split(' ')[0]}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-4">
+                        <h3 className={`text-[19px] font-[620] leading-snug transition-colors sm:text-[21px] ${href ? 'group-hover:text-accent' : ''}`}>{tool.name}</h3>
+                        {tool.price ? (
+                          <span className="flex-none font-mono text-sm text-muted" aria-label={`Price band ${tool.price.length} of 4`}>{tool.price}</span>
+                        ) : null}
+                      </div>
+                      <p className="mt-2 text-[16px] leading-relaxed text-muted">{tool.description}</p>
+                      {href ? (
+                        <p className="mt-3 text-sm font-medium text-accent">{isShop ? 'View on Amazon' : isExternal ? 'Visit the website' : 'Find out more'} →</p>
                       ) : null}
                     </div>
-                    <p className="mt-2 text-[16px] leading-relaxed text-muted">{tool.description}</p>
-                    {href ? (
-                      <p className="mt-3 text-sm font-medium text-accent">{isShop ? 'View on Amazon' : isExternal ? 'Visit the website' : 'Find out more'} →</p>
-                    ) : null}
-                  </>
+                  </div>
                 );
                 // Tools without a confirmed link are listed but not clickable.
                 if (!href) return <div key={ti} className={cls}>{inner}</div>;

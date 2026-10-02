@@ -14,21 +14,21 @@
           "name": "Festool TSC 55 KEB Track Saw",
           "description": "My go-to for clean, straight cuts on sheet materials. Essential for cabinet work.",
           "url": "https://link.amazon/B09cZDeJP",
-          "image": "",
+          "image": "/images/tools/festool-track-saw.jpg",
           "price": "££££"
         },
         {
           "name": "Festool Guide Rail 1400 mm",
           "description": "The everyday rail for cutting boards to size with the track saw.",
           "url": "https://link.amazon/B00f2gVpW",
-          "image": "",
+          "image": "/images/tools/festool-guide-rail.jpg",
           "price": "££"
         },
         {
           "name": "Festool Guide Rail 2400 mm",
           "description": "The long rail for cuts down full-size sheets with the track saw.",
           "url": "https://link.amazon/B02jNHys2",
-          "image": "",
+          "image": "/images/tools/festool-guide-rail-2400.jpg",
           "price": "£££"
         },
         {
@@ -42,35 +42,35 @@
           "name": "DeWalt Cordless Drill",
           "description": "Reliable everyday driver. It comes to almost every job.",
           "url": "#",
-          "image": "",
+          "image": "/images/tools/dewalt-drill.jpg",
           "price": "££"
         },
         {
           "name": "DeWalt Impact Driver",
           "description": "Drives the screws on most of my fits, next to the drill.",
           "url": "https://link.amazon/B0dwGcKYq",
-          "image": "",
+          "image": "/images/tools/dewalt-impact-driver.jpg",
           "price": "££"
         },
         {
           "name": "DeWalt Cordless Jigsaw",
           "description": "For curved cuts and quick scribing on site.",
           "url": "https://link.amazon/B0i0c5CMu",
-          "image": "",
+          "image": "/images/tools/dewalt-jigsaw.jpg",
           "price": "££"
         },
         {
           "name": "DeWalt Mitre Saw",
           "description": "Cordless, so it goes up into lofts and out into gardens. Trims, battens and deck boards.",
           "url": "https://link.amazon/B05c5GsFX",
-          "image": "",
+          "image": "/images/tools/dewalt-mitre-saw.jpg",
           "price": "£££"
         },
         {
           "name": "DeWalt Random Orbital Sander",
           "description": "125 mm and cordless. For birch ply edges and filled MDF before paint.",
           "url": "https://link.amazon/B031DQY1u",
-          "image": "",
+          "image": "/images/tools/dewalt-sander.jpg",
           "price": "££"
         },
         {
@@ -84,14 +84,14 @@
           "name": "Makita Trim Router",
           "description": "Small enough for one hand. I run it round templates for curved birch ply parts.",
           "url": "https://link.amazon/B0036Ifid",
-          "image": "",
+          "image": "/images/tools/makita-trim-router.jpg",
           "price": "££"
         },
         {
           "name": "DeWalt Finish Nailer",
           "description": "For fixing trims, beading and mouldings.",
           "url": "https://link.amazon/B09m5xhew",
-          "image": "",
+          "image": "/images/tools/dewalt-pin-nailer.jpg",
           "price": "£££"
         }
       ]
@@ -104,7 +104,7 @@
           "name": "Stanley FatMax Tape Measure 5m",
           "description": "The yellow tape you see in every photo. Accurate and durable.",
           "url": "https://link.amazon/B0gnYBmMd",
-          "image": "",
+          "image": "/images/tools/stanley-tape.jpg",
           "price": "£"
         },
         {
@@ -132,7 +132,7 @@
           "name": "Stabila Digital Level",
           "description": "Reads the exact angle as well as the bubble.",
           "url": "https://link.amazon/B01AH95gQ",
-          "image": "",
+          "image": "/images/tools/stabila-electronic-level.jpg",
           "price": "££"
         }
       ]
@@ -152,7 +152,7 @@
           "name": "DeWalt Laser Level",
           "description": "Throws a level line along a whole wall for fitting wardrobes and panelling.",
           "url": "https://link.amazon/B0elL28Zc",
-          "image": "",
+          "image": "/images/tools/dewalt-laser-level.jpg",
           "price": "££"
         },
         {
@@ -179,7 +179,7 @@
           "name": "Henry Vacuum",
           "description": "For the clean-up before I leave a job.",
           "url": "https://link.amazon/B08MSwRs2",
-          "image": "",
+          "image": "/images/tools/henry-vacuum.jpg",
           "price": "££"
         }
       ]
@@ -192,14 +192,14 @@
           "name": "SketchUp Pro",
           "description": "I design every project in 3D before building. Non-negotiable.",
           "url": "https://www.sketchup.com/",
-          "image": "",
+          "image": "/images/tools/sketchup-pro.jpg",
           "price": "£££"
         },
         {
           "name": "Cabinetos",
           "description": "My own app — automatic cut lists, parts lists, and board optimisation.",
           "url": "/cabinetos",
-          "image": "",
+          "image": "/images/tools/cabinetos.jpg",
           "price": "Free"
         }
       ]
