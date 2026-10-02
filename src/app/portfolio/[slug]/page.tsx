@@ -9,6 +9,7 @@ import ProjectGallery from '@/components/project/ProjectGallery';
 import ToolsUsed from '@/components/ToolsUsed';
 import { formatMonth, getAllProjects, getProject, isPlanReady } from '@/lib/projects';
 import PlanCard from '@/components/project/PlanCard';
+import PlanDrawings from '@/components/project/PlanDrawings';
 import { QUOTE_URL } from '@/lib/site';
 import '../project.css';
 
@@ -99,24 +100,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           <Container className="py-16 md:py-24">
             <SectionHeading>{p.plan.title}</SectionHeading>
             <p className="mt-4 max-w-[56ch] text-muted">{p.plan.text}</p>
-            <div className="mt-12 grid grid-cols-1 gap-x-6 gap-y-10 md:grid-cols-2">
-              <figure>
-                <div className="mount">
-                  <div className="relative overflow-hidden bg-white" style={{ aspectRatio: `${p.plan.image.w} / ${p.plan.image.h}` }}>
-                    <Image src={p.plan.image.src} alt={p.plan.image.alt} fill sizes="(max-width: 768px) 100vw, 600px" className="object-contain" />
-                  </div>
-                </div>
-                <figcaption className="mt-4 font-mono text-[13px] text-faint">The plan</figcaption>
-              </figure>
-              <figure>
-                <div className="mount">
-                  <div className="relative overflow-hidden bg-raised" style={{ aspectRatio: `${p.plan.image.w} / ${p.plan.image.h}` }}>
-                    <Image src={p.plan.real.src} alt={p.plan.real.alt} fill sizes="(max-width: 768px) 100vw, 600px" className="object-cover" />
-                  </div>
-                </div>
-                <figcaption className="mt-4 font-mono text-[13px] text-faint">The real thing</figcaption>
-              </figure>
-            </div>
+            <PlanDrawings plan={p.plan} title={p.title} />
           </Container>
         </section>
       ) : null}

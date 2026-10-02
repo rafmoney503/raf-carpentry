@@ -15,6 +15,15 @@ export type PlanSale = {
   freeDownload?: string; // e.g. /plans/alcove-units.zip, when the plan is given away
 };
 export type Step = { title: string; text: string; image: Photo };
+export type Plan = {
+  image: Photo;
+  real: Photo;
+  title: string;
+  text: string;
+  imageLabel?: string; // caption under the drawing, default "The plan"
+  realLabel?: string; // caption under the photo, default "The real thing"
+  views?: (Photo & { caption?: string })[];
+};
 export type Project = {
   slug: string;
   order: number;
@@ -29,7 +38,9 @@ export type Project = {
   facts: { label: string; value: string }[];
   compare?: { before: Photo; after: Photo; beforeLabel: string; afterLabel: string; caption: string };
   video?: { src: string; poster: Photo; title: string; text: string };
-  plan?: { image: Photo; real: Photo; title: string; text: string };
+  /* The drawing next to the finished job. `views` are extra drawings (other SketchUp angles, hand sketches)
+     shown as a row underneath; tap any drawing to see it full size. */
+  plan?: Plan;
   steps: Step[];
   gallery: Photo[];
   planSale?: PlanSale;

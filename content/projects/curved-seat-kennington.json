@@ -10,10 +10,11 @@
     "Curved",
     "Storage",
     "Kitchen",
-    "MDF"
+    "MDF",
+    "SketchUp"
   ],
   "summary": "A curved bench seat with storage under lift-up lids, made to sit in a kitchen bay.",
-  "intro": "A curved bench for a kitchen bay, next to a round table. It was drawn by hand first, then built in MDF: curved frames, storage boxes underneath and lift-up lids on top, with panelled fronts.",
+  "intro": "A curved bench for a kitchen bay, next to a round table. I sketched it by hand, drew it up in SketchUp, then built it in MDF: curved frames, storage boxes underneath and lift-up lids on top, with panelled fronts.",
   "cover": {
     "src": "/images/projects/curved-seat-kennington/cover.jpg",
     "w": 860,
@@ -55,19 +56,51 @@
   },
   "plan": {
     "image": {
-      "src": "/images/projects/curved-seat-kennington/plan.jpg",
-      "w": 900,
-      "h": 1600,
-      "alt": "Hand sketch of the curved seat"
+      "src": "/images/projects/curved-seat-kennington/plan-sketchup.jpg",
+      "w": 1600,
+      "h": 1067,
+      "alt": "SketchUp model of the curved seat from the front"
     },
     "real": {
-      "src": "/images/projects/curved-seat-kennington/plan-real.jpg",
+      "src": "/images/projects/curved-seat-kennington/plan-real-front.jpg",
       "w": 1200,
-      "h": 1600,
-      "alt": "The finished curved bench"
+      "h": 800,
+      "alt": "The built seat from the front, before it went in"
     },
-    "title": "Drawn by hand first",
-    "text": "The first sketch of the seat, and the bench it turned into."
+    "title": "Drawn by hand, then in SketchUp",
+    "text": "I sketched the curve by hand first, then drew the whole seat in SketchUp to settle the curve and the panel layout before cutting anything.",
+    "imageLabel": "The SketchUp model",
+    "realLabel": "The real thing",
+    "views": [
+      {
+        "src": "/images/projects/curved-seat-kennington/plan-view1.jpg",
+        "w": 1600,
+        "h": 1067,
+        "alt": "SketchUp model of the curved seat from the left",
+        "caption": "SketchUp, from the left"
+      },
+      {
+        "src": "/images/projects/curved-seat-kennington/plan-view2.jpg",
+        "w": 1600,
+        "h": 1067,
+        "alt": "SketchUp model of the curved seat from the right",
+        "caption": "SketchUp, from the right"
+      },
+      {
+        "src": "/images/projects/curved-seat-kennington/plan-view3.jpg",
+        "w": 900,
+        "h": 600,
+        "alt": "Hand sketch of the curve of the seat",
+        "caption": "Hand sketch: the curve"
+      },
+      {
+        "src": "/images/projects/curved-seat-kennington/plan-view4.jpg",
+        "w": 900,
+        "h": 600,
+        "alt": "Hand sketch of the seat with the back, front and panels marked",
+        "caption": "Hand sketch: front and panels"
+      }
+    ]
   },
   "steps": [
     {
@@ -146,5 +179,29 @@
       "h": 1600,
       "alt": "Bench with the lids on"
     }
-  ]
+  ],
+  "planSale": {
+    "previews": [
+      {
+        "src": "/images/projects/curved-seat-kennington/plan-sketchup.jpg",
+        "w": 1600,
+        "h": 1067,
+        "alt": "SketchUp model of the curved seat from the front"
+      },
+      {
+        "src": "/images/projects/curved-seat-kennington/plan-view1.jpg",
+        "w": 1600,
+        "h": 1067,
+        "alt": "SketchUp model of the curved seat from the left"
+      },
+      {
+        "src": "/images/projects/curved-seat-kennington/plan-view2.jpg",
+        "w": 1600,
+        "h": 1067,
+        "alt": "SketchUp model of the curved seat from the right"
+      }
+    ],
+    "includes": "The SketchUp model of the seat (.skp)",
+    "price": "£4.99"
+  }
 }
