@@ -18,6 +18,13 @@
           "price": "££££"
         },
         {
+          "name": "Festool Guide Rail 2400 mm",
+          "description": "The long rail for cuts down full-size sheets with the track saw.",
+          "url": "https://link.amazon/B02jNHys2",
+          "image": "",
+          "price": "£££"
+        },
+        {
           "name": "Festool Domino Joiner",
           "description": "Game-changer for strong, fast joinery. Worth every penny.",
           "url": "https://link.amazon/B0fjrVzgM",
@@ -72,6 +79,13 @@
           "url": "https://link.amazon/B0036Ifid",
           "image": "",
           "price": "££"
+        },
+        {
+          "name": "DeWalt Finish Nailer",
+          "description": "For fixing trims, beading and mouldings.",
+          "url": "https://link.amazon/B09m5xhew",
+          "image": "",
+          "price": "£££"
         }
       ]
     },

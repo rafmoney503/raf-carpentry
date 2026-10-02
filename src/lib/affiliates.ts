@@ -1,6 +1,5 @@
 // Raf's products and their links, mirrored from the Products tab of his Google Sheet
-// "Raf Carpentry Amazon links" (only Confirmed rows get a link; '#' means not yet).
-// The Tools page and blog posts are updated from the sheet with scripts/links-from-sheet.py.
+// "Raf Carpentry Amazon links" by scripts/links-from-sheet.py (only Confirmed rows get a link; '#' means not yet).
 
 export const affiliateLinks: Record<string, { name: string; url: string; category: string }> = {
   // Power Tools
@@ -14,8 +13,8 @@ export const affiliateLinks: Record<string, { name: string; url: string; categor
   "dewalt-sander": { name: "DeWalt Random Orbital Sander", url: "https://link.amazon/B031DQY1u", category: "Power Tools" },
   "dewalt-multi-tool": { name: "DeWalt Multi-Tool", url: "https://link.amazon/B06LvLFsZ", category: "Power Tools" },
   "makita-trim-router": { name: "Makita Trim Router", url: "https://link.amazon/B0036Ifid", category: "Power Tools" },
-  "dewalt-pin-nailer": { name: "DeWalt Pin Nailer", url: "#", category: "Power Tools" },
-  "festool-guide-rail-2400": { name: "Festool Guide Rail 2400 mm", url: "#", category: "Power Tools" },
+  "dewalt-pin-nailer": { name: "DeWalt Finish Nailer", url: "https://link.amazon/B09m5xhew", category: "Power Tools" },
+  "festool-guide-rail-2400": { name: "Festool Guide Rail 2400 mm", url: "https://link.amazon/B02jNHys2", category: "Power Tools" },
 
   // Hand Tools
   "stanley-tape": { name: "Stanley FatMax Tape Measure 5m", url: "https://link.amazon/B0gnYBmMd", category: "Hand Tools" },

@@ -28,8 +28,31 @@ def load(src):
         if not name:
             continue
         ok = status in LIVE and (link.startswith('http') or link.startswith('/'))
-        products[name] = {'link': link if ok else '', 'price': price}
+        products[name] = {'key': row[0].strip(), 'category': row[2].strip(), 'link': link if ok else '', 'price': price}
     return products
+
+
+def affiliates_file(products):
+    groups = {}
+    for name, pr in products.items():
+        if pr['key']:
+            groups.setdefault(pr['category'] or 'Other', []).append((pr['key'], name, pr['link'] or '#'))
+    out = ["// Raf's products and their links, mirrored from the Products tab of his Google Sheet",
+           "// \"Raf Carpentry Amazon links\" by scripts/links-from-sheet.py (only Confirmed rows get a link; '#' means not yet).",
+           "",
+           "export const affiliateLinks: Record<string, { name: string; url: string; category: string }> = {"]
+    for cat, items in groups.items():
+        out.append(f'  // {cat}')
+        for key, name, url in items:
+            out.append(f'  {json.dumps(key)}: {{ name: {json.dumps(name, ensure_ascii=False)}, url: {json.dumps(url)}, category: {json.dumps(cat)} }},')
+        out.append('')
+    out[-1] = '};'
+    out += ['', '// Helper: get a link by key', 'export function getAffiliateUrl(key: string): string {',
+            "  return affiliateLinks[key]?.url || '#';", '}', '',
+            '// Amazon links (full or short) are paid links: they get rel="sponsored" and the Associate sentence.',
+            'export function isAmazonLink(href?: string): boolean {',
+            r"  return Boolean(href && /(^|\/\/|\.)(amazon\.|amzn\.|link\.amazon)/.test(href));", '}', '']
+    (ROOT / 'src/lib/affiliates.ts').write_text('\n'.join(out))
 
 
 def tools_page(products):
@@ -74,3 +97,8 @@ if __name__ == '__main__':
     prods = load(sys.argv[1])
     for line in tools_page(prods) + blog_posts(prods):
         print(line)
+    affiliates_file(prods)
+    missing = [n for n, pr in prods.items() if pr['link'] and pr['key'] not in ('cabinetos',)
+               and n not in {t['name'] for c in json.loads((ROOT / 'content/pages/tools.json').read_text())['categories'] for t in c['tools']}]
+    if missing:
+        print('Confirmed but not on the Tools page yet (add with a description):', ', '.join(missing))
