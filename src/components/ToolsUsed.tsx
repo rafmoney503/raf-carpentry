@@ -16,12 +16,14 @@ export default function ToolsUsed({ tools }: { tools: Tool[] }) {
         {tools.map((tool, i) => {
           const href = tool.link || tool.url;
           const isExternal = href?.startsWith('http');
+          // Only shop links are paid links; Raf's own sites (like CabinetOS) are not.
+          const isShop = Boolean(href && /amazon\.|amzn\./.test(href));
           return (
             <a
               key={i}
               href={href}
               target={isExternal ? '_blank' : undefined}
-              rel={isExternal ? 'noopener sponsored' : undefined}
+              rel={isExternal ? (isShop ? 'noopener sponsored' : 'noopener') : undefined}
               className="inline-flex h-10 items-center gap-1.5 rounded-sm border border-line-strong bg-mount px-3.5 text-sm text-ink transition-colors hover:border-accent hover:text-accent"
             >
               {tool.name}

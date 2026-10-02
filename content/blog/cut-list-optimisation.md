@@ -6,7 +6,7 @@ date: 2026-04-05T00:00:00.000Z
 image: /images/Screenshot 2026-04-10 at 08.00.59.png
 tools:
   - name: Cabinetos App
-    link: 'https://cabinetos.com'
+    link: 'https://www.cabinetos.co.uk'
   - name: Makita Track Saw
     link: 'https://amazon.co.uk'
   - name: Shinwa Combination Square
