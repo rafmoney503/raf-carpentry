@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "TINA_PUBLIC_IS_LOCAL=true tinacms dev -c \"next dev\"",
-    "build": "tinacms build && next build",
+    "build": "node scripts/build-cms.mjs && next build",
     "start": "next start",
     "lint": "eslint"
   },
