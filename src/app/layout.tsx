@@ -26,6 +26,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.rafcarpentry.com'),
   title: 'Raf Carpentry | Fitted wardrobes and built-in furniture in London',
   description:
     'Fitted wardrobes, alcove units, cupboards and garden-office fit-outs across London. Every job is drawn in 3D before a single board is cut.',

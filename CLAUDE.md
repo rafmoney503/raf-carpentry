@@ -5,8 +5,8 @@
 Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrobes, cabinets, garden offices. Also building an app called Cabinetos and is a SketchUp expert. Active on Instagram (@rafcarpentry), TikTok (@rafcarpentry), Facebook.
 
 ## Project
-- **Site**: rafcarpentry.com (currently still pointed at old systeme.io — needs domain transfer to Vercel)
-- **Live preview**: https://raf-carpentry.vercel.app
+- **Site**: https://www.rafcarpentry.com (main address). raf-carpentry.vercel.app redirects there (next.config.ts).
+- **Vercel address**: https://raf-carpentry.vercel.app
 - **GitHub**: https://github.com/rafmoney503/raf-carpentry
 - **Stack**: Next.js 16 + Tailwind CSS v4 + TypeScript + TinaCMS
 - **Hosting**: Vercel (free tier, auto-deploys from GitHub main branch)
