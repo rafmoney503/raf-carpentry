@@ -4,7 +4,7 @@
   "title": "My Carpentry ",
   "titleAccent": "Tools",
   "intro": "Every tool here is something I personally use and recommend. No fluff — just the gear that makes my work better.",
-  "disclosure": "🔗 Some links are affiliate links. I earn a small commission if you buy through them — at no extra cost to you. This helps support my content.",
+  "disclosure": "Some links are affiliate links: I earn a small commission if you buy through them, at no extra cost to you. As an Amazon Associate I earn from qualifying purchases.",
   "categories": [
     {
       "name": "Power Tools",
@@ -13,14 +13,14 @@
         {
           "name": "Festool TSC 55 KEB Track Saw",
           "description": "My go-to for clean, straight cuts on sheet materials. Essential for cabinet work.",
-          "url": "#",
+          "url": "https://link.amazon/B09cZDeJP",
           "image": "",
-          "price": "£££"
+          "price": "££££"
         },
         {
           "name": "Festool Domino Joiner",
           "description": "Game-changer for strong, fast joinery. Worth every penny.",
-          "url": "#",
+          "url": "https://link.amazon/B0fjrVzgM",
           "image": "",
           "price": "££££"
         },
@@ -32,9 +32,44 @@
           "price": "££"
         },
         {
+          "name": "DeWalt Impact Driver",
+          "description": "Drives the screws on most of my fits, next to the drill.",
+          "url": "https://link.amazon/B0dwGcKYq",
+          "image": "",
+          "price": "££"
+        },
+        {
           "name": "DeWalt Cordless Jigsaw",
           "description": "For curved cuts and quick scribing on site.",
-          "url": "#",
+          "url": "https://link.amazon/B0i0c5CMu",
+          "image": "",
+          "price": "££"
+        },
+        {
+          "name": "DeWalt Mitre Saw",
+          "description": "Cordless, so it goes up into lofts and out into gardens. Trims, battens and deck boards.",
+          "url": "https://link.amazon/B05c5GsFX",
+          "image": "",
+          "price": "£££"
+        },
+        {
+          "name": "DeWalt Random Orbital Sander",
+          "description": "125 mm and cordless. For birch ply edges and filled MDF before paint.",
+          "url": "https://link.amazon/B031DQY1u",
+          "image": "",
+          "price": "££"
+        },
+        {
+          "name": "DeWalt Multi-Tool",
+          "description": "For cuts in place: notches, scribes and trimming on site.",
+          "url": "https://link.amazon/B06LvLFsZ",
+          "image": "",
+          "price": "££"
+        },
+        {
+          "name": "Makita Trim Router",
+          "description": "Small enough for one hand. I run it round templates for curved birch ply parts.",
+          "url": "https://link.amazon/B0036Ifid",
           "image": "",
           "price": "££"
         }
@@ -47,14 +82,14 @@
         {
           "name": "Stanley FatMax Tape Measure 5m",
           "description": "The yellow tape you see in every photo. Accurate and durable.",
-          "url": "#",
+          "url": "https://link.amazon/B0gnYBmMd",
           "image": "",
           "price": "£"
         },
         {
           "name": "Irwin Marples Chisels",
           "description": "Great edge retention, comfortable grip. Use them daily.",
-          "url": "#",
+          "url": "https://link.amazon/B0d24xz9j",
           "image": "",
           "price": "££"
         },
@@ -68,7 +103,14 @@
         {
           "name": "Stabila Spirit Level",
           "description": "Accurate and built to survive a building site.",
-          "url": "#",
+          "url": "https://link.amazon/B01e0FQsL",
+          "image": "",
+          "price": "££"
+        },
+        {
+          "name": "Stabila Digital Level",
+          "description": "Reads the exact angle as well as the bubble.",
+          "url": "https://link.amazon/B01AH95gQ",
           "image": "",
           "price": "££"
         }
@@ -81,7 +123,14 @@
         {
           "name": "Bosch Laser Measure",
           "description": "Instant room measurements. Saves hours on site surveys.",
-          "url": "#",
+          "url": "https://link.amazon/B0a1GvdVU",
+          "image": "",
+          "price": "££"
+        },
+        {
+          "name": "DeWalt Laser Level",
+          "description": "Throws a level line along a whole wall for fitting wardrobes and panelling.",
+          "url": "https://link.amazon/B0elL28Zc",
           "image": "",
           "price": "££"
         },
@@ -102,13 +151,26 @@
       ]
     },
     {
+      "name": "Workshop & Site",
+      "icon": "",
+      "tools": [
+        {
+          "name": "Henry Vacuum",
+          "description": "For the clean-up before I leave a job.",
+          "url": "https://link.amazon/B08MSwRs2",
+          "image": "",
+          "price": "££"
+        }
+      ]
+    },
+    {
       "name": "Software & Digital",
       "icon": "💻",
       "tools": [
         {
           "name": "SketchUp Pro",
           "description": "I design every project in 3D before building. Non-negotiable.",
-          "url": "#",
+          "url": "https://www.sketchup.com/",
           "image": "",
           "price": "£££"
         },

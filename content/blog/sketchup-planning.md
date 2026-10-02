@@ -6,11 +6,11 @@ category: "SketchUp"
 image: "/images/blog/sketchup-planning.jpg"
 tools:
   - name: "SketchUp Pro"
-    link: "#"
+    link: 'https://www.sketchup.com/'
   - name: "Bosch Laser Measure"
-    link: "#"
-  - name: "Stanley FatMax Tape 5m"
-    link: "#"
+    link: 'https://link.amazon/B0a1GvdVU'
+  - name: "Stanley FatMax Tape Measure 5m"
+    link: 'https://link.amazon/B0gnYBmMd'
 ---
 
 ## Why Every Carpenter Should Learn SketchUp

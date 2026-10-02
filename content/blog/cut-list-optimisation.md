@@ -7,10 +7,10 @@ image: /images/Screenshot 2026-04-10 at 08.00.59.png
 tools:
   - name: Cabinetos App
     link: 'https://www.cabinetos.co.uk'
-  - name: Festool Track Saw
-    link: 'https://amazon.co.uk'
+  - name: Festool TSC 55 KEB Track Saw
+    link: 'https://link.amazon/B09cZDeJP'
   - name: Shinwa Combination Square
-    link: 'https://amazon.co.uk'
+    link: '#'
 ---
 
 ## The Hidden Cost of Poor Cut Planning

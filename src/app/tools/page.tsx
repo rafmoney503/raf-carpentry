@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { readPageJson } from '@/lib/pages';
 import { Container, PageHeader, SectionHeading } from '@/components/ui';
+import { isAmazonLink } from '@/lib/affiliates';
 
 type ToolEntry = {
   name: string;
@@ -52,22 +53,36 @@ export default function ToolsPage() {
             <SectionHeading className="md:col-span-4">{cat.name}</SectionHeading>
             <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2 md:col-span-8">
               {cat.tools.map((tool, ti) => {
-                const href = tool.url;
-                const isExternal = href?.startsWith('http');
+                const href = tool.url && tool.url !== '#' ? tool.url : '';
+                const isExternal = href.startsWith('http');
+                const isShop = isAmazonLink(href);
+                const cls =
+                  'group block border-t border-line py-6 sm:[&:nth-child(-n+2)]:border-t-0 sm:[&:nth-child(-n+2)]:pt-0 [&:first-child]:border-t-0 [&:first-child]:pt-0';
+                const inner = (
+                  <>
+                    <div className="flex items-baseline justify-between gap-4">
+                      <h3 className={`text-[21px] font-[620] leading-snug transition-colors ${href ? 'group-hover:text-accent' : ''}`}>{tool.name}</h3>
+                      {tool.price ? (
+                        <span className="flex-none font-mono text-sm text-muted" aria-label={`Price band ${tool.price.length} of 4`}>{tool.price}</span>
+                      ) : null}
+                    </div>
+                    <p className="mt-2 text-[16px] leading-relaxed text-muted">{tool.description}</p>
+                    {href ? (
+                      <p className="mt-3 text-sm font-medium text-accent">{isShop ? 'View on Amazon' : isExternal ? 'Visit the website' : 'Find out more'} →</p>
+                    ) : null}
+                  </>
+                );
+                // Tools without a confirmed link are listed but not clickable.
+                if (!href) return <div key={ti} className={cls}>{inner}</div>;
                 return (
                   <a
                     key={ti}
                     href={href}
                     target={isExternal ? '_blank' : undefined}
-                    rel={isExternal ? 'noopener sponsored' : undefined}
-                    className="group block border-t border-line py-6 sm:[&:nth-child(-n+2)]:border-t-0 sm:[&:nth-child(-n+2)]:pt-0 [&:first-child]:border-t-0 [&:first-child]:pt-0"
+                    rel={isExternal ? (isShop ? 'sponsored nofollow noopener' : 'noopener') : undefined}
+                    className={cls}
                   >
-                    <div className="flex items-baseline justify-between gap-4">
-                      <h3 className="text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">{tool.name}</h3>
-                      <span className="flex-none font-mono text-sm text-muted" aria-label={`Price band ${tool.price.length} of 4`}>{tool.price}</span>
-                    </div>
-                    <p className="mt-2 text-[16px] leading-relaxed text-muted">{tool.description}</p>
-                    {isExternal && <p className="mt-3 text-sm font-medium text-accent">View on Amazon →</p>}
+                    {inner}
                   </a>
                 );
               })}
