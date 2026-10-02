@@ -1,5 +1,5 @@
 # Raf Carpentry — Project Context for Claude
-# Updated: 9 April 2026
+# Updated: 2 October 2026
 
 ## Owner
 Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrobes, cabinets, garden offices. Also building an app called Cabinetos and is a SketchUp expert. Active on Instagram (@rafcarpentry), TikTok (@rafcarpentry), Facebook.
@@ -8,19 +8,24 @@ Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrob
 - **Site**: rafcarpentry.com (currently still pointed at old systeme.io — needs domain transfer to Vercel)
 - **Live preview**: https://raf-carpentry.vercel.app
 - **GitHub**: https://github.com/rafmoney503/raf-carpentry
-- **Stack**: Next.js 15 + Tailwind CSS v4 + TypeScript
+- **Stack**: Next.js 16 + Tailwind CSS v4 + TypeScript + TinaCMS
 - **Hosting**: Vercel (free tier, auto-deploys from GitHub main branch)
 - **Blog**: Markdown files in content/blog/ — parsed with gray-matter + remark
 
-## Design
-- **Theme**: Dark craftsman aesthetic — dark background (#0f1114), gold accents (#d4a853)
-- **Fonts**: Playfair Display (headings), DM Sans (body) — loaded via Google Fonts
-- **Logo**: Crisp black R on white circle (public/images/r-logo-final.png). V1 clean/thin lines chosen.
-- **Tailwind v4**: Uses `@import "tailwindcss"` NOT old `@tailwind` directives. CSS variables like `bg-[--text]` may not work — use hardcoded values or `bg-[var(--text)]`.
+## Design (redesign, October 2026: "drafting paper")
+- **Look**: light paper background, pencil-grey text, one blueprint-blue accent, square 2px corners, photos on a white mount with a hairline border and soft shadow.
+- **Colours** (Tailwind tokens in src/app/globals.css `@theme`): paper #f1f2ef, raised #e6e7e2, mount #fbfbf9, ink #16191c, muted #4f555b, faint #5e646a, accent #2547d0 (hover #1b38ad). Use `bg-paper`, `bg-raised`, `text-ink`, `text-muted`, `text-faint`, `border-line`, `border-line-strong`, `bg-accent`, `text-accent`, `text-on-accent`. Do not use hex colours or zinc/gray classes in pages.
+- **Fonts** (self-hosted in src/fonts, loaded in src/app/layout.tsx with next/font/local): Bricolage Grotesque for headings (`font-display`), Geist for body (`font-sans`), Geist Mono for small labels and measurements (`font-mono`).
+- **Shared pieces**: `.btn .btn-primary .btn-ghost .btn-sm`, `.link-more`, `.kicker`, `.mount` (globals.css); `Container`, `PageHeader`, `SectionHeading`, `MountedImage` (src/components/ui.tsx); `QuoteForm` (src/components/QuoteForm.tsx, used on home and contact).
+- **Homepage**: src/app/page.tsx + src/app/home.css, content from content/pages/home.json (editable in TinaCMS).
+- **Rules (taste-skill)**: no em-dashes in new copy, no emoji icons, one accent colour, one "Get a quote" label for every quote button, max 20 words under the hero headline.
+- **Logo**: Crisp black R on white circle (public/images/r-logo-final.png).
+- **Quote form**: not connected to a mail service yet. It opens the visitor's email app with the enquiry written out to info@rafcarpentry.com. Swap handleSubmit in QuoteForm.tsx for Formspree or Resend when ready.
+- **/editor**: old Supabase editor, not restyled. It needs NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY at build time. TinaCMS (/admin) is the editor to use.
 
 ## Pages Built (all working)
-1. **/** — Homepage: hero (photo of Raf measuring), 3 services, 4 featured projects (all with real photos), Cabinetos CTA, blog preview (3 posts), contact CTA
-2. **/portfolio** — Gallery with category filters (placeholder filtering, real structure)
+1. **/** — Homepage: split hero (birch wardrobe photo), facts strip, 'What I build' (3 photo tiles), SketchUp process with the drawing, CabinetOS band, 3 newest blog posts, quote form
+2. **/portfolio** — Gallery with working category filters
 3. **/cabinetos** — Product landing page: features, before/after comparison, FAQ
 4. **/sketchup** — Authority page: benefits, 3D vs real build comparison slots
 5. **/blog** — Blog listing from markdown files
@@ -65,7 +70,7 @@ Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrob
 - [x] Mobile hamburger menu fixed (white lines)
 
 ## What's TODO
-- [ ] Connect contact form to backend (Formspree or similar)
+- [ ] Connect the quote form to a backend (Formspree or Resend); it currently opens the email app
 - [ ] Point rafcarpentry.com domain to Vercel
 - [ ] Add real Amazon affiliate URLs to src/lib/affiliates.ts
 - [ ] Connect affiliates.ts config to the Tools page (currently Tools page has hardcoded links)
@@ -77,7 +82,7 @@ Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrob
 - [ ] Add blog images for cut-list and outdoor-gym posts
 - [ ] About page: add real photo of Raf
 - [ ] Cabinetos page: add app screenshots/demo when ready
-- [ ] Make portfolio filter buttons functional (currently static)
+- [x] Make portfolio filter buttons functional (currently static)
 
 ## How to Push Updates
 ```bash

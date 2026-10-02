@@ -3,7 +3,7 @@ title: "Building an Outdoor Gym During Lockdown"
 date: "2026-03-20"
 excerpt: "When COVID shut everything down, I turned to my carpentry skills to build something useful — a full timber-frame outdoor gym."
 category: "Projects"
-image: "/images/blog/outdoor-gym.jpg"
+image: "/images/projects/outdoor-gym.jpg"
 ---
 
 ## When the World Stopped, I Started Building

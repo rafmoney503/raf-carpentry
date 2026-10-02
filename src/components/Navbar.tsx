@@ -5,78 +5,83 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 const links = [
-  { href: '/', label: 'Home' },
   { href: '/portfolio', label: 'My Work' },
-  { href: '/cabinetos', label: 'Cabinetos' },
   { href: '/sketchup', label: 'SketchUp' },
+  { href: '/cabinetos', label: 'CabinetOS' },
   { href: '/blog', label: 'Blog' },
   { href: '/tools', label: 'Tools' },
   { href: '/about', label: 'About' },
-  { href: '/contact', label: 'Contact' },
 ];
+
+export const PHONE_DISPLAY = '07792 860221';
+export const PHONE_HREF = 'tel:07792860221';
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const quoteHref = pathname === '/' ? '#quote' : '/contact';
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-[#0f1114]/80 border-b border-[--border]">
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-full overflow-hidden bg-white flex items-center justify-center">
-            <Image src="/images/r-logo-final.png" alt="R" width={36} height={36} className="w-full h-full object-cover" />
-          </div>
-          <span className="font-bold text-lg tracking-tight">Raf Carpentry</span>
+    <header className="sticky top-0 z-50 border-b border-line bg-paper/90 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-3 px-5 md:h-[72px] md:gap-8 md:px-10">
+        <Link href="/" className="flex items-center gap-3 whitespace-nowrap text-[17px] font-semibold tracking-tight">
+          <span className="h-9 w-9 flex-none overflow-hidden rounded-full bg-[#f4f1ea] ring-1 ring-line-strong">
+            <Image src="/images/r-logo-final.png" alt="" width={36} height={36} className="h-full w-full object-cover" />
+          </span>
+          Raf Carpentry
         </Link>
 
-        {/* Desktop */}
-        <div className="hidden md:flex items-center gap-1">
-          {links.map(l => (
+        <nav aria-label="Main" className="ml-auto hidden gap-1 lg:flex">
+          {links.map((l) => (
             <Link
               key={l.href}
               href={l.href}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                pathname === l.href
-                  ? 'text-[--gold] bg-[rgba(212,168,83,0.1)]'
-                  : 'text-[--text-muted] hover:text-[--text] hover:bg-[--bg-card]'
-              }`}
+              aria-current={pathname === l.href || pathname.startsWith(l.href + '/') ? 'page' : undefined}
+              className="whitespace-nowrap rounded-sm px-3 py-2 text-[15px] text-muted transition-colors hover:text-ink aria-[current=page]:text-accent"
             >
               {l.label}
             </Link>
           ))}
-        </div>
+        </nav>
 
-        {/* Mobile toggle */}
-        <button
-          onClick={() => setOpen(!open)}
-          className="md:hidden w-9 h-9 flex flex-col items-center justify-center gap-1.5"
-          aria-label="Menu"
-        >
-          <span className={`w-5 h-0.5 bg-white transition-all ${open ? 'rotate-45 translate-y-1' : ''}`} />
-          <span className={`w-5 h-0.5 bg-white transition-all ${open ? 'opacity-0' : ''}`} />
-          <span className={`w-5 h-0.5 bg-white transition-all ${open ? '-rotate-45 -translate-y-1' : ''}`} />
-        </button>
+        <div className="ml-auto flex items-center gap-2.5 lg:ml-0 lg:gap-5">
+          <a href={PHONE_HREF} className="hidden whitespace-nowrap font-mono text-sm text-ink xl:inline">
+            {PHONE_DISPLAY}
+          </a>
+          <Link href={quoteHref} className="btn btn-primary btn-sm">
+            Get a quote
+          </Link>
+          <button
+            type="button"
+            onClick={() => setOpen(!open)}
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-expanded={open}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-sm border border-line-strong text-ink lg:hidden"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+              {open ? <path d="M5 5l10 10M15 5L5 15" /> : <path d="M3 7h14M3 13h14" />}
+            </svg>
+          </button>
+        </div>
       </div>
 
-      {/* Mobile menu */}
       {open && (
-        <div className="md:hidden bg-[--bg-card] border-b border-[--border] px-6 py-4 flex flex-col gap-1">
-          {links.map(l => (
+        <nav aria-label="Mobile" className="border-t border-line bg-paper px-5 pb-6 pt-2 lg:hidden">
+          {[...links, { href: '/contact', label: 'Contact' }].map((l) => (
             <Link
               key={l.href}
               href={l.href}
               onClick={() => setOpen(false)}
-              className={`px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                pathname === l.href
-                  ? 'text-[--gold] bg-[rgba(212,168,83,0.1)]'
-                  : 'text-[--text-muted] hover:text-[--text]'
-              }`}
+              className="block border-b border-line py-3.5 text-[17px] text-ink"
             >
               {l.label}
             </Link>
           ))}
-        </div>
+          <a href={PHONE_HREF} className="mt-5 block font-mono text-[15px] text-ink">
+            {PHONE_DISPLAY}
+          </a>
+        </nav>
       )}
-    </nav>
+    </header>
   );
 }

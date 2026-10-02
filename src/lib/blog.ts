@@ -39,7 +39,8 @@ export function getAllPosts(): Post[] {
       image: data.image || undefined,
     };
   });
-  return posts.sort((a, b) => (a.date > b.date ? -1 : 1));
+  const time = (v: unknown) => new Date(v instanceof Date ? v : String(v)).getTime() || 0;
+  return posts.sort((a, b) => time(b.date) - time(a.date));
 }
 
 export async function getPostBySlug(slug: string): Promise<Post | null> {

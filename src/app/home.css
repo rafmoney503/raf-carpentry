@@ -1,0 +1,158 @@
+/* Homepage layout. Colours, fonts, buttons and .mount come from globals.css. */
+
+.home { --gap: 24px; font-size: 17px; line-height: 1.6; }
+.home .wrap { width: 100%; max-width: 1280px; margin: 0 auto; padding-inline: 40px; }
+.home .grid12 { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--gap); }
+.home .h2 { font-family: var(--font-display); font-weight: 650; font-size: 46px; line-height: 1.04; letter-spacing: -0.025em; }
+.home .lede { color: var(--color-muted); max-width: 56ch; margin-top: 18px; text-wrap: pretty; }
+.home .photo { position: relative; overflow: hidden; background: var(--color-raised); }
+.home .photo img { object-fit: cover; }
+
+/* Hero */
+.home .hero { padding-block: 72px 104px; align-items: center; row-gap: 48px; }
+.home .hero-copy { grid-column: 1 / span 7; }
+.home .hero .kicker { margin-bottom: 28px; }
+.home .h1 { font-family: var(--font-display); font-weight: 680; font-size: 66px; line-height: 1.02; letter-spacing: -0.035em; max-width: 13.5em; text-wrap: balance; }
+.home .h1 em { font-style: normal; color: var(--color-accent); }
+.home .hero-sub { margin-top: 28px; font-size: 19px; color: var(--color-muted); max-width: 33em; }
+.home .hero-ctas { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 40px; }
+.home .hero-visual { grid-column: 8 / span 5; margin: 0; }
+.home .hero-photo { aspect-ratio: 4 / 5; }
+.home .hero-photo img { object-position: 50% 45%; }
+
+/* Facts */
+.home .facts { border-top: 1px solid var(--color-line); padding-top: 44px; row-gap: 36px; }
+.home .fact { grid-column: span 3; }
+.home .fact-v { font-family: var(--font-display); font-weight: 620; font-size: 50px; line-height: 1; letter-spacing: -0.03em; }
+.home .fact-v small { font-family: var(--font-mono); font-size: 18px; font-weight: 500; letter-spacing: 0; margin-left: 6px; color: var(--color-muted); }
+.home .fact-l { margin-top: 12px; font-size: 15px; line-height: 1.5; color: var(--color-muted); max-width: 24ch; }
+
+/* Sections */
+.home .sec { padding-block: 120px; }
+.home .sec-head { max-width: 760px; margin-bottom: 56px; }
+
+/* What I build */
+.home .build { row-gap: 40px; }
+.home .tile { display: flex; flex-direction: column; }
+.home .tile-a { grid-column: 1 / span 7; grid-row: 1 / span 2; }
+.home .tile-b { grid-column: 8 / span 5; grid-row: 1; }
+.home .tile-c { grid-column: 8 / span 5; grid-row: 2; }
+.home .tile-a .mount { flex: 1 1 auto; display: flex; }
+.home .tile-a .photo { flex: 1 1 auto; min-height: 520px; }
+.home .tile-a .photo img { object-position: 50% 40%; }
+.home .tile-b .photo, .home .tile-c .photo { aspect-ratio: 3 / 2; }
+.home .tile-c .photo img { object-position: 50% 38%; }
+.home .tile:hover .mount { border-color: var(--color-accent); }
+.home .tile h3 { margin-top: 20px; font-weight: 620; font-size: 26px; letter-spacing: -0.02em; line-height: 1.15; }
+.home .tile p { margin-top: 8px; color: var(--color-muted); font-size: 16px; max-width: 44ch; }
+.home .build-foot { margin-top: 48px; }
+
+/* Process */
+.home .process { background: var(--color-raised); border-block: 1px solid var(--color-line); }
+.home .process .grid12 { align-items: start; row-gap: 56px; }
+.home .drawing { grid-column: 1 / span 6; position: sticky; top: 112px; margin: 0; }
+.home .drawing img { width: 100%; max-width: 560px; height: auto; }
+.home .drawing figcaption { margin-top: 18px; font-family: var(--font-mono); font-size: 13px; color: var(--color-faint); }
+.home .process-copy { grid-column: 8 / span 5; }
+.home .steps { margin-top: 48px; border-top: 1px solid var(--color-line); }
+.home .step { padding-top: 32px; }
+.home .step h3 { font-weight: 620; font-size: 30px; letter-spacing: -0.02em; line-height: 1.1; }
+.home .step p { margin-top: 10px; color: var(--color-muted); }
+.home .process-foot { margin-top: 44px; }
+
+/* CabinetOS */
+.home .app { overflow: hidden; }
+.home .app .grid12 { align-items: center; row-gap: 48px; }
+.home .app-copy { grid-column: 1 / span 5; }
+.home .app-copy .kicker { margin-bottom: 20px; }
+.home .app-copy .link-more { margin-top: 32px; }
+.home .app-shot { grid-column: 7 / span 6; margin: 0; }
+.home .app-frame { width: 128%; border: 1px solid var(--color-line-strong); border-radius: 2px; overflow: hidden; background: #f6f7f8; }
+.home .app-frame img { width: 100%; height: auto; }
+
+/* Blog */
+.home .blog { padding-top: 0; }
+.home .blog .sec-head { margin-bottom: 24px; }
+.home .post { display: grid; grid-template-columns: 150px minmax(0, 1fr) 140px 32px; align-items: baseline; column-gap: 24px; padding-block: 28px; }
+.home li + li .post { border-top: 1px solid var(--color-line); }
+.home .post-date { font-family: var(--font-mono); font-size: 13px; color: var(--color-faint); }
+.home .post-title { font-family: var(--font-display); font-weight: 600; font-size: 25px; line-height: 1.2; letter-spacing: -0.015em; transition: color 0.2s var(--ease-soft); }
+.home .post-cat { font-size: 15px; color: var(--color-muted); }
+.home .post-arrow { color: var(--color-accent); justify-self: end; transition: transform 0.3s var(--ease-soft); }
+.home .post:hover .post-title { color: var(--color-accent); }
+.home .post:hover .post-arrow { transform: translateX(4px); }
+
+/* Quote */
+.home .quote { border-top: 1px solid var(--color-line); }
+.home .quote .grid12 { row-gap: 48px; align-items: start; }
+.home .quote-copy { grid-column: 1 / span 5; }
+.home .direct { margin-top: 44px; display: grid; gap: 22px; }
+.home .direct-l { font-size: 14px; color: var(--color-faint); }
+.home .direct-v { display: inline-block; margin-top: 4px; font-family: var(--font-display); font-weight: 600; font-size: 28px; letter-spacing: -0.015em; line-height: 1.2; }
+.home .direct-v:hover { color: var(--color-accent); }
+.home .quote-form { grid-column: 7 / span 6; }
+
+/* Motion: hero entrance, a gentle lift as sections scroll in. Transform only, so nothing is ever hidden. */
+@keyframes home-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes home-lift { from { transform: translateY(20px); } to { transform: none; } }
+.home .anim { animation: home-rise 0.9s var(--ease-soft) both; }
+.home .d1 { animation-delay: 0.08s; }
+.home .d2 { animation-delay: 0.18s; }
+.home .d3 { animation-delay: 0.28s; }
+@supports (animation-timeline: view()) {
+  .home .reveal { animation: home-lift linear both; animation-timeline: view(); animation-range: entry 0% entry 60%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home .anim, .home .reveal { animation: none !important; }
+}
+
+/* Laptop */
+@media (max-width: 1180px) {
+  .home .h1 { font-size: 58px; }
+}
+
+/* Tablet and phone: everything stacks into one column. */
+@media (max-width: 860px) {
+  .home .wrap { padding-inline: 20px; }
+  .home .grid12 { grid-template-columns: minmax(0, 1fr); }
+  .home .grid12 > * { grid-column: 1 / -1 !important; grid-row: auto !important; }
+
+  .home .hero { padding-block: 36px 64px; row-gap: 40px; }
+  .home .hero .kicker { margin-bottom: 20px; font-size: 13px; }
+  .home .h1 { font-size: 44px; letter-spacing: -0.03em; text-wrap: wrap; }
+  .home .hero-sub { font-size: 17px; margin-top: 20px; }
+  .home .hero-ctas { margin-top: 32px; }
+  .home .hero-ctas .btn { flex: 1 1 0; padding-inline: 16px; }
+  .home .hero-photo { aspect-ratio: 4 / 4.4; }
+
+  .home .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; row-gap: 32px; padding-top: 36px; }
+  .home .facts > .fact { grid-column: span 1 !important; }
+  .home .fact-v { font-size: 40px; }
+  .home .fact-v small { font-size: 15px; }
+  .home .fact-l { font-size: 14px; }
+
+  .home .sec { padding-block: 80px; }
+  .home .blog { padding-top: 0; }
+  .home .sec-head { margin-bottom: 36px; }
+  .home .h2 { font-size: 34px; }
+  .home .tile-a .mount { flex: none; display: block; }
+  .home .tile-a .photo { min-height: 0; aspect-ratio: 4 / 5; }
+  .home .tile h3 { font-size: 23px; margin-top: 16px; }
+  .home .build-foot { margin-top: 36px; }
+
+  .home .drawing { position: static; }
+  .home .drawing img { max-width: 100%; }
+  .home .steps { margin-top: 36px; }
+  .home .step { padding-top: 26px; }
+  .home .step h3 { font-size: 25px; }
+
+  .home .app-frame { width: 100%; }
+
+  .home .post { grid-template-columns: minmax(0, 1fr) 24px; row-gap: 8px; padding-block: 22px; }
+  .home .post-date { grid-column: 1; grid-row: 1; }
+  .home .post-title { grid-column: 1; grid-row: 2; font-size: 21px; }
+  .home .post-cat { display: none; }
+  .home .post-arrow { grid-column: 2; grid-row: 2; }
+
+  .home .direct-v { font-size: 24px; }
+}

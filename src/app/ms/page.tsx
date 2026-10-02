@@ -31,90 +31,48 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function MiniSite() {
   const d = readPageJson<MsPageData>('ms.json');
+  const socials = [
+    { href: d.instagramUrl, label: 'Instagram' },
+    { href: d.tiktokUrl, label: 'TikTok' },
+    { href: d.facebookUrl, label: 'Facebook' },
+  ].filter((s) => s.href);
 
   return (
-    <div className="min-h-screen flex flex-col items-center px-5 py-10 max-w-lg mx-auto">
-      <div className="flex flex-col items-center mb-8">
-        <div className="w-24 h-24 rounded-full overflow-hidden border-[3px] border-[--gold] mb-4 bg-white flex items-center justify-center">
-          <Image
-            src="/images/r-logo-final.png"
-            alt="Raf Carpentry Logo"
-            width={96}
-            height={96}
-            className="w-full h-full object-cover"
-          />
+    <div className="mx-auto flex min-h-screen max-w-lg flex-col px-5 py-12">
+      <div className="flex flex-col items-center text-center">
+        <div className="h-20 w-20 overflow-hidden rounded-full bg-[#f4f1ea] ring-1 ring-line-strong">
+          <Image src="/images/r-logo-final.png" alt="Raf Carpentry logo" width={80} height={80} className="h-full w-full object-cover" priority />
         </div>
-        <h1 className="text-xl font-bold">{d.title}</h1>
-        <p className="text-sm text-[--text-muted] mt-1">{d.subtitle}</p>
-
-        <div className="flex gap-4 mt-4">
-          <a
-            href={d.instagramUrl}
-            target="_blank"
-            rel="noopener"
-            className="w-10 h-10 rounded-full border border-[--border] flex items-center justify-center text-[--text-muted] hover:border-[--gold] hover:text-[--gold] transition-colors text-sm"
-            aria-label="Instagram"
-          >
-            {'\u{1F4F7}'}
-          </a>
-          <a
-            href={d.tiktokUrl}
-            target="_blank"
-            rel="noopener"
-            className="w-10 h-10 rounded-full border border-[--border] flex items-center justify-center text-[--text-muted] hover:border-[--gold] hover:text-[--gold] transition-colors text-sm"
-            aria-label="TikTok"
-          >
-            {'\u{1F3B5}'}
-          </a>
-          <a
-            href={d.facebookUrl}
-            target="_blank"
-            rel="noopener"
-            className="w-10 h-10 rounded-full border border-[--border] flex items-center justify-center text-[--text-muted] hover:border-[--gold] hover:text-[--gold] transition-colors text-sm"
-            aria-label="Facebook"
-          >
-            {'\u{1F4D8}'}
-          </a>
+        <h1 className="mt-5 font-display text-[28px] font-[680] tracking-[-0.025em]">{d.title}</h1>
+        <p className="mt-1 text-[15px] text-muted">{d.subtitle}</p>
+        <div className="mt-5 flex gap-2">
+          {socials.map((s) => (
+            <a key={s.label} href={s.href} target="_blank" rel="noopener" className="btn btn-ghost btn-sm">
+              {s.label}
+            </a>
+          ))}
         </div>
       </div>
 
-      <div className="w-full space-y-3">
+      <div className="mt-10 w-full space-y-3">
         {d.links.map((link, i) => (
           <a
             key={i}
             href={link.url}
-            className={`block w-full rounded-2xl border p-4 transition-all duration-200 group ${
-              link.highlight
-                ? 'border-[--gold] bg-gradient-to-r from-[rgba(212,168,83,0.1)] to-[rgba(212,168,83,0.03)] hover:from-[rgba(212,168,83,0.15)] hover:to-[rgba(212,168,83,0.06)]'
-                : 'border-[--border] bg-[--bg-card] hover:border-[rgba(212,168,83,0.3)] hover:bg-[--bg-card-hover]'
+            className={`group flex min-h-[68px] items-center gap-4 rounded-sm border px-5 py-4 transition-colors ${
+              link.highlight ? 'border-accent bg-accent text-on-accent hover:bg-accent-hover' : 'border-line-strong bg-mount hover:border-accent'
             }`}
           >
-            <div className="flex items-center gap-4">
-              <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
-                link.highlight ? 'bg-[rgba(212,168,83,0.2)]' : 'bg-[rgba(212,168,83,0.08)]'
-              }`}>
-                {link.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className={`font-bold text-sm group-hover:text-[--gold] transition-colors ${
-                  link.highlight ? 'text-[--gold]' : ''
-                }`}>
-                  {link.highlight && <span className="text-[--gold-light]">NEW {'\u26A1'} </span>}
-                  {link.label}
-                </div>
-                <div className="text-xs text-[--text-muted] mt-0.5 leading-snug">{link.subtitle}</div>
-              </div>
-              <div className="text-[--text-muted] text-sm opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                →
-              </div>
+            <div className="min-w-0 flex-1">
+              <div className={`text-[16px] font-semibold ${link.highlight ? '' : 'transition-colors group-hover:text-accent'}`}>{link.label}</div>
+              <div className={`mt-0.5 text-[13px] leading-snug ${link.highlight ? 'text-on-accent/80' : 'text-muted'}`}>{link.subtitle}</div>
             </div>
+            <span aria-hidden="true" className={`flex-none transition-transform group-hover:translate-x-1 ${link.highlight ? '' : 'text-accent'}`}>→</span>
           </a>
         ))}
       </div>
 
-      <div className="mt-10 text-center">
-        <p className="text-xs text-[--text-muted]">© {new Date().getFullYear()} Raf Carpentry</p>
-      </div>
+      <p className="mt-auto pt-12 text-center text-xs text-faint">© {new Date().getFullYear()} Raf Carpentry</p>
     </div>
   );
 }

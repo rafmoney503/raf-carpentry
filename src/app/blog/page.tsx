@@ -1,67 +1,53 @@
+import fs from 'fs';
+import path from 'path';
 import Link from 'next/link';
 import { getAllPosts } from '@/lib/blog';
+import { Container, MountedImage, PageHeader } from '@/components/ui';
+
+function imageExists(src?: string) {
+  if (!src || !src.startsWith('/')) return false;
+  return fs.existsSync(path.join(process.cwd(), 'public', src));
+}
+
+function formatDate(value: unknown) {
+  const d = new Date(value instanceof Date ? value : String(value));
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/London' });
+}
 
 export default function Blog() {
   const posts = getAllPosts();
 
   return (
     <>
-      <section className="max-w-6xl mx-auto px-6 pt-24 pb-10 md:pt-32">
-        <div className="gold-line mb-6" />
-        <h1 className="text-4xl md:text-5xl font-bold mb-4">
-          The Workshop <span className="gold-text">Journal</span>
-        </h1>
-        <p className="text-lg text-[--text-muted] max-w-lg">
-          Tips, tutorials, and behind-the-scenes from a carpenter who codes.
-        </p>
-      </section>
-
-      <section className="max-w-6xl mx-auto px-6 pb-20">
+      <PageHeader title="The Workshop" accent="Journal" lede="Tips, tutorials and behind-the-scenes from a carpenter who codes." />
+      <Container className="pb-24 md:pb-32">
         {posts.length === 0 ? (
-          <div className="text-center py-20 rounded-2xl border border-[--border] bg-[--bg-card]">
-            <span className="text-5xl block mb-4">📝</span>
-            <p className="text-[--text-muted]">Blog posts coming soon!</p>
-          </div>
+          <p className="border-t border-line pt-8 text-muted">The first posts are on their way.</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {posts.map(post => (
-              <Link
-                key={post.slug}
-                href={`/blog/${post.slug}`}
-                className="card-hover bg-[--bg-card] border border-[--border] rounded-2xl overflow-hidden group"
-              >
-                <div className="aspect-video bg-[--bg-card-hover] flex items-center justify-center relative overflow-hidden">
-                  {post.image ? (
-                    <div className="absolute inset-0 bg-[--bg-card-hover] flex items-center justify-center">
-                      <span className="text-4xl opacity-20">📷</span>
+          <div className="grid grid-cols-1 gap-x-6 gap-y-14 md:grid-cols-2 lg:grid-cols-3">
+            {posts.map((post) => (
+              <Link key={post.slug} href={`/blog/${post.slug}`} className="group block">
+                {imageExists(post.image) ? (
+                  <MountedImage src={post.image as string} alt="" aspect="aspect-[16/10]" sizes="(max-width: 768px) 100vw, 400px" className="group-hover:border-accent" />
+                ) : (
+                  <div className="mount group-hover:border-accent">
+                    <div className="flex aspect-[16/10] items-end bg-raised p-5">
+                      <span className="font-mono text-[13px] text-faint">{post.category}</span>
                     </div>
-                  ) : (
-                    <span className="text-4xl opacity-20">📝</span>
-                  )}
-                </div>
-                <div className="p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[--gold]">{post.category}</span>
-                    <span className="text-xs text-[--text-muted]">·</span>
-                    <span className="text-xs text-[--text-muted]">
-                      {new Date(post.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </span>
                   </div>
-                  <h3 className="font-bold text-lg mb-2 group-hover:text-[--gold] transition-colors leading-snug">
-                    {post.title}
-                  </h3>
-                  <p className="text-sm text-[--text-muted] leading-relaxed line-clamp-2">
-                    {post.excerpt}
-                  </p>
-                  <div className="mt-4 text-sm text-[--gold] opacity-0 group-hover:opacity-100 transition-opacity">
-                    Read more →
-                  </div>
-                </div>
+                )}
+                <p className="mt-5 font-mono text-[13px] text-faint">
+                  {formatDate(post.date)}
+                  <span className="text-line-strong"> / </span>
+                  {post.category}
+                </p>
+                <h2 className="mt-2 text-[24px] font-[620] leading-tight transition-colors group-hover:text-accent">{post.title}</h2>
+                <p className="mt-2 line-clamp-3 text-[16px] leading-relaxed text-muted">{post.excerpt}</p>
               </Link>
             ))}
           </div>
         )}
-      </section>
+      </Container>
     </>
   );
 }

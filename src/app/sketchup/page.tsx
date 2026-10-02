@@ -1,5 +1,6 @@
-import Image from "next/image";
-import { readPageJson } from "@/lib/pages";
+import Link from 'next/link';
+import { readPageJson } from '@/lib/pages';
+import { Container, MountedImage, SectionHeading } from '@/components/ui';
 
 type SketchupPageData = {
   heroTitle: string;
@@ -26,107 +27,78 @@ type SketchupPageData = {
 };
 
 export default function SketchUpPage() {
-  const d = readPageJson<SketchupPageData>("sketchup.json");
+  const d = readPageJson<SketchupPageData>('sketchup.json');
 
   return (
-    <main className="min-h-screen bg-[#0f1114] text-white">
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-8">
-            <h1 className="text-3xl font-serif mb-6">
-              {d.heroTitle}<span className="text-[#d4a853]">{d.heroTitleAccent}</span>
+    <>
+      <Container className="pb-20 pt-12 md:pb-28 md:pt-20">
+        <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-12 md:gap-6">
+          <div className="md:col-span-6">
+            <h1 className="font-display text-[40px] font-[680] leading-[1.04] tracking-[-0.03em] md:text-[58px]">
+              {d.heroTitle}
+              <span className="text-accent">{d.heroTitleAccent}</span>
             </h1>
-            <div className="space-y-4 text-gray-300">
+            <div className="mt-8 max-w-[58ch] space-y-4 text-[17px] leading-relaxed text-muted">
               {d.heroParagraphs.map((p, i) => (
                 <p key={i}>{p}</p>
               ))}
             </div>
           </div>
+          <figure className="md:col-span-5 md:col-start-8">
+            <MountedImage src={d.heroImage} alt={d.heroImageAlt} aspect="aspect-square" contain priority sizes="(max-width: 768px) 100vw, 480px" />
+            <figcaption className="mt-4 font-mono text-[13px] text-faint">{d.heroImageCaption}</figcaption>
+          </figure>
+        </div>
+      </Container>
 
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-6">
-            <div className="relative aspect-square rounded-lg overflow-hidden bg-white">
-              <Image
-                src={d.heroImage}
-                alt={d.heroImageAlt}
-                fill
-                className="object-contain p-4"
-              />
+      <section className="border-y border-line bg-raised py-20 md:py-28">
+        <Container>
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:gap-6">
+            <SectionHeading className="md:col-span-5">
+              {d.benefitsSectionTitle}
+              <span className="text-accent">{d.benefitsSectionTitleAccent}</span>
+            </SectionHeading>
+            <div className="md:col-span-7">
+              {d.benefits.map((b, i) => (
+                <div key={i} className="border-t border-line py-7 first:border-t-0 first:pt-0">
+                  <h3 className="text-[25px] font-[620] leading-tight">{b.title}</h3>
+                  <p className="mt-2 max-w-[56ch] text-muted">{b.description}</p>
+                </div>
+              ))}
             </div>
-            <p className="text-center text-gray-400 text-sm mt-3">
-              {d.heroImageCaption}
-            </p>
           </div>
-        </div>
+        </Container>
       </section>
 
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <h2 className="text-3xl md:text-4xl font-serif text-center mb-12">
-          {d.benefitsSectionTitle}<span className="text-[#d4a853]">{d.benefitsSectionTitleAccent}</span>
-        </h2>
-        <div className="grid md:grid-cols-3 gap-6">
-          {d.benefits.map((benefit, index) => (
-            <div
-              key={index}
-              className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-6"
-            >
-              <div className="text-3xl mb-4">{benefit.icon}</div>
-              <h3 className="text-lg font-semibold mb-2">{benefit.title}</h3>
-              <p className="text-gray-400 text-sm">{benefit.description}</p>
-            </div>
-          ))}
+      <Container className="py-20 md:py-28">
+        <SectionHeading>
+          {d.comparisonTitle}
+          <span className="text-accent">{d.comparisonTitleAccent}</span>
+        </SectionHeading>
+        <p className="mt-4 max-w-[56ch] text-muted">{d.comparisonSubtitle}</p>
+        <div className="mt-12 grid grid-cols-1 gap-x-6 gap-y-10 md:grid-cols-2">
+          <figure>
+            <MountedImage src={d.comparisonModelImage} alt={d.comparisonModelAlt} aspect="aspect-[4/3]" contain />
+            <figcaption className="mt-4 text-[17px] font-semibold">{d.comparisonModelLabel}</figcaption>
+          </figure>
+          <figure>
+            <MountedImage src={d.comparisonBuildImage} alt={d.comparisonBuildAlt} aspect="aspect-[4/3]" />
+            <figcaption className="mt-4 text-[17px] font-semibold">{d.comparisonBuildLabel}</figcaption>
+          </figure>
         </div>
-      </section>
+      </Container>
 
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <h2 className="text-3xl md:text-4xl font-serif text-center mb-4">
-          {d.comparisonTitle}<span className="text-[#d4a853]">{d.comparisonTitleAccent}</span>
-        </h2>
-        <p className="text-gray-400 text-center max-w-2xl mx-auto mb-12">
-          {d.comparisonSubtitle}
-        </p>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-6">
-            <div className="relative aspect-video rounded-lg overflow-hidden bg-white mb-4">
-              <Image
-                src={d.comparisonModelImage}
-                alt={d.comparisonModelAlt}
-                fill
-                className="object-contain p-4"
-              />
-            </div>
-            <p className="text-center text-[#d4a853] font-medium">{d.comparisonModelLabel}</p>
+      <section className="border-t border-line">
+        <Container className="grid grid-cols-1 items-end gap-8 py-20 md:grid-cols-12 md:gap-6 md:py-24">
+          <div className="md:col-span-8">
+            <SectionHeading>{d.ctaTitle}</SectionHeading>
+            <p className="mt-4 max-w-[56ch] text-muted">{d.ctaSubtitle}</p>
           </div>
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-6">
-            <div className="relative aspect-video rounded-lg overflow-hidden bg-zinc-800 mb-4">
-              <Image
-                src={d.comparisonBuildImage}
-                alt={d.comparisonBuildAlt}
-                fill
-                className="object-cover"
-              />
-            </div>
-            <p className="text-center text-[#d4a853] font-medium">{d.comparisonBuildLabel}</p>
+          <div className="md:col-span-4 md:justify-self-end">
+            <Link href="/contact" className="btn btn-primary">{d.ctaButtonLabel}</Link>
           </div>
-        </div>
+        </Container>
       </section>
-
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <div className="bg-gradient-to-r from-zinc-900 to-zinc-800 border border-zinc-700 rounded-lg p-8 md:p-12 text-center">
-          <h2 className="text-2xl md:text-3xl font-serif mb-4">
-            {d.ctaTitle}
-          </h2>
-          <p className="text-gray-400 mb-6 max-w-xl mx-auto">
-            {d.ctaSubtitle}
-          </p>
-          <a
-            href="/contact"
-            className="inline-block px-8 py-3 bg-[#d4a853] text-black font-semibold rounded hover:bg-[#c49843] transition"
-          >
-            {d.ctaButtonLabel}
-          </a>
-        </div>
-      </section>
-    </main>
+    </>
   );
 }

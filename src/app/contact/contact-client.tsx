@@ -1,4 +1,5 @@
-'use client';
+import QuoteForm from '@/components/QuoteForm';
+import { Container } from '@/components/ui';
 
 export type ContactPageData = {
   title: string;
@@ -14,102 +15,51 @@ export type ContactPageData = {
   formSubmitLabel: string;
 };
 
+function formatPhone(p: string) {
+  const digits = p.replace(/\s/g, '');
+  return digits.length === 11 ? `${digits.slice(0, 5)} ${digits.slice(5)}` : p;
+}
+
 export default function ContactClient({ d }: { d: ContactPageData }) {
+  const phone = formatPhone(d.phone);
+  const details = [
+    { label: 'Call, text or WhatsApp', value: phone, href: `tel:${d.phone.replace(/\s/g, '')}` },
+    { label: 'Email', value: d.email, href: `mailto:${d.email}` },
+    { label: 'Based in', value: d.address },
+    { label: d.responseTimeLabel, value: d.responseTimeValue },
+  ];
+
   return (
-    <>
-      <section className="max-w-6xl mx-auto px-6 pt-24 pb-20 md:pt-32">
-        <div className={`grid grid-cols-1 gap-12 ${d.formEnabled ? 'md:grid-cols-2' : ''}`}>
-          <div>
-            <div className="gold-line mb-6" />
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              {d.title}<br /><span className="gold-text">{d.titleAccent}</span>
-            </h1>
-            <p className="text-[--text-muted] leading-relaxed mb-8">
-              {d.subtitle}
-            </p>
-
-            <div className="space-y-5">
-              <div className="flex items-center gap-4">
-                <div className="w-11 h-11 rounded-xl bg-[rgba(212,168,83,0.1)] flex items-center justify-center text-lg">{'\u{1F4E7}'}</div>
-                <div>
-                  <div className="text-xs text-[--text-muted] uppercase tracking-wider">Email</div>
-                  <div className="text-sm font-medium">{d.email}</div>
-                </div>
+    <Container className="pb-24 pt-12 md:pb-32 md:pt-20">
+      <div className={`grid grid-cols-1 items-start gap-12 ${d.formEnabled ? 'md:grid-cols-12 md:gap-6' : ''}`}>
+        <div className="md:col-span-5">
+          <h1 className="max-w-[12em] font-display text-[40px] font-[680] leading-[1.04] tracking-[-0.03em] md:text-[58px]">
+            {d.title} <span className="text-accent">{d.titleAccent}</span>
+          </h1>
+          <p className="mt-5 max-w-[48ch] text-pretty text-[17px] leading-relaxed text-muted">{d.subtitle}</p>
+          <dl className="mt-10 grid gap-6">
+            {details.map((item) => (
+              <div key={item.label}>
+                <dt className="text-sm text-faint">{item.label}</dt>
+                <dd className="mt-1 font-display text-[24px] font-semibold leading-tight tracking-[-0.015em] md:text-[26px]">
+                  {item.href ? (
+                    <a href={item.href} className="transition-colors hover:text-accent">{item.value}</a>
+                  ) : (
+                    item.value
+                  )}
+                </dd>
               </div>
-                                        <div className="flex items-center gap-4">
-                <div className="w-11 h-11 rounded-xl bg-[rgba(212,168,83,0.1)] flex items-center justify-center text-lg">{'\u{1F4F1}'}</div>
-                <div>
-                  <div className="text-xs text-[--text-muted] uppercase tracking-wider">Phone / WhatsApp</div>
-                  <div className="text-sm font-medium">{d.phone}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-11 h-11 rounded-xl bg-[rgba(212,168,83,0.1)] flex items-center justify-center text-lg">{'\u{1F4CD}'}</div>
-                <div>
-                  <div className="text-xs text-[--text-muted] uppercase tracking-wider">Based in</div>
-                  <div className="text-sm font-medium">{d.address}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="w-11 h-11 rounded-xl bg-[rgba(212,168,83,0.1)] flex items-center justify-center text-lg">{'\u23F1\uFE0F'}</div>
-                <div>
-                  <div className="text-xs text-[--text-muted] uppercase tracking-wider">{d.responseTimeLabel}</div>
-                  <div className="text-sm font-medium">{d.responseTimeValue}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {d.formEnabled ? (
-            <div className="bg-[--bg-card] border border-[--border] rounded-2xl p-8">
-              <h3 className="text-xl font-bold mb-6">{d.formHeading}</h3>
-              <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
-                <div>
-                  <label className="text-xs text-[--text-muted] uppercase tracking-wider block mb-2">Name</label>
-                  <input
-                    type="text"
-                    className="w-full bg-[--bg] border border-[--border] rounded-xl px-4 py-3 text-sm text-[--text] outline-none focus:border-[--gold] transition-colors"
-                    placeholder="Your name"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-[--text-muted] uppercase tracking-wider block mb-2">Email</label>
-                  <input
-                    type="email"
-                    className="w-full bg-[--bg] border border-[--border] rounded-xl px-4 py-3 text-sm text-[--text] outline-none focus:border-[--gold] transition-colors"
-                    placeholder="your@email.com"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-[--text-muted] uppercase tracking-wider block mb-2">Project Type</label>
-                  <select className="w-full bg-[--bg] border border-[--border] rounded-xl px-4 py-3 text-sm text-[--text-muted] outline-none focus:border-[--gold] transition-colors">
-                    <option>Kitchen / Cabinets</option>
-                    <option>Custom Furniture</option>
-                    <option>Outdoor Build</option>
-                    <option>SketchUp Design</option>
-                    <option>Cabinetos Inquiry</option>
-                    <option>Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-[--text-muted] uppercase tracking-wider block mb-2">Message</label>
-                  <textarea
-                    rows={4}
-                    className="w-full bg-[--bg] border border-[--border] rounded-xl px-4 py-3 text-sm text-[--text] outline-none focus:border-[--gold] transition-colors resize-none"
-                    placeholder="Tell me about your project..."
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[--gold] to-[--gold-light] text-[--bg] font-bold text-sm hover:opacity-90 transition-opacity"
-                >
-                  {d.formSubmitLabel}
-                </button>
-              </form>
-            </div>
-          ) : null}
+            ))}
+          </dl>
         </div>
-      </section>
-    </>
+
+        {d.formEnabled ? (
+          <div className="md:col-span-6 md:col-start-7">
+            <h2 className="mb-5 text-[25px] font-[620] leading-tight">{d.formHeading}</h2>
+            <QuoteForm email={d.email} phone={phone} submitLabel={d.formSubmitLabel} idPrefix="contact-q" />
+          </div>
+        ) : null}
+      </div>
+    </Container>
   );
 }

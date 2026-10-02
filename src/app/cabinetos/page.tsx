@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { readPageJson } from '@/lib/pages';
+import { Container, MountedImage, SectionHeading } from '@/components/ui';
 
 function imageSrc(v: unknown): string {
   if (typeof v === 'string' && v.trim()) return v;
@@ -46,177 +47,128 @@ type CabinetosPageData = {
 export default function Cabinetos() {
   const d = readPageJson<CabinetosPageData>('cabinetos.json');
   const heroSrc = imageSrc(d.heroImage);
-  const items = d.beforeAfterItems ?? [];
-  const [firstPair, ...extraPairs] = items;
-  const before0 = imageSrc(firstPair?.beforeImage);
-  const after0 = imageSrc(firstPair?.afterImage);
+  const pairs = (d.beforeAfterItems ?? []).filter((p) => imageSrc(p.beforeImage) || imageSrc(p.afterImage));
 
   return (
     <>
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-[rgba(96,165,250,0.05)] via-transparent to-transparent pointer-events-none" />
-        <div className="max-w-6xl mx-auto px-6 pt-24 pb-20 md:pt-32 md:pb-28">
-          <div className="max-w-3xl">
-            <span className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-4 block">{d.eyebrow}</span>
-            <h1 className="text-4xl md:text-6xl font-bold leading-[1.1] mb-6">
-              {d.title}<br />
-              <span className="gold-text">{d.titleAccent}</span>
-            </h1>
-            <p className="text-lg text-[--text-muted] max-w-xl mb-10 leading-relaxed">
-              {d.subtitle}
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <a href="#features" className="px-7 py-3.5 rounded-xl bg-gradient-to-r from-[--gold] to-[--gold-light] text-[--bg] font-bold text-sm hover:opacity-90 transition-opacity">
-                {d.primaryCtaLabel}
-              </a>
-              <a href="#faq" className="px-7 py-3.5 rounded-xl border border-[--border] text-[--text] font-bold text-sm hover:border-[--gold] hover:text-[--gold] transition-colors">
-                {d.secondaryCtaLabel}
-              </a>
-            </div>
+      <Container className="pb-14 pt-12 md:pb-20 md:pt-20">
+        <p className="kicker mb-5">{d.eyebrow}</p>
+        <h1 className="max-w-[15em] font-display text-[40px] font-[680] leading-[1.04] tracking-[-0.03em] md:text-[58px]">
+          {d.title} <span className="text-accent">{d.titleAccent}</span>
+        </h1>
+        <p className="mt-5 max-w-[56ch] text-pretty text-[17px] leading-relaxed text-muted md:text-[19px]">{d.subtitle}</p>
+        <div className="mt-9 flex flex-wrap gap-3.5">
+          <a href="#features" className="btn btn-primary">{d.primaryCtaLabel}</a>
+          <a href="#faq" className="btn btn-ghost">{d.secondaryCtaLabel}</a>
+        </div>
+      </Container>
+
+      {heroSrc ? (
+        <Container className="pb-20 md:pb-28">
+          <div className="overflow-hidden rounded-sm border border-line-strong bg-[#f6f7f8]">
+            <Image src={heroSrc} alt={d.heroImageAlt || 'CabinetOS app'} width={2648} height={1916} priority sizes="(max-width: 1280px) 100vw, 1200px" className="h-auto w-full" />
           </div>
-        </div>
-      </section>
+        </Container>
+      ) : null}
 
-      <section className="max-w-4xl mx-auto px-6 pb-20">
-        <div className="aspect-video rounded-2xl border border-[--border] bg-[--bg-card] overflow-hidden relative flex items-center justify-center">
-          {heroSrc ? (
-            <Image
-              src={heroSrc}
-              alt={d.heroImageAlt || 'Cabinetos app'}
-              fill
-              className="object-contain"
-              sizes="(max-width: 896px) 100vw, 896px"
-              priority
-            />
-          ) : (
-            <div className="text-center p-8">
-              <span className="text-6xl block mb-4">{d.mockupEmoji}</span>
-              <p className="text-[--text-muted] text-sm">{d.mockupPlaceholder}</p>
+      <section id="features" className="border-y border-line bg-raised py-20 md:py-28">
+        <Container>
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:gap-6">
+            <div className="md:col-span-5">
+              <SectionHeading>
+                {d.featuresSectionTitle}
+                <span className="text-accent">{d.featuresSectionTitleAccent}</span>
+              </SectionHeading>
+              <p className="mt-4 max-w-[40ch] text-muted">{d.featuresSectionSubtitle}</p>
             </div>
-          )}
-        </div>
+            <ol className="md:col-span-7">
+              {d.features.map((f, i) => (
+                <li key={i} className="grid grid-cols-[48px_minmax(0,1fr)] gap-4 border-t border-line py-7 first:border-t-0 first:pt-0">
+                  <span className="pt-1.5 font-mono text-sm text-accent">{String(i + 1).padStart(2, '0')}</span>
+                  <div>
+                    <h3 className="text-[25px] font-[620] leading-tight">{f.title}</h3>
+                    <p className="mt-2 text-muted">{f.description}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </Container>
       </section>
 
-      <section id="features" className="max-w-6xl mx-auto px-6 py-20">
-        <div className="text-center mb-14">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">{d.featuresSectionTitle}<span className="gold-text">{d.featuresSectionTitleAccent}</span></h2>
-          <p className="text-[--text-muted] max-w-md mx-auto">{d.featuresSectionSubtitle}</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {d.features.map((f, i) => (
-            <div key={i} className="card-hover bg-[--bg-card] border border-[--border] rounded-2xl p-8">
-              <div className="flex items-start gap-5">
-                <div className="w-14 h-14 rounded-xl bg-[rgba(96,165,250,0.12)] flex items-center justify-center text-2xl flex-shrink-0">
-                  {f.icon}
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg mb-2">{f.title}</h3>
-                  <p className="text-sm text-[--text-muted] leading-relaxed">{f.description}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="rounded-2xl border border-red-900/30 bg-[rgba(239,68,68,0.03)] p-8">
-            {before0 ? (
-              <div className="relative aspect-video rounded-xl overflow-hidden mb-4 border border-red-900/20">
-                <Image
-                  src={before0}
-                  alt={firstPair?.beforeAlt || d.withoutTitle}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
-              </div>
-            ) : null}
-            <h3 className="text-xl font-bold mb-4 text-red-400">{d.withoutTitle}</h3>
-            <ul className="space-y-3 text-sm text-[--text-muted]">
+      <Container className="py-20 md:py-28">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="rounded-sm border border-line-strong p-7 md:p-9">
+            <h3 className="text-[25px] font-[620] text-muted">{d.withoutTitle}</h3>
+            <ul className="mt-5 space-y-3 text-muted">
               {d.withoutBullets.map((line, i) => (
-                <li key={i} className="flex gap-2"><span className="text-red-400">{'\u2717'}</span> {line}</li>
+                <li key={i} className="flex gap-3">
+                  <span aria-hidden="true" className="font-mono text-faint">{'✗'}</span>
+                  {line}
+                </li>
               ))}
             </ul>
           </div>
-          <div className="rounded-2xl border border-green-900/30 bg-[rgba(74,222,128,0.03)] p-8">
-            {after0 ? (
-              <div className="relative aspect-video rounded-xl overflow-hidden mb-4 border border-green-900/20">
-                <Image
-                  src={after0}
-                  alt={firstPair?.afterAlt || d.withTitle}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
-              </div>
-            ) : null}
-            <h3 className="text-xl font-bold mb-4 text-green-400">{d.withTitle}</h3>
-            <ul className="space-y-3 text-sm text-[--text-muted]">
+          <div className="rounded-sm border border-accent bg-accent-soft p-7 md:p-9">
+            <h3 className="text-[25px] font-[620] text-accent">{d.withTitle}</h3>
+            <ul className="mt-5 space-y-3 text-ink">
               {d.withBullets.map((line, i) => (
-                <li key={i} className="flex gap-2"><span className="text-green-400">{'\u2713'}</span> {line}</li>
+                <li key={i} className="flex gap-3">
+                  <span aria-hidden="true" className="font-mono text-accent">{'✓'}</span>
+                  {line}
+                </li>
               ))}
             </ul>
           </div>
         </div>
 
-        {extraPairs.map((pair, idx) => {
+        {pairs.map((pair, idx) => {
           const b = imageSrc(pair.beforeImage);
           const a = imageSrc(pair.afterImage);
-          if (!b && !a) return null;
           return (
-            <div
-              key={idx}
-              className={`grid gap-6 mt-6 ${b && a ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}
-            >
-              {b ? (
-                <div className="relative aspect-video rounded-xl overflow-hidden border border-red-900/30 bg-[rgba(239,68,68,0.03)]">
-                  <Image
-                    src={b}
-                    alt={pair.beforeAlt || d.withoutTitle}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                  />
-                </div>
-              ) : null}
-              {a ? (
-                <div className="relative aspect-video rounded-xl overflow-hidden border border-green-900/30 bg-[rgba(74,222,128,0.03)]">
-                  <Image
-                    src={a}
-                    alt={pair.afterAlt || d.withTitle}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                  />
-                </div>
-              ) : null}
+            <div key={idx} className={`mt-6 grid gap-6 ${b && a ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+              {b ? <MountedImage src={b} alt={pair.beforeAlt || d.withoutTitle} aspect="aspect-video" /> : null}
+              {a ? <MountedImage src={a} alt={pair.afterAlt || d.withTitle} aspect="aspect-video" /> : null}
             </div>
           );
         })}
-      </section>
+      </Container>
 
-      <section id="faq" className="max-w-3xl mx-auto px-6 py-20">
-        <h2 className="text-3xl font-bold mb-10 text-center">{d.faqSectionTitle}<span className="gold-text">{d.faqSectionTitleAccent}</span></h2>
-        <div className="space-y-4">
-          {d.faq.map((f, i) => (
-            <div key={i} className="bg-[--bg-card] border border-[--border] rounded-xl p-6">
-              <h4 className="font-bold mb-2">{f.question}</h4>
-              <p className="text-sm text-[--text-muted] leading-relaxed">{f.answer}</p>
+      <section id="faq" className="border-t border-line py-20 md:py-28">
+        <Container>
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:gap-6">
+            <SectionHeading className="md:col-span-5">
+              {d.faqSectionTitle}
+              <span className="text-accent">{d.faqSectionTitleAccent}</span>
+            </SectionHeading>
+            <div className="md:col-span-7">
+              {d.faq.map((f, i) => (
+                <details key={i} className="group border-t border-line py-6 first:border-t-0 first:pt-0" open={i === 0}>
+                  <summary className="flex cursor-pointer list-none items-start justify-between gap-6 text-[21px] font-[620] leading-snug [&::-webkit-details-marker]:hidden">
+                    {f.question}
+                    <span aria-hidden="true" className="mt-1 font-mono text-lg text-accent transition-transform group-open:rotate-45">+</span>
+                  </summary>
+                  <p className="mt-3 max-w-[60ch] text-muted">{f.answer}</p>
+                </details>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        </Container>
       </section>
 
-      <section className="max-w-6xl mx-auto px-6 pb-20">
-        <div className="text-center py-14 rounded-2xl border border-[--border] bg-[--bg-card]">
-          <h2 className="text-2xl md:text-3xl font-bold mb-3">{d.bottomCtaTitle}<span className="gold-text">{d.bottomCtaTitleAccent}</span></h2>
-          <p className="text-[--text-muted] max-w-md mx-auto mb-6">{d.bottomCtaSubtitle}</p>
-          <Link href="/contact" className="inline-block px-7 py-3.5 rounded-xl bg-gradient-to-r from-[--gold] to-[--gold-light] text-[--bg] font-bold text-sm hover:opacity-90 transition-opacity">
-            {d.bottomCtaButtonLabel}
-          </Link>
-        </div>
+      <section className="border-t border-line">
+        <Container className="grid grid-cols-1 items-end gap-8 py-20 md:grid-cols-12 md:gap-6 md:py-24">
+          <div className="md:col-span-8">
+            <SectionHeading>
+              {d.bottomCtaTitle}
+              <span className="text-accent">{d.bottomCtaTitleAccent}</span>
+            </SectionHeading>
+            <p className="mt-4 max-w-[56ch] text-muted">{d.bottomCtaSubtitle}</p>
+          </div>
+          <div className="md:col-span-4 md:justify-self-end">
+            <Link href="/contact" className="btn btn-primary">{d.bottomCtaButtonLabel}</Link>
+          </div>
+        </Container>
       </section>
     </>
   );

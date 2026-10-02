@@ -1,47 +1,63 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
+const explore = [
+  { href: '/portfolio', label: 'My Work' },
+  { href: '/sketchup', label: 'SketchUp' },
+  { href: '/cabinetos', label: 'CabinetOS' },
+  { href: '/tools', label: 'Tools' },
+];
+const read = [
+  { href: '/blog', label: 'Blog' },
+  { href: '/about', label: 'About' },
+  { href: '/contact', label: 'Contact' },
+];
+const social = [
+  { href: 'https://www.instagram.com/rafcarpentry/', label: 'Instagram' },
+  { href: 'https://www.tiktok.com/@rafcarpentry', label: 'TikTok' },
+  { href: 'https://www.facebook.com/rafcarpentry/', label: 'Facebook' },
+];
+
+const linkClass = 'block py-2.5 text-[15px] text-muted transition-colors hover:text-ink md:py-1.5';
+
 export default function Footer() {
   return (
-    <footer className="border-t border-[--border] bg-[--bg-card]">
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 rounded-full overflow-hidden bg-white flex items-center justify-center">
-                <Image src="/images/r-logo-final.png" alt="R" width={36} height={36} className="w-full h-full object-cover" />
-              </div>
-              <span className="font-bold text-lg">Raf Carpentry</span>
-            </div>
-            <p className="text-sm text-[--text-muted] leading-relaxed">Craftsmanship meets technology. Bespoke carpentry, smart tools, and decades of expertise.</p>
+    <footer className="border-t border-line">
+      <div className="mx-auto max-w-[1280px] px-5 pb-8 pt-14 md:px-10 md:pb-10 md:pt-[72px]">
+        <div className="grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-12 md:gap-x-6">
+          <div className="col-span-2 md:col-span-4">
+            <Link href="/" className="flex items-center gap-3 text-[17px] font-semibold tracking-tight">
+              <span className="h-9 w-9 flex-none overflow-hidden rounded-full bg-[#f4f1ea] ring-1 ring-line-strong">
+                <Image src="/images/r-logo-final.png" alt="" width={36} height={36} className="h-full w-full object-cover" />
+              </span>
+              Raf Carpentry
+            </Link>
+            <p className="mt-4 max-w-[32ch] text-pretty text-[15px] text-muted">Fitted furniture in London, drawn before it&apos;s built.</p>
           </div>
-          <div>
-            <h4 className="text-sm font-bold mb-3 text-[--gold]">Services</h4>
-            <div className="flex flex-col gap-2 text-sm text-[--text-muted]">
-              <Link href="/portfolio" className="hover:text-[--text] transition-colors">Portfolio</Link>
-              <Link href="/cabinetos" className="hover:text-[--text] transition-colors">Cabinetos App</Link>
-              <Link href="/sketchup" className="hover:text-[--text] transition-colors">SketchUp</Link>
-            </div>
+          <div className="md:col-span-2 md:col-start-6">
+            <h4 className="mb-3 font-sans text-sm font-semibold tracking-normal text-ink">Explore</h4>
+            {explore.map((l) => (
+              <Link key={l.href} href={l.href} className={linkClass}>{l.label}</Link>
+            ))}
           </div>
-          <div>
-            <h4 className="text-sm font-bold mb-3 text-[--gold]">Resources</h4>
-            <div className="flex flex-col gap-2 text-sm text-[--text-muted]">
-              <Link href="/blog" className="hover:text-[--text] transition-colors">Blog</Link>
-              <Link href="/about" className="hover:text-[--text] transition-colors">About</Link>
-              <Link href="/contact" className="hover:text-[--text] transition-colors">Contact</Link>
-            </div>
+          <div className="md:col-span-2">
+            <h4 className="mb-3 font-sans text-sm font-semibold tracking-normal text-ink">Read</h4>
+            {read.map((l) => (
+              <Link key={l.href} href={l.href} className={linkClass}>{l.label}</Link>
+            ))}
           </div>
-          <div>
-            <h4 className="text-sm font-bold mb-3 text-[--gold]">Connect</h4>
-            <div className="flex flex-col gap-2 text-sm text-[--text-muted]">
-              <a href="https://www.instagram.com/raf_carpentry/" target="_blank" rel="noopener" className="hover:text-[--text] transition-colors">Instagram</a>
-              <a href="https://www.tiktok.com/@rafcarpentry" target="_blank" rel="noopener" className="hover:text-[--text] transition-colors">TikTok</a>
-              <a href="https://www.facebook.com/rafcarpentry/" target="_blank" rel="noopener" className="hover:text-[--text] transition-colors">Facebook</a>
-            </div>
+          <div className="col-span-2 md:col-span-3">
+            <h4 className="mb-3 font-sans text-sm font-semibold tracking-normal text-ink">Contact</h4>
+            <a href="tel:07792860221" className={linkClass}>07792 860221</a>
+            <a href="mailto:info@rafcarpentry.com" className={linkClass}>info@rafcarpentry.com</a>
+            {social.map((l) => (
+              <a key={l.href} href={l.href} target="_blank" rel="noopener" className={linkClass}>{l.label}</a>
+            ))}
           </div>
         </div>
-        <div className="border-t border-[--border] mt-10 pt-6 text-center text-xs text-[--text-muted]">
-          &copy; {new Date().getFullYear()} Raf Carpentry. All rights reserved.
+        <div className="mt-12 grid gap-1.5 border-t border-line pt-6 text-[13px] leading-relaxed text-faint md:mt-16">
+          <p>© {new Date().getFullYear()} Raf Carpentry. Raf Carpentry is a trading name of Rafal Solutions Ltd, registered in England and Wales, company no. 13645392.</p>
+          <p>Registered office: 14 Kings Road, Wood Green, London N22 5SN. VAT no. 521 4613 26.</p>
         </div>
       </div>
     </footer>

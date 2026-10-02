@@ -10,12 +10,9 @@ export default function ToolsUsed({ tools }: { tools: Tool[] }) {
   if (!tools || tools.length === 0) return null;
 
   return (
-    <div className="mt-12 border border-[--border] rounded-2xl bg-[--bg-card] p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-lg">🛠️</span>
-        <h3 className="font-bold text-base" style={{ fontFamily: "'Playfair Display', serif" }}>Tools Used in This Post</h3>
-      </div>
-      <div className="flex flex-wrap gap-2">
+    <aside className="mt-14 rounded-sm border border-line-strong bg-raised p-6 md:p-7">
+      <h3 className="text-[21px] font-[620]">Tools used in this post</h3>
+      <div className="mt-4 flex flex-wrap gap-2">
         {tools.map((tool, i) => {
           const href = tool.link || tool.url;
           const isExternal = href?.startsWith('http');
@@ -25,17 +22,18 @@ export default function ToolsUsed({ tools }: { tools: Tool[] }) {
               href={href}
               target={isExternal ? '_blank' : undefined}
               rel={isExternal ? 'noopener sponsored' : undefined}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-[--border] bg-[--bg] text-sm hover:border-[--gold] hover:text-[--gold] transition-colors"
+              className="inline-flex h-10 items-center gap-1.5 rounded-sm border border-line-strong bg-mount px-3.5 text-sm text-ink transition-colors hover:border-accent hover:text-accent"
             >
               {tool.name}
-              {isExternal && <span className="text-[--text-muted] text-xs">{'\u2197'}</span>}
+              {isExternal && <span aria-hidden="true" className="text-xs text-faint">{'↗'}</span>}
             </a>
           );
         })}
       </div>
-      <p className="text-[10px] text-[--text-muted] mt-4">
-        Affiliate links — I earn a small commission at no cost to you. <Link href="/tools" className="text-[--gold] hover:underline">See all my tools →</Link>
+      <p className="mt-4 text-[13px] text-faint">
+        Some are affiliate links: I earn a small commission at no cost to you.{' '}
+        <Link href="/tools" className="font-medium text-accent hover:underline">See all my tools</Link>
       </p>
-    </div>
+    </aside>
   );
 }

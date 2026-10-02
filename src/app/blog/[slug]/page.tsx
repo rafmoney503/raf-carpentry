@@ -1,12 +1,24 @@
+import fs from 'fs';
+import path from 'path';
 import Link from 'next/link';
-import Image from 'next/image';
 import { getPostBySlug, getAllPosts } from '@/lib/blog';
 import { notFound } from 'next/navigation';
 import ToolsUsed from '@/components/ToolsUsed';
+import { MountedImage } from '@/components/ui';
 
 export async function generateStaticParams() {
   const posts = getAllPosts();
-  return posts.map(p => ({ slug: p.slug }));
+  return posts.map((p) => ({ slug: p.slug }));
+}
+
+function imageExists(src?: string) {
+  if (!src || !src.startsWith('/')) return false;
+  return fs.existsSync(path.join(process.cwd(), 'public', src));
+}
+
+function formatDate(value: unknown) {
+  const d = new Date(value instanceof Date ? value : String(value));
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/London' });
 }
 
 export default async function BlogPost({ params }: { params: Promise<{ slug: string }> }) {
@@ -16,45 +28,36 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
 
   return (
     <>
-      <article className="max-w-3xl mx-auto px-6 pt-24 pb-20 md:pt-32">
-        <Link href="/blog" className="text-sm text-[--gold] hover:underline mb-6 inline-block">
-          ← Back to Journal
+      <article className="mx-auto max-w-3xl px-5 pb-16 pt-12 md:px-6 md:pt-20">
+        <Link href="/blog" className="link-more text-[15px]">
+          <span aria-hidden="true">←</span> Back to the journal
         </Link>
 
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-xs font-bold uppercase tracking-wider text-[--gold]">{post.category}</span>
-          <span className="text-xs text-[--text-muted]">·</span>
-          <span className="text-xs text-[--text-muted]">
-            {new Date(post.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
-          </span>
-        </div>
+        <p className="mt-8 font-mono text-[13px] text-faint">
+          {formatDate(post.date)}
+          <span className="text-line-strong"> / </span>
+          {post.category}
+        </p>
+        <h1 className="mt-3 font-display text-[36px] font-[680] leading-[1.06] tracking-[-0.03em] md:text-[48px]">{post.title}</h1>
 
-        <h1 className="text-3xl md:text-4xl font-bold mb-6 leading-tight">{post.title}</h1>
-
-        {post.image && (
-          <div className="aspect-video rounded-2xl border border-[--border] bg-[--bg-card] mb-10 relative overflow-hidden">
-            <Image src={post.image} alt={post.title} fill className="object-cover" />
-          </div>
+        {imageExists(post.image) && (
+          <MountedImage src={post.image as string} alt="" aspect="aspect-video" priority sizes="(max-width: 768px) 100vw, 720px" className="mb-10 mt-10" />
         )}
 
-        <div
-          className="prose-custom"
-          dangerouslySetInnerHTML={{ __html: post.content || '' }}
-        />
+        <div className={`prose-custom text-[17px] ${imageExists(post.image) ? '' : 'mt-10'}`} dangerouslySetInnerHTML={{ __html: post.content || '' }} />
 
         {post.tools && <ToolsUsed tools={post.tools} />}
       </article>
 
-      {/* CTA */}
-      <section className="max-w-3xl mx-auto px-6 pb-20">
-        <div className="rounded-2xl border border-[--border] bg-[--bg-card] p-8 flex flex-col md:flex-row items-center gap-6">
+      <section className="mx-auto max-w-3xl px-5 pb-24 md:px-6">
+        <div className="flex flex-col gap-6 border-t border-line pt-10 md:flex-row md:items-center">
           <div className="flex-1">
-            <h3 className="font-bold text-lg mb-1">Enjoyed this post?</h3>
-            <p className="text-sm text-[--text-muted]">Follow me on social media for more tips, builds, and behind-the-scenes content.</p>
+            <h3 className="text-[23px] font-[620]">Enjoyed this post?</h3>
+            <p className="mt-1 text-muted">Follow along for more builds, tips and behind-the-scenes.</p>
           </div>
           <div className="flex gap-3">
-            <a href="https://www.instagram.com/raf_carpentry/" target="_blank" rel="noopener" className="px-5 py-2.5 rounded-xl border border-[--border] text-sm hover:border-[--gold] hover:text-[--gold] transition-colors">Instagram</a>
-            <a href="https://www.tiktok.com/@rafcarpentry" target="_blank" rel="noopener" className="px-5 py-2.5 rounded-xl border border-[--border] text-sm hover:border-[--gold] hover:text-[--gold] transition-colors">TikTok</a>
+            <a href="https://www.instagram.com/rafcarpentry/" target="_blank" rel="noopener" className="btn btn-ghost btn-sm">Instagram</a>
+            <a href="https://www.tiktok.com/@rafcarpentry" target="_blank" rel="noopener" className="btn btn-ghost btn-sm">TikTok</a>
           </div>
         </div>
       </section>

@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import { readPageJson } from '@/lib/pages';
-
-type ProfileImageStyle = 'rounded' | 'circle' | 'square' | 'phone-frame';
+import { Container, SectionHeading } from '@/components/ui';
 
 type AboutPageData = {
   title: string;
@@ -19,110 +18,82 @@ type AboutPageData = {
   photoPlaceholderText: string;
 };
 
-function profileImageSrc(v: unknown): string {
-  if (typeof v === 'string' && v.trim()) return v.trim();
-  return '';
-}
-
-function profileShapeClass(style: string | undefined): string {
-  const s = style as ProfileImageStyle | undefined;
-  switch (s) {
-    case 'circle':
-      return 'rounded-full';
-    case 'square':
-      return 'rounded-none';
-    case 'phone-frame':
-      return 'rounded-[2rem] border-2 border-zinc-800';
-    case 'rounded':
-    default:
-      return 'rounded-xl';
-  }
-}
+// Until a portrait is added in the CMS, the page uses the photo of Raf measuring timber.
+const FALLBACK_PHOTO = '/images/raf-at-work.jpg';
 
 export default function About() {
   const d = readPageJson<AboutPageData>('about.json');
-  const imgSrc = profileImageSrc(d.profileImage);
-  const shapeClass = profileShapeClass(d.profileImageStyle);
+  const imgSrc = typeof d.profileImage === 'string' && d.profileImage.trim() ? d.profileImage.trim() : FALLBACK_PHOTO;
 
   return (
     <>
-      <section className="max-w-6xl mx-auto px-6 pt-24 pb-20 md:pt-32">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div>
-            <div className="gold-line mb-6" />
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              {d.title}<br /><span className="gold-text">{d.titleAccent}</span>
+      <Container className="pb-16 pt-12 md:pb-24 md:pt-20">
+        <div className="grid grid-cols-1 items-start gap-12 md:grid-cols-12 md:gap-6">
+          <div className="md:col-span-7">
+            <h1 className="max-w-[14em] font-display text-[40px] font-[680] leading-[1.04] tracking-[-0.03em] md:text-[58px]">
+              {d.title} <span className="text-accent">{d.titleAccent}</span>
             </h1>
-            {d.storyParagraphs.map((p, i) => (
-              <p key={i} className="text-[--text-muted] leading-relaxed mb-4">
-                {p}
+            <div className="mt-8 max-w-[60ch] space-y-4 text-[17px] leading-relaxed text-muted">
+              {d.storyParagraphs.map((p, i) => (
+                <p key={i}>{p}</p>
+              ))}
+              <p>
+                {d.storyClosingLead}
+                <strong className="font-semibold text-ink">{d.storyClosingBold}</strong>
+                {d.storyClosingRest}
               </p>
-            ))}
-            <p className="text-[--text-muted] leading-relaxed">
-              {d.storyClosingLead}<strong className="text-[--text]">{d.storyClosingBold}</strong>{d.storyClosingRest}
-            </p>
+            </div>
           </div>
-          <div className="aspect-square rounded-2xl border border-[--border] bg-[--bg-card] overflow-hidden flex items-center justify-center">
-            {imgSrc ? (
-              <div className={`relative w-full h-full overflow-hidden ${shapeClass}`}>
-                <Image
-                  src={imgSrc}
-                  alt={`${d.title} ${d.titleAccent}`}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
+          <figure className="md:col-span-5">
+            <div className="mount">
+              <div className="relative aspect-[4/5] overflow-hidden bg-raised">
+                <Image src={imgSrc} alt="Raf Janczy at work" fill priority sizes="(max-width: 768px) 100vw, 480px" className="object-cover" />
               </div>
-            ) : (
-              <div className="text-center px-4 py-8">
-                <span className="text-6xl block mb-3">{d.photoPlaceholderEmoji}</span>
-                <p className="text-[--text-muted] text-sm">{d.photoPlaceholderText}</p>
-              </div>
-            )}
-          </div>
+            </div>
+          </figure>
         </div>
-      </section>
+      </Container>
 
-      <section className="max-w-6xl mx-auto px-6 pb-20">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <Container className="pb-20 md:pb-28">
+        <div className="grid grid-cols-2 gap-x-5 gap-y-8 border-t border-line pt-10 md:grid-cols-4 md:gap-x-6">
           {d.stats.map((s, i) => (
-            <div key={i} className="text-center py-8 rounded-2xl border border-[--border] bg-[--bg-card]">
-              <div className="text-3xl font-bold gold-text mb-1">{s.value}</div>
-              <div className="text-xs text-[--text-muted] uppercase tracking-wider">{s.label}</div>
+            <div key={i}>
+              <div className="font-display text-[44px] font-[620] leading-none tracking-[-0.03em] md:text-[50px]">{s.value}</div>
+              <div className="mt-3 text-[15px] text-muted">{s.label}</div>
             </div>
           ))}
         </div>
-      </section>
+      </Container>
 
-      <section className="max-w-4xl mx-auto px-6 pb-20">
-        <h2 className="text-3xl font-bold mb-8 text-center">What Makes Me <span className="gold-text">Different</span></h2>
-        <div className="space-y-4">
-          {d.differentiators.map((item, i) => (
-            <div key={i} className="bg-[--bg-card] border border-[--border] rounded-xl p-6 flex gap-4 items-start">
-              <div className="w-8 h-8 rounded-full bg-[rgba(212,168,83,0.15)] flex items-center justify-center text-[--gold] text-sm font-bold flex-shrink-0 mt-0.5">
-                {i + 1}
-              </div>
-              <div>
-                <h4 className="font-bold mb-1">{item.title}</h4>
-                <p className="text-sm text-[--text-muted]">{item.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="max-w-6xl mx-auto px-6 pb-20">
-        <div className="text-center py-14 rounded-2xl border border-[--border] bg-[--bg-card]">
-          <h2 className="text-2xl font-bold mb-6">Follow <span className="gold-text">My Journey</span></h2>
-          <div className="flex justify-center gap-4 flex-wrap">
-            {d.socialLinks.map((s) => (
-              <a key={s.label} href={s.url} target="_blank" rel="noopener" className="px-6 py-3 rounded-xl border border-[--border] text-sm hover:border-[--gold] hover:text-[--gold] transition-colors">
-                {s.label}
-              </a>
-            ))}
+      <section className="border-y border-line bg-raised py-20 md:py-28">
+        <Container>
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:gap-6">
+            <SectionHeading className="md:col-span-5">What makes me different</SectionHeading>
+            <ol className="md:col-span-7">
+              {d.differentiators.map((item, i) => (
+                <li key={i} className="grid grid-cols-[48px_minmax(0,1fr)] gap-4 border-t border-line py-7 first:border-t-0 first:pt-0">
+                  <span className="pt-1.5 font-mono text-sm text-accent">{String(i + 1).padStart(2, '0')}</span>
+                  <div>
+                    <h3 className="text-[25px] font-[620] leading-tight">{item.title}</h3>
+                    <p className="mt-2 text-muted">{item.description}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
-        </div>
+        </Container>
       </section>
+
+      <Container className="py-20 md:py-28">
+        <SectionHeading>Follow the work</SectionHeading>
+        <div className="mt-8 flex flex-wrap gap-3">
+          {d.socialLinks.map((s) => (
+            <a key={s.label} href={s.url} target="_blank" rel="noopener" className="btn btn-ghost">
+              {s.label}
+            </a>
+          ))}
+        </div>
+      </Container>
     </>
   );
 }
