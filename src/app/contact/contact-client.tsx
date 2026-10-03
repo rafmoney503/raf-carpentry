@@ -1,5 +1,7 @@
 import QuoteCta from '@/components/QuoteCta';
 import { Container } from '@/components/ui';
+import SocialIcon from '@/components/SocialIcon';
+import { whatsappText, whatsappUrl } from '@/lib/site';
 
 export type ContactPageData = {
   title: string;
@@ -23,7 +25,8 @@ function formatPhone(p: string) {
 export default function ContactClient({ d }: { d: ContactPageData }) {
   const phone = formatPhone(d.phone);
   const details = [
-    { label: 'Call, text or WhatsApp', value: phone, href: `tel:${d.phone.replace(/\s/g, '')}` },
+    { label: 'Call or text', value: phone, href: `tel:${d.phone.replace(/\s/g, '')}` },
+    { label: 'WhatsApp', value: 'Message me', href: whatsappUrl(whatsappText('/contact')), whatsapp: true },
     { label: 'Email', value: d.email, href: `mailto:${d.email}` },
     { label: 'Based in', value: d.address },
     { label: d.responseTimeLabel, value: d.responseTimeValue },
@@ -43,7 +46,14 @@ export default function ContactClient({ d }: { d: ContactPageData }) {
                 <dt className="text-sm text-faint">{item.label}</dt>
                 <dd className="mt-1 font-display text-[24px] font-semibold leading-tight tracking-[-0.015em] md:text-[26px]">
                   {item.href ? (
-                    <a href={item.href} className="transition-colors hover:text-accent">{item.value}</a>
+                    'whatsapp' in item ? (
+                      <a href={item.href} target="_blank" rel="noopener" className="inline-flex items-center gap-2.5 transition-colors hover:text-accent">
+                        <SocialIcon network="whatsapp" size={24} />
+                        {item.value}
+                      </a>
+                    ) : (
+                      <a href={item.href} className="transition-colors hover:text-accent">{item.value}</a>
+                    )
                   ) : (
                     item.value
                   )}

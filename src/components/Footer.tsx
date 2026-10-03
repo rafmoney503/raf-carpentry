@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import SocialIcon, { networkOf } from './SocialIcon';
+import { whatsappText, whatsappUrl } from '@/lib/site';
 
 const explore = [
   { href: '/portfolio', label: 'My Work' },
@@ -24,7 +25,7 @@ const linkClass = 'block py-2.5 text-[15px] text-muted transition-colors hover:t
 export default function Footer() {
   return (
     <footer className="border-t border-line">
-      <div className="mx-auto max-w-[1280px] px-5 pb-8 pt-14 md:px-10 md:pb-10 md:pt-[72px]">
+      <div className="mx-auto max-w-[1280px] px-5 pb-24 pt-14 md:px-10 md:pb-10 md:pt-[72px]">
         <div className="grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-12 md:gap-x-6">
           <div className="col-span-2 md:col-span-4">
             <Link href="/" className="flex items-center gap-3 text-[17px] font-semibold tracking-tight">
@@ -50,6 +51,10 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-3">
             <h4 className="mb-3 font-sans text-sm font-semibold tracking-normal text-ink">Contact</h4>
             <a href="tel:07792860221" className={linkClass}>07792 860221</a>
+            <a href={whatsappUrl(whatsappText())} target="_blank" rel="noopener" className={linkClass.replace('block', 'flex items-center gap-2.5')}>
+              <SocialIcon network="whatsapp" size={17} />
+              WhatsApp me
+            </a>
             <a href="mailto:info@rafcarpentry.com" className={linkClass}>info@rafcarpentry.com</a>
             <div className="mt-2">
               {social.map((l) => {

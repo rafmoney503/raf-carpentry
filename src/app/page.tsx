@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { readPageJson } from '@/lib/pages';
 import { getAllPosts } from '@/lib/blog';
 import QuoteCta from '@/components/QuoteCta';
-import { QUOTE_URL } from '@/lib/site';
+import { QUOTE_URL, whatsappText, whatsappUrl } from '@/lib/site';
+import SocialIcon from '@/components/SocialIcon';
 import './home.css';
 
 export type HomePageData = {
@@ -194,6 +195,13 @@ export default function HomePage() {
               <div>
                 <p className="direct-l">Call or text</p>
                 <a className="direct-v" href={phoneHref}>{d.phone}</a>
+              </div>
+              <div>
+                <p className="direct-l">WhatsApp</p>
+                <a className="direct-v direct-wa" href={whatsappUrl(whatsappText('/'))} target="_blank" rel="noopener">
+                  <SocialIcon network="whatsapp" size={24} />
+                  Message me
+                </a>
               </div>
               <div>
                 <p className="direct-l">Email</p>

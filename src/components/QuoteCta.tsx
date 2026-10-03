@@ -1,4 +1,5 @@
 import { QUOTE_URL } from '@/lib/site';
+import WhatsAppButton from './WhatsAppButton';
 
 type Props = {
   heading?: string;
@@ -34,11 +35,15 @@ export default function QuoteCta({
           ))}
         </ol>
       )}
-      <a href={QUOTE_URL} target="_blank" rel="noopener" className="btn btn-primary mt-8 w-full gap-2 md:w-auto">
-        {buttonLabel}
-        <span aria-hidden="true">↗</span>
-      </a>
+      <div className="mt-8 flex flex-col gap-3 md:flex-row md:flex-wrap">
+        <a href={QUOTE_URL} target="_blank" rel="noopener" className="btn btn-primary w-full gap-2 md:w-auto">
+          {buttonLabel}
+          <span aria-hidden="true">↗</span>
+        </a>
+        <WhatsAppButton className="w-full md:w-auto" />
+      </div>
       {note ? <p className="mt-4 text-sm text-faint">{note}</p> : null}
+      <p className="mt-1 text-sm text-faint">Or send me photos of the space on WhatsApp.</p>
     </div>
   );
 }

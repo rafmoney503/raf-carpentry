@@ -6,3 +6,23 @@ export const QUOTE_URL =
 export const PHONE_DISPLAY = '07792 860221';
 export const PHONE_HREF = 'tel:07792860221';
 export const EMAIL = 'info@rafcarpentry.com';
+
+// WhatsApp: the same mobile number in international format (44, no leading 0, no spaces).
+// Every WhatsApp button opens a chat with Raf with the first message already typed in,
+// so the customer only has to press send. "Get a quote" still goes to ServiceM8.
+export const WHATSAPP_NUMBER = '447792860221';
+
+export function whatsappUrl(text?: string) {
+  return `https://wa.me/${WHATSAPP_NUMBER}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
+}
+
+/* The ready-typed first message, worded for the page the visitor is on. `title` is the job or post title. */
+export function whatsappText(path = '/', title = '') {
+  const ask = '\n\nArea or postcode: \nWhat I need: ';
+  if (path.startsWith('/portfolio/') && title) return `Hi Raf, I've just seen the "${title}" job on your website and I'd like something similar.${ask}`;
+  if (path.startsWith('/blog/') && title) return `Hi Raf, I've just read "${title}" on your website and I've got a question.`;
+  if (path.startsWith('/tools')) return "Hi Raf, I've got a question about the tools on your website.";
+  if (path.startsWith('/sketchup')) return "Hi Raf, I've got a question about your SketchUp drawings and plans.";
+  if (path.startsWith('/cabinetos')) return "Hi Raf, I've got a question about CabinetOS.";
+  return `Hi Raf, I found you on rafcarpentry.com and I'd like to ask about a job.${ask}`;
+}

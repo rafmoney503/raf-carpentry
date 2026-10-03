@@ -12,6 +12,13 @@
       "highlight": false
     },
     {
+      "label": "WhatsApp me",
+      "subtitle": "Send photos of your space and ask me anything.",
+      "url": "https://wa.me/447792860221?text=Hi%20Raf%2C%20I%20found%20you%20on%20social%20media%20and%20I%27d%20like%20to%20ask%20about%20a%20job.%0A%0AArea%20or%20postcode%3A%20%0AWhat%20I%20need%3A%20",
+      "icon": "",
+      "highlight": false
+    },
+    {
       "label": "CabinetOS App Waitlist",
       "subtitle": "Cutlists. Boards. Done. A carpenter built this — join free.",
       "url": "/cabinetos",

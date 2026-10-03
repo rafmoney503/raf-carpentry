@@ -66,10 +66,16 @@ export default function MiniSite() {
           <a
             key={i}
             href={link.url}
+            {...(link.url.startsWith('http') ? { target: '_blank', rel: 'noopener' } : {})}
             className={`group flex min-h-[68px] items-center gap-4 rounded-sm border px-5 py-4 transition-colors ${
               link.highlight ? 'border-accent bg-accent text-on-accent hover:bg-accent-hover' : 'border-line-strong bg-mount hover:border-accent'
             }`}
           >
+            {networkOf(link.url) === 'whatsapp' ? (
+              <span className={`flex-none ${link.highlight ? '' : 'text-ink transition-colors group-hover:text-accent'}`}>
+                <SocialIcon network="whatsapp" size={22} />
+              </span>
+            ) : null}
             <div className="min-w-0 flex-1">
               <div className={`text-[16px] font-semibold ${link.highlight ? '' : 'transition-colors group-hover:text-accent'}`}>{link.label}</div>
               <div className={`mt-0.5 text-[13px] leading-snug ${link.highlight ? 'text-on-accent/80' : 'text-muted'}`}>{link.subtitle}</div>

@@ -11,7 +11,8 @@ import { formatMonth, getAllProjects, getKit, getProject, isPlanReady } from '@/
 import PlanCard from '@/components/project/PlanCard';
 import ProjectKit from '@/components/project/ProjectKit';
 import PlanDrawings from '@/components/project/PlanDrawings';
-import { QUOTE_URL } from '@/lib/site';
+import { QUOTE_URL, whatsappText } from '@/lib/site';
+import WhatsAppButton from '@/components/WhatsAppButton';
 import '../project.css';
 
 export function generateStaticParams() {
@@ -36,6 +37,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
 
   const all = getAllProjects();
   const next = all[(all.findIndex((x) => x.slug === p.slug) + 1) % all.length];
+  const waText = whatsappText(`/portfolio/${p.slug}`, p.title);
   const stepCount = p.steps.length;
   const kit = getKit(p.slug);
 
@@ -74,6 +76,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
 
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
               <a href={QUOTE_URL} target="_blank" rel="noopener" className="btn btn-primary">Get a quote</a>
+              <WhatsAppButton text={waText} />
               <a href="#photos" className="link-more">
                 All {p.gallery.length + 1} photos <span aria-hidden="true">↓</span>
               </a>
@@ -201,7 +204,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           <div className="md:col-span-7">
             <SectionHeading>Want something like this?</SectionHeading>
             <p className="mt-4 max-w-[52ch] text-muted">Tell me about the room. I&apos;ll come and measure up, then draw it before anything is cut.</p>
-            <a href={QUOTE_URL} target="_blank" rel="noopener" className="btn btn-primary mt-8">Get a quote</a>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <a href={QUOTE_URL} target="_blank" rel="noopener" className="btn btn-primary">Get a quote</a>
+              <WhatsAppButton text={waText} />
+            </div>
           </div>
           {next && next.slug !== p.slug ? (
             <Link href={`/portfolio/${next.slug}`} className="group md:col-span-4 md:col-start-9">

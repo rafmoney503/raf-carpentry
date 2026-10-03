@@ -90,6 +90,7 @@
 .home .direct-l { font-size: 14px; color: var(--color-faint); }
 .home .direct-v { display: inline-block; margin-top: 4px; font-family: var(--font-display); font-weight: 600; font-size: 28px; letter-spacing: -0.015em; line-height: 1.2; }
 .home .direct-v:hover { color: var(--color-accent); }
+.home .direct-wa { display: inline-flex; align-items: center; gap: 10px; }
 .home .quote-form { grid-column: 7 / span 6; }
 
 /* Motion: hero entrance, a gentle lift as sections scroll in. Transform only, so nothing is ever hidden. */
