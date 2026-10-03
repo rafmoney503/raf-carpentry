@@ -15,7 +15,7 @@ import { BOOKING_URL, QUOTE_HREF, whatsappText } from '@/lib/site';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import '../project.css';
 import { pageMeta } from '@/lib/seo';
-import Reviews from '@/components/Reviews';
+import Reviews, { GoogleRating } from '@/components/Reviews';
 import { getReviews } from '@/lib/reviews';
 
 export function generateStaticParams() {
@@ -81,6 +81,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                 All {p.gallery.length + 1} photos <span aria-hidden="true">↓</span>
               </a>
             </div>
+            <GoogleRating variant="inline" className="mt-6" />
           </div>
         </div>
       </Container>

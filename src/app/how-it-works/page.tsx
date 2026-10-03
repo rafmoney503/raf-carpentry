@@ -10,7 +10,7 @@ import Sketch from './sketches';
 import JobNote from './job-note';
 import { getAllProjects } from '@/lib/projects';
 import { pageMeta } from '@/lib/seo';
-import Reviews from '@/components/Reviews';
+import Reviews, { GoogleRating } from '@/components/Reviews';
 import { getReviews } from '@/lib/reviews';
 
 type Item = { title: string; description: string };
@@ -91,7 +91,8 @@ export default function HowItWorksPage() {
   return (
     <>
       <PageHeader kicker={d.kicker} title={d.title} accent={d.titleAccent} lede={d.lede}>
-        <nav aria-label="On this page" className="mt-8 flex flex-wrap gap-2">
+        <GoogleRating variant="inline" className="mt-6" />
+        <nav aria-label="On this page" className="mt-7 flex flex-wrap gap-2">
           {jump.map((j) => (
             <a key={j.href} href={j.href} className="inline-flex h-10 items-center rounded-sm border border-line-strong px-4 text-[14.5px] font-medium text-ink transition-colors hover:border-ink">
               {j.label}

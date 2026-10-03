@@ -14,9 +14,29 @@ function Star({ size = 15 }: { size?: number }) {
   );
 }
 
-export function GoogleRating({ className = '' }: { className?: string }) {
+/* `inline` is the small line under the main buttons at the top of a page; `box` sits in the reviews section. */
+export function GoogleRating({ className = '', variant = 'box' }: { className?: string; variant?: 'box' | 'inline' }) {
   const d = getReviews();
   if (!d.googleRating) return null;
+  if (variant === 'inline') {
+    return (
+      <a
+        href={GOOGLE_REVIEWS_URL}
+        target="_blank"
+        rel="noopener"
+        className={`group inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] text-ink ${className}`}
+      >
+        <span className="flex items-center gap-0.5 text-accent" aria-hidden="true">
+          {[0, 1, 2, 3, 4].map((i) => <Star key={i} size={15} />)}
+        </span>
+        <span>
+          <span className="font-semibold">{d.googleRating}</span> on Google
+          {d.googleCount ? <span className="text-muted"> from {d.googleCount} reviews</span> : null}
+        </span>
+        <span className="text-[14px] font-medium text-accent group-hover:underline">Read them <span aria-hidden="true">↗</span></span>
+      </a>
+    );
+  }
   return (
     <a
       href={GOOGLE_REVIEWS_URL}

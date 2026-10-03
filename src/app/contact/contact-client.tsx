@@ -1,4 +1,5 @@
 import QuoteCta from '@/components/QuoteCta';
+import { GoogleRating } from '@/components/Reviews';
 import Link from 'next/link';
 import { Container } from '@/components/ui';
 import SocialIcon from '@/components/SocialIcon';
@@ -41,6 +42,7 @@ export default function ContactClient({ d }: { d: ContactPageData }) {
             {d.title} <span className="text-accent">{d.titleAccent}</span>
           </h1>
           <p className="mt-5 max-w-[48ch] text-pretty text-[17px] leading-relaxed text-muted">{d.subtitle}</p>
+          <GoogleRating variant="inline" className="mt-6" />
           <dl className="mt-10 grid gap-6">
             {details.map((item) => (
               <div key={item.label}>

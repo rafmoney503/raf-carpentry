@@ -73,6 +73,13 @@
       "url": "/",
       "icon": "🌐",
       "highlight": false
+    },
+    {
+      "label": "Leave a Review",
+      "subtitle": "Had work done by me? It takes a minute on Google.",
+      "url": "/review",
+      "icon": "",
+      "highlight": false
     }
   ],
   "instagramUrl": "https://www.instagram.com/rafcarpentry/",

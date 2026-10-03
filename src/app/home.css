@@ -16,6 +16,7 @@
 .home .h1 em { font-style: normal; color: var(--color-accent); }
 .home .hero-sub { margin-top: 28px; font-size: 19px; color: var(--color-muted); max-width: 33em; }
 .home .hero-ctas { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 40px; }
+.home .hero-rating { margin-top: 22px; }
 .home .hero-visual { grid-column: 8 / span 5; margin: 0; }
 .home .hero-photo { aspect-ratio: 4 / 5; }
 .home .hero-photo img { object-position: 50% 45%; }

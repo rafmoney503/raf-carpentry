@@ -2,6 +2,7 @@ import Image from 'next/image';
 import SocialIcon, { networkOf } from '@/components/SocialIcon';
 import type { Metadata } from 'next';
 import { readPageJson } from '@/lib/pages';
+import { GoogleRating } from '@/components/Reviews';
 
 type MsLink = {
   label: string;
@@ -59,6 +60,7 @@ export default function MiniSite() {
             );
           })}
         </div>
+        <GoogleRating variant="inline" className="mt-6 justify-center" />
       </div>
 
       <div className="mt-10 w-full space-y-3">

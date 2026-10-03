@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { readPageJson } from '@/lib/pages';
 import { getAllPosts } from '@/lib/blog';
 import QuoteCta from '@/components/QuoteCta';
-import Reviews from '@/components/Reviews';
+import Reviews, { GoogleRating } from '@/components/Reviews';
 import { getReviews } from '@/lib/reviews';
 import { QUOTE_HREF, whatsappText, whatsappUrl } from '@/lib/site';
 import SocialIcon from '@/components/SocialIcon';
@@ -83,6 +83,7 @@ export default function HomePage() {
             <Link className="btn btn-primary" href={QUOTE_HREF}>{d.primaryCtaLabel}</Link>
             <Link className="btn btn-ghost" href="/portfolio">{d.secondaryCtaLabel}</Link>
           </div>
+          <GoogleRating variant="inline" className="hero-rating anim d3" />
         </div>
         <figure className="hero-visual anim d2">
           <div className="mount">
