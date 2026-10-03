@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Container, PageHeader } from '@/components/ui';
 import { GoogleRating } from '@/components/Reviews';
 import { pageMeta } from '@/lib/seo';
-import { getServicesData, jobsFor } from '@/lib/services';
+import { coverFor, getServicesData, jobsFor } from '@/lib/services';
 
 export function generateMetadata() {
   const d = getServicesData();
@@ -15,7 +15,7 @@ export default function ServicesPage() {
   const d = getServicesData();
   const cards = d.services.map((s) => {
     const jobs = jobsFor(s);
-    return { s, count: jobs.length, image: s.image || jobs[0]?.cover.src, alt: jobs[0]?.cover.alt ?? s.name };
+    return { s, count: jobs.length, image: coverFor(s, jobs), alt: s.photos?.[0]?.alt ?? jobs[0]?.cover.alt ?? s.name };
   });
   return (
     <>

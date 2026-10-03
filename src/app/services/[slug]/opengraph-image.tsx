@@ -1,5 +1,5 @@
 import { ogCard, ogContentType, ogSize } from '@/lib/og-card';
-import { getService, getServices, jobsFor, areasFor, joinAreas } from '@/lib/services';
+import { coverFor, getService, getServices, jobsFor, areasFor, joinAreas } from '@/lib/services';
 
 /* Each service's sharing picture: the newest job's photo, the service name and where the jobs were. */
 export const alt = 'A service from Raf Carpentry';
@@ -20,6 +20,6 @@ export default async function Image({ params }: { params: Promise<{ slug: string
     kicker: `Services · London`,
     title: s.name,
     sub: jobs.length ? `${jobs.length} jobs, in ${joinAreas(areas, 3)}.` : s.summary,
-    photo: s.image || jobs[0]?.cover.src,
+    photo: coverFor(s, jobs),
   });
 }

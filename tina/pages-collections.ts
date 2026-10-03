@@ -479,6 +479,17 @@ export const pageCollections: Collection[] = [
           { type: "string", name: "metaTitle", label: "Google title" },
           { type: "string", name: "metaDescription", label: "Google description", ui: { component: "textarea" } },
           { type: "image", name: "image", label: "Card photo (optional)", description: "Empty uses the newest job's photo." },
+          {
+            type: "object", name: "photos", label: "Loose photos", list: true,
+            description: "Usually filled from the Mac folder \"0 Services\". The first one is the card photo.",
+            ui: { itemProps: (item: Record<string, unknown>) => ({ label: (typeof item?.alt === "string" && item.alt) || "Photo" }) },
+            fields: [
+              { type: "image", name: "src", label: "Photo", required: true },
+              { type: "string", name: "alt", label: "What it shows" },
+              { type: "number", name: "w", label: "Width in px (filled in automatically)" },
+              { type: "number", name: "h", label: "Height in px (filled in automatically)" },
+            ],
+          },
           { type: "string", name: "matchTypes", label: "Show jobs of these types", list: true, description: "Exactly as the job's Type, e.g. Fitted wardrobes" },
           { type: "string", name: "matchTags", label: "...or with these tags", list: true, description: "Exactly as the job's tags, e.g. IKEA PAX" },
           {

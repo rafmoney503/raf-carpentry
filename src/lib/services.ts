@@ -14,6 +14,9 @@ export type Service = {
   summary: string;
   intro: string;
   image?: string;
+  /* Loose photos from the Mac folder "0 Services/<service name>" (scripts/service-photos.py).
+     The first one becomes the card photo, in place of a drawing. */
+  photos?: { src: string; w: number; h: number; alt: string }[];
   matchTypes: string[];
   matchTags: string[];
   points: { title: string; description: string }[];
@@ -33,11 +36,20 @@ export type ServicesData = {
 
 export function getServicesData(): ServicesData {
   const d = readPageJson<ServicesData>('services.json');
-  return { ...d, services: (d.services ?? []).filter((s) => s?.slug) };
+  return {
+    ...d,
+    services: (d.services ?? [])
+      .filter((s) => s?.slug)
+      // A photo added in TinaCMS may have no size yet: assume 4:3 so the gallery still works.
+      .map((s) => ({ ...s, photos: (s.photos ?? []).filter((p) => p?.src).map((p) => ({ ...p, w: p.w || 1200, h: p.h || 900, alt: p.alt || `${s.name} by Raf Carpentry` })) })),
+  };
 }
 
 export const getServices = () => getServicesData().services;
 export const getService = (slug: string) => getServices().find((s) => s.slug === slug);
+
+/* Card and sharing photo: a dropped-in photo first, then the chosen image or drawing, then the newest job. */
+export const coverFor = (s: Service, jobs: Project[]) => s.photos?.[0]?.src || s.image || jobs[0]?.cover.src;
 
 const norm = (s: string) => s.trim().toLowerCase();
 

@@ -9,6 +9,8 @@ import { formatMonth } from '@/lib/projects';
 import { QUOTE_HREF, whatsappText } from '@/lib/site';
 import { jsonLd, pageMeta, SITE_URL } from '@/lib/seo';
 import { areasFor, getService, getServices, getServicesData, joinAreas, jobsFor } from '@/lib/services';
+import ProjectGallery from '@/components/project/ProjectGallery';
+import '@/app/portfolio/project.css';
 
 export function generateStaticParams() {
   return getServices().map((s) => ({ slug: s.slug }));
@@ -30,6 +32,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
   const areas = areasFor(jobs);
   const others = getServices().filter((x) => x.slug !== s.slug);
   const waText = whatsappText(`/services/${s.slug}`, s.name);
+  const photos = s.photos ?? [];
 
   const serviceLd = {
     '@context': 'https://schema.org',
@@ -99,7 +102,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
             </ul>
           </Container>
         </section>
-      ) : (
+      ) : photos.length ? null : (
         <section id="jobs" className="scroll-mt-20 border-t border-line">
           <Container className="grid grid-cols-1 items-center gap-8 py-14 md:grid-cols-12 md:gap-6 md:py-16">
             {s.image ? (
@@ -123,7 +126,22 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
         </section>
       )}
 
-      {/* What customers say: the reviews about this kind of work first */}
+      {/* Loose photos from the "0 Services" folder (opens full screen) */}
+      {photos.length ? (
+        <section id="photos" className="scroll-mt-20 border-t border-line">
+          <Container className="py-14 md:py-20">
+            <div className="max-w-[62ch]">
+              <SectionHeading>{jobs.length ? 'More photos' : 'Photos'}</SectionHeading>
+              {!jobs.length ? <p className="mt-4 text-[16px] leading-relaxed text-muted">Ask me on WhatsApp for more pictures of recent jobs like these.</p> : null}
+            </div>
+            <div className="mt-10">
+              <ProjectGallery photos={photos} title={s.name} />
+            </div>
+          </Container>
+        </section>
+      ) : null}
+
+            {/* What customers say: the reviews about this kind of work first */}
       <section className="border-t border-line">
         <Container className="py-14 md:py-20">
           <Reviews max={3} job={{ slug: '', main: `${s.name} ${(s.matchTags ?? []).join(' ')}`, tags: (s.matchTypes ?? []).join(' ') }} />
