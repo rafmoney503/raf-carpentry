@@ -8,6 +8,7 @@ const explore = [
   { href: '/sketchup', label: 'SketchUp' },
   { href: '/cabinetos', label: 'CabinetOS' },
   { href: '/tools', label: 'Tools' },
+  { href: '/calculator', label: 'Calculator' },
 ];
 const read = [
   { href: '/blog', label: 'Blog' },

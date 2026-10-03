@@ -17,7 +17,8 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       <Navbar />
       <main className="min-h-screen">{children}</main>
       <Footer />
-      {pathname?.startsWith('/editor') ? null : <WhatsAppFloat />}
+      {/* No floating WhatsApp on the calculator: it would sit on top of the = key on phones. */}
+      {pathname?.startsWith('/editor') || pathname === '/calculator' ? null : <WhatsAppFloat />}
     </>
   );
 }

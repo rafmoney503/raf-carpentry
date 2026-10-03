@@ -49,6 +49,23 @@ export default function ToolsPage() {
       </PageHeader>
 
       <Container className="pb-8">
+        {/* Teaser for the free calculator page */}
+        <Link
+          href="/calculator"
+          className="group mb-12 grid grid-cols-1 items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent sm:grid-cols-[minmax(0,1fr)_auto] md:mb-16 md:p-6"
+        >
+          <div>
+            <p className="font-mono text-[13px] text-accent">Free tool</p>
+            <h2 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Workshop calculator in mm</h2>
+            <p className="mt-1 text-[15px] text-muted">The quick calc from CabinetOS: answers in mm, cm and inches, checked against a full board.</p>
+          </div>
+          <div className="flex items-center gap-5">
+            <p className="whitespace-nowrap rounded-sm border border-line bg-paper px-4 py-2.5 font-mono text-[15px] text-muted" aria-hidden="true">
+              600 − 18 × 2 = <span className="font-semibold text-ink">564</span>
+            </p>
+            <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+          </div>
+        </Link>
         {d.categories.map((cat, ci) => (
           <section key={ci} className="grid grid-cols-1 gap-8 border-t border-line py-12 md:grid-cols-12 md:gap-6 md:py-16">
             <SectionHeading className="md:col-span-4">{cat.name}</SectionHeading>

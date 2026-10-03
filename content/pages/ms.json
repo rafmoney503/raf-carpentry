@@ -33,6 +33,13 @@
       "highlight": false
     },
     {
+      "label": "Workshop Calculator",
+      "subtitle": "Free mm calculator, the quick calc from CabinetOS.",
+      "url": "/calculator",
+      "icon": "",
+      "highlight": false
+    },
+    {
       "label": "SketchUp for Carpenters",
       "subtitle": "How I design every project in 3D before building.",
       "url": "/sketchup",

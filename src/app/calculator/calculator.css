@@ -1,0 +1,42 @@
+/* Workshop calculator: tape-measure ticks along the top of the display, blinking caret, board bar. */
+
+.calc-ticks {
+  height: 14px;
+  background-image:
+    linear-gradient(to right, var(--color-line-strong) 1px, transparent 1px),
+    linear-gradient(to right, var(--color-line) 1px, transparent 1px);
+  background-size: 40px 14px, 8px 7px;
+  background-repeat: repeat-x;
+  background-position: 0 0, 0 0;
+}
+
+.calc-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: var(--color-accent);
+  animation: calc-blink 1.06s steps(1) infinite;
+}
+@keyframes calc-blink { 50% { opacity: 0; } }
+
+.calc-key {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.calc-key:active { transform: translateY(1px); }
+
+.calc-kbd {
+  display: inline-block; min-width: 22px; padding: 1px 6px; margin-right: 2px;
+  border: 1px solid var(--color-line-strong); border-bottom-width: 2px; border-radius: 3px;
+  background: var(--color-mount); font-family: var(--font-mono); font-size: 12px; color: var(--color-ink); text-align: center;
+}
+
+.calc-bar-fill { transition: width 0.35s var(--ease-soft); }
+
+@media (prefers-reduced-motion: reduce) {
+  .calc-caret { animation: none; }
+  .calc-bar-fill { transition: none; }
+}
