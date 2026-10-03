@@ -4,12 +4,12 @@
   "kicker": "Before you get in touch",
   "title": "How it works,",
   "titleAccent": "from first message to fitted.",
-  "lede": "What I need from you, what you get from me, and the choices worth thinking about before we meet. Five minutes here saves a lot of back and forth.",
+  "lede": "What I need from you, what you get from me, and the choices worth thinking about before we meet. Tick what fits in the brief further down and everything you pick goes straight into a ready-written message to me.",
   "stepsHeading": "Five steps",
   "steps": [
     {
       "title": "Get in touch",
-      "description": "Send photos and rough sizes on WhatsApp, or book a visit online. I reply within 24 hours."
+      "description": "Tick what fits in the brief on this page and it becomes a ready-written WhatsApp message to me. Or book a visit online. I reply within 24 hours."
     },
     {
       "title": "Survey",
@@ -83,10 +83,19 @@
   "materialsIntro": "Most fitted furniture is made from one of these. Not sure? Pick \"not sure\" in the brief below and I will suggest what suits the room and the budget.",
   "materials": [
     {
+      "name": "MDF",
+      "cost": "£",
+      "bestFor": "Wardrobes, cupboards and shelving that will be painted later.",
+      "description": "Built and fitted in bare MDF, ready to paint when you are, by you or your decorator. A good, affordable board that stays flat and straight.",
+      "image": "/images/projects/bookcase-radiator-cover-east-finchley/cover.jpg",
+      "imageAlt": "Bare MDF bookcase with a grille radiator cover",
+      "link": "/portfolio/bookcase-radiator-cover-east-finchley"
+    },
+    {
       "name": "Painted MDF",
       "cost": "££",
       "bestFor": "Painted wardrobes, alcove units, bookcases, panelled doors.",
-      "description": "Smooth and stable, so it takes paint well and stays flat. Any colour you like. It needs painting: by me, or left ready for your decorator.",
+      "description": "Smooth and stable, so it takes paint well and stays flat. I build it ready for your decorator, who can paint it any colour you like.",
       "image": "/images/projects/alcove-shelves-newington-green/cover.jpg",
       "imageAlt": "White painted alcove unit with shelves and a cupboard",
       "link": "/portfolio/alcove-shelves-newington-green"
@@ -133,7 +142,7 @@
   "finishes": [
     {
       "title": "Painted",
-      "description": "Any colour. Painted by me, or left ready for your decorator if you would rather they did it with the walls."
+      "description": "Left ready for your decorator, who can paint it any colour along with the walls."
     },
     {
       "title": "Natural wood",
@@ -153,7 +162,7 @@
     }
   ],
   "briefHeading": "Put your brief together",
-  "briefIntro": "Tick what fits, add sizes if you have them and your details. Then send it to me on WhatsApp or by email, and add your photos in the chat.",
+  "briefIntro": "Tick as many as fit. Everything you pick is added to your message automatically, and you can see it build up as you go. Then send it on WhatsApp or by email, with your photos.",
   "briefWhat": [
     "Fitted wardrobe",
     "Alcove units",
@@ -184,15 +193,15 @@
     "Seating"
   ],
   "briefMaterial": [
-    "Painted MDF",
+    "MDF",
+    "Moisture-resistant MDF",
     "Birch ply",
     "Walnut or oak",
     "IKEA PAX built in",
     "Not sure, advise me"
   ],
   "briefFinish": [
-    "Painted by you",
-    "Ready for my decorator",
+    "Ready for my decorator to paint",
     "MDF only, no paint",
     "Natural wood",
     "Not sure"
@@ -217,6 +226,12 @@
     "Free parking nearby",
     "I have a permit for you"
   ],
+  "briefPhotoTips": [
+    "The whole wall, taken from the doorway",
+    "Close-ups of sockets, radiators, pipes or the boiler",
+    "Floor to ceiling with a tape measure in the photo",
+    "Anything you like the look of"
+  ],
   "faqHeading": "Questions people ask",
   "faq": [
     {
@@ -233,7 +248,7 @@
     },
     {
       "question": "Who paints it?",
-      "answer": "Either works. I can paint it, or leave it ready for your decorator. We agree which before I start."
+      "answer": "I focus on the woodwork. Everything is built and fitted ready for your decorator, or left as bare MDF if you would rather paint it yourself."
     },
     {
       "question": "Can I change things after the drawing?",
