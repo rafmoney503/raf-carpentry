@@ -3,7 +3,7 @@ import QRCode from 'qrcode';
 import { Container } from '@/components/ui';
 import SocialIcon from '@/components/SocialIcon';
 import { GoogleRating } from '@/components/Reviews';
-import { GOOGLE_WRITE_REVIEW_URL, PHONE_DISPLAY, PHONE_HREF, whatsappUrl } from '@/lib/site';
+import { GOOGLE_WRITE_REVIEW_URL, PHONE_DISPLAY, PHONE_HREF, REVIEW_SHORT_URL, whatsappUrl } from '@/lib/site';
 
 /* For customers when a job is finished: one button (and a QR code to show on Raf's phone)
    that opens the Google "write a review" box for RAF CARPENTRY. Not in the menu or in Google. */
@@ -16,7 +16,8 @@ export const metadata: Metadata = {
 };
 
 export default async function ReviewPage() {
-  const qr = await QRCode.toString(GOOGLE_WRITE_REVIEW_URL, {
+  // The short link makes a simpler QR code, which scans more easily off a phone screen.
+  const qr = await QRCode.toString(REVIEW_SHORT_URL, {
     type: 'svg',
     margin: 0,
     errorCorrectionLevel: 'M',

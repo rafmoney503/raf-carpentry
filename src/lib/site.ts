@@ -12,6 +12,8 @@ export const BOOKING_URL =
 export const GOOGLE_PLACE_ID = 'ChIJOZ8b3lgZdkgRGsfKVoPIUDc';
 export const GOOGLE_REVIEWS_URL = `https://www.google.com/maps/place/?q=place_id:${GOOGLE_PLACE_ID}`;
 export const GOOGLE_WRITE_REVIEW_URL = `https://search.google.com/local/writereview?placeid=${GOOGLE_PLACE_ID}`;
+// Short link used in QR codes and printed cards; redirects to GOOGLE_WRITE_REVIEW_URL (src/app/review/google/route.ts).
+export const REVIEW_SHORT_URL = 'https://www.rafcarpentry.com/review/google';
 
 export const SOCIAL_URLS = [
   'https://www.instagram.com/rafcarpentry/',
