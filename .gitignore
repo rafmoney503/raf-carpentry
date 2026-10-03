@@ -42,3 +42,5 @@ next-env.d.ts
 
 node_modules
 .env
+# Python cache from scripts/
+__pycache__/
