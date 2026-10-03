@@ -39,16 +39,16 @@
       "imageAlt": "Two unpainted MDF wardrobes with panelled doors either side of a bay window"
     },
     {
-      "title": "Garden office fit-outs",
-      "description": "Desks, shelving and cupboards built in, so the room works from day one.",
-      "image": "/images/projects/IMG_9245.jpg",
-      "imageAlt": "Garden office with built-in shelving, low cupboards and a long worktop"
-    },
-    {
       "title": "Alcoves, pantries and cupboards",
       "description": "Storage built into the awkward spaces, with shelves set where you need them.",
       "image": "/images/projects/IMG_8984.jpg",
       "imageAlt": "Tall pantry cupboard with adjustable shelves and tray dividers"
+    },
+    {
+      "title": "Garden office fit-outs",
+      "description": "Desks, shelving and cupboards built in, so the room works from day one.",
+      "image": "/images/projects/IMG_9245.jpg",
+      "imageAlt": "Garden office with built-in shelving, low cupboards and a long worktop"
     }
   ],
   "processHeading": "Nothing gets cut until you've seen it.",
