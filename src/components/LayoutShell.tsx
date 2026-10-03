@@ -18,8 +18,8 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       <Navbar />
       <main className="min-h-screen">{children}</main>
       <Footer />
-      {/* Floating buttons: How it works bottom-left, WhatsApp bottom-right. None on the calculator
-          (they sat on the keypad on phones). How it works has its own WhatsApp button that sends
+      {/* Floating buttons: Plan your project (/how-it-works) bottom-left, WhatsApp bottom-right. None on the calculator
+          (they sat on the keypad on phones). Plan your project has its own WhatsApp button that sends
           the customer's brief, so neither floats there either. */}
       {pathname?.startsWith('/editor') || pathname === '/calculator' || pathname === '/how-it-works' ? null : (
         <>

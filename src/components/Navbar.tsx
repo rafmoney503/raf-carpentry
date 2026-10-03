@@ -50,12 +50,11 @@ export default function Navbar() {
             href={QUOTE_HREF}
             className="btn btn-primary btn-sm"
             onClick={(e) => {
-              // Already on How it works: always scroll to the brief, even if the address already ends in #brief.
-              const brief = pathname === '/how-it-works' ? document.getElementById('brief') : null;
-              if (brief) {
+              // Already on the page: go back to its top.
+              if (pathname === QUOTE_HREF) {
                 e.preventDefault();
-                brief.scrollIntoView({ behavior: 'smooth' });
-                history.replaceState(history.state, '', '#brief');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                history.replaceState(history.state, '', QUOTE_HREF);
               }
             }}
           >
@@ -77,7 +76,7 @@ export default function Navbar() {
 
       {open && (
         <nav aria-label="Mobile" className="border-t border-line bg-paper px-5 pb-6 pt-2 lg:hidden">
-          {[...links, { href: '/how-it-works', label: 'How it works' }, { href: '/contact', label: 'Contact' }].map((l) => (
+          {[...links, { href: '/how-it-works', label: 'Plan your project' }, { href: '/contact', label: 'Contact' }].map((l) => (
             <Link
               key={l.href}
               href={l.href}

@@ -453,7 +453,7 @@ export const pageCollections: Collection[] = [
   },
   {
     name: "how_it_works_page",
-    label: "How it works",
+    label: "Plan your project (How it works page)",
     path: pagesPath,
     format: jsonFormat,
     match: { include: "how-it-works" },

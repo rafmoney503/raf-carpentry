@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
-/* "How it works" button that stays in the bottom-left corner on every page, opposite the
-   green WhatsApp button, so customers can always find what to send and what to expect. */
+/* "Plan your project" button (the /how-it-works page) that stays in the bottom-left corner on every
+   page, opposite the green WhatsApp button, so customers can always find what to send and what to expect. */
 export default function HowItWorksFloat() {
   return (
     <Link
@@ -14,7 +14,7 @@ export default function HowItWorksFloat() {
         <circle cx="4" cy="15" r="1.6" fill="currentColor" />
         <path d="M8.5 5h8M8.5 10h8M8.5 15h6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
       </svg>
-      How it works
+      Plan your project
     </Link>
   );
 }

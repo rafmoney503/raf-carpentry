@@ -11,7 +11,7 @@ const explore = [
   { href: '/calculator', label: 'Calculator' },
 ];
 const read = [
-  { href: '/how-it-works', label: 'How it works' },
+  { href: '/how-it-works', label: 'Plan your project' },
   { href: '/blog', label: 'Blog' },
   { href: '/about', label: 'About' },
   { href: '/contact', label: 'Contact' },

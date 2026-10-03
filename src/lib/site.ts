@@ -1,8 +1,9 @@
 // One place for the business details used across the site.
-// Every "Get a quote" button goes to the brief on How it works (QUOTE_HREF): the customer ticks what
-// fits and it becomes a ready-written WhatsApp message or email. BOOKING_URL is the ServiceM8 online
-// booking page, still linked as "Book a visit online" for people who would rather pick a date.
-export const QUOTE_HREF = '/how-it-works#brief';
+// Every "Get a quote" button opens the top of the "Plan your project" page (/how-it-works, QUOTE_HREF):
+// what I need, what you get, materials, then a brief that becomes a ready-written WhatsApp message or
+// email. BOOKING_URL is the ServiceM8 online booking page, still linked as "Book a visit online" for
+// people who would rather pick a date.
+export const QUOTE_HREF = '/how-it-works';
 export const BOOKING_URL =
   'https://book.servicem8.com/request_service_booking?strVendorUUID=0ddb658e-f9b6-46a4-bf41-1bb0e304e6db';
 

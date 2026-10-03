@@ -10,8 +10,8 @@ type Props = {
   note?: string;
 };
 
-/* Quote panel: "Get a quote" goes to the brief on How it works (a ready-written WhatsApp message or
-   email). The ServiceM8 booking page stays one tap away for people who want to pick a date. */
+/* Quote panel: "Get a quote" opens the Plan your project page (/how-it-works), which ends in a brief
+   that becomes a ready-written WhatsApp message or email. The ServiceM8 booking page stays one tap away for people who want to pick a date. */
 export default function QuoteCta({
   heading = 'Get a free quote',
   body = 'Tick what fits in a short brief and it becomes a ready-written message to me, with everything I need to know.',
