@@ -7,6 +7,11 @@ import WhatsAppButton from '@/components/WhatsAppButton';
 import { BOOKING_URL } from '@/lib/site';
 import BriefBuilder from './brief-builder';
 import Sketch from './sketches';
+import JobNote from './job-note';
+import { getAllProjects } from '@/lib/projects';
+import { pageMeta } from '@/lib/seo';
+import Reviews from '@/components/Reviews';
+import { getReviews } from '@/lib/reviews';
 
 type Item = { title: string; description: string };
 type Material = { name: string; cost: string; bestFor: string; description: string; image: string; imageAlt: string; link: string };
@@ -47,7 +52,7 @@ type HowItWorksData = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const d = readPageJson<HowItWorksData>('how-it-works.json');
-  return { title: d.metaTitle, description: d.metaDescription };
+  return pageMeta({ title: d.metaTitle, description: d.metaDescription, path: '/how-it-works', ownImage: true });
 }
 
 const jump = [
@@ -79,6 +84,9 @@ function Check() {
 
 export default function HowItWorksPage() {
   const d = readPageJson<HowItWorksData>('how-it-works.json');
+  // For "Get a quote" on a job page (?job=slug): the brief names that job.
+  const hasReviews = getReviews().reviews.length > 0;
+  const jobs = getAllProjects().map((p) => ({ slug: p.slug, title: p.title, area: p.area, cover: p.cover.src }));
 
   return (
     <>
@@ -90,6 +98,7 @@ export default function HowItWorksPage() {
             </a>
           ))}
         </nav>
+        <JobNote jobs={jobs} />
       </PageHeader>
 
       {/* What I need / what you get */}
@@ -178,6 +187,13 @@ export default function HowItWorksPage() {
         </Container>
       </section>
 
+      {/* What customers say */}
+      <section className="border-t border-line">
+        <Container className={hasReviews ? 'py-14 md:py-20' : 'py-8 md:py-10'}>
+          <Reviews max={3} />
+        </Container>
+      </section>
+
       {/* Brief builder */}
       <section id="brief" className="scroll-mt-20 border-t border-line bg-raised">
         <Container className="py-14 md:py-20">
@@ -189,6 +205,7 @@ export default function HowItWorksPage() {
           <div className="mt-10">
             <BriefBuilder
               options={{ what: d.briefWhat, room: d.briefRoom, uses: d.briefUses, material: d.briefMaterial, finish: d.briefFinish, timing: d.briefTiming, budget: d.briefBudget, parking: d.briefParking, photoTips: d.briefPhotoTips }}
+              jobs={jobs}
             />
           </div>
         </Container>

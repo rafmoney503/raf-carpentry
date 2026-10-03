@@ -18,6 +18,9 @@ const links = [
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  // On a job page, Get a quote carries the job so the brief can name it.
+  const jobSlug = pathname?.startsWith('/portfolio/') ? pathname.split('/')[2] : '';
+  const quoteHref = jobSlug ? `${QUOTE_HREF}?job=${jobSlug}` : QUOTE_HREF;
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-paper/90 backdrop-blur-md">
@@ -47,14 +50,14 @@ export default function Navbar() {
             {PHONE_DISPLAY}
           </a>
           <Link
-            href={QUOTE_HREF}
+            href={quoteHref}
             className="btn btn-primary btn-sm"
             onClick={(e) => {
               // Already on the page: go back to its top.
               if (pathname === QUOTE_HREF) {
                 e.preventDefault();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-                history.replaceState(history.state, '', QUOTE_HREF);
+                history.replaceState(history.state, '', window.location.pathname + window.location.search);
               }
             }}
           >

@@ -4,6 +4,7 @@ import { formatMonth, getAllProjects, getKit } from '@/lib/projects';
 import { matches } from '@/lib/search';
 import PortfolioBrowser, { type ArchiveCard, type JobCard } from './portfolio-browser';
 import './project.css';
+import { pageMeta } from '@/lib/seo';
 
 type PortfolioPageData = {
   title: string;
@@ -12,10 +13,11 @@ type PortfolioPageData = {
   projects: ArchiveCard[];
 };
 
-export const metadata = {
+export const metadata = pageMeta({
   title: 'My work | Raf Carpentry',
   description: 'Fitted wardrobes, alcove units and built-ins across north London, with the build photographed step by step.',
-};
+  path: '/portfolio',
+});
 
 export default function PortfolioPage() {
   const d = readPageJson<PortfolioPageData>('portfolio.json');

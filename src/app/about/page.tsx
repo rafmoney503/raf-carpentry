@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { readPageJson } from '@/lib/pages';
 import { Container, SectionHeading } from '@/components/ui';
 import SocialIcon, { networkOf } from '@/components/SocialIcon';
+import { pageMeta } from '@/lib/seo';
 
 type AboutPageData = {
   title: string;
@@ -21,6 +22,12 @@ type AboutPageData = {
 
 // Until a portrait is added in the CMS, the page uses the photo of Raf measuring timber.
 const FALLBACK_PHOTO = '/images/raf-at-work.jpg';
+
+export const metadata = pageMeta({
+  title: 'About Rafal Janczy | Raf Carpentry',
+  description: "A London carpenter with 20+ years' experience who draws every job in SketchUp first, and built the CabinetOS app for cabinet makers.",
+  path: '/about',
+});
 
 export default function About() {
   const d = readPageJson<AboutPageData>('about.json');

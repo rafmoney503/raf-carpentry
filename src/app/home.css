@@ -29,6 +29,7 @@
 
 /* Sections */
 .home .sec { padding-block: 120px; }
+.home .sec-tight { padding-block: 48px; border-top: 1px solid var(--color-line); border-bottom: 1px solid var(--color-line); }
 .home .sec-head { max-width: 760px; margin-bottom: 56px; }
 
 /* What I build */

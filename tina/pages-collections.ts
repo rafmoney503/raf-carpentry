@@ -452,6 +452,31 @@ export const pageCollections: Collection[] = [
     ],
   },
   {
+    name: "reviews_page",
+    label: "Reviews",
+    path: pagesPath,
+    format: jsonFormat,
+    match: { include: "reviews" },
+    ui: pageUi,
+    fields: [
+      { type: "string", name: "heading", label: "Heading", isTitle: true, required: true },
+      { type: "string", name: "intro", label: "Line under the heading" },
+      { type: "string", name: "googleRating", label: "Google rating (e.g. 4.8)", description: "Copy it from your Google Business Profile when it changes." },
+      { type: "string", name: "googleCount", label: "Number of Google reviews (e.g. 27)" },
+      {
+        type: "object", name: "reviews", label: "Reviews", list: true, ui: listItemUi,
+        description: "Real reviews only, copied from Google. The first three show on the home page; on a job page, reviews about that job come first.",
+        fields: [
+          { type: "string", name: "name", label: "Customer first name", required: true },
+          { type: "string", name: "area", label: "Area (e.g. Highbury)" },
+          { type: "string", name: "text", label: "Review", ui: { component: "textarea" }, required: true },
+          { type: "number", name: "stars", label: "Stars (1 to 5)" },
+          { type: "string", name: "job", label: "Job page (optional)", description: "The end of the job's address, e.g. floating-walnut-desk-highbury" },
+        ],
+      },
+    ],
+  },
+  {
     name: "how_it_works_page",
     label: "Plan your project (How it works page)",
     path: pagesPath,

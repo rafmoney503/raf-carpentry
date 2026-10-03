@@ -6,6 +6,8 @@ import { notFound } from 'next/navigation';
 import ToolsUsed from '@/components/ToolsUsed';
 import { MountedImage } from '@/components/ui';
 import SocialIcon from '@/components/SocialIcon';
+import type { Metadata } from 'next';
+import { pageMeta } from '@/lib/seo';
 
 export async function generateStaticParams() {
   const posts = getAllPosts();
@@ -20,6 +22,22 @@ function imageExists(src?: string) {
 function formatDate(value: unknown) {
   const d = new Date(value instanceof Date ? value : String(value));
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/London' });
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const post = getAllPosts().find((p) => p.slug === slug);
+  if (!post) return {};
+  const raw: unknown = post.date; // gray-matter can give a Date or a string
+  const d = new Date(raw instanceof Date ? raw : String(raw));
+  return pageMeta({
+    title: `${post.title} | Raf Carpentry`,
+    description: post.excerpt,
+    path: `/blog/${post.slug}`,
+    type: 'article',
+    ownImage: true,
+    publishedTime: Number.isNaN(d.getTime()) ? undefined : d.toISOString(),
+  });
 }
 
 export default async function BlogPost({ params }: { params: Promise<{ slug: string }> }) {

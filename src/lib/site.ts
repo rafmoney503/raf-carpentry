@@ -7,6 +7,18 @@ export const QUOTE_HREF = '/how-it-works';
 export const BOOKING_URL =
   'https://book.servicem8.com/request_service_booking?strVendorUUID=0ddb658e-f9b6-46a4-bf41-1bb0e304e6db';
 
+// Google Business Profile "RAF CARPENTRY" (14 Kings Rd, N22 5SN). The place ID builds both links:
+// GOOGLE_REVIEWS_URL opens the profile with its reviews, GOOGLE_WRITE_REVIEW_URL opens the "write a review" box.
+export const GOOGLE_PLACE_ID = 'ChIJOZ8b3lgZdkgRGsfKVoPIUDc';
+export const GOOGLE_REVIEWS_URL = `https://www.google.com/maps/place/?q=place_id:${GOOGLE_PLACE_ID}`;
+export const GOOGLE_WRITE_REVIEW_URL = `https://search.google.com/local/writereview?placeid=${GOOGLE_PLACE_ID}`;
+
+export const SOCIAL_URLS = [
+  'https://www.instagram.com/rafcarpentry/',
+  'https://www.tiktok.com/@rafcarpentry',
+  'https://www.facebook.com/rafcarpentry/',
+];
+
 export const PHONE_DISPLAY = '07792 860221';
 export const PHONE_HREF = 'tel:07792860221';
 export const EMAIL = 'info@rafcarpentry.com';

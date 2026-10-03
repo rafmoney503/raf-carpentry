@@ -1,8 +1,10 @@
 'use client';
 import { useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import SocialIcon from '@/components/SocialIcon';
 import { BOOKING_URL, EMAIL, whatsappUrl } from '@/lib/site';
 import AddressFinder, { type Address } from './address-finder';
+import { clearJobFromLink, jobUrl, useJobFromLink, type JobRef } from './job-from-link';
 
 export type BriefOptions = {
   what: string[];
@@ -56,7 +58,9 @@ function Field({ n, title, hint, children }: { n: number; title: string; hint?: 
 const input =
   'h-12 w-full rounded-sm border border-line-strong bg-mount px-3 text-[16px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20';
 
-export default function BriefBuilder({ options }: { options: BriefOptions }) {
+export default function BriefBuilder({ options, jobs }: { options: BriefOptions; jobs: JobRef[] }) {
+  // Came from "Get a quote" on a job page: that job goes at the top of the message.
+  const job = useJobFromLink(jobs);
   const [what, setWhat] = useState<string[]>([]);
   const [room, setRoom] = useState<string[]>([]);
   const [uses, setUses] = useState<string[]>([]);
@@ -89,6 +93,7 @@ export default function BriefBuilder({ options }: { options: BriefOptions }) {
 
   const message = useMemo(() => {
     const lines = [name.trim() ? `Hi Raf, this is ${name.trim()}. Here is my brief from your website.` : 'Hi Raf, here is my brief from your website.', ''];
+    if (job) lines.push(`Something like your job: ${job.title}, ${job.area}`, jobUrl(job.slug), '');
     if (what.length) lines.push(`What: ${join(what)}`);
     if (room.length) lines.push(`${room.length > 1 ? 'Rooms' : 'Room'}: ${join(room)}`);
     if (uses.length) lines.push(`For: ${join(uses)}`);
@@ -106,7 +111,7 @@ export default function BriefBuilder({ options }: { options: BriefOptions }) {
     if (notes.trim()) lines.push('', notes.trim());
     lines.push('', 'I will send photos of the space next.');
     return lines.join('\n');
-  }, [what, room, uses, material, finish, hasSize, size, name, addressText, parking, access, timing, budget, notes]);
+  }, [job, what, room, uses, material, finish, hasSize, size, name, addressText, parking, access, timing, budget, notes]);
 
   const mailto = `mailto:${EMAIL}?subject=${encodeURIComponent(`My project brief${what.length ? `: ${what.join(' + ')}` : ''}`.slice(0, 120))}&body=${encodeURIComponent(message.replace('I will send photos of the space next.', 'Photos of the space attached.'))}`;
 
@@ -140,6 +145,20 @@ export default function BriefBuilder({ options }: { options: BriefOptions }) {
   return (
     <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:gap-6">
       <form className="md:col-span-7" onSubmit={(e) => e.preventDefault()} aria-label="Project brief">
+        {job ? (
+          <div className="mb-6 flex items-center gap-3.5 rounded-sm border border-accent/40 bg-mount p-2.5 pr-3">
+            <span className="relative h-14 w-14 flex-none overflow-hidden rounded-[2px] bg-raised">
+              <Image src={job.cover} alt="" fill sizes="56px" className="object-cover" />
+            </span>
+            <span className="min-w-0 flex-1 text-[14.5px] leading-snug">
+              <span className="block font-mono text-[12px] text-accent">Something like this job</span>
+              <span className="line-clamp-2 block font-medium text-ink">{job.title}, {job.area}</span>
+            </span>
+            <button type="button" onClick={clearJobFromLink} className="flex-none rounded-sm px-2 py-1.5 font-mono text-[12px] text-faint transition-colors hover:text-ink">
+              Remove
+            </button>
+          </div>
+        ) : null}
         <Field n={1} title="What is it?" hint="pick any">
           <Chips label="What is it?" options={options.what} value={what} onPick={toggle(setWhat)} multi />
         </Field>

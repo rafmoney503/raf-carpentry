@@ -3,6 +3,7 @@ import path from 'path';
 import Link from 'next/link';
 import { getAllPosts } from '@/lib/blog';
 import { Container, MountedImage, PageHeader } from '@/components/ui';
+import { pageMeta } from '@/lib/seo';
 
 function imageExists(src?: string) {
   if (!src || !src.startsWith('/')) return false;
@@ -13,6 +14,12 @@ function formatDate(value: unknown) {
   const d = new Date(value instanceof Date ? value : String(value));
   return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/London' });
 }
+
+export const metadata = pageMeta({
+  title: 'The Workshop Journal | Raf Carpentry',
+  description: 'How real jobs went together, step by step, plus tips on tools and SketchUp from a London carpenter.',
+  path: '/blog',
+});
 
 export default function Blog() {
   const posts = getAllPosts();

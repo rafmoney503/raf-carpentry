@@ -3,9 +3,19 @@ import Link from 'next/link';
 import { readPageJson } from '@/lib/pages';
 import { getAllPosts } from '@/lib/blog';
 import QuoteCta from '@/components/QuoteCta';
+import Reviews from '@/components/Reviews';
+import { getReviews } from '@/lib/reviews';
 import { QUOTE_HREF, whatsappText, whatsappUrl } from '@/lib/site';
 import SocialIcon from '@/components/SocialIcon';
+import { businessJsonLd, jsonLd, pageMeta } from '@/lib/seo';
 import './home.css';
+
+export const metadata = pageMeta({
+  title: 'Raf Carpentry | Fitted wardrobes and built-in furniture in London',
+  description: 'Fitted wardrobes, alcove units, bookcases and built-ins across London. You see the 3D drawing before a board is cut, and I reply within 24 hours.',
+  path: '/',
+  ownImage: true,
+});
 
 export type HomePageData = {
   heroKicker: string;
@@ -55,10 +65,13 @@ const tileSizes = ['(max-width: 860px) 100vw, 700px', '(max-width: 860px) 100vw,
 export default function HomePage() {
   const d = readPageJson<HomePageData>('home.json');
   const posts = getAllPosts().slice(0, 3);
+  const hasReviews = getReviews().reviews.length > 0;
   const phoneHref = `tel:${d.phone.replace(/\s/g, '')}`;
 
   return (
     <div className="home">
+      {/* Business details for Google: same name, address and phone as the Google Business Profile. */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(businessJsonLd)} />
       <section className="wrap grid12 hero">
         <div className="hero-copy">
           <p className="kicker anim">{d.heroKicker}</p>
@@ -146,6 +159,12 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className={`sec reviews${hasReviews ? '' : ' sec-tight'}`} id="reviews">
+        <div className="wrap">
+          <Reviews max={3} homeHeading />
         </div>
       </section>
 

@@ -4,6 +4,7 @@ import { Container, MountedImage, SectionHeading } from '@/components/ui';
 import PlanCard from '@/components/project/PlanCard';
 import ScreenGrid from '@/components/project/ScreenGrid';
 import { formatMonth, getAllProjects, isPlanReady } from '@/lib/projects';
+import { pageMeta } from '@/lib/seo';
 
 type SketchupPageData = {
   heroTitle: string;
@@ -39,6 +40,12 @@ type SketchupPageData = {
   ctaSubtitle: string;
   ctaButtonLabel: string;
 };
+
+export const metadata = pageMeta({
+  title: 'Why I draw every job in SketchUp | Raf Carpentry',
+  description: 'Every job is drawn in SketchUp first, so you see exactly what you are getting before a single board is ordered. Plans from real jobs, and how to learn SketchUp with me.',
+  path: '/sketchup',
+});
 
 export default function SketchUpPage() {
   const d = readPageJson<SketchupPageData>('sketchup.json');

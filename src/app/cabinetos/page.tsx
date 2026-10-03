@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { readPageJson } from '@/lib/pages';
 import { Container, MountedImage, SectionHeading } from '@/components/ui';
+import { pageMeta } from '@/lib/seo';
 
 function imageSrc(v: unknown): string {
   if (typeof v === 'string' && v.trim()) return v;
@@ -43,6 +44,12 @@ type CabinetosPageData = {
   bottomCtaSubtitle: string;
   bottomCtaButtonLabel: string;
 };
+
+export const metadata = pageMeta({
+  title: 'CabinetOS, the cabinet making app | Raf Carpentry',
+  description: 'CabinetOS automates your parts list, cut list, board optimisation and printing, so you can focus on building, not calculating.',
+  path: '/cabinetos',
+});
 
 export default function Cabinetos() {
   const d = readPageJson<CabinetosPageData>('cabinetos.json');

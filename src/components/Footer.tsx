@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import SocialIcon, { networkOf } from './SocialIcon';
-import { whatsappText, whatsappUrl } from '@/lib/site';
+import { GOOGLE_REVIEWS_URL, whatsappText, whatsappUrl } from '@/lib/site';
 
 const explore = [
   { href: '/portfolio', label: 'My Work' },
@@ -15,11 +15,13 @@ const read = [
   { href: '/blog', label: 'Blog' },
   { href: '/about', label: 'About' },
   { href: '/contact', label: 'Contact' },
+  { href: '/review', label: 'Leave a review' },
 ];
 const social = [
   { href: 'https://www.instagram.com/rafcarpentry/', label: 'Instagram' },
   { href: 'https://www.tiktok.com/@rafcarpentry', label: 'TikTok' },
   { href: 'https://www.facebook.com/rafcarpentry/', label: 'Facebook' },
+  { href: GOOGLE_REVIEWS_URL, label: 'Google reviews' },
 ];
 
 const linkClass = 'block py-2.5 text-[15px] text-muted transition-colors hover:text-ink md:py-1.5';
@@ -63,7 +65,13 @@ export default function Footer() {
                 const net = networkOf(l.href);
                 return (
                   <a key={l.href} href={l.href} target="_blank" rel="noopener" className={linkClass.replace('block', 'flex items-center gap-2.5')}>
-                    {net ? <SocialIcon network={net} size={17} /> : null}
+                    {net ? (
+                      <SocialIcon network={net} size={17} />
+                    ) : (
+                      <svg width="17" height="17" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" className="flex-none text-accent">
+                        <path d="M10 1.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8L10 14.9l-5.2 2.7 1-5.8L1.6 7.7l5.8-.8z" />
+                      </svg>
+                    )}
                     {l.label}
                   </a>
                 );

@@ -14,6 +14,9 @@ import PlanDrawings from '@/components/project/PlanDrawings';
 import { BOOKING_URL, QUOTE_HREF, whatsappText } from '@/lib/site';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import '../project.css';
+import { pageMeta } from '@/lib/seo';
+import Reviews from '@/components/Reviews';
+import { getReviews } from '@/lib/reviews';
 
 export function generateStaticParams() {
   return getAllProjects().map((p) => ({ slug: p.slug }));
@@ -23,11 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const p = getProject(slug);
   if (!p) return {};
-  return {
-    title: `${p.title}, ${p.area} | Raf Carpentry`,
-    description: p.summary,
-    openGraph: { title: `${p.title}, ${p.area}`, description: p.summary, images: [{ url: p.cover.src, width: p.cover.w, height: p.cover.h }] },
-  };
+  return pageMeta({ title: `${p.title}, ${p.area} | Raf Carpentry`, description: p.summary, path: `/portfolio/${p.slug}`, ownImage: true });
 }
 
 export default async function ProjectPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -38,6 +37,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   const all = getAllProjects();
   const next = all[(all.findIndex((x) => x.slug === p.slug) + 1) % all.length];
   const waText = whatsappText(`/portfolio/${p.slug}`, p.title);
+  const hasReviews = getReviews().reviews.length > 0;
   const stepCount = p.steps.length;
   const kit = getKit(p.slug);
 
@@ -75,7 +75,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             </dl>
 
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
-              <Link href={QUOTE_HREF} className="btn btn-primary">Get a quote</Link>
+              <Link href={`${QUOTE_HREF}?job=${p.slug}`} className="btn btn-primary">Get a quote</Link>
               <WhatsAppButton text={waText} />
               <a href="#photos" className="link-more">
                 All {p.gallery.length + 1} photos <span aria-hidden="true">↓</span>
@@ -198,6 +198,13 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         </section>
       ) : null}
 
+      {/* What customers say (reviews about this job first) */}
+      <section className="border-t border-line">
+        <Container className={hasReviews ? 'py-14 md:py-20' : 'py-8 md:py-10'}>
+          <Reviews max={3} jobSlug={p.slug} />
+        </Container>
+      </section>
+
       {/* Quote and next job */}
       <section className="border-t border-line bg-raised">
         <Container className="grid grid-cols-1 items-end gap-10 py-16 md:grid-cols-12 md:gap-6 md:py-20">
@@ -205,7 +212,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             <SectionHeading>Want something like this?</SectionHeading>
             <p className="mt-4 max-w-[52ch] text-muted">Tell me about the room. I&apos;ll come and measure up, then draw it before anything is cut.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={QUOTE_HREF} className="btn btn-primary">Get a quote</Link>
+              <Link href={`${QUOTE_HREF}?job=${p.slug}`} className="btn btn-primary">Get a quote</Link>
               <WhatsAppButton text={waText} />
             </div>
             <a href={BOOKING_URL} target="_blank" rel="noopener" className="link-more mt-6 text-[15px]">
