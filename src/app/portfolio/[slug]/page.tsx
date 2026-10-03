@@ -202,7 +202,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
       {/* What customers say (reviews about this job first) */}
       <section className="border-t border-line">
         <Container className={hasReviews ? 'py-14 md:py-20' : 'py-8 md:py-10'}>
-          <Reviews max={3} jobSlug={p.slug} />
+          <Reviews max={3} job={{ slug: p.slug, main: `${p.type} ${p.title}`, tags: (p.tags ?? []).join(' ') }} />
         </Container>
       </section>
 

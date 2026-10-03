@@ -3,5 +3,31 @@
   "intro": "From my Google Business Profile.",
   "googleRating": "4.8",
   "googleCount": "27",
-  "reviews": []
+  "reviews": [
+    {
+      "name": "Yasmin",
+      "text": "Raf has created bespoke cabinetry and panelling for us in our kitchen, living room and bedroom as well as some additional smaller pieces. Everything has been done to a very high standard and we couldn't recommend him more highly!",
+      "stars": 5
+    },
+    {
+      "name": "Marjan",
+      "text": "We were really impressed by the quality of the work Raf did. Also with his punctuality. He designed and installed our fitted wardrobes to a quality that he would have done in his own house I think. Really cared about the outcome. We feel so lucky to have found a carpenter like him in London.",
+      "stars": 5
+    },
+    {
+      "name": "Souad",
+      "text": "Raf helped us with a bespoke floor to ceiling bookshelf for our first floor landing. He gave us his time to discuss how it would be built and more importantly how he would get it into our house and up to the first floor. He built the bookcase exactly to our specification and design. … The result is a bookcase that fits the space perfectly. We are very pleased with the quality and workmanship of Raf's work.",
+      "stars": 5
+    },
+    {
+      "name": "Rebecca",
+      "text": "Raf fitted a sliding wooden door on our bathroom. He did a fantastic job from start to finish. He kept us updated, arrived promptly and worked really hard the whole day. The work and finish were excellent. Can't recommend him enough and will definitely be using him again.",
+      "stars": 5
+    },
+    {
+      "name": "Yas",
+      "text": "Raf helped us renovate our flat, he built walls, cupboards, doors and helped instal our kitchen. He was very organised and methodical in his approach. He wastes no time and gets the job done! A great carpenter and a nice guy.",
+      "stars": 5
+    }
+  ]
 }

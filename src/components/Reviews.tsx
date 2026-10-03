@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { GOOGLE_REVIEWS_URL } from '@/lib/site';
-import { getReviews, pickReviews } from '@/lib/reviews';
+import { getReviews, pickReviews, type JobForReviews } from '@/lib/reviews';
 import { SectionHeading } from './ui';
 
 /* "What customers say": the Google rating with a link to the profile, and review cards.
@@ -54,9 +54,10 @@ export function GoogleRating({ className = '', variant = 'box' }: { className?: 
   );
 }
 
-export default function Reviews({ max = 3, jobSlug, homeHeading = false }: { max?: number; jobSlug?: string; homeHeading?: boolean }) {
+/* `job` (slug, type + title, tags) puts the reviews about that kind of work first. */
+export default function Reviews({ max = 3, job, homeHeading = false }: { max?: number; job?: JobForReviews; homeHeading?: boolean }) {
   const d = getReviews();
-  const list = pickReviews(d.reviews, max, jobSlug);
+  const list = pickReviews(d.reviews, max, job);
 
   if (!list.length) {
     return (
@@ -76,9 +77,9 @@ export default function Reviews({ max = 3, jobSlug, homeHeading = false }: { max
         </div>
         <GoogleRating />
       </div>
-      <ul className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-6">
+      <ul className="-mx-5 mt-10 flex items-start snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 pb-2 md:mx-0 md:items-stretch md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0">
         {list.map((r, i) => (
-          <li key={i} className="flex flex-col rounded-sm border border-line-strong bg-mount p-6">
+          <li key={i} className="flex w-[84%] flex-none snap-start flex-col rounded-sm border border-line-strong bg-mount p-6 md:w-auto">
             <span className="flex items-center gap-0.5 text-accent" aria-label={`${r.stars ?? 5} out of 5 stars`}>
               {Array.from({ length: Math.max(1, Math.min(5, r.stars ?? 5)) }, (_, k) => <Star key={k} size={14} />)}
             </span>
@@ -94,6 +95,7 @@ export default function Reviews({ max = 3, jobSlug, homeHeading = false }: { max
           </li>
         ))}
       </ul>
+      {list.length > 1 ? <p className="mt-3 font-mono text-[12px] text-faint md:hidden">Swipe for more <span aria-hidden="true">→</span></p> : null}
     </div>
   );
 }

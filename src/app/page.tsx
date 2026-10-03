@@ -165,7 +165,7 @@ export default function HomePage() {
 
       <section className={`sec reviews${hasReviews ? '' : ' sec-tight'}`} id="reviews">
         <div className="wrap">
-          <Reviews max={3} homeHeading />
+          <Reviews max={6} homeHeading />
         </div>
       </section>
 
