@@ -208,6 +208,9 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
               <a href={QUOTE_URL} target="_blank" rel="noopener" className="btn btn-primary">Get a quote</a>
               <WhatsAppButton text={waText} />
             </div>
+            <Link href="/how-it-works" className="link-more mt-6 text-[15px]">
+              How it works and what I need from you <span aria-hidden="true">→</span>
+            </Link>
           </div>
           {next && next.slug !== p.slug ? (
             <Link href={`/portfolio/${next.slug}`} className="group md:col-span-4 md:col-start-9">

@@ -138,6 +138,9 @@ export default function HomePage() {
               ))}
             </ol>
             <div className="process-foot reveal">
+              <Link className="link-more" href="/how-it-works">
+                How it works in full <span aria-hidden="true">→</span>
+              </Link>
               <Link className="link-more" href="/sketchup">
                 {d.processLinkLabel} <span aria-hidden="true">→</span>
               </Link>

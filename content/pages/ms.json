@@ -19,6 +19,13 @@
       "highlight": false
     },
     {
+      "label": "How It Works",
+      "subtitle": "What I need from you, materials explained, and a 2-minute brief.",
+      "url": "/how-it-works",
+      "icon": "",
+      "highlight": false
+    },
+    {
       "label": "CabinetOS App Waitlist",
       "subtitle": "Cutlists. Boards. Done. A carpenter built this — join free.",
       "url": "/cabinetos",

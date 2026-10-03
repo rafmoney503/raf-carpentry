@@ -1,0 +1,112 @@
+{
+  "metaTitle": "How it works | Raf Carpentry",
+  "metaDescription": "What happens after you get in touch, what I need from you, and how to choose materials and finishes for fitted furniture in London.",
+  "kicker": "Before you get in touch",
+  "title": "How it works,",
+  "titleAccent": "from first message to fitted.",
+  "lede": "What I need from you, what you get from me, and the choices worth thinking about before we meet. Five minutes here saves a lot of back and forth.",
+  "stepsHeading": "Five steps",
+  "steps": [
+    { "title": "Get in touch", "description": "Send photos and rough sizes on WhatsApp, or book a visit online. I reply within 24 hours." },
+    { "title": "Survey", "description": "I visit, measure every wall and talk through how you'll use the space." },
+    { "title": "Draw", "description": "You get a 3D drawing with real measurements. We adjust it until it's right, then you sign it off." },
+    { "title": "Build", "description": "Every panel is cut to that drawing, in 18 mm board throughout, backs included." },
+    { "title": "Fit", "description": "I fit it on site, scribed to your walls, floor and ceiling, and leave the room clean." }
+  ],
+  "needHeading": "What I need from you",
+  "needIntro": "Rough is fine. I measure everything properly at the visit. This just means I turn up with the right ideas.",
+  "need": [
+    { "title": "Photos of the space", "description": "The whole wall from the doorway, then close-ups of anything in the way: sockets, switches, radiators, pipes, the boiler, skirting and coving." },
+    { "title": "Rough sizes", "description": "Width, height from floor to ceiling, and how far it can come into the room. A photo of the wall with the numbers written on it is perfect." },
+    { "title": "What it is for", "description": "What goes inside: long coats or shirts, folded clothes, shoes, books, a TV, files. A quick list helps more than anything." },
+    { "title": "A look you like", "description": "Two or three pictures from Pinterest or Instagram, or one of my jobs. It tells me more than any description." },
+    { "title": "Your area and access", "description": "Your area or postcode, which floor, stairs or lift, and where a van can park. In London that last one matters." },
+    { "title": "Budget and timing", "description": "A rough figure and when you would like it done, so I can suggest the right materials from the start." }
+  ],
+  "getHeading": "What you get from me",
+  "get": [
+    { "title": "A reply within 24 hours", "description": "To every enquiry, on WhatsApp, phone or email." },
+    { "title": "A free quote and a visit", "description": "I come and measure up, talk through how you will use the space and what is possible." },
+    { "title": "A 3D drawing to approve", "description": "With real measurements. We change it until it is right, and nothing is cut until you sign it off." },
+    { "title": "Built in 18 mm board", "description": "Throughout, backs included. No thin 8 mm sheets." },
+    { "title": "Fitted to your room", "description": "Scribed to your walls, floor and ceiling, with the room left clean when I go." }
+  ],
+  "materialsHeading": "Materials, in plain English",
+  "materialsIntro": "Most fitted furniture is made from one of these. Not sure? Pick \"not sure\" in the brief below and I will suggest what suits the room and the budget.",
+  "materials": [
+    {
+      "name": "Painted MDF",
+      "cost": "££",
+      "bestFor": "Painted wardrobes, alcove units, bookcases, panelled doors.",
+      "description": "Smooth and stable, so it takes paint well and stays flat. Any colour you like. It needs painting: by me, or left ready for your decorator.",
+      "image": "/images/projects/alcove-shelves-newington-green/cover.jpg",
+      "imageAlt": "White painted alcove unit with shelves and a cupboard",
+      "link": "/portfolio/alcove-shelves-newington-green"
+    },
+    {
+      "name": "Moisture-resistant MDF",
+      "cost": "££",
+      "bestFor": "Bathrooms, utility rooms, anywhere with steam or splashes.",
+      "description": "The green board. Worked the same way as normal MDF, but copes far better with damp. Painted like normal MDF.",
+      "image": "/images/projects/vanity-unit-bowes-park/cover.jpg",
+      "imageAlt": "Cream painted vanity unit with brass handles",
+      "link": "/portfolio/vanity-unit-bowes-park"
+    },
+    {
+      "name": "Birch plywood",
+      "cost": "£££",
+      "bestFor": "A natural wood look, modern rooms, desks and kids' rooms.",
+      "description": "Strong and light in colour, and the layered edge looks good left on show. Usually finished clear, so the grain shows.",
+      "image": "/images/projects/birch-ply-wardrobe-chiswick/cover.jpg",
+      "imageAlt": "Four-door birch ply wardrobe",
+      "link": "/portfolio/birch-ply-wardrobe-chiswick"
+    },
+    {
+      "name": "Walnut and oak",
+      "cost": "££££",
+      "bestFor": "Desks, shelves and pieces you want to stand out.",
+      "description": "Real hardwood character and the richest look, at the highest cost. It often works best where you see and touch it most, like a desk top.",
+      "image": "/images/projects/floating-walnut-desk-highbury/cover.jpg",
+      "imageAlt": "Floating walnut desk under a window",
+      "link": "/portfolio/floating-walnut-desk-highbury"
+    },
+    {
+      "name": "IKEA PAX, built in",
+      "cost": "£",
+      "bestFor": "Big wardrobes on a tighter budget.",
+      "description": "IKEA frames and fittings inside, built in with MDF tops and end panels up to the ceiling and finished with painted doors, so it looks fitted, not flat-pack.",
+      "image": "/images/projects/pax-wardrobes-haringey/cover.jpg",
+      "imageAlt": "Full wall of built-in PAX wardrobes with painted doors",
+      "link": "/portfolio/pax-wardrobes-haringey"
+    }
+  ],
+  "costNote": "£ to ££££ shows how the materials compare with each other. It is not a price: every job is quoted on its own.",
+  "finishesHeading": "Finishes and details",
+  "finishes": [
+    { "title": "Painted", "description": "Any colour. Painted by me, or left ready for your decorator if you would rather they did it with the walls." },
+    { "title": "Natural wood", "description": "A clear finish on birch ply, oak or walnut, so the grain shows." },
+    { "title": "Doors", "description": "Hinged or sliding. Flat, panelled with moulding, glazed, or a grille over a radiator." },
+    { "title": "Handles", "description": "Knobs, long pulls, brass, or none at all, with a finger pull underneath like the walnut desk." },
+    { "title": "Inside", "description": "Rails, shelves, drawers, shoe space, strip lights. Tell me what goes in and I plan the inside around it." }
+  ],
+  "briefHeading": "Put your brief together",
+  "briefIntro": "Tick what fits and add sizes if you have them. Then send it to me on WhatsApp or by email, and add your photos in the chat.",
+  "briefWhat": ["Fitted wardrobe", "Alcove units", "Bookcase or shelves", "Window seat or bench", "Desk or home office", "Loft or eaves storage", "Wall panelling", "Something else"],
+  "briefRoom": ["Bedroom", "Living room", "Hallway", "Loft", "Home office", "Bathroom", "Other"],
+  "briefUses": ["Hanging clothes", "Folded clothes", "Shoes", "Books or display", "TV and media", "Hiding a boiler, radiator or cylinder", "A place to work", "Seating"],
+  "briefMaterial": ["Painted MDF", "Birch ply", "Walnut or oak", "IKEA PAX built in", "Not sure, advise me"],
+  "briefFinish": ["Painted by you", "Ready for my decorator", "Natural wood", "Not sure"],
+  "briefTiming": ["As soon as possible", "In 1 to 3 months", "In 3 to 6 months", "Just planning"],
+  "briefBudget": ["Under £2,000", "£2,000 to £4,000", "£4,000 to £8,000", "Over £8,000", "Not sure yet"],
+  "faqHeading": "Questions people ask",
+  "faq": [
+    { "question": "Do you fit kitchens?", "answer": "No. I build fitted furniture: wardrobes, alcove units, bookcases, window seats, desks and storage. I do build the pieces around a kitchen, like pantry cupboards and panelling." },
+    { "question": "Do I need to clear the room?", "answer": "Just the wall and some floor space in front of it. I put dust sheets down and leave the room clean." },
+    { "question": "Can you work with IKEA PAX?", "answer": "Yes. Building PAX in with tops, end panels and proper doors is a good way to get a fitted wardrobe for less. There are a few PAX jobs on My Work." },
+    { "question": "Who paints it?", "answer": "Either works. I can paint it, or leave it ready for your decorator. We agree which before I start." },
+    { "question": "Can I change things after the drawing?", "answer": "Yes, that is what the drawing is for. We change it until it is right. Once you sign it off, that is what gets built." },
+    { "question": "Where do you work?", "answer": "Across London, from Chiswick to East Finchley, and further out when the job suits." }
+  ],
+  "ctaHeading": "Ready when you are.",
+  "ctaText": "Send your brief on WhatsApp, or book a free quote online and I will be in touch within 24 hours."
+}

@@ -1,4 +1,5 @@
 import { QUOTE_URL } from '@/lib/site';
+import Link from 'next/link';
 import WhatsAppButton from './WhatsAppButton';
 
 type Props = {
@@ -44,6 +45,9 @@ export default function QuoteCta({
       </div>
       {note ? <p className="mt-4 text-sm text-faint">{note}</p> : null}
       <p className="mt-1 text-sm text-faint">Or send me photos of the space on WhatsApp.</p>
+      <Link href="/how-it-works#need" className="link-more mt-6 text-[15px]">
+        Not sure what to send? See what I need <span aria-hidden="true">→</span>
+      </Link>
     </div>
   );
 }

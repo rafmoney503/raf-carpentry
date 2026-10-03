@@ -65,7 +65,7 @@ export default function Navbar() {
 
       {open && (
         <nav aria-label="Mobile" className="border-t border-line bg-paper px-5 pb-6 pt-2 lg:hidden">
-          {[...links, { href: '/contact', label: 'Contact' }].map((l) => (
+          {[...links, { href: '/how-it-works', label: 'How it works' }, { href: '/contact', label: 'Contact' }].map((l) => (
             <Link
               key={l.href}
               href={l.href}

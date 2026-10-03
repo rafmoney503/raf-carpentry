@@ -1,4 +1,5 @@
 import QuoteCta from '@/components/QuoteCta';
+import Link from 'next/link';
 import { Container } from '@/components/ui';
 import SocialIcon from '@/components/SocialIcon';
 import { whatsappText, whatsappUrl } from '@/lib/site';
@@ -61,6 +62,13 @@ export default function ContactClient({ d }: { d: ContactPageData }) {
               </div>
             ))}
           </dl>
+          <div className="mt-10 rounded-sm border border-line bg-raised p-5">
+            <p className="font-mono text-[13px] text-accent">Before you get in touch</p>
+            <p className="mt-2 text-[15px] leading-relaxed text-muted">What I need from you, how materials and finishes compare, and a quick brief you can send me in two minutes.</p>
+            <Link href="/how-it-works" className="link-more mt-3 text-[15px]">
+              How it works <span aria-hidden="true">→</span>
+            </Link>
+          </div>
         </div>
 
         {d.formEnabled ? (
