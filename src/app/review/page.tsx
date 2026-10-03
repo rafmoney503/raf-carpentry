@@ -60,6 +60,10 @@ export default async function ReviewPage() {
             <a href={PHONE_HREF} className="font-mono text-ink hover:text-accent">{PHONE_DISPLAY}</a>
           </p>
         </div>
+
+        <a href="/review/send" className="mt-10 inline-block font-mono text-[12.5px] text-accent hover:underline">
+          For Raf: send this page to a client by WhatsApp or text <span aria-hidden="true">→</span>
+        </a>
       </div>
     </Container>
   );

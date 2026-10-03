@@ -82,6 +82,12 @@ export default function Footer() {
         <div className="mt-12 grid gap-1.5 border-t border-line pt-6 text-[13px] leading-relaxed text-faint md:mt-16">
           <p>© {new Date().getFullYear()} Raf Carpentry. Raf Carpentry is a trading name of Rafal Solutions Ltd, registered in England and Wales, company no. 13645392.</p>
           <p>Registered office: 14 Kings Road, Wood Green, London N22 5SN. VAT no. 521 4613 26.</p>
+          {/* Raf's own tool: sends a client the review link by WhatsApp or text (src/app/review/send). */}
+          <p className="mt-2">
+            <Link href="/review/send" className="inline-flex items-center gap-1.5 font-mono text-[12.5px] text-accent hover:underline">
+              For Raf: ask a client for a review <span aria-hidden="true">→</span>
+            </Link>
+          </p>
         </div>
       </div>
     </footer>
