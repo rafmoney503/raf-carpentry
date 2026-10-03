@@ -3,7 +3,7 @@ title: Wardrobes built around a chimney breast
 date: 2026-09-30T20:45:00.000Z
 excerpt: PAX frames either side, an MDF bridge over the fireplace and one run of doors, so the whole wall reads as one piece and the fireplace stays on show.
 category: Projects
-image: /images/blog/wardrobes-around-a-chimney-breast/hero.jpg
+image: /images/blog/wardrobes-around-a-chimney-breast/hero-sharp.jpg
 tools:
   - name: DeWalt Mitre Saw
     link: 'https://link.amazon/B05c5GsFX'
