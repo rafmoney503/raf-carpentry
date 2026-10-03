@@ -11,7 +11,7 @@ import { formatMonth, getAllProjects, getKit, getProject, isPlanReady } from '@/
 import PlanCard from '@/components/project/PlanCard';
 import ProjectKit from '@/components/project/ProjectKit';
 import PlanDrawings from '@/components/project/PlanDrawings';
-import { QUOTE_URL, whatsappText } from '@/lib/site';
+import { BOOKING_URL, QUOTE_HREF, whatsappText } from '@/lib/site';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import '../project.css';
 
@@ -75,7 +75,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             </dl>
 
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
-              <a href={QUOTE_URL} target="_blank" rel="noopener" className="btn btn-primary">Get a quote</a>
+              <Link href={QUOTE_HREF} className="btn btn-primary">Get a quote</Link>
               <WhatsAppButton text={waText} />
               <a href="#photos" className="link-more">
                 All {p.gallery.length + 1} photos <span aria-hidden="true">↓</span>
@@ -205,12 +205,12 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             <SectionHeading>Want something like this?</SectionHeading>
             <p className="mt-4 max-w-[52ch] text-muted">Tell me about the room. I&apos;ll come and measure up, then draw it before anything is cut.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <a href={QUOTE_URL} target="_blank" rel="noopener" className="btn btn-primary">Get a quote</a>
+              <Link href={QUOTE_HREF} className="btn btn-primary">Get a quote</Link>
               <WhatsAppButton text={waText} />
             </div>
-            <Link href="/how-it-works" className="link-more mt-6 text-[15px]">
-              How it works and what I need from you <span aria-hidden="true">→</span>
-            </Link>
+            <a href={BOOKING_URL} target="_blank" rel="noopener" className="link-more mt-6 text-[15px]">
+              Rather pick a date yourself? Book a visit online <span aria-hidden="true">↗</span>
+            </a>
           </div>
           {next && next.slug !== p.slug ? (
             <Link href={`/portfolio/${next.slug}`} className="group md:col-span-4 md:col-start-9">

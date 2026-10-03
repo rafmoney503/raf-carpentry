@@ -1,7 +1,7 @@
 'use client';
 import { useMemo, useRef, useState } from 'react';
 import SocialIcon from '@/components/SocialIcon';
-import { EMAIL, QUOTE_URL, whatsappUrl } from '@/lib/site';
+import { BOOKING_URL, EMAIL, whatsappUrl } from '@/lib/site';
 import AddressFinder, { type Address } from './address-finder';
 
 export type BriefOptions = {
@@ -265,7 +265,7 @@ export default function BriefBuilder({ options }: { options: BriefOptions }) {
           </div>
           <p className="mt-4 text-sm leading-relaxed text-muted">
             Add your photos in the WhatsApp chat or attach them to the email. Rather book a visit straight away?{' '}
-            <a href={QUOTE_URL} target="_blank" rel="noopener" className="font-medium text-accent hover:underline">Book online</a>.
+            <a href={BOOKING_URL} target="_blank" rel="noopener" className="font-medium text-accent hover:underline">Book online</a>.
           </p>
           {needName && !name.trim() ? (
             <p className="mt-3 text-sm font-medium text-accent" role="alert">Add your name in step 07 first.</p>

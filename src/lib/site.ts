@@ -1,6 +1,9 @@
 // One place for the business details used across the site.
-// QUOTE_URL is the ServiceM8 online booking page; every "Get a quote" button opens it.
-export const QUOTE_URL =
+// Every "Get a quote" button goes to the brief on How it works (QUOTE_HREF): the customer ticks what
+// fits and it becomes a ready-written WhatsApp message or email. BOOKING_URL is the ServiceM8 online
+// booking page, still linked as "Book a visit online" for people who would rather pick a date.
+export const QUOTE_HREF = '/how-it-works#brief';
+export const BOOKING_URL =
   'https://book.servicem8.com/request_service_booking?strVendorUUID=0ddb658e-f9b6-46a4-bf41-1bb0e304e6db';
 
 export const PHONE_DISPLAY = '07792 860221';
@@ -9,7 +12,7 @@ export const EMAIL = 'info@rafcarpentry.com';
 
 // WhatsApp: the same mobile number in international format (44, no leading 0, no spaces).
 // Every WhatsApp button opens a chat with Raf with the first message already typed in,
-// so the customer only has to press send. "Get a quote" still goes to ServiceM8.
+// so the customer only has to press send.
 export const WHATSAPP_NUMBER = '447792860221';
 
 export function whatsappUrl(text?: string) {

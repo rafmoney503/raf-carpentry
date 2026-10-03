@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { readPageJson } from '@/lib/pages';
 import { getAllPosts } from '@/lib/blog';
 import QuoteCta from '@/components/QuoteCta';
-import { QUOTE_URL, whatsappText, whatsappUrl } from '@/lib/site';
+import { QUOTE_HREF, whatsappText, whatsappUrl } from '@/lib/site';
 import SocialIcon from '@/components/SocialIcon';
 import './home.css';
 
@@ -67,7 +67,7 @@ export default function HomePage() {
           </h1>
           <p className="hero-sub anim d2">{d.heroSubtitle}</p>
           <div className="hero-ctas anim d3">
-            <a className="btn btn-primary" href={QUOTE_URL} target="_blank" rel="noopener">{d.primaryCtaLabel}</a>
+            <Link className="btn btn-primary" href={QUOTE_HREF}>{d.primaryCtaLabel}</Link>
             <Link className="btn btn-ghost" href="/portfolio">{d.secondaryCtaLabel}</Link>
           </div>
         </div>

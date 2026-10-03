@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { PHONE_DISPLAY, PHONE_HREF, QUOTE_URL } from '@/lib/site';
+import { PHONE_DISPLAY, PHONE_HREF, QUOTE_HREF } from '@/lib/site';
 
 const links = [
   { href: '/portfolio', label: 'My Work' },
@@ -46,9 +46,21 @@ export default function Navbar() {
           <a href={PHONE_HREF} className="hidden whitespace-nowrap font-mono text-sm text-ink xl:inline">
             {PHONE_DISPLAY}
           </a>
-          <a href={QUOTE_URL} target="_blank" rel="noopener" className="btn btn-primary btn-sm">
+          <Link
+            href={QUOTE_HREF}
+            className="btn btn-primary btn-sm"
+            onClick={(e) => {
+              // Already on How it works: always scroll to the brief, even if the address already ends in #brief.
+              const brief = pathname === '/how-it-works' ? document.getElementById('brief') : null;
+              if (brief) {
+                e.preventDefault();
+                brief.scrollIntoView({ behavior: 'smooth' });
+                history.replaceState(history.state, '', '#brief');
+              }
+            }}
+          >
             Get a quote
-          </a>
+          </Link>
           <button
             type="button"
             onClick={() => setOpen(!open)}

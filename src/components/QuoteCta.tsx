@@ -1,4 +1,4 @@
-import { QUOTE_URL } from '@/lib/site';
+import { BOOKING_URL, QUOTE_HREF } from '@/lib/site';
 import Link from 'next/link';
 import WhatsAppButton from './WhatsAppButton';
 
@@ -10,17 +10,18 @@ type Props = {
   note?: string;
 };
 
-/* Quote panel: sends visitors to the ServiceM8 booking page, so every enquiry lands in ServiceM8. */
+/* Quote panel: "Get a quote" goes to the brief on How it works (a ready-written WhatsApp message or
+   email). The ServiceM8 booking page stays one tap away for people who want to pick a date. */
 export default function QuoteCta({
-  heading = 'Book a free quote',
-  body = 'Tell me what you need and where the job is. It goes straight into my booking system.',
+  heading = 'Get a free quote',
+  body = 'Tick what fits in a short brief and it becomes a ready-written message to me, with everything I need to know.',
   steps = [
     'I reply within 24 hours to arrange a visit.',
     'I measure up and talk through the space.',
     'You get a 3D drawing to approve before anything is cut.',
   ],
   buttonLabel = 'Get a quote',
-  note = 'Opens my booking page in a new tab.',
+  note = 'Takes two minutes. Send it on WhatsApp or by email.',
 }: Props) {
   return (
     <div className="rounded-sm border border-line bg-raised p-6 md:p-10">
@@ -37,17 +38,17 @@ export default function QuoteCta({
         </ol>
       )}
       <div className="mt-8 flex flex-col gap-3 md:flex-row md:flex-wrap">
-        <a href={QUOTE_URL} target="_blank" rel="noopener" className="btn btn-primary w-full gap-2 md:w-auto">
+        <Link href={QUOTE_HREF} className="btn btn-primary w-full gap-2 md:w-auto">
           {buttonLabel}
-          <span aria-hidden="true">↗</span>
-        </a>
+          <span aria-hidden="true">→</span>
+        </Link>
         <WhatsAppButton className="w-full md:w-auto" />
       </div>
       {note ? <p className="mt-4 text-sm text-faint">{note}</p> : null}
       <p className="mt-1 text-sm text-faint">Or send me photos of the space on WhatsApp.</p>
-      <Link href="/how-it-works#need" className="link-more mt-6 text-[15px]">
-        Not sure what to send? See what I need <span aria-hidden="true">→</span>
-      </Link>
+      <a href={BOOKING_URL} target="_blank" rel="noopener" className="link-more mt-6 text-[15px]">
+        Rather pick a date yourself? Book a visit online <span aria-hidden="true">↗</span>
+      </a>
     </div>
   );
 }

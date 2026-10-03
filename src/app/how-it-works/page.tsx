@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import { readPageJson } from '@/lib/pages';
 import { Container, PageHeader, SectionHeading } from '@/components/ui';
 import WhatsAppButton from '@/components/WhatsAppButton';
-import { QUOTE_URL } from '@/lib/site';
+import { BOOKING_URL } from '@/lib/site';
 import BriefBuilder from './brief-builder';
 import Sketch from './sketches';
 
@@ -220,8 +220,11 @@ export default function HowItWorksPage() {
             <p className="mt-4 max-w-[52ch] text-muted">{d.ctaText}</p>
           </div>
           <div className="flex flex-wrap gap-3 md:col-span-5 md:justify-self-end">
-            <a href={QUOTE_URL} target="_blank" rel="noopener" className="btn btn-primary">Get a quote</a>
+            <a href="#brief" className="btn btn-primary">Get a quote</a>
             <WhatsAppButton />
+            <a href={BOOKING_URL} target="_blank" rel="noopener" className="btn btn-ghost gap-2">
+              Book a visit online <span aria-hidden="true">↗</span>
+            </a>
           </div>
         </Container>
       </section>
