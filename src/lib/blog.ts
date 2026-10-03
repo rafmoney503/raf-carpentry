@@ -56,7 +56,8 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
     excerpt: data.excerpt || '',
     category: data.category || 'General',
     image: data.image || undefined,
-    content: processed.toString(),
+    // Photos in the post body load as you scroll.
+    content: processed.toString().replace(/<img /g, '<img loading="lazy" decoding="async" '),
     tools: data.tools || undefined,
   };
 }

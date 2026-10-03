@@ -39,6 +39,7 @@ Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrob
 1. sketchup-planning.md — "How I Use SketchUp to Plan Every Build" (has SketchUp screenshot image)
 2. cut-list-optimisation.md — "Cut List Optimisation: Save 15% on Materials"
 3. outdoor-gym-lockdown.md — "Building an Outdoor Gym During Lockdown"
+4-9. Project posts (3 Oct 2026), short, written from the job photos only, each linked both ways with its job page (blogSlug): curved-storage-seat-kennington, birch-ply-desk-stands-wood-green, birch-ply-room-chiswick, reception-desk-brentwood, loft-wardrobes-ikea-pax, wardrobes-around-a-chimney-breast. Photos in public/images/blog/<post>/ (hero.jpg 16:10 plus 1.jpg... at 900 px). Two images on one markdown line show side by side; post images lazy-load. "Tools used" only lists tools seen in that job's photos, by their Products-tab names so links-from-sheet.py keeps them in sync.
 
 ## Photos Added (public/images/)
 - raf-at-work.jpg — Raf measuring timber (hero section)
