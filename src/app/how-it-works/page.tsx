@@ -6,6 +6,7 @@ import { Container, PageHeader, SectionHeading } from '@/components/ui';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import { QUOTE_URL } from '@/lib/site';
 import BriefBuilder from './brief-builder';
+import NeedSketch from './need-sketch';
 
 type Item = { title: string; description: string };
 type Material = { name: string; cost: string; bestFor: string; description: string; image: string; imageAlt: string; link: string };
@@ -20,7 +21,7 @@ type HowItWorksData = {
   steps: Item[];
   needHeading: string;
   needIntro: string;
-  need: Item[];
+  need: (Item & { sketch?: string })[];
   getHeading: string;
   get: Item[];
   materialsHeading: string;
@@ -116,15 +117,21 @@ export default function HowItWorksPage() {
             <h2 className="font-display text-[26px] font-[650] leading-tight tracking-[-0.02em] md:text-[30px]">{d.needHeading}</h2>
             <p className="mt-3 max-w-[46ch] text-[15px] leading-relaxed text-muted">{d.needIntro}</p>
             <ol className="mt-7 border-t border-line">
-              {d.need.map((n, i) => (
-                <li key={i} className="grid grid-cols-[36px_minmax(0,1fr)] gap-3 border-b border-line py-4">
-                  <span className="pt-0.5 font-mono text-[13px] text-accent">{String(i + 1).padStart(2, '0')}</span>
-                  <div>
-                    <h3 className="text-[17px] font-[620] text-ink">{n.title}</h3>
-                    <p className="mt-1 text-[15px] leading-relaxed text-muted">{n.description}</p>
-                  </div>
-                </li>
-              ))}
+              {d.need.map((n, i) => {
+                const num = String(i + 1).padStart(2, '0');
+                return (
+                  <li key={i} className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-4 border-b border-line py-4 sm:grid-cols-[76px_minmax(0,1fr)] sm:gap-5">
+                    <NeedSketch name={n.sketch} number={num} />
+                    <div className="pt-0.5">
+                      <h3 className="text-[17px] font-[620] text-ink">
+                        <span className="mr-2 font-mono text-[13px] font-normal text-accent">{num}</span>
+                        {n.title}
+                      </h3>
+                      <p className="mt-1 text-[15px] leading-relaxed text-muted">{n.description}</p>
+                    </div>
+                  </li>
+                );
+              })}
             </ol>
           </div>
           <div className="rounded-sm border border-line bg-raised p-6 md:p-9">

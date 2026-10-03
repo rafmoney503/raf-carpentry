@@ -480,6 +480,18 @@ export const pageCollections: Collection[] = [
         fields: [
           { type: "string", name: "title", label: "Item", required: true },
           { type: "string", name: "description", label: "Description", ui: { component: "textarea" } },
+          {
+            type: "string", name: "sketch", label: "Little drawing",
+            description: "The small sketch beside this item. Leave empty to show the number instead.",
+            options: [
+              { value: "photos", label: "Phone photo of the wall" },
+              { value: "sizes", label: "Unit with width and height" },
+              { value: "uses", label: "Open wardrobe (what goes inside)" },
+              { value: "look", label: "Pinned pictures with a heart" },
+              { value: "details", label: "House and parking sign" },
+              { value: "budget", label: "Calendar and pound coin" },
+            ],
+          },
         ],
       },
       { type: "string", name: "getHeading", label: "What you get: heading" },
