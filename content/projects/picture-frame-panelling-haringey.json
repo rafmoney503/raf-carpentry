@@ -1,0 +1,104 @@
+{
+  "slug": "picture-frame-panelling-haringey",
+  "order": 21,
+  "title": "Picture-frame panelling round a living room",
+  "area": "Haringey",
+  "finished": "2025-08",
+  "type": "Wall panelling",
+  "tags": [
+    "Wall panelling",
+    "Moulding",
+    "Living room"
+  ],
+  "summary": "Picture-frame panels in pine moulding, with a dado rail and shorter panels below, set out round a living room ready for painting.",
+  "intro": "The same living room as the TV unit and bookcase. The walls were plain, and the room has a deep cornice and an old fireplace that deserved more than flat paint. Pine moulding went on as tall frames above a dado rail and shorter frames below it, spaced so they line up across each wall, round the door and over the radiator. Left ready for the decorator.",
+  "cover": {
+    "src": "/images/projects/picture-frame-panelling-haringey/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Living room wall with tall pine moulding frames above a dado rail and shorter frames below, beside the window"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Haringey"
+    },
+    {
+      "label": "Finished",
+      "value": "August 2025"
+    },
+    {
+      "label": "Room",
+      "value": "Living room"
+    },
+    {
+      "label": "Moulding",
+      "value": "Pine"
+    },
+    {
+      "label": "Layout",
+      "value": "Frames above and below a dado rail"
+    }
+  ],
+  "steps": [
+    {
+      "title": "Two profiles",
+      "text": "A wider moulding for the dado rail and a slimmer one for the frames, chosen first thing that morning.",
+      "image": {
+        "src": "/images/projects/picture-frame-panelling-haringey/s1.jpg",
+        "w": 900,
+        "h": 1200,
+        "alt": "Two lengths of pine moulding held in a hand at the timber merchant"
+      }
+    },
+    {
+      "title": "Frames round the door",
+      "text": "Each frame is mitred at the corners and fixed to the wall. The frames by the door are sized so the gap to the architrave matches the gaps between panels.",
+      "image": {
+        "src": "/images/projects/picture-frame-panelling-haringey/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Moulding frames fitted on the wall beside a panelled door"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/picture-frame-panelling-haringey/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The whole room with panelling on every wall, the fireplace on the left"
+    },
+    {
+      "src": "/images/projects/picture-frame-panelling-haringey/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Panelled wall between the door and the radiator"
+    },
+    {
+      "src": "/images/projects/picture-frame-panelling-haringey/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Frames spaced evenly along the wall above the radiator"
+    },
+    {
+      "src": "/images/projects/picture-frame-panelling-haringey/g4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Panelling behind the sofa, next to the door"
+    },
+    {
+      "src": "/images/projects/picture-frame-panelling-haringey/g5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Panelling continuing past the bookcase and the fireplace"
+    },
+    {
+      "src": "/images/projects/picture-frame-panelling-haringey/g6.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The far wall with panels either side of the doorway"
+    }
+  ],
+  "blogSlug": "picture-frame-panelling-haringey"
+}

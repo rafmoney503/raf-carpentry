@@ -1,0 +1,98 @@
+{
+  "slug": "alcove-shelves-newington-green",
+  "order": 25,
+  "title": "Alcove shelves with a lit shelf",
+  "area": "Newington Green",
+  "finished": "2025-11",
+  "type": "Alcove units",
+  "tags": [
+    "Alcoves",
+    "Bookshelves",
+    "Chimney breast",
+    "Lighting",
+    "Painted"
+  ],
+  "summary": "An alcove beside the chimney breast rebuilt with shelves, a lit shelf and a cupboard, all painted white.",
+  "intro": "The alcove had a few old shelves on brackets. They came out and in went a proper unit: a low cupboard with two flat doors, open shelves above it, and a light in the shelf over the cupboard so it glows in the evening. The parts were painted before fitting, and the whole unit finished white to match the walls and the window shutters.",
+  "cover": {
+    "src": "/images/projects/alcove-shelves-newington-green/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "White painted alcove unit with open shelves above a low two-door cupboard, next to a sash window"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Newington Green"
+    },
+    {
+      "label": "Finished",
+      "value": "November 2025"
+    },
+    {
+      "label": "Room",
+      "value": "Living room"
+    },
+    {
+      "label": "Finish",
+      "value": "Painted white"
+    },
+    {
+      "label": "Extras",
+      "value": "Lit shelf"
+    }
+  ],
+  "steps": [
+    {
+      "title": "What was there",
+      "text": "Four shelves on brackets. Useful enough, but nothing hid the clutter and the bottom was wasted.",
+      "image": {
+        "src": "/images/projects/alcove-shelves-newington-green/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Old shelves on brackets in the alcove, covered in tools"
+      }
+    },
+    {
+      "title": "Back to the wall",
+      "text": "Old shelves out and a new base set in so the unit sits level.",
+      "image": {
+        "src": "/images/projects/alcove-shelves-newington-green/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "The empty alcove with a new base fitted"
+      }
+    },
+    {
+      "title": "Painted first",
+      "text": "Doors and shelves painted on trestles in the room before they went in. It is far easier than painting inside the alcove.",
+      "image": {
+        "src": "/images/projects/alcove-shelves-newington-green/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "White painted shelves and doors laid out on trestles"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/alcove-shelves-newington-green/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The shelf above the cupboard lit up, with the switch in hand"
+    },
+    {
+      "src": "/images/projects/alcove-shelves-newington-green/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The alcove unit beside the folded window shutters"
+    },
+    {
+      "src": "/images/projects/alcove-shelves-newington-green/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The unit seen from the window"
+    }
+  ],
+  "blogSlug": "alcove-shelves-newington-green"
+}

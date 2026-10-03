@@ -1,0 +1,80 @@
+{
+  "slug": "alcove-wardrobes-east-finchley",
+  "order": 27,
+  "title": "Two alcove wardrobes, one around the boiler",
+  "area": "East Finchley",
+  "finished": "2025-11",
+  "type": "Fitted wardrobes",
+  "tags": [
+    "Wardrobes",
+    "Alcoves",
+    "Chimney breast",
+    "Boiler cupboard",
+    "MDF",
+    "Bedroom"
+  ],
+  "summary": "Tall wardrobes in both alcoves of a bedroom: one with a rail and shelves, the other built around the boiler.",
+  "intro": "A bedroom with a chimney breast and an alcove either side. One alcove got a hanging wardrobe with shelves above the rail. The other had the boiler on the wall, so that wardrobe is built around it: narrow shelves down one side and the boiler behind the other door, with room left round it for servicing. Both have panelled doors made with applied moulding, built in MDF ready for painting.",
+  "cover": {
+    "src": "/images/projects/alcove-wardrobes-east-finchley/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Two tall MDF wardrobes with panelled doors in the alcoves of a bedroom"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "East Finchley"
+    },
+    {
+      "label": "Finished",
+      "value": "November 2025"
+    },
+    {
+      "label": "Room",
+      "value": "Bedroom"
+    },
+    {
+      "label": "Built from",
+      "value": "MDF"
+    },
+    {
+      "label": "Inside",
+      "value": "Rail, shelves, boiler space"
+    }
+  ],
+  "steps": [],
+  "gallery": [
+    {
+      "src": "/images/projects/alcove-wardrobes-east-finchley/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Left wardrobe with two panelled doors, floor to ceiling"
+    },
+    {
+      "src": "/images/projects/alcove-wardrobes-east-finchley/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Left wardrobe open: shelves at the top and space to hang clothes"
+    },
+    {
+      "src": "/images/projects/alcove-wardrobes-east-finchley/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Right wardrobe beside the bay window"
+    },
+    {
+      "src": "/images/projects/alcove-wardrobes-east-finchley/g4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Right wardrobe open, with shelves on one side and the boiler on the other"
+    },
+    {
+      "src": "/images/projects/alcove-wardrobes-east-finchley/g5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Inside the boiler side, with the controls and pipes reachable"
+    }
+  ],
+  "blogSlug": "alcove-wardrobes-east-finchley"
+}

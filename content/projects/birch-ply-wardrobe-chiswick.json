@@ -1,0 +1,110 @@
+{
+  "slug": "birch-ply-wardrobe-chiswick",
+  "order": 29,
+  "title": "Four-door birch ply wardrobe with lights",
+  "area": "Chiswick",
+  "finished": "2025-12",
+  "type": "Fitted wardrobes",
+  "tags": [
+    "Wardrobes",
+    "Birch ply",
+    "Lighting",
+    "Drawers",
+    "Hidden storage"
+  ],
+  "summary": "A four-door wardrobe in birch ply, lit inside, with rails, shelves, drawers and hidden boxes under the floor panels.",
+  "intro": "A fitted wardrobe filling a recess, built in birch ply with the layered edges left on show. Behind the four doors: hanging rails, shelves, a stack of three drawers and warm strip lights along the top. In two of the bays the floor panels lift out on finger holes to boxes underneath, for the things you do not need every week.",
+  "cover": {
+    "src": "/images/projects/birch-ply-wardrobe-chiswick/cover.jpg",
+    "w": 900,
+    "h": 1200,
+    "alt": "Four-door birch ply wardrobe filling a recess, with long wooden pull handles"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Chiswick"
+    },
+    {
+      "label": "Finished",
+      "value": "December 2025"
+    },
+    {
+      "label": "Built from",
+      "value": "Birch ply"
+    },
+    {
+      "label": "Doors",
+      "value": "4"
+    },
+    {
+      "label": "Inside",
+      "value": "Rails, shelves, drawers, lights"
+    }
+  ],
+  "steps": [
+    {
+      "title": "Carcasses on a plinth",
+      "text": "Carcasses set on a levelled plinth, with the wall behind lined in birch ply as well.",
+      "image": {
+        "src": "/images/projects/birch-ply-wardrobe-chiswick/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Birch ply carcasses standing on a plinth in the recess"
+      }
+    },
+    {
+      "title": "Inside first",
+      "text": "Shelves and the drawer stack went in before the doors, so every gap could be checked.",
+      "image": {
+        "src": "/images/projects/birch-ply-wardrobe-chiswick/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Shelves and drawers fitted inside the carcasses"
+      }
+    },
+    {
+      "title": "Ready for doors",
+      "text": "Interior done and the lights wired in along the top. The doors were the last day.",
+      "image": {
+        "src": "/images/projects/birch-ply-wardrobe-chiswick/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "The wardrobe interior finished, ready for the doors"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/birch-ply-wardrobe-chiswick/g1.jpg",
+      "w": 900,
+      "h": 1200,
+      "alt": "Two doors open: hanging rail, shelves and the strip light along the top"
+    },
+    {
+      "src": "/images/projects/birch-ply-wardrobe-chiswick/g2.jpg",
+      "w": 900,
+      "h": 1200,
+      "alt": "Right side open, with shelves over a stack of three drawers"
+    },
+    {
+      "src": "/images/projects/birch-ply-wardrobe-chiswick/g3.jpg",
+      "w": 900,
+      "h": 1200,
+      "alt": "Floor panels with finger holes at the bottom of the left bays"
+    },
+    {
+      "src": "/images/projects/birch-ply-wardrobe-chiswick/g4.jpg",
+      "w": 900,
+      "h": 1200,
+      "alt": "A floor panel lifted out to show the hidden box underneath"
+    },
+    {
+      "src": "/images/projects/birch-ply-wardrobe-chiswick/g5.jpg",
+      "w": 900,
+      "h": 1200,
+      "alt": "All four doors open with the lights on"
+    }
+  ],
+  "blogSlug": "birch-ply-wardrobe-chiswick"
+}

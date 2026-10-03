@@ -1,0 +1,112 @@
+{
+  "slug": "corner-storage-bench-kings-park",
+  "order": 22,
+  "title": "L-shaped storage bench",
+  "area": "Kings Park",
+  "finished": "2025-09",
+  "type": "Seating",
+  "tags": [
+    "Seating",
+    "Storage",
+    "Bench",
+    "MDF",
+    "SketchUp"
+  ],
+  "summary": "A 3 metre storage bench that turns the corner, with three lift-up lids and panelled fronts, built in MDF.",
+  "intro": "A long wall and a corner that were doing nothing. The bench runs 3 metres along the wall and turns 1.2 metres round the corner, at 400 mm high, so it is a seat and a storage box at once. Three lids lift on hinges, each with a finger hole to open it, and the fronts have a simple raised panel. I drew it in SketchUp first so the client could see the size against the room.",
+  "cover": {
+    "src": "/images/projects/corner-storage-bench-kings-park/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "L-shaped MDF storage bench along a wall and round a corner, on a chevron oak floor"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Kings Park"
+    },
+    {
+      "label": "Finished",
+      "value": "September 2025"
+    },
+    {
+      "label": "Built from",
+      "value": "MDF"
+    },
+    {
+      "label": "Size",
+      "value": "3000 + 1215 mm, 400 mm high"
+    },
+    {
+      "label": "Storage",
+      "value": "3 lift-up lids"
+    }
+  ],
+  "plan": {
+    "image": {
+      "src": "/images/projects/corner-storage-bench-kings-park/plan-drawing.jpg",
+      "w": 1158,
+      "h": 696,
+      "alt": "SketchUp drawing of the lift-up storage bench with its sizes: 3000 mm long, 1215 mm return, 400 mm high"
+    },
+    "real": {
+      "src": "/images/projects/corner-storage-bench-kings-park/plan-built.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The finished bench seen from the same side as the drawing"
+    },
+    "title": "Drawn first, then built",
+    "text": "The SketchUp drawing the client approved, next to the bench as it was fitted. 3000 mm along the wall, 1215 mm round the corner, 400 mm high.",
+    "imageLabel": "The SketchUp drawing",
+    "realLabel": "As built",
+    "views": [
+      {
+        "src": "/images/projects/corner-storage-bench-kings-park/plan-view1.jpg",
+        "w": 1124,
+        "h": 500,
+        "alt": "SketchUp view of the bench showing the three panelled fronts",
+        "caption": "The same drawing turned round"
+      }
+    ]
+  },
+  "steps": [],
+  "gallery": [
+    {
+      "src": "/images/projects/corner-storage-bench-kings-park/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The long run of the bench under the mirror"
+    },
+    {
+      "src": "/images/projects/corner-storage-bench-kings-park/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "One lid lifted, showing the storage box and hinges"
+    },
+    {
+      "src": "/images/projects/corner-storage-bench-kings-park/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Two lids open along the long run"
+    },
+    {
+      "src": "/images/projects/corner-storage-bench-kings-park/g4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The corner lid open, with a deep box underneath"
+    },
+    {
+      "src": "/images/projects/corner-storage-bench-kings-park/g5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The bench turning the corner"
+    },
+    {
+      "src": "/images/projects/corner-storage-bench-kings-park/g6.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The bench seen from the stairs"
+    }
+  ],
+  "blogSlug": "corner-storage-bench-kings-park"
+}

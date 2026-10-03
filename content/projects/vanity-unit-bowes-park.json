@@ -1,0 +1,104 @@
+{
+  "slug": "vanity-unit-bowes-park",
+  "order": 24,
+  "title": "Painted vanity unit with three drawers",
+  "area": "Bowes Park",
+  "finished": "2025-09",
+  "type": "Bathroom",
+  "tags": [
+    "Bathroom",
+    "Vanity unit",
+    "Drawers",
+    "MDF",
+    "Painted"
+  ],
+  "summary": "A three-drawer vanity unit in moisture-resistant MDF, with a hole for the basin waste and a top drawer shaped around the pipe.",
+  "intro": "A freestanding vanity unit for a bathroom. Three deep drawers with brass handles, a hole in the top for the basin waste, and a box built into the middle of the top drawer so it slides past the pipe. I made it in moisture-resistant MDF, the green board in the build photos, then painted it a soft cream.",
+  "cover": {
+    "src": "/images/projects/vanity-unit-bowes-park/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Cream painted vanity unit with three drawers and brass handles"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Bowes Park"
+    },
+    {
+      "label": "Finished",
+      "value": "September 2025"
+    },
+    {
+      "label": "Room",
+      "value": "Bathroom"
+    },
+    {
+      "label": "Built from",
+      "value": "Moisture-resistant MDF"
+    },
+    {
+      "label": "Finish",
+      "value": "Painted, brass handles"
+    }
+  ],
+  "steps": [
+    {
+      "title": "Built in green board",
+      "text": "Moisture-resistant MDF is the green board. It costs a bit more than normal MDF but it is the right thing for a bathroom.",
+      "image": {
+        "src": "/images/projects/vanity-unit-bowes-park/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "The vanity unit built in green moisture-resistant MDF, handles on"
+      }
+    },
+    {
+      "title": "A drawer that misses the pipe",
+      "text": "The top drawer has a box in the middle, so the waste pipe from the basin drops straight through and the drawer still slides.",
+      "image": {
+        "src": "/images/projects/vanity-unit-bowes-park/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Top drawer pulled out, showing a box built round the space for the pipe"
+      }
+    },
+    {
+      "title": "Hole for the waste",
+      "text": "A hole through the top lines up with the basin waste and the gap in the drawer below. Then it was off to be painted.",
+      "image": {
+        "src": "/images/projects/vanity-unit-bowes-park/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "The top of the unit with a round hole for the basin waste"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/vanity-unit-bowes-park/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Bottom drawer pulled out, showing its depth"
+    },
+    {
+      "src": "/images/projects/vanity-unit-bowes-park/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Top drawer open with the box around the waste pipe"
+    },
+    {
+      "src": "/images/projects/vanity-unit-bowes-park/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The vanity unit from the side"
+    },
+    {
+      "src": "/images/projects/vanity-unit-bowes-park/g4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Close-up of the drawer fronts and handles"
+    }
+  ],
+  "blogSlug": "vanity-unit-bowes-park"
+}

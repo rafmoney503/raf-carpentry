@@ -41,7 +41,7 @@ export default function PortfolioPage() {
 
   // Quick-filter buttons, in this order, shown only when at least one job matches them.
   const archiveText = d.projects.map((a) => `${a.title} ${a.description} ${a.category}`);
-  const chips = ['Wardrobes', 'IKEA PAX', 'Window seats', 'Alcoves', 'Desks', 'Storage', 'Wall panelling', 'Birch ply', 'MDF', 'Loft', 'Outdoor'].filter(
+  const chips = ['Wardrobes', 'IKEA PAX', 'Window seats', 'Alcoves', 'Bookshelves', 'Desks', 'Storage', 'Wall panelling', 'Birch ply', 'MDF', 'Loft', 'Outdoor'].filter(
     (c) => jobs.some((j) => matches(j.searchText, c)) || archiveText.some((t) => matches(t, c)),
   );
 

@@ -1,0 +1,124 @@
+{
+  "slug": "bookcase-radiator-cover-east-finchley",
+  "order": 28,
+  "title": "Wall-to-wall bookcase with a radiator cover",
+  "area": "East Finchley",
+  "finished": "2025-11",
+  "type": "Bookcases",
+  "tags": [
+    "Bookshelves",
+    "Radiator cover",
+    "Cupboards",
+    "MDF",
+    "Storage"
+  ],
+  "summary": "Three bays of shelves across a whole wall, cupboards below, and a radiator cover with grille doors in the middle.",
+  "intro": "A whole wall for books and storage, with a radiator in the middle of it. Three bays of shelves run wall to wall with panelled cupboards underneath. In the middle bay the cupboard front is a radiator cover: two doors with grille panels that let the heat out and open up when the radiator needs bleeding.",
+  "cover": {
+    "src": "/images/projects/bookcase-radiator-cover-east-finchley/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "MDF bookcase with shelves above, a grille radiator cover and a panelled cupboard below"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "East Finchley"
+    },
+    {
+      "label": "Finished",
+      "value": "November 2025"
+    },
+    {
+      "label": "Built from",
+      "value": "MDF"
+    },
+    {
+      "label": "Width",
+      "value": "Wall to wall"
+    },
+    {
+      "label": "Doors",
+      "value": "Panelled and grille"
+    }
+  ],
+  "steps": [
+    {
+      "title": "Uprights first",
+      "text": "The tall uprights went in first, one each side of the radiator, so the middle bay is built around it.",
+      "image": {
+        "src": "/images/projects/bookcase-radiator-cover-east-finchley/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "First MDF uprights standing in the alcove next to the radiator"
+      }
+    },
+    {
+      "title": "Cut from a plan",
+      "text": "Every board was cut from a printed sheet plan on the bench, so nothing gets cut twice.",
+      "image": {
+        "src": "/images/projects/bookcase-radiator-cover-east-finchley/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Cutting list and board plan clipped to a board on the bench"
+      }
+    },
+    {
+      "title": "Round the radiator",
+      "text": "The middle bay frames the radiator with space all round it, so the heat can rise behind the grille.",
+      "image": {
+        "src": "/images/projects/bookcase-radiator-cover-east-finchley/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Frame built round the radiator in the middle bay"
+      }
+    },
+    {
+      "title": "Shelves in",
+      "text": "Shelves in all three bays and the cupboard bases fronted by the end of day two.",
+      "image": {
+        "src": "/images/projects/bookcase-radiator-cover-east-finchley/s4.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Shelves fitted in all three bays with cupboards underneath"
+      }
+    },
+    {
+      "title": "Grille doors on",
+      "text": "The grille doors went on last, with the panelled cupboard doors either side.",
+      "image": {
+        "src": "/images/projects/bookcase-radiator-cover-east-finchley/s5.jpg",
+        "w": 1600,
+        "h": 1200,
+        "alt": "Grille doors fitted over the radiator in the middle bay"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/bookcase-radiator-cover-east-finchley/g1.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "The whole wall: three bays of shelves over cupboards and the radiator cover"
+    },
+    {
+      "src": "/images/projects/bookcase-radiator-cover-east-finchley/g2.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Cupboard doors open on both sides"
+    },
+    {
+      "src": "/images/projects/bookcase-radiator-cover-east-finchley/g3.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Radiator cover doors open, showing the radiator behind"
+    },
+    {
+      "src": "/images/projects/bookcase-radiator-cover-east-finchley/g4.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "All the doors open with the grille doors closed"
+    }
+  ],
+  "blogSlug": "bookcase-radiator-cover-east-finchley"
+}

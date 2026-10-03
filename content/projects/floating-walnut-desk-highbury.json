@@ -1,0 +1,126 @@
+{
+  "slug": "floating-walnut-desk-highbury",
+  "order": 23,
+  "title": "Floating walnut desk with hidden drawers",
+  "area": "Highbury",
+  "finished": "2025-09",
+  "type": "Desks",
+  "tags": [
+    "Desks",
+    "Home office",
+    "Walnut",
+    "Drawers",
+    "Floating"
+  ],
+  "summary": "A wall-to-wall walnut desk under a window, fixed to the walls with no legs, with four drawers built into its front.",
+  "intro": "A small room with a window that wanted a desk without legs. The desk spans wall to wall under the window, fixed to a batten along the back wall and into the walls at each end, so it floats. Four drawers sit within its thickness and pull out from underneath, with no handles on show. The drawer boxes were made the day before, and the desk went together and was fitted in a day.",
+  "cover": {
+    "src": "/images/projects/floating-walnut-desk-highbury/cover.jpg",
+    "w": 1200,
+    "h": 1600,
+    "alt": "Floating walnut desk spanning wall to wall under an open window"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "Highbury"
+    },
+    {
+      "label": "Finished",
+      "value": "September 2025"
+    },
+    {
+      "label": "Room",
+      "value": "Study"
+    },
+    {
+      "label": "Built from",
+      "value": "Walnut"
+    },
+    {
+      "label": "Drawers",
+      "value": "4, no handles"
+    }
+  ],
+  "steps": [
+    {
+      "title": "Drawer boxes first",
+      "text": "The four walnut drawer boxes were built the day before outside the workshop, with tape on the edges to keep them clean until fitting.",
+      "image": {
+        "src": "/images/projects/floating-walnut-desk-highbury/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Walnut drawer boxes laid out on trestles outside the van"
+      }
+    },
+    {
+      "title": "Level line first",
+      "text": "On site, a level line across the room and a batten fixed along it to carry the back of the desk. Everything after this hangs off that line.",
+      "image": {
+        "src": "/images/projects/floating-walnut-desk-highbury/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Level line and fixing holes along the wall under the window"
+      }
+    },
+    {
+      "title": "Top on, runners under",
+      "text": "The top went on first, with walnut dividers underneath carrying the drawer runners. Once the drawers are in, none of it shows.",
+      "image": {
+        "src": "/images/projects/floating-walnut-desk-highbury/s3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "The walnut desk top fitted, with drawer runners fixed underneath"
+      }
+    },
+    {
+      "title": "Checked and fixed",
+      "text": "Level checked along the length before the last fixings went in, then the drawers were fitted.",
+      "image": {
+        "src": "/images/projects/floating-walnut-desk-highbury/s4.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Yellow spirit level on the fitted desk top"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/g1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "All four drawers pulled out from under the desk"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/g2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "One drawer open, showing the walnut drawer box"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/g3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Looking along the desk top towards the window"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/g4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The desk seen from the door, floating above the floor"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/g5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Sunlight across the desk top"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/g6.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The desk from the far corner"
+    }
+  ],
+  "blogSlug": "floating-walnut-desk-highbury"
+}

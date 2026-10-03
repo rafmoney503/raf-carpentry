@@ -1,0 +1,98 @@
+{
+  "slug": "cylinder-cupboard-loft-east-finchley",
+  "order": 26,
+  "title": "Sliding doors over a hot water cylinder",
+  "area": "East Finchley",
+  "finished": "2025-11",
+  "type": "Loft storage",
+  "tags": [
+    "Loft",
+    "Sliding doors",
+    "Eaves",
+    "MDF",
+    "Storage"
+  ],
+  "summary": "A frame and two sliding doors under the roof slope, hiding a hot water cylinder in a loft room.",
+  "intro": "A loft room where the hot water cylinder and its pipes sat in the open under the eaves. I built a frame along the low wall, following the slope of the ceiling, and hung two sliding doors in it. The doors slide past each other, so either end can be opened to get at the cylinder, and nothing swings out into the room.",
+  "cover": {
+    "src": "/images/projects/cylinder-cupboard-loft-east-finchley/cover.jpg",
+    "w": 900,
+    "h": 1200,
+    "alt": "Two MDF sliding doors closed along the low wall of a loft room under two skylights"
+  },
+  "facts": [
+    {
+      "label": "Area",
+      "value": "East Finchley"
+    },
+    {
+      "label": "Finished",
+      "value": "November 2025"
+    },
+    {
+      "label": "Room",
+      "value": "Loft room"
+    },
+    {
+      "label": "Doors",
+      "value": "2 sliding"
+    },
+    {
+      "label": "Hides",
+      "value": "Hot water cylinder"
+    }
+  ],
+  "steps": [
+    {
+      "title": "The cylinder in the open",
+      "text": "The cylinder, its pipes and the expansion vessel, all on show under the slope.",
+      "image": {
+        "src": "/images/projects/cylinder-cupboard-loft-east-finchley/s1.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Hot water cylinder and pipework sitting in the open under the eaves"
+      }
+    },
+    {
+      "title": "Frame to a laser line",
+      "text": "The frame goes up to a laser line, because the floor and the slope are never quite straight in a loft.",
+      "image": {
+        "src": "/images/projects/cylinder-cupboard-loft-east-finchley/s2.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Frame going up along a green laser line beside the radiator"
+      }
+    },
+    {
+      "title": "Frame round the slope",
+      "text": "The top of the frame follows the ceiling, and the bottom track sits flat on the floor ready for the doors.",
+      "image": {
+        "src": "/images/projects/cylinder-cupboard-loft-east-finchley/s3.jpg",
+        "w": 1600,
+        "h": 1200,
+        "alt": "Finished frame round the opening, following the ceiling slope"
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "src": "/images/projects/cylinder-cupboard-loft-east-finchley/g1.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "One door slid across to show the cylinder behind"
+    },
+    {
+      "src": "/images/projects/cylinder-cupboard-loft-east-finchley/g2.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "The frame and doors along the eaves wall"
+    },
+    {
+      "src": "/images/projects/cylinder-cupboard-loft-east-finchley/g3.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Both doors closed under the skylights"
+    }
+  ],
+  "blogSlug": "cylinder-cupboard-loft-east-finchley"
+}
