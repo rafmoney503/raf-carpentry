@@ -5,18 +5,18 @@
   "subtitle": "Where Ideas Take Shape",
   "links": [
     {
-      "label": "CabinetOS App Waitlist",
-      "subtitle": "Cutlists. Boards. Done. A carpenter built this — join free.",
-      "url": "/cabinetos",
-      "icon": "⚡",
-      "highlight": true
-    },
-    {
       "label": "Book a Service in London",
       "subtitle": "Let's make your dream project a reality!",
       "url": "/contact",
       "icon": "🪚",
       "highlight": false
+    },
+    {
+      "label": "CabinetOS App Waitlist",
+      "subtitle": "Cutlists. Boards. Done. A carpenter built this — join free.",
+      "url": "/cabinetos",
+      "icon": "⚡",
+      "highlight": true
     },
     {
       "label": "My Carpentry Tools",
