@@ -6,7 +6,7 @@ import './calculator.css';
 export const metadata: Metadata = {
   title: 'Workshop calculator in mm | Raf Carpentry',
   description:
-    'Free millimetre calculator for carpenters and DIY. Type a sum like 600 − 18 × 2 and see the answer in mm, cm and inches, and against a 2440 × 1220 board.',
+    'Free millimetre calculator for carpenters and DIY. Type a sum like 600 − 18 × 2 and see the answer in mm, cm and inches, and how many fit along and across a 2440 × 1220 board.',
 };
 
 export default function CalculatorPage() {
@@ -16,7 +16,7 @@ export default function CalculatorPage() {
         kicker="Free workshop tool"
         title="Workshop calculator,"
         accent="in millimetres."
-        lede="Type a sum like 600 − 18 × 2. The answer shows as you type, in mm, cm and inches, and against a full board."
+        lede="Type a sum like 600 − 18 × 2. The answer shows as you type, in mm, cm and inches, with how many fit along and across a full board."
       />
       <Container className="pb-24 md:pb-32">
         <CalculatorClient />

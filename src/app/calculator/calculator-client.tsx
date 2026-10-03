@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  boardFit,
   calcCharFromKey,
   clearCalcHistory,
   evalDimExpression,
@@ -60,10 +61,36 @@ function pretty(expr: string) {
   return out.replace(/\s+/g, ' ').trim();
 }
 
-function boardNote(v: number) {
-  if (v <= BOARD_W) return `Fits across the board width, ${formatMm(BOARD_W - v)} mm spare`;
-  if (v <= BOARD_L) return `Fits along the board, ${formatMm(+(BOARD_L - v).toFixed(3))} mm spare`;
-  return `Longer than a board by ${formatMm(+(v - BOARD_L).toFixed(3))} mm`;
+/* One side of the board: the parts that fit drawn end to end, with a cut line between each,
+   and the count on the right. Too big for this side and the whole bar turns blue. */
+function BoardBar({ value, side, label, tooBig }: { value: number | null; side: number; label: string; tooBig: string }) {
+  const fit = value !== null ? boardFit(value, side) : null;
+  const none = fit !== null && fit.count === 0;
+  const used = !fit ? 0 : none ? 100 : Math.min((fit.count * value!) / side, 1) * 100;
+  const cuts = fit && fit.count > 1 && fit.count <= 40 ? fit.count - 1 : 0; // past 40 the lines would just be a smudge
+  return (
+    <div>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 font-mono text-[12px]">
+        <span className="text-faint">{label}</span>
+        <span className={`whitespace-nowrap ${none ? 'text-accent' : 'text-ink'}`} data-fit={fit ? fit.count : ''}>
+          {!fit ? '' : none ? `None fit, ${formatMm(fit.over)} mm ${tooBig}` : `${fit.count} fit${fit.spare ? `, ${formatMm(fit.spare)} mm spare` : ' exactly'}`}
+        </span>
+      </div>
+      <div className="relative mt-2 h-2.5 rounded-full bg-raised">
+        <div className={`calc-bar-fill absolute inset-y-0 left-0 rounded-full ${none ? 'bg-accent' : 'bg-ink'}`} style={{ width: `${used}%` }}>
+          {Array.from({ length: cuts }, (_, i) => (
+            <span key={i} className="absolute inset-y-0 w-[2px] -translate-x-1/2 bg-mount" style={{ left: `${((i + 1) / fit!.count) * 100}%` }} aria-hidden="true" />
+          ))}
+        </div>
+        <span className="absolute -top-1 bottom-[-4px] left-1/2 w-px bg-line-strong" aria-hidden="true" />
+      </div>
+      <div className="relative mt-1.5 h-4 font-mono text-[11px] text-faint" aria-hidden="true">
+        <span className="absolute left-0">0</span>
+        <span className="absolute left-1/2 -translate-x-1/2">{side / 2}</span>
+        <span className="absolute right-0">{side}</span>
+      </div>
+    </div>
+  );
 }
 
 export default function CalculatorClient() {
@@ -174,9 +201,6 @@ export default function CalculatorClient() {
     if (window.matchMedia('(max-width: 767px)').matches) panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const showBar = value !== null && value > 0;
-  const fill = showBar ? Math.min(value / BOARD_L, 1) * 100 : 0;
-  const over = showBar && value > BOARD_L;
   const feet = value !== null ? toFeetInches(value) : null;
 
   return (
@@ -244,22 +268,16 @@ export default function CalculatorClient() {
                 </div>
               </dl>
 
-              {/* Against a full board */}
-              <div className="mt-5">
-                <div className="flex items-baseline justify-between font-mono text-[12px] text-faint">
-                  <span>Against a {formatMm(BOARD_L)} × {formatMm(BOARD_W)} board</span>
-                  <span className={over ? 'text-accent' : ''}>{showBar ? `${Math.round((value / BOARD_L) * 100)}%` : ''}</span>
+              {/* How many fit on a full board, along the length and across the width */}
+              <div className="mt-5 border-t border-line pt-4">
+                <p className="text-[14px] font-medium text-ink">
+                  How many fit on a {formatMm(BOARD_L)} × {formatMm(BOARD_W)} board
+                </p>
+                <div className="mt-3 space-y-3">
+                  <BoardBar value={value} side={BOARD_L} label="Length" tooBig="too long" />
+                  <BoardBar value={value} side={BOARD_W} label="Width" tooBig="too wide" />
                 </div>
-                <div className="relative mt-2 h-2 rounded-full bg-raised">
-                  <div className={`calc-bar-fill absolute inset-y-0 left-0 rounded-full ${over ? 'bg-accent' : 'bg-ink'}`} style={{ width: `${fill}%` }} />
-                  <span className="absolute -top-1 bottom-[-4px] left-1/2 w-px bg-line-strong" aria-hidden="true" />
-                </div>
-                <div className="relative mt-1.5 h-4 font-mono text-[11px] text-faint" aria-hidden="true">
-                  <span className="absolute left-0">0</span>
-                  <span className="absolute left-1/2 -translate-x-1/2">1220</span>
-                  <span className="absolute right-0">2440</span>
-                </div>
-                <p className={`mt-2 min-h-[20px] text-[14px] ${over ? 'text-accent' : 'text-muted'}`}>{showBar ? boardNote(value) : ''}</p>
+                <p className="mt-1 text-[13px] text-faint">Not counting saw cuts (a few mm each).</p>
               </div>
             </div>
           </div>

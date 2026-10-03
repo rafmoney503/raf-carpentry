@@ -134,6 +134,15 @@ export function toFeetInches(mm: number) {
   return `${mm < 0 ? '-' : ''}${ft}′${inchPart}`;
 }
 
+/** How many parts of length v fit along one side of a board, and what is left over. Allows 0.01 mm
+    so 1220 ÷ 3 (406.667) still gives 3. No allowance for saw cuts: the page says so. */
+export function boardFit(v: number, side: number): { count: number; spare: number; over: number } | null {
+  if (!(v > 0)) return null;
+  const count = Math.floor((side + 0.01) / v);
+  if (count === 0) return { count, spare: 0, over: +(v - side).toFixed(3) };
+  return { count, spare: Math.max(0, +(side - count * v).toFixed(3)), over: 0 };
+}
+
 export function formatMm(n: number) {
   n = Math.round(n * 1000) / 1000; // no 418.66700000000003
   const [i, d] = String(Math.abs(n)).split('.');

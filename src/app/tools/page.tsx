@@ -57,7 +57,7 @@ export default function ToolsPage() {
           <div>
             <p className="font-mono text-[13px] text-accent">Free tool</p>
             <h2 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Workshop calculator in mm</h2>
-            <p className="mt-1 text-[15px] text-muted">The quick calc from CabinetOS: answers in mm, cm and inches, checked against a full board.</p>
+            <p className="mt-1 text-[15px] text-muted">The quick calc from CabinetOS: answers in mm, cm and inches, and how many fit on a full board.</p>
           </div>
           <div className="flex items-center gap-5">
             <p className="whitespace-nowrap rounded-sm border border-line bg-paper px-4 py-2.5 font-mono text-[15px] text-muted" aria-hidden="true">
