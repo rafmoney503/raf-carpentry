@@ -38,6 +38,7 @@ export function whatsappUrl(text?: string) {
 export function whatsappText(path = '/', title = '') {
   const ask = '\n\nArea or postcode: \nWhat I need: ';
   if (path.startsWith('/portfolio/') && title) return `Hi Raf, I've just seen the "${title}" job on your website and I'd like something similar.${ask}`;
+  if (path.startsWith('/services/') && title) return `Hi Raf, I found you on rafcarpentry.com and I'd like a quote for ${title.split(',')[0].trim().toLowerCase()}.${ask}`;
   if (path.startsWith('/blog/') && title) return `Hi Raf, I've just read "${title}" on your website and I've got a question.`;
   if (path.startsWith('/tools')) return "Hi Raf, I've got a question about the tools on your website.";
   if (path.startsWith('/sketchup')) return "Hi Raf, I've got a question about your SketchUp drawings and plans.";

@@ -47,7 +47,11 @@
 .home .tile:hover .mount { border-color: var(--color-accent); }
 .home .tile h3 { margin-top: 20px; font-weight: 620; font-size: 26px; letter-spacing: -0.02em; line-height: 1.15; }
 .home .tile p { margin-top: 8px; color: var(--color-muted); font-size: 16px; max-width: 44ch; }
-.home .build-foot { margin-top: 48px; }
+.home .build-foot { margin-top: 48px; display: flex; flex-wrap: wrap; gap: 14px 32px; }
+/* The tile title links to its service page; the whole tile is the click area. */
+.home .tile { position: relative; }
+.home .tile-link::after { content: ''; position: absolute; inset: 0; }
+.home .tile-link:hover { color: var(--color-accent); }
 
 /* Process */
 .home .process { background: var(--color-raised); border-block: 1px solid var(--color-line); }

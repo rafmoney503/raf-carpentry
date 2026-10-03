@@ -29,7 +29,7 @@ export type HomePageData = {
   facts: { value: string; unit?: string; label: string }[];
   buildHeading: string;
   buildIntro: string;
-  services: { title: string; description: string; image: string; imageAlt: string }[];
+  services: { title: string; description: string; image: string; imageAlt: string; link?: string }[];
   processHeading: string;
   processImage: string;
   processImageAlt: string;
@@ -122,12 +122,15 @@ export default function HomePage() {
                     <Image src={s.image} alt={s.imageAlt} fill sizes={tileSizes[i]} />
                   </div>
                 </div>
-                <h3>{s.title}</h3>
+                <h3>{s.link ? <Link href={s.link} className="tile-link">{s.title}</Link> : s.title}</h3>
                 <p>{s.description}</p>
               </article>
             ))}
           </div>
           <div className="build-foot">
+            <Link className="link-more" href="/services">
+              Everything I build <span aria-hidden="true">→</span>
+            </Link>
             <Link className="link-more" href="/portfolio">
               {d.secondaryCtaLabel} <span aria-hidden="true">→</span>
             </Link>

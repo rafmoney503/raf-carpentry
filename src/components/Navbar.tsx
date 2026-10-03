@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { PHONE_DISPLAY, PHONE_HREF, QUOTE_HREF } from '@/lib/site';
 
 const links = [
+  { href: '/services', label: 'Services' },
   { href: '/portfolio', label: 'My Work' },
   { href: '/sketchup', label: 'SketchUp' },
   { href: '/cabinetos', label: 'CabinetOS' },

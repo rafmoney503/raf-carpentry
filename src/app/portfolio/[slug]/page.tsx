@@ -17,6 +17,7 @@ import '../project.css';
 import { pageMeta } from '@/lib/seo';
 import Reviews, { GoogleRating } from '@/components/Reviews';
 import { getReviews } from '@/lib/reviews';
+import { serviceForJob } from '@/lib/services';
 
 export function generateStaticParams() {
   return getAllProjects().map((p) => ({ slug: p.slug }));
@@ -38,6 +39,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   const next = all[(all.findIndex((x) => x.slug === p.slug) + 1) % all.length];
   const waText = whatsappText(`/portfolio/${p.slug}`, p.title);
   const hasReviews = getReviews().reviews.length > 0;
+  const service = serviceForJob(p);
   const stepCount = p.steps.length;
   const kit = getKit(p.slug);
 
@@ -61,7 +63,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           </figure>
 
           <div className="md:sticky md:top-28 md:col-span-5">
-            <p className="kicker">{p.type}</p>
+            {service ? (
+              <Link href={`/services/${service.slug}`} className="kicker hover:underline">{p.type}</Link>
+            ) : (
+              <p className="kicker">{p.type}</p>
+            )}
             <h1 className="mt-3 font-display text-[36px] font-[680] leading-[1.05] tracking-[-0.03em] md:text-[48px]">{p.title}</h1>
             <p className="mt-5 max-w-[52ch] text-pretty text-[17px] leading-relaxed text-muted">{p.intro}</p>
 

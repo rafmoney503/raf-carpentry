@@ -4,6 +4,7 @@ import SocialIcon, { networkOf } from './SocialIcon';
 import { GOOGLE_REVIEWS_URL, whatsappText, whatsappUrl } from '@/lib/site';
 
 const explore = [
+  { href: '/services', label: 'Services' },
   { href: '/portfolio', label: 'My Work' },
   { href: '/sketchup', label: 'SketchUp' },
   { href: '/cabinetos', label: 'CabinetOS' },

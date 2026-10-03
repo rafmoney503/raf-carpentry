@@ -36,19 +36,22 @@
       "title": "Fitted wardrobes",
       "description": "Floor to ceiling, fitted into alcoves and bays, with the inside planned around what you actually own.",
       "image": "/images/projects/IMG_8172.jpg",
-      "imageAlt": "Two unpainted MDF wardrobes with panelled doors either side of a bay window"
+      "imageAlt": "Two unpainted MDF wardrobes with panelled doors either side of a bay window",
+      "link": "/services/fitted-wardrobes"
     },
     {
       "title": "Alcoves, pantries and cupboards",
       "description": "Storage built into the awkward spaces, with shelves set where you need them.",
       "image": "/images/projects/IMG_8984.jpg",
-      "imageAlt": "Tall pantry cupboard with adjustable shelves and tray dividers"
+      "imageAlt": "Tall pantry cupboard with adjustable shelves and tray dividers",
+      "link": "/services/alcove-units-and-bookcases"
     },
     {
       "title": "Garden office fit-outs",
       "description": "Desks, shelving and cupboards built in, so the room works from day one.",
       "image": "/images/projects/IMG_9245.jpg",
-      "imageAlt": "Garden office with built-in shelving, low cupboards and a long worktop"
+      "imageAlt": "Garden office with built-in shelving, low cupboards and a long worktop",
+      "link": "/services/desks-and-home-offices"
     }
   ],
   "processHeading": "Nothing gets cut until you've seen it.",

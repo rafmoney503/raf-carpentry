@@ -1,0 +1,372 @@
+{
+  "metaTitle": "Services | Raf Carpentry",
+  "metaDescription": "Fitted wardrobes, alcove units and bookcases, wall panelling, window seats, desks, kitchens and built-in storage across London. Each one shown with real jobs.",
+  "kicker": "Services",
+  "title": "What I build,",
+  "titleAccent": "with real jobs to show for each.",
+  "lede": "Pick what you have in mind to see the jobs I have built like it, what customers say, and the answers to the questions people ask first.",
+  "faqHeading": "Questions people ask",
+  "services": [
+    {
+      "slug": "fitted-wardrobes",
+      "name": "Fitted wardrobes",
+      "titleAccent": "built to the ceiling, scribed to the walls.",
+      "metaTitle": "Fitted wardrobes in London | Raf Carpentry",
+      "metaDescription": "Fitted wardrobes made to measure across London: around chimney breasts, boilers and lofts, in MDF, birch ply or IKEA PAX built in. Free quote and a 3D drawing first.",
+      "summary": "Floor to ceiling, around chimney breasts, boilers and lofts.",
+      "intro": "Made-to-measure wardrobes that fill the wall from floor to ceiling, scribed to your walls so there are no gaps. Around a chimney breast, a boiler or under the eaves, each one is drawn in 3D first, so you see it before a board is cut.",
+      "matchTypes": [
+        "Fitted wardrobes",
+        "Loft storage"
+      ],
+      "matchTags": [
+        "Wardrobes",
+        "IKEA PAX"
+      ],
+      "points": [
+        {
+          "title": "Planned around what you own",
+          "description": "Long and short hanging, shelves, drawers and shoe space, laid out around your clothes."
+        },
+        {
+          "title": "Awkward spaces welcome",
+          "description": "Chimney breasts, alcoves, boilers, lofts and eaves. The jobs below show how."
+        },
+        {
+          "title": "Your choice of build",
+          "description": "Painted MDF, birch ply, or IKEA PAX frames built in with MDF panels for a tighter budget."
+        },
+        {
+          "title": "18 mm board throughout",
+          "description": "Backs included, and a 3D drawing you sign off before anything is cut."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How much do fitted wardrobes cost?",
+          "answer": "Every job is quoted on its own after a free visit, because the size, the material and the inside layout all change the price. The materials guide on Plan your project shows how the options compare, from £ to ££££."
+        },
+        {
+          "question": "Can you build in IKEA PAX?",
+          "answer": "Yes. PAX frames built in with tops, end panels up to the ceiling and proper doors is a good way to get a fitted look for less. Some of the jobs below are PAX."
+        },
+        {
+          "question": "Who paints them?",
+          "answer": "I focus on the woodwork. Everything is built and fitted ready for your decorator, or left as bare MDF if you would rather paint it yourself."
+        },
+        {
+          "question": "What do you need from me for a quote?",
+          "answer": "Photos of the wall, rough sizes and what goes inside. Plan your project lists it all, and the brief there puts it into one message."
+        }
+      ]
+    },
+    {
+      "slug": "alcove-units-and-bookcases",
+      "name": "Alcove units and bookcases",
+      "titleAccent": "either side of the chimney breast.",
+      "metaTitle": "Alcove units and bookcases in London | Raf Carpentry",
+      "metaDescription": "Alcove cupboards, shelves, TV units and floor-to-ceiling bookcases made to fit your alcoves exactly. Painted MDF or natural wood, drawn in 3D first.",
+      "summary": "Cupboards below, shelves above, or a bookcase floor to ceiling.",
+      "intro": "Cupboards below and shelves above, or a full bookcase from floor to ceiling. Alcoves are never square, so each unit is scribed to the walls and drawn in 3D first.",
+      "matchTypes": [
+        "Alcove units",
+        "Bookcases"
+      ],
+      "matchTags": [
+        "Alcoves",
+        "Bookshelves",
+        "Shelving"
+      ],
+      "points": [
+        {
+          "title": "Cupboards and shelves",
+          "description": "Closed storage at the bottom and open shelves above, or shelves all the way up."
+        },
+        {
+          "title": "Built around what is there",
+          "description": "Radiators, sockets and the TV. One job below hides a radiator behind a grille."
+        },
+        {
+          "title": "Lighting if you want it",
+          "description": "A light set into a shelf, like the Newington Green alcove."
+        },
+        {
+          "title": "Ready for your decorator",
+          "description": "Built in MDF ready to paint any colour, or in birch ply left natural."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How much do alcove units cost?",
+          "answer": "Every job is quoted on its own after a free visit, because the size, the material and the mix of cupboards and shelves all change the price. The materials guide on Plan your project shows how the options compare, from £ to ££££."
+        },
+        {
+          "question": "Can you hide a radiator or fit a TV in?",
+          "answer": "Yes. A radiator can sit behind a grille, like the East Finchley bookcase below, and a TV unit can be built in with the shelves, like the Haringey job."
+        },
+        {
+          "question": "Do I need to clear the room?",
+          "answer": "Yes, please. Clear the room as much as you can, so I have as much space as possible to work. I leave it clean when I go."
+        },
+        {
+          "question": "What do you need from me for a quote?",
+          "answer": "Photos of both alcoves, rough sizes and what you want on the shelves. Plan your project lists it all, and the brief there puts it into one message."
+        }
+      ]
+    },
+    {
+      "slug": "wall-panelling",
+      "name": "Wall panelling",
+      "titleAccent": "picture frame, V-groove and more.",
+      "metaTitle": "Wall panelling in London | Raf Carpentry",
+      "metaDescription": "Wall panelling in London: picture-frame moulding, V-groove boarding and feature walls with lighting, fitted and left ready for your decorator.",
+      "summary": "Picture-frame moulding, V-groove and lit feature walls.",
+      "intro": "Panelling changes a room more than almost anything else. It is set out from a drawing so the panels line up with the doors, windows and sockets, then fitted ready for your decorator to paint.",
+      "matchTypes": [
+        "Wall panelling"
+      ],
+      "matchTags": [
+        "Wall panelling"
+      ],
+      "points": [
+        {
+          "title": "Picture-frame moulding",
+          "description": "Frames on the wall, sized so they line up across the room."
+        },
+        {
+          "title": "V-groove boarding",
+          "description": "Like the Crouch End kitchen below, with the cooker hood boxed in to match."
+        },
+        {
+          "title": "Lighting built in",
+          "description": "Lit brass strips set into the panels, like the Haringey feature wall."
+        },
+        {
+          "title": "Ready to paint",
+          "description": "Left ready for your decorator, who can paint it along with the walls."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How much does wall panelling cost?",
+          "answer": "Every job is quoted on its own after a free visit, because the size of the wall and the style of panelling change the price."
+        },
+        {
+          "question": "Can you panel a kitchen?",
+          "answer": "Yes. One of the jobs below is a kitchen panelled in V-groove MDF above the worktops, with the cooker hood boxed in to match."
+        },
+        {
+          "question": "Who paints it?",
+          "answer": "I focus on the woodwork. The panelling is fitted ready for your decorator to paint."
+        },
+        {
+          "question": "What do you need from me for a quote?",
+          "answer": "A photo of the whole wall, rough sizes and a picture of a look you like. Plan your project lists it all, and the brief there puts it into one message."
+        }
+      ],
+      "image": "/images/projects/picture-frame-panelling-haringey/cover.jpg"
+    },
+    {
+      "slug": "window-seats-and-benches",
+      "name": "Window seats and benches",
+      "titleAccent": "with storage underneath.",
+      "metaTitle": "Window seats and storage benches in London | Raf Carpentry",
+      "metaDescription": "Window seats, bay seats, corner benches and a curved kitchen seat, most with storage underneath. Made to measure in London and drawn in 3D first.",
+      "summary": "Bay and window seats, corner benches, porch benches.",
+      "intro": "A seat in a bay or under a window, a corner bench in a kitchen or a porch bench for shoes. Most of them hide storage under a lift-up lid or behind doors.",
+      "matchTypes": [
+        "Window seats",
+        "Seating"
+      ],
+      "matchTags": [
+        "Window seats",
+        "Bench",
+        "Seating"
+      ],
+      "points": [
+        {
+          "title": "Storage underneath",
+          "description": "Lift-up lids or cupboard doors below the seat."
+        },
+        {
+          "title": "Curved if you need it",
+          "description": "The Kennington seat follows the curve of a round table."
+        },
+        {
+          "title": "Rebuilds too",
+          "description": "An old window seat can be rebuilt and insulated, like the Bounds Green job."
+        },
+        {
+          "title": "Drawn first",
+          "description": "Each seat is drawn in 3D, so the height and depth are right before anything is cut."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How much does a window seat cost?",
+          "answer": "Every job is quoted on its own after a free visit, because the size, the storage and the material all change the price."
+        },
+        {
+          "question": "Can you fit a seat in a bay?",
+          "answer": "Yes. Bays are rarely square, so the seat is measured on site and scribed to the walls. The curved seat below sits in a kitchen bay."
+        },
+        {
+          "question": "What do you need from me for a quote?",
+          "answer": "Photos of the window or the corner, rough sizes and what you want to store. Plan your project lists it all, and the brief there puts it into one message."
+        }
+      ],
+      "image": "/images/projects/window-seat-alcove-cabinet-east-finchley/cover.jpg"
+    },
+    {
+      "slug": "desks-and-home-offices",
+      "name": "Desks and home offices",
+      "titleAccent": "built into the room.",
+      "metaTitle": "Built-in desks and home offices in London | Raf Carpentry",
+      "metaDescription": "Built-in desks and home offices in London: a floating walnut desk with hidden drawers, birch ply desks, a whole birch ply room and a reception desk. Drawn in 3D first.",
+      "summary": "Floating desks, birch ply desks and whole home offices.",
+      "intro": "A desk that fits the wall exactly, with the storage you need around it. From a floating walnut desk with hidden drawers to a whole room in birch ply.",
+      "matchTypes": [
+        "Desks"
+      ],
+      "matchTags": [
+        "Desks",
+        "Home office"
+      ],
+      "points": [
+        {
+          "title": "Floating or on legs",
+          "description": "Fixed to the walls with no legs, like the Highbury walnut desk, or on legs or shaped stands, like the Chiswick and Wood Green desks."
+        },
+        {
+          "title": "Storage around it",
+          "description": "Drawers, shelves and cupboards planned around how you work."
+        },
+        {
+          "title": "Natural wood",
+          "description": "Walnut, oak or birch ply with a clear finish, so the grain shows."
+        },
+        {
+          "title": "For businesses too",
+          "description": "Including a reception desk for an office in Brentwood."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How much does a built-in desk cost?",
+          "answer": "Every job is quoted on its own after a free visit, because the size, the drawers and the timber all change the price. The materials guide on Plan your project shows how the options compare, from £ to ££££."
+        },
+        {
+          "question": "Can you build a desk under a window?",
+          "answer": "Yes. The walnut desk below runs wall to wall under a window, with four drawers hidden in its front."
+        },
+        {
+          "question": "What do you need from me for a quote?",
+          "answer": "Photos of the space, rough sizes and what needs to go on and around the desk. Plan your project lists it all, and the brief there puts it into one message."
+        }
+      ],
+      "image": "/images/projects/floating-walnut-desk-highbury/cover.jpg"
+    },
+    {
+      "slug": "kitchens",
+      "name": "Kitchens",
+      "titleAccent": "fitted, plus the pieces around them.",
+      "metaTitle": "Kitchen fitting and pantry cupboards in London | Raf Carpentry",
+      "metaDescription": "Kitchen fitting in London, plus the made-to-measure pieces around a kitchen: pantry cupboards, V-groove panelling and a curved bay seat.",
+      "summary": "Kitchen fitting, pantry cupboards, panelling and seating.",
+      "intro": "I fit kitchens, and I build the pieces that make a kitchen work around them: tall pantry cupboards, panelling and seating. The jobs below are some of those pieces.",
+      "matchTypes": [],
+      "matchTags": [
+        "Kitchen",
+        "Pantry"
+      ],
+      "points": [
+        {
+          "title": "Kitchen fitting",
+          "description": "Tell me about your kitchen in the brief and I will come and talk it through."
+        },
+        {
+          "title": "Pantry cupboards",
+          "description": "Tall cupboards with shelves for jars and tins and upright dividers for trays and boards."
+        },
+        {
+          "title": "Panelling and cooker hoods",
+          "description": "V-groove panelling with the cooker hood boxed in to match, like the Crouch End kitchen."
+        },
+        {
+          "title": "Seating",
+          "description": "A curved storage seat in a kitchen bay, drawn in SketchUp first."
+        }
+      ],
+      "faq": [
+        {
+          "question": "Do you fit kitchens?",
+          "answer": "Yes, I fit kitchens. I also build fitted furniture: wardrobes, alcove units, bookcases, window seats, desks and storage, plus the pieces around a kitchen, like pantry cupboards and panelling."
+        },
+        {
+          "question": "How much does it cost?",
+          "answer": "Every job is quoted on its own after a free visit."
+        },
+        {
+          "question": "What do you need from me for a quote?",
+          "answer": "Photos of the kitchen, rough sizes and what you have in mind. Plan your project lists it all, and the brief there puts it into one message."
+        }
+      ],
+      "image": "/images/projects/kitchen-panelling-crouch-end/cover.jpg"
+    },
+    {
+      "slug": "cupboards-and-storage",
+      "name": "Cupboards and built-in storage",
+      "titleAccent": "for the awkward corners.",
+      "metaTitle": "Built-in cupboards and storage in London | Raf Carpentry",
+      "metaDescription": "Built-in cupboards and storage in London: boiler and cylinder cupboards, eaves storage, pantry cupboards, shoe storage, vanity units and radiator covers, made to measure.",
+      "summary": "Boiler cupboards, eaves storage, shoe storage, vanity units.",
+      "intro": "Some of the most useful jobs are the smaller ones: a cupboard around the boiler, storage in the eaves, a porch bench for shoes or a vanity unit in the bathroom.",
+      "matchTypes": [
+        "Cupboards",
+        "Storage",
+        "Bathroom",
+        "Loft storage"
+      ],
+      "matchTags": [
+        "Boiler cupboard",
+        "Shoe storage",
+        "Vanity unit",
+        "Radiator cover",
+        "Eaves",
+        "Pantry"
+      ],
+      "points": [
+        {
+          "title": "Boilers and cylinders",
+          "description": "Cupboards built around boilers and hot water cylinders."
+        },
+        {
+          "title": "Eaves and lofts",
+          "description": "Sliding doors along the eaves, so the space under the roof is used."
+        },
+        {
+          "title": "Bathrooms",
+          "description": "Vanity units in moisture-resistant MDF, which copes far better with steam."
+        },
+        {
+          "title": "Hallways and porches",
+          "description": "Shoe storage and a bench by the front door."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How much does a built-in cupboard cost?",
+          "answer": "Every job is quoted on its own after a free visit, because the size, the doors and the material all change the price."
+        },
+        {
+          "question": "Can you build for a bathroom?",
+          "answer": "Yes, in moisture-resistant MDF, which copes far better with steam and splashes than normal MDF."
+        },
+        {
+          "question": "What do you need from me for a quote?",
+          "answer": "Photos of the space, including anything in the way like pipes or the boiler, and rough sizes. Plan your project lists it all, and the brief there puts it into one message."
+        }
+      ]
+    }
+  ]
+}
