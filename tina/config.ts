@@ -46,6 +46,12 @@ export default defineConfig({
             ui: { component: "textarea" },
           },
           {
+            type: "string",
+            name: "category",
+            label: "Category",
+            options: ["Projects", "SketchUp", "Cabinetos", "Tips"],
+          },
+          {
             type: "datetime",
             name: "date",
             label: "Date",

@@ -21,6 +21,7 @@ Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrob
 - **Rules (taste-skill)**: no em-dashes in new copy, no emoji icons, one accent colour, one "Get a quote" label for every quote button, max 20 words under the hero headline.
 - **Logo**: Crisp black R on white circle (public/images/r-logo-final.png).
 - **Quotes go through ServiceM8**: every "Get a quote" button (navbar, hero, quote panels) opens the ServiceM8 booking page in a new tab. The link, phone and email live in src/lib/site.ts (QUOTE_URL).
+- **TinaCMS status (3 Oct 2026)**: /admin is NOT live yet (404) because NEXT_PUBLIC_TINA_CLIENT_ID and TINA_TOKEN are not set in Vercel; scripts/build-cms.mjs skips the editor build without them. To switch it on: TinaCloud project (app.tina.io, sign in with GitHub, connect rafmoney503/raf-carpentry, branch main), copy Client ID and a read-only token into Vercel env vars, redeploy. Free plan = 2 users. Local alternative: `npm run dev` then http://localhost:3000/admin. Blog posts have a `category` field in the schema (Projects, SketchUp, Cabinetos, Tips).
 - **/editor**: old Supabase editor, not restyled. It needs NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY at build time. TinaCMS (/admin) is the editor to use.
 
 ## Pages Built (all working)
