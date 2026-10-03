@@ -38,6 +38,7 @@ type HowItWorksData = {
   briefFinish: string[];
   briefTiming: string[];
   briefBudget: string[];
+  briefParking: string[];
   faqHeading: string;
   faq: { question: string; answer: string }[];
   ctaHeading: string;
@@ -194,7 +195,7 @@ export default function HowItWorksPage() {
           </div>
           <div className="mt-10">
             <BriefBuilder
-              options={{ what: d.briefWhat, room: d.briefRoom, uses: d.briefUses, material: d.briefMaterial, finish: d.briefFinish, timing: d.briefTiming, budget: d.briefBudget }}
+              options={{ what: d.briefWhat, room: d.briefRoom, uses: d.briefUses, material: d.briefMaterial, finish: d.briefFinish, timing: d.briefTiming, budget: d.briefBudget, parking: d.briefParking }}
             />
           </div>
         </Container>

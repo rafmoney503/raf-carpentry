@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import SocialIcon from '@/components/SocialIcon';
 import { EMAIL, QUOTE_URL, whatsappUrl } from '@/lib/site';
 
@@ -11,6 +11,7 @@ export type BriefOptions = {
   finish: string[];
   timing: string[];
   budget: string[];
+  parking: string[];
 };
 
 /* A customer ticks what fits; the answers become a ready-written WhatsApp message or email to Raf. */
@@ -60,7 +61,12 @@ export default function BriefBuilder({ options }: { options: BriefOptions }) {
   const [material, setMaterial] = useState('');
   const [finish, setFinish] = useState('');
   const [size, setSize] = useState({ w: '', h: '', d: '' });
-  const [area, setArea] = useState('');
+  const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
+  const [parking, setParking] = useState('');
+  const [access, setAccess] = useState('');
+  const [needName, setNeedName] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
   const [timing, setTiming] = useState('');
   const [budget, setBudget] = useState('');
   const [notes, setNotes] = useState('');
@@ -70,27 +76,43 @@ export default function BriefBuilder({ options }: { options: BriefOptions }) {
   const toggleUse = (v: string) => setUses((u) => (u.includes(v) ? u.filter((x) => x !== v) : [...u, v]));
   const hasSize = Boolean(size.w || size.h || size.d);
 
-  const filled = [what, room, uses.length ? 'y' : '', material, finish, hasSize ? 'y' : '', area.trim(), timing, budget].filter(Boolean).length;
+  const filled = [what, room, uses.length ? 'y' : '', material, finish, hasSize ? 'y' : '', name.trim(), timing, budget].filter(Boolean).length;
 
   const message = useMemo(() => {
-    const lines = ['Hi Raf, here is my brief from your website.', ''];
+    const lines = [name.trim() ? `Hi Raf, this is ${name.trim()}. Here is my brief from your website.` : 'Hi Raf, here is my brief from your website.', ''];
     if (what) lines.push(`What: ${what}`);
     if (room) lines.push(`Room: ${room}`);
     if (uses.length) lines.push(`For: ${uses.join(', ')}`);
     if (material) lines.push(`Material: ${material}`);
     if (finish) lines.push(`Finish: ${finish}`);
     if (hasSize) lines.push(`Rough size: ${size.w || '?'} wide x ${size.h || '?'} high x ${size.d || '?'} deep (mm)`);
-    if (area.trim()) lines.push(`Area: ${area.trim()}`);
     if (timing) lines.push(`When: ${timing}`);
     if (budget) lines.push(`Budget: ${budget}`);
+    const where = [
+      address.trim() ? `Address: ${address.trim().replace(/\s*\n\s*/g, ', ')}` : '',
+      parking ? `Parking: ${parking}` : '',
+      access.trim() ? `Parking and access: ${access.trim()}` : '',
+    ].filter(Boolean);
+    if (where.length) lines.push('', ...where);
     if (notes.trim()) lines.push('', notes.trim());
     lines.push('', 'I will send photos of the space next.');
     return lines.join('\n');
-  }, [what, room, uses, material, finish, hasSize, size, area, timing, budget, notes]);
+  }, [what, room, uses, material, finish, hasSize, size, name, address, parking, access, timing, budget, notes]);
 
   const mailto = `mailto:${EMAIL}?subject=${encodeURIComponent(`My project brief${what ? `: ${what}` : ''}`)}&body=${encodeURIComponent(message.replace('I will send photos of the space next.', 'Photos of the space attached.'))}`;
 
+  // Raf needs at least a name: stop the send and point at the box instead.
+  const gate = (e?: { preventDefault: () => void }) => {
+    if (name.trim()) return true;
+    e?.preventDefault();
+    setNeedName(true);
+    nameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    nameRef.current?.focus({ preventScroll: true });
+    return false;
+  };
+
   const copy = async () => {
+    if (!gate()) return;
     try {
       await navigator.clipboard.writeText(message);
       setCopied(true);
@@ -102,7 +124,8 @@ export default function BriefBuilder({ options }: { options: BriefOptions }) {
 
   const reset = () => {
     setWhat(''); setRoom(''); setUses([]); setMaterial(''); setFinish('');
-    setSize({ w: '', h: '', d: '' }); setArea(''); setTiming(''); setBudget(''); setNotes('');
+    setSize({ w: '', h: '', d: '' }); setName(''); setAddress(''); setParking(''); setAccess('');
+    setTiming(''); setBudget(''); setNotes(''); setNeedName(false);
   };
 
   return (
@@ -139,10 +162,46 @@ export default function BriefBuilder({ options }: { options: BriefOptions }) {
             ))}
           </div>
         </Field>
-        <Field n={7} title="Your area">
+        <Field n={7} title="Your details and parking" hint="name needed">
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="font-mono text-[12px] text-faint">Name</span>
+              <input
+                ref={nameRef}
+                className={`${input} mt-1 ${needName && !name.trim() ? 'border-accent ring-2 ring-accent/20' : ''}`}
+                placeholder="Your name"
+                value={name}
+                onChange={(e) => { setName(e.target.value.slice(0, 80)); setNeedName(false); }}
+                autoComplete="name"
+                aria-required="true"
+                aria-invalid={needName && !name.trim() ? true : undefined}
+                aria-describedby="brief-name-note"
+              />
+            </label>
+            <label className="block sm:row-span-2">
+              <span className="font-mono text-[12px] text-faint">Full address</span>
+              <textarea
+                className={`${input} mt-1 h-[104px] resize-none py-2.5`}
+                placeholder={'House number and street\nTown, postcode'}
+                value={address}
+                onChange={(e) => setAddress(e.target.value.slice(0, 200))}
+                autoComplete="street-address"
+              />
+            </label>
+            <p id="brief-name-note" className={`self-end text-[13px] leading-snug ${needName && !name.trim() ? 'font-medium text-accent' : 'text-faint'}`}>
+              {needName && !name.trim() ? 'Add your name, then send.' : 'Only sent to me in your message. Nothing is saved on this website.'}
+            </p>
+          </div>
+          <p className="mt-5 font-mono text-[12px] text-faint">Parking</p>
+          <Chips label="Parking" options={options.parking} value={parking} onPick={one(setParking, parking)} />
           <label className="mt-3 block">
-            <span className="sr-only">Area or postcode</span>
-            <input className={input} placeholder="e.g. Finchley, or N3" value={area} onChange={(e) => setArea(e.target.value.slice(0, 60))} autoComplete="postal-code" />
+            <span className="sr-only">Anything else about parking or access</span>
+            <input
+              className={input}
+              placeholder="Anything else? e.g. 3rd floor, no lift; bay behind the shop"
+              value={access}
+              onChange={(e) => setAccess(e.target.value.slice(0, 160))}
+            />
           </label>
         </Field>
         <Field n={8} title="When?">
@@ -176,12 +235,12 @@ export default function BriefBuilder({ options }: { options: BriefOptions }) {
           </div>
           <pre className="mt-4 min-h-[220px] whitespace-pre-wrap break-words rounded-sm border border-line-strong bg-mount p-5 font-mono text-[13.5px] leading-relaxed text-ink">{message}</pre>
           <div className="mt-4 grid gap-2.5">
-            <a href={whatsappUrl(message)} target="_blank" rel="noopener" className="btn btn-whatsapp w-full gap-2.5">
+            <a href={whatsappUrl(message)} target="_blank" rel="noopener" onClick={(e) => gate(e)} className="btn btn-whatsapp w-full gap-2.5">
               <SocialIcon network="whatsapp" size={18} />
               Send on WhatsApp
             </a>
             <div className="grid grid-cols-2 gap-2.5">
-              <a href={mailto} className="btn btn-ghost">Email it</a>
+              <a href={mailto} onClick={(e) => gate(e)} className="btn btn-ghost">Email it</a>
               <button type="button" onClick={copy} className="btn btn-ghost">{copied ? 'Copied' : 'Copy text'}</button>
             </div>
           </div>
@@ -189,6 +248,9 @@ export default function BriefBuilder({ options }: { options: BriefOptions }) {
             Add your photos in the WhatsApp chat or attach them to the email. Rather book a visit straight away?{' '}
             <a href={QUOTE_URL} target="_blank" rel="noopener" className="font-medium text-accent hover:underline">Book online</a>.
           </p>
+          {needName && !name.trim() ? (
+            <p className="mt-3 text-sm font-medium text-accent" role="alert">Add your name in step 07 first.</p>
+          ) : null}
           {filled > 0 || notes ? (
             <button type="button" onClick={reset} className="mt-3 font-mono text-[12px] text-faint transition-colors hover:text-ink">
               Start again

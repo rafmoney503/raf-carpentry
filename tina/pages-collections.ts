@@ -522,6 +522,7 @@ export const pageCollections: Collection[] = [
       { type: "string", name: "briefFinish", label: "Brief choices: Finish", list: true },
       { type: "string", name: "briefTiming", label: "Brief choices: When?", list: true },
       { type: "string", name: "briefBudget", label: "Brief choices: Rough budget", list: true },
+      { type: "string", name: "briefParking", label: "Brief choices: Parking", list: true },
       { type: "string", name: "faqHeading", label: "Questions: heading" },
       {
         type: "object", name: "faq", label: "Questions", list: true, ui: listItemUi,

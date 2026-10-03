@@ -3,6 +3,7 @@ import { usePathname } from 'next/navigation';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import WhatsAppFloat from './WhatsAppFloat';
+import HowItWorksFloat from './HowItWorksFloat';
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -17,9 +18,15 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
       <Navbar />
       <main className="min-h-screen">{children}</main>
       <Footer />
-      {/* No floating WhatsApp on the calculator (it sat on the = key on phones) or on How it works,
-          which has its own WhatsApp button that sends the customer's brief. */}
-      {pathname?.startsWith('/editor') || pathname === '/calculator' || pathname === '/how-it-works' ? null : <WhatsAppFloat />}
+      {/* Floating buttons: How it works bottom-left, WhatsApp bottom-right. None on the calculator
+          (they sat on the keypad on phones). How it works has its own WhatsApp button that sends
+          the customer's brief, so neither floats there either. */}
+      {pathname?.startsWith('/editor') || pathname === '/calculator' || pathname === '/how-it-works' ? null : (
+        <>
+          <HowItWorksFloat />
+          <WhatsAppFloat />
+        </>
+      )}
     </>
   );
 }
