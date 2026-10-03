@@ -17,8 +17,6 @@ type HowItWorksData = {
   title: string;
   titleAccent: string;
   lede: string;
-  stepsHeading: string;
-  steps: Item[];
   needHeading: string;
   needIntro: string;
   need: (Item & { sketch?: string })[];
@@ -53,8 +51,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const jump = [
-  { href: '#steps', label: 'The steps' },
   { href: '#need', label: 'What I need' },
+  { href: '#get', label: 'What you get' },
   { href: '#materials', label: 'Materials' },
   { href: '#brief', label: 'Your brief' },
   { href: '#faq', label: 'Questions' },
@@ -94,22 +92,6 @@ export default function HowItWorksPage() {
         </nav>
       </PageHeader>
 
-      {/* Steps */}
-      <section id="steps" className="scroll-mt-20 border-t border-line">
-        <Container className="py-14 md:py-20">
-          <SectionHeading>{d.stepsHeading}</SectionHeading>
-          <ol className="mt-10 grid grid-cols-1 gap-x-6 sm:grid-cols-2 lg:grid-cols-5">
-            {d.steps.map((s, i) => (
-              <li key={i} className={`border-t-2 py-5 ${i === 0 ? 'border-accent' : 'border-line-strong'}`}>
-                <span className="font-mono text-[13px] text-accent">{String(i + 1).padStart(2, '0')}</span>
-                <h3 className="mt-2 text-[20px] font-[620] leading-snug">{s.title}</h3>
-                <p className="mt-2 text-[15px] leading-relaxed text-muted">{s.description}</p>
-              </li>
-            ))}
-          </ol>
-        </Container>
-      </section>
-
       {/* What I need / what you get */}
       <section id="need" className="scroll-mt-20 border-t border-line">
         <Container className="grid grid-cols-1 gap-6 py-14 md:grid-cols-2 md:py-20">
@@ -134,7 +116,7 @@ export default function HowItWorksPage() {
               })}
             </ol>
           </div>
-          <div className="rounded-sm border border-line bg-raised p-6 md:p-9">
+          <div id="get" className="scroll-mt-20 rounded-sm border border-line bg-raised p-6 md:p-9">
             <h2 className="font-display text-[26px] font-[650] leading-tight tracking-[-0.02em] md:text-[30px]">{d.getHeading}</h2>
             <ul className="mt-7 border-t border-line-strong">
               {d.get.map((g, i) => (

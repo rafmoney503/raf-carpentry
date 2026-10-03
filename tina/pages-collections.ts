@@ -465,14 +465,6 @@ export const pageCollections: Collection[] = [
       { type: "string", name: "title", label: "Title" },
       { type: "string", name: "titleAccent", label: "Title, last words (in blue)" },
       { type: "string", name: "lede", label: "Intro", ui: { component: "textarea" } },
-      { type: "string", name: "stepsHeading", label: "Steps: heading" },
-      {
-        type: "object", name: "steps", label: "Steps", list: true, ui: listItemUi,
-        fields: [
-          { type: "string", name: "title", label: "Step", required: true },
-          { type: "string", name: "description", label: "Description", ui: { component: "textarea" } },
-        ],
-      },
       { type: "string", name: "needHeading", label: "What I need: heading" },
       { type: "string", name: "needIntro", label: "What I need: intro", ui: { component: "textarea" } },
       {
