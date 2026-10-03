@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import QRCode from 'qrcode';
 import { Container } from '@/components/ui';
+import { pageMeta } from '@/lib/seo';
 import SocialIcon from '@/components/SocialIcon';
 import { GoogleRating } from '@/components/Reviews';
 import { GOOGLE_WRITE_REVIEW_URL, PHONE_DISPLAY, PHONE_HREF, REVIEW_SHORT_URL, whatsappUrl } from '@/lib/site';
@@ -9,10 +10,13 @@ import { GOOGLE_WRITE_REVIEW_URL, PHONE_DISPLAY, PHONE_HREF, REVIEW_SHORT_URL, w
    that opens the Google "write a review" box for RAF CARPENTRY. Not in the menu or in Google. */
 
 export const metadata: Metadata = {
-  title: 'Leave a review | Raf Carpentry',
-  description: 'Thank you for having me. A short Google review helps other people in London find me.',
+  ...pageMeta({
+    title: 'Leave a review | Raf Carpentry',
+    description: 'Thanks for having me. Happy with the work? A quick Google review helps other people in London find me.',
+    path: '/review',
+    ownImage: true,
+  }),
   robots: { index: false, follow: true },
-  alternates: { canonical: '/review' },
 };
 
 export default async function ReviewPage() {
