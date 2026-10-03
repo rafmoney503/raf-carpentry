@@ -6,7 +6,7 @@ import { Container, PageHeader, SectionHeading } from '@/components/ui';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import { QUOTE_URL } from '@/lib/site';
 import BriefBuilder from './brief-builder';
-import NeedSketch from './need-sketch';
+import Sketch from './sketches';
 
 type Item = { title: string; description: string };
 type Material = { name: string; cost: string; bestFor: string; description: string; image: string; imageAlt: string; link: string };
@@ -23,7 +23,7 @@ type HowItWorksData = {
   needIntro: string;
   need: (Item & { sketch?: string })[];
   getHeading: string;
-  get: Item[];
+  get: (Item & { sketch?: string })[];
   materialsHeading: string;
   materialsIntro: string;
   materials: Material[];
@@ -73,7 +73,7 @@ function Cost({ value }: { value: string }) {
 
 function Check() {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="mt-1 flex-none text-accent">
+    <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="mt-[3px] flex-none text-accent">
       <path d="M3.5 9.5l3.5 3.5 7.5-8" />
     </svg>
   );
@@ -121,7 +121,7 @@ export default function HowItWorksPage() {
                 const num = String(i + 1).padStart(2, '0');
                 return (
                   <li key={i} className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-4 border-b border-line py-4 sm:grid-cols-[76px_minmax(0,1fr)] sm:gap-5">
-                    <NeedSketch name={n.sketch} number={num} />
+                    <Sketch name={n.sketch} fallback={num} />
                     <div className="pt-0.5">
                       <h3 className="text-[17px] font-[620] text-ink">
                         <span className="mr-2 font-mono text-[13px] font-normal text-accent">{num}</span>
@@ -138,10 +138,13 @@ export default function HowItWorksPage() {
             <h2 className="font-display text-[26px] font-[650] leading-tight tracking-[-0.02em] md:text-[30px]">{d.getHeading}</h2>
             <ul className="mt-7 border-t border-line-strong">
               {d.get.map((g, i) => (
-                <li key={i} className="flex gap-3 border-b border-line-strong py-4">
-                  <Check />
-                  <div>
-                    <h3 className="text-[17px] font-[620] text-ink">{g.title}</h3>
+                <li key={i} className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-4 border-b border-line-strong py-4 sm:grid-cols-[76px_minmax(0,1fr)] sm:gap-5">
+                  <Sketch name={g.sketch} fallback={<Check />} />
+                  <div className="pt-0.5">
+                    <h3 className="flex gap-2 text-[17px] font-[620] text-ink">
+                      <Check />
+                      {g.title}
+                    </h3>
                     <p className="mt-1 text-[15px] leading-relaxed text-muted">{g.description}</p>
                   </div>
                 </li>

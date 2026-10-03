@@ -66,23 +66,28 @@
   "get": [
     {
       "title": "A reply within 24 hours",
-      "description": "To every enquiry, on WhatsApp, phone or email."
+      "description": "To every enquiry, on WhatsApp, phone or email.",
+      "sketch": "reply"
     },
     {
       "title": "A free quote and a visit",
-      "description": "I come and measure up, talk through how you will use the space and what is possible."
+      "description": "I come and measure up, talk through how you will use the space and what is possible.",
+      "sketch": "visit"
     },
     {
       "title": "A 3D drawing to approve",
-      "description": "With real measurements. We change it until it is right, and nothing is cut until you sign it off."
+      "description": "With real measurements. We change it until it is right, and nothing is cut until you sign it off.",
+      "sketch": "drawing"
     },
     {
       "title": "Built in 18 mm board",
-      "description": "Throughout, backs included. No thin 8 mm sheets."
+      "description": "Throughout, backs included. No thin 8 mm sheets.",
+      "sketch": "board"
     },
     {
       "title": "Fitted to your room",
-      "description": "Scribed to your walls, floor and ceiling, with the room left clean when I go."
+      "description": "Scribed to your walls, floor and ceiling, with the room left clean when I go.",
+      "sketch": "fitted"
     }
   ],
   "materialsHeading": "Materials, in plain English",

@@ -1,9 +1,14 @@
-/* Small line drawings for "What I need from you", drawn like the rest of the site: pencil ink
-   with the one blueprint-blue accent, on a square of graph paper. They are decorative (the text
-   says the same thing), so screen readers skip them. Which drawing goes with which item is the
-   "sketch" field in content/pages/how-it-works.json (a dropdown in TinaCMS). */
+/* Small line drawings for "What I need from you" and "What you get from me", drawn like the rest
+   of the site: pencil ink with the one blueprint-blue accent, on a square of graph paper. They are
+   decorative (the text says the same thing), so screen readers skip them. Which drawing goes with
+   which item is the "sketch" field in content/pages/how-it-works.json (a dropdown in TinaCMS). */
 
-export const SKETCHES = ['photos', 'sizes', 'uses', 'look', 'details', 'budget'] as const;
+export const SKETCHES = [
+  // What I need from you
+  'photos', 'sizes', 'uses', 'look', 'details', 'budget',
+  // What you get from me
+  'reply', 'visit', 'drawing', 'board', 'fitted',
+] as const;
 export type SketchName = (typeof SKETCHES)[number];
 
 const accent = 'text-accent';
@@ -129,6 +134,110 @@ function Budget() {
   );
 }
 
+function Reply() {
+  return (
+    <>
+      {/* a message bubble and a clock marked 24h */}
+      <path d="M16 12h34a6 6 0 0 1 6 6v20a6 6 0 0 1-6 6H28l-9 8v-8h-3a6 6 0 0 1-6-6V18a6 6 0 0 1 6-6z" />
+      <path d="M18 23h28M18 30h22M18 37h13" strokeWidth="1.1" />
+      <g className={accent}>
+        <circle cx="57" cy="55" r="14" fill="var(--color-paper)" />
+        <path d="M57 43v2.5M57 64.5V67M45 55h2.5M66.5 55H69" strokeWidth="1.2" />
+        <text x="57" y="58" textAnchor="middle" {...label} fontSize="8.5">24h</text>
+      </g>
+    </>
+  );
+}
+
+function Visit() {
+  return (
+    <>
+      {/* the quote sheet, ticked, and a tape measure pulled out across it */}
+      <rect x="34" y="9" width="31" height="40" rx="1" />
+      <path d="M39 17h18M39 23h21M39 29h14" strokeWidth="1.1" />
+      <rect x="11" y="39" width="26" height="26" rx="6" fill="var(--color-paper)" />
+      <circle cx="24" cy="52" r="6" strokeWidth="1.2" />
+      <circle cx="24" cy="52" r="1.3" strokeWidth="1" />
+      <g className={accent}>
+        <path d="M43 39.5l3.5 3.5 7-7" />
+        <rect x="37" y="57" width="31" height="6" rx="0.5" fill="var(--color-paper)" strokeWidth="1.3" />
+        <path d="M41 57v3M45 57v2M49 57v3M53 57v2M57 57v3M61 57v2M65 57v3" strokeWidth="1" />
+        <path d="M68 54.5v11" strokeWidth="1.6" />
+      </g>
+    </>
+  );
+}
+
+function Drawing3D() {
+  return (
+    <>
+      {/* a 3D drawing of a wardrobe on a sheet, signed and ticked at the bottom */}
+      <rect x="10" y="7" width="60" height="67" rx="1" />
+      <path d="M40 13l16 8-16 8-16-8z" strokeWidth="1.3" />
+      <path d="M24 21v24l16 8V29M56 21v24l-16 8" strokeWidth="1.3" />
+      <path d="M32 25v24" strokeWidth="1" />
+      <circle cx="30.4" cy="38" r="0.6" strokeWidth="1" />
+      <circle cx="33.6" cy="39.6" r="0.6" strokeWidth="1" />
+      <path d="M16 67h26" strokeWidth="1" />
+      <g className={accent}>
+        <path d="M18 64c2.5-5 4.5 2.5 7-1s3.5 2.5 6.5-.5 3 1.5 5 0" strokeWidth="1.3" />
+        <path d="M50 63.5l3.5 3.5 7-7" />
+      </g>
+    </>
+  );
+}
+
+/* The cut edge of the board, hatched like a section on a drawing. */
+function hatch(x0: number, x1: number, y0: number, y1: number, step: number) {
+  const h = y1 - y0;
+  const out: string[] = [];
+  for (let x = x0 - h + step; x < x1; x += step) {
+    const sx = Math.max(x, x0);
+    const sy = y1 - (sx - x);
+    const ex = Math.min(x + h, x1);
+    const ey = y1 - (ex - x);
+    out.push(`M${sx.toFixed(1)} ${sy.toFixed(1)}L${ex.toFixed(1)} ${ey.toFixed(1)}`);
+  }
+  return out.join('');
+}
+
+function Board() {
+  return (
+    <>
+      {/* a thick board with its cut edge hatched and an 18 mm dimension */}
+      <path d="M22 44h40l12-14H34z" />
+      <rect x="22" y="44" width="40" height="12" />
+      <path d="M62 56l12-14V30" />
+      <path d={hatch(22, 62, 44, 56, 4.5)} strokeWidth="0.8" />
+      <g className={accent}>
+        <path d="M11 44h8M11 56h8" strokeWidth="1" />
+        <path d="M15 44v12M13.2 46l1.8-2 1.8 2M13.2 54l1.8 2 1.8-2" strokeWidth="1.2" />
+        <text x="15" y="66" textAnchor="middle" {...label} fontSize="8">18</text>
+        <text x="15" y="73.5" textAnchor="middle" {...label} fontSize="7" fontWeight="500">mm</text>
+      </g>
+    </>
+  );
+}
+
+function Fitted() {
+  return (
+    <>
+      {/* a wardrobe between floor and ceiling, its side scribed to a wall that is not straight */}
+      <path d="M8 10h64M8 70h64" />
+      <path d="M13 10c3 8-2 14 1 22s-3 16 0 22 2 10 0 16" strokeWidth="1.2" />
+      <path d="M17.2 13H62v57M17.4 66H62" />
+      <path d="M40 13v53" strokeWidth="1.1" />
+      <circle cx="37.5" cy="40" r="0.8" strokeWidth="1.1" />
+      <circle cx="42.5" cy="40" r="0.8" strokeWidth="1.1" />
+      <g className={accent}>
+        <path d="M16.3 13c2.4 5.6-1.6 12.5 1.2 19s-3 16 0 22 2 10 0 16" />
+        {/* room left clean */}
+        <path d="M71 48.5c0 4.2 1.8 6 6 6-4.2 0-6 1.8-6 6 0-4.2-1.8-6-6-6 4.2 0 6-1.8 6-6z" strokeWidth="1.1" fill="currentColor" fillOpacity="0.14" />
+      </g>
+    </>
+  );
+}
+
 const DRAWINGS: Record<SketchName, () => React.JSX.Element> = {
   photos: Photos,
   sizes: Sizes,
@@ -136,6 +245,11 @@ const DRAWINGS: Record<SketchName, () => React.JSX.Element> = {
   look: Look,
   details: Details,
   budget: Budget,
+  reply: Reply,
+  visit: Visit,
+  drawing: Drawing3D,
+  board: Board,
+  fitted: Fitted,
 };
 
 export function isSketch(name: string | undefined): name is SketchName {
@@ -150,7 +264,8 @@ const paper: React.CSSProperties = {
   backgroundPosition: '-1px -1px',
 };
 
-export default function NeedSketch({ name, number }: { name?: string; number: string }) {
+/* `fallback` shows in the square when an item has no drawing chosen (the number, or a tick). */
+export default function Sketch({ name, fallback }: { name?: string; fallback: React.ReactNode }) {
   const Drawing = isSketch(name) ? DRAWINGS[name] : null;
   return (
     <div className="relative aspect-square w-full overflow-hidden rounded-sm border border-line bg-paper text-ink" style={paper} aria-hidden="true">
@@ -159,7 +274,7 @@ export default function NeedSketch({ name, number }: { name?: string; number: st
           <Drawing />
         </svg>
       ) : (
-        <span className="absolute inset-0 grid place-items-center font-mono text-[18px] text-accent">{number}</span>
+        <span className="absolute inset-0 grid place-items-center font-mono text-[18px] text-accent">{fallback}</span>
       )}
     </div>
   );

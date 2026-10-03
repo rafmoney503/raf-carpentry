@@ -500,6 +500,17 @@ export const pageCollections: Collection[] = [
         fields: [
           { type: "string", name: "title", label: "Item", required: true },
           { type: "string", name: "description", label: "Description", ui: { component: "textarea" } },
+          {
+            type: "string", name: "sketch", label: "Little drawing",
+            description: "The small sketch beside this item. Leave empty to show a tick instead.",
+            options: [
+              { value: "reply", label: "Message and 24h clock" },
+              { value: "visit", label: "Quote sheet and tape measure" },
+              { value: "drawing", label: "Signed 3D drawing" },
+              { value: "board", label: "18 mm board" },
+              { value: "fitted", label: "Wardrobe scribed to the wall" },
+            ],
+          },
         ],
       },
       { type: "string", name: "materialsHeading", label: "Materials: heading" },
