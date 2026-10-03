@@ -199,7 +199,7 @@ export default function HomePage() {
               <div>
                 <p className="direct-l">WhatsApp</p>
                 <a className="direct-v direct-wa" href={whatsappUrl(whatsappText('/'))} target="_blank" rel="noopener">
-                  <SocialIcon network="whatsapp" size={24} />
+                  <SocialIcon network="whatsapp" size={24} className="text-whatsapp" />
                   Message me
                 </a>
               </div>

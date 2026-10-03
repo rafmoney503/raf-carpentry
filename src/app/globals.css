@@ -21,6 +21,8 @@
   --color-accent-hover: #1b38ad;
   --color-accent-soft: rgb(37 71 208 / 0.08);
   --color-on-accent: #f6f7f4;
+  --color-whatsapp: #25d366; /* WhatsApp's own green, only for WhatsApp buttons and logos */
+  --color-whatsapp-hover: #1ebe5d;
 
   /* One corner system across the whole site: square, 2px. rounded-full is kept for the logo. */
   --radius: 2px;
@@ -94,6 +96,8 @@ h1, h2, h3, h4, h5 {
   .btn-primary:hover { background: var(--color-accent-hover); }
   .btn-ghost { background: transparent; color: var(--color-ink); border-color: var(--color-line-strong); }
   .btn-ghost:hover { border-color: var(--color-ink); }
+  .btn-whatsapp { background: var(--color-whatsapp); color: #fff; }
+  .btn-whatsapp:hover { background: var(--color-whatsapp-hover); }
   .btn-sm { height: 44px; padding: 0 18px; font-size: 15px; }
 
   .link-more { display: inline-flex; align-items: center; gap: 10px; color: var(--color-accent); font-weight: 600; }

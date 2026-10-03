@@ -52,7 +52,7 @@ export default function Footer() {
             <h4 className="mb-3 font-sans text-sm font-semibold tracking-normal text-ink">Contact</h4>
             <a href="tel:07792860221" className={linkClass}>07792 860221</a>
             <a href={whatsappUrl(whatsappText())} target="_blank" rel="noopener" className={linkClass.replace('block', 'flex items-center gap-2.5')}>
-              <SocialIcon network="whatsapp" size={17} />
+              <SocialIcon network="whatsapp" size={17} className="text-whatsapp" />
               WhatsApp me
             </a>
             <a href="mailto:info@rafcarpentry.com" className={linkClass}>info@rafcarpentry.com</a>

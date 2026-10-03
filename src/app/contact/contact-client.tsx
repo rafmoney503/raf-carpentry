@@ -48,7 +48,7 @@ export default function ContactClient({ d }: { d: ContactPageData }) {
                   {item.href ? (
                     'whatsapp' in item ? (
                       <a href={item.href} target="_blank" rel="noopener" className="inline-flex items-center gap-2.5 transition-colors hover:text-accent">
-                        <SocialIcon network="whatsapp" size={24} />
+                        <SocialIcon network="whatsapp" size={24} className="text-whatsapp" />
                         {item.value}
                       </a>
                     ) : (
