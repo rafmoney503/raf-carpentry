@@ -5,6 +5,7 @@ import { getPostBySlug, getAllPosts } from '@/lib/blog';
 import { notFound } from 'next/navigation';
 import ToolsUsed from '@/components/ToolsUsed';
 import { MountedImage } from '@/components/ui';
+import SocialIcon from '@/components/SocialIcon';
 
 export async function generateStaticParams() {
   const posts = getAllPosts();
@@ -56,8 +57,8 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
             <p className="mt-1 text-muted">Follow along for more builds, tips and behind-the-scenes.</p>
           </div>
           <div className="flex gap-3">
-            <a href="https://www.instagram.com/rafcarpentry/" target="_blank" rel="noopener" className="btn btn-ghost btn-sm">Instagram</a>
-            <a href="https://www.tiktok.com/@rafcarpentry" target="_blank" rel="noopener" className="btn btn-ghost btn-sm">TikTok</a>
+            <a href="https://www.instagram.com/rafcarpentry/" target="_blank" rel="noopener" className="btn btn-ghost btn-sm gap-2"><SocialIcon network="instagram" size={16} />Instagram</a>
+            <a href="https://www.tiktok.com/@rafcarpentry" target="_blank" rel="noopener" className="btn btn-ghost btn-sm gap-2"><SocialIcon network="tiktok" size={16} />TikTok</a>
           </div>
         </div>
       </section>

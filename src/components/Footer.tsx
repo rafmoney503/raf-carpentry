@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import SocialIcon, { networkOf } from './SocialIcon';
 
 const explore = [
   { href: '/portfolio', label: 'My Work' },
@@ -50,9 +51,17 @@ export default function Footer() {
             <h4 className="mb-3 font-sans text-sm font-semibold tracking-normal text-ink">Contact</h4>
             <a href="tel:07792860221" className={linkClass}>07792 860221</a>
             <a href="mailto:info@rafcarpentry.com" className={linkClass}>info@rafcarpentry.com</a>
-            {social.map((l) => (
-              <a key={l.href} href={l.href} target="_blank" rel="noopener" className={linkClass}>{l.label}</a>
-            ))}
+            <div className="mt-2">
+              {social.map((l) => {
+                const net = networkOf(l.href);
+                return (
+                  <a key={l.href} href={l.href} target="_blank" rel="noopener" className={linkClass.replace('block', 'flex items-center gap-2.5')}>
+                    {net ? <SocialIcon network={net} size={17} /> : null}
+                    {l.label}
+                  </a>
+                );
+              })}
+            </div>
           </div>
         </div>
         <div className="mt-12 grid gap-1.5 border-t border-line pt-6 text-[13px] leading-relaxed text-faint md:mt-16">

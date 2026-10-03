@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import SocialIcon, { networkOf } from '@/components/SocialIcon';
 import type { Metadata } from 'next';
 import { readPageJson } from '@/lib/pages';
 
@@ -45,12 +46,18 @@ export default function MiniSite() {
         </div>
         <h1 className="mt-5 font-display text-[28px] font-[680] tracking-[-0.025em]">{d.title}</h1>
         <p className="mt-1 text-[15px] text-muted">{d.subtitle}</p>
-        <div className="mt-5 flex gap-2">
-          {socials.map((s) => (
-            <a key={s.label} href={s.href} target="_blank" rel="noopener" className="btn btn-ghost btn-sm">
-              {s.label}
-            </a>
-          ))}
+        <div className="mt-6 flex gap-5">
+          {socials.map((s) => {
+            const net = networkOf(s.href) ?? networkOf(s.label);
+            return (
+              <a key={s.label} href={s.href} target="_blank" rel="noopener" aria-label={`${s.label}: @rafcarpentry`} className="group flex flex-col items-center gap-1.5">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full border border-line-strong bg-mount text-ink transition-colors group-hover:border-accent group-hover:bg-accent group-hover:text-on-accent">
+                  {net ? <SocialIcon network={net} size={20} /> : null}
+                </span>
+                <span className="font-mono text-[11px] text-faint transition-colors group-hover:text-accent">{s.label}</span>
+              </a>
+            );
+          })}
         </div>
       </div>
 

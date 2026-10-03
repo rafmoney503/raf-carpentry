@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { readPageJson } from '@/lib/pages';
 import { Container, SectionHeading } from '@/components/ui';
+import SocialIcon, { networkOf } from '@/components/SocialIcon';
 
 type AboutPageData = {
   title: string;
@@ -87,11 +88,15 @@ export default function About() {
       <Container className="py-20 md:py-28">
         <SectionHeading>Follow the work</SectionHeading>
         <div className="mt-8 flex flex-wrap gap-3">
-          {d.socialLinks.map((s) => (
-            <a key={s.label} href={s.url} target="_blank" rel="noopener" className="btn btn-ghost">
-              {s.label}
-            </a>
-          ))}
+          {d.socialLinks.map((s) => {
+            const net = networkOf(s.url) ?? networkOf(s.label);
+            return (
+              <a key={s.label} href={s.url} target="_blank" rel="noopener" className="btn btn-ghost gap-2.5">
+                {net ? <SocialIcon network={net} size={18} /> : null}
+                {s.label}
+              </a>
+            );
+          })}
         </div>
       </Container>
     </>
