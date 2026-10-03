@@ -2,6 +2,7 @@
 import { useMemo, useRef, useState } from 'react';
 import SocialIcon from '@/components/SocialIcon';
 import { EMAIL, QUOTE_URL, whatsappUrl } from '@/lib/site';
+import AddressFinder, { type Address } from './address-finder';
 
 export type BriefOptions = {
   what: string[];
@@ -63,7 +64,7 @@ export default function BriefBuilder({ options }: { options: BriefOptions }) {
   const [finish, setFinish] = useState<string[]>([]);
   const [size, setSize] = useState({ w: '', h: '', d: '' });
   const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
+  const [addr, setAddr] = useState<Address>({ line1: '', area: '', postcode: '' });
   const [parking, setParking] = useState<string[]>([]);
   const [access, setAccess] = useState('');
   const [needName, setNeedName] = useState(false);
@@ -84,6 +85,8 @@ export default function BriefBuilder({ options }: { options: BriefOptions }) {
   // Some choices contain commas ("MDF only, no paint"), so several picks are joined with " + ".
   const join = (list: string[]) => list.join(' + ');
 
+  const addressText = [addr.line1, addr.area, addr.postcode].map((x) => x.trim()).filter(Boolean).join(', ');
+
   const message = useMemo(() => {
     const lines = [name.trim() ? `Hi Raf, this is ${name.trim()}. Here is my brief from your website.` : 'Hi Raf, here is my brief from your website.', ''];
     if (what.length) lines.push(`What: ${join(what)}`);
@@ -95,7 +98,7 @@ export default function BriefBuilder({ options }: { options: BriefOptions }) {
     if (timing) lines.push(`When: ${timing}`);
     if (budget) lines.push(`Budget: ${budget}`);
     const where = [
-      address.trim() ? `Address: ${address.trim().replace(/\s*\n\s*/g, ', ')}` : '',
+      addressText ? `Address: ${addressText}` : '',
       parking.length ? `Parking: ${join(parking)}` : '',
       access.trim() ? `Parking and access: ${access.trim()}` : '',
     ].filter(Boolean);
@@ -103,7 +106,7 @@ export default function BriefBuilder({ options }: { options: BriefOptions }) {
     if (notes.trim()) lines.push('', notes.trim());
     lines.push('', 'I will send photos of the space next.');
     return lines.join('\n');
-  }, [what, room, uses, material, finish, hasSize, size, name, address, parking, access, timing, budget, notes]);
+  }, [what, room, uses, material, finish, hasSize, size, name, addressText, parking, access, timing, budget, notes]);
 
   const mailto = `mailto:${EMAIL}?subject=${encodeURIComponent(`My project brief${what.length ? `: ${what.join(' + ')}` : ''}`.slice(0, 120))}&body=${encodeURIComponent(message.replace('I will send photos of the space next.', 'Photos of the space attached.'))}`;
 
@@ -130,7 +133,7 @@ export default function BriefBuilder({ options }: { options: BriefOptions }) {
 
   const reset = () => {
     setWhat([]); setRoom([]); setUses([]); setMaterial([]); setFinish([]);
-    setSize({ w: '', h: '', d: '' }); setName(''); setAddress(''); setParking([]); setAccess('');
+    setSize({ w: '', h: '', d: '' }); setName(''); setAddr({ line1: '', area: '', postcode: '' }); setParking([]); setAccess('');
     setTiming(''); setBudget(''); setNotes(''); setNeedName(false);
   };
 
@@ -184,21 +187,14 @@ export default function BriefBuilder({ options }: { options: BriefOptions }) {
                 aria-describedby="brief-name-note"
               />
             </label>
-            <label className="block sm:row-span-2">
-              <span className="font-mono text-[12px] text-faint">Full address</span>
-              <textarea
-                className={`${input} mt-1 h-[104px] resize-none py-2.5`}
-                placeholder={'House number and street\nTown, postcode'}
-                value={address}
-                onChange={(e) => setAddress(e.target.value.slice(0, 200))}
-                autoComplete="street-address"
-              />
-            </label>
-            <p id="brief-name-note" className={`self-end text-[13px] leading-snug ${needName && !name.trim() ? 'font-medium text-accent' : 'text-faint'}`}>
+            <p id="brief-name-note" className={`self-end pb-1 text-[13px] leading-snug ${needName && !name.trim() ? 'font-medium text-accent' : 'text-faint'}`}>
               {needName && !name.trim() ? 'Add your name, then send.' : 'Only sent to me in your message. Nothing is saved on this website.'}
             </p>
           </div>
-          <p className="mt-5 font-mono text-[12px] text-faint">Parking</p>
+          <div className="mt-4">
+            <AddressFinder value={addr} onChange={setAddr} inputClass={input} />
+          </div>
+          <p className="mt-3 font-mono text-[12px] text-faint">Parking</p>
           <Chips label="Parking" options={options.parking} value={parking} onPick={toggle(setParking)} multi />
           <label className="mt-3 block">
             <span className="sr-only">Anything else about parking or access</span>
