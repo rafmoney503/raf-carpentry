@@ -10,6 +10,7 @@ const explore = [
   { href: '/cabinetos', label: 'CabinetOS' },
   { href: '/tools', label: 'Tools' },
   { href: '/calculator', label: 'Calculator' },
+  { href: '/tips', label: 'Workshop tips' },
 ];
 const read = [
   { href: '/how-it-works', label: 'Plan your project' },

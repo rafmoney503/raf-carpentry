@@ -1,4 +1,4 @@
-/* Small line drawings for "What I need from you" and "What you get from me", drawn like the rest
+/* Small line drawings for "What I need from you" and "What you get from me" (and the Workshop tips page), drawn like the rest
    of the site: pencil ink with the one blueprint-blue accent, on a square of graph paper. They are
    decorative (the text says the same thing), so screen readers skip them. Which drawing goes with
    which item is the "sketch" field in content/pages/how-it-works.json (a dropdown in TinaCMS). */
@@ -8,6 +8,8 @@ export const SKETCHES = [
   'photos', 'sizes', 'uses', 'look', 'details', 'budget',
   // What you get from me
   'reply', 'visit', 'drawing', 'board', 'fitted',
+  // Workshop tips (/tips)
+  'skirting', 'backSkirting', 'compass', 'hinge21', 'screw', 'hingeJig',
 ] as const;
 export type SketchName = (typeof SKETCHES)[number];
 
@@ -238,6 +240,116 @@ function Fitted() {
   );
 }
 
+/* Workshop tips (/tips) */
+
+function Skirting() {
+  return (
+    <>
+      {/* an alcove seen from above: walls, skirting along all three, the width taken between the skirtings */}
+      <path d="M8 70V8h64v62" strokeWidth="1" />
+      <path d="M8 22l6-6M8 34l6-6M8 46l6-6M8 58l6-6M8 70l6-6M66 22l6-6M66 34l6-6M66 46l6-6M66 58l6-6M66 70l6-6M20 14l6-6M32 14l6-6M44 14l6-6M56 14l6-6" strokeWidth="0.7" />
+      <path d="M14 70V14h52v56h-5V19H19v51z" fill="currentColor" fillOpacity="0.12" stroke="none" />
+      <path d="M14 70V14h52v56" />
+      <path d="M19 70V19h42v51" strokeWidth="1.1" />
+      <path d="M14 14l5 5M66 14l-5 5" strokeWidth="0.8" />
+      <g className={accent}>
+        <path d="M19 46h42M22.5 43.5 19 46l3.5 2.5M57.5 43.5 61 46l-3.5 2.5" />
+        <text x="40" y="41" textAnchor="middle" {...label}>W</text>
+      </g>
+    </>
+  );
+}
+
+function BackSkirting() {
+  return (
+    <>
+      {/* side view: the unit pushed tight to the wall where the skirting was */}
+      <path d="M64 6v66M71 6v66" />
+      <path d="M64 14l7-7M64 26l7-7M64 38l7-7M64 50l7-7M64 62l7-7" strokeWidth="0.7" />
+      <path d="M8 72h63" />
+      <path d="M64 26H22v46" />
+      <path d="M22 40h42M22 54h42" strokeWidth="1" />
+      <path d="M22 66h42" strokeWidth="1.1" />
+      <g className={accent}>
+        <path d="M57 58h7v14h-7z" fill="currentColor" fillOpacity="0.12" stroke="none" />
+        <path d="M64 58h-7v14" strokeDasharray="2 2.2" />
+        <path d="M44 17h16M56.5 14.5 60 17l-3.5 2.5" />
+      </g>
+    </>
+  );
+}
+
+function Compass() {
+  return (
+    <>
+      {/* a compass run down an uneven wall, its pencil copying the wall onto the side panel */}
+      <path d="M13 6c3 8-2 14 1 22s-3 16 0 22 2 10 0 22" strokeWidth="1.3" />
+      <path d="M5 16l6-6M5 30l6-6M5 44l6-6M5 58l6-6M5 72l6-6" strokeWidth="0.8" />
+      <rect x="28" y="6" width="34" height="66" rx="0.6" />
+      <g className={accent}>
+        <path d="M31 6c3 8-2 14 1 22s-3 16 0 22 2 10 0 22" />
+        <path d="M46 40v14M43.5 51.5 46 54l2.5-2.5" />
+      </g>
+      <path d="M22 29 12.8 47M22 29l9 18" strokeWidth="1.4" />
+      <path d="M29.6 44.2 31 47" strokeWidth="2.6" />
+      <path d="M22 29v-7" strokeWidth="1.8" />
+      <circle cx="22" cy="29" r="1.8" fill="var(--color-paper)" strokeWidth="1.2" />
+    </>
+  );
+}
+
+function Hinge21() {
+  return (
+    <>
+      {/* back of a door at its corner: the hinge cup, its centre 21 mm from the edge */}
+      <path d="M12 74V8h62" />
+      <rect x="44" y="27" width="30" height="10" rx="1.5" strokeWidth="1.2" />
+      <circle cx="33" cy="32" r="17.5" fill="var(--color-paper)" />
+      <circle cx="33" cy="32" r="13" strokeWidth="1" />
+      <g className={accent}>
+        <path d="M29.5 32h7M33 28.5v7" strokeWidth="1.2" />
+        <path d="M33 52v12" strokeWidth="1" />
+        <path d="M12 60h21M15 58l-3 2 3 2M30 58l3 2-3 2" strokeWidth="1.2" />
+        <text x="22.5" y="72" textAnchor="middle" {...label} fontSize="8">21</text>
+      </g>
+    </>
+  );
+}
+
+function Screw() {
+  return (
+    <>
+      {/* a side panel screwed into the edge of a shelf, both 18 mm board */}
+      <rect x="10" y="8" width="18" height="64" />
+      <path d="M28 34h46M28 52h46" />
+      <g className={accent}>
+        <path d="M10 39.5l5.5 2.3v2.4L10 46.5z" fill="var(--color-paper)" />
+        <path d="M15.5 41.8h30.5l4 1.2-4 1.2H15.5z" fill="var(--color-paper)" />
+        <path d="M19 41.8l1.6 2.4M23 41.8l1.6 2.4M27 41.8l1.6 2.4M31 41.8l1.6 2.4M35 41.8l1.6 2.4M39 41.8l1.6 2.4M43 41.8l1.6 2.4" strokeWidth="0.9" />
+        <text x="51" y="64" textAnchor="middle" {...label}>3.5 × 40</text>
+      </g>
+    </>
+  );
+}
+
+function HingeJig() {
+  return (
+    <>
+      {/* side view: a hinge jig hooked over the door edge, the drill's depth stop resting on it */}
+      <path d="M16 52v14h58" />
+      <path d="M16 52h8M44 52h30" />
+      <path d="M50 52V38H10v24h6" />
+      <rect x="29" y="4" width="10" height="9" rx="1" strokeWidth="1.2" />
+      <path d="M34 13v19" strokeWidth="2.4" />
+      <path d="M34 38v14" strokeWidth="1" strokeDasharray="2 2" />
+      <g className={accent}>
+        <path d="M24 52v9h20v-9" />
+        <rect x="29" y="32" width="10" height="6" rx="0.8" fill="var(--color-paper)" />
+      </g>
+    </>
+  );
+}
+
 const DRAWINGS: Record<SketchName, () => React.JSX.Element> = {
   photos: Photos,
   sizes: Sizes,
@@ -250,6 +362,12 @@ const DRAWINGS: Record<SketchName, () => React.JSX.Element> = {
   drawing: Drawing3D,
   board: Board,
   fitted: Fitted,
+  skirting: Skirting,
+  backSkirting: BackSkirting,
+  compass: Compass,
+  hinge21: Hinge21,
+  screw: Screw,
+  hingeJig: HingeJig,
 };
 
 export function isSketch(name: string | undefined): name is SketchName {

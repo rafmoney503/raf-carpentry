@@ -1,0 +1,60 @@
+{
+  "metaTitle": "Workshop tips for carpenters and DIY | Raf Carpentry",
+  "metaDescription": "How I measure an alcove, scribe to an uneven wall with a compass, set wardrobe door hinges 21 mm from the edge and the screws I use for units. Tips from a London carpenter.",
+  "kicker": "Free workshop tips",
+  "title": "Workshop tips,",
+  "titleAccent": "from my own fits.",
+  "intro": "How I measure, scribe, hang wardrobe doors and screw units together. For other carpenters and anyone doing it themselves.",
+  "tips": [
+    {
+      "id": "measure-skirting-to-skirting",
+      "section": "Alcoves",
+      "title": "Measure an alcove from skirting to skirting",
+      "body": "Take the width between the skirting boards, not between the walls. The skirting is the narrowest point of the alcove, so that is the width that decides what fits.",
+      "sketch": "skirting",
+      "linkLabel": "Alcove units I've built",
+      "linkHref": "/services/alcove-units-and-bookcases"
+    },
+    {
+      "id": "take-off-the-back-skirting",
+      "section": "Alcoves",
+      "title": "Take the skirting off the back wall",
+      "body": "Before an alcove unit goes in, I remove the skirting on the back wall. The unit then sits tight against the wall and you gain the thickness of the skirting in depth. Measure the depth to the wall itself, not to the front of the skirting.",
+      "sketch": "backSkirting"
+    },
+    {
+      "id": "scribe-with-a-compass",
+      "section": "Uneven walls",
+      "title": "Scribe to an uneven wall with a school compass",
+      "body": "Walls are rarely straight, so the side panel has to follow the wall. Hold the panel upright against the wall, open a compass to the widest gap between the two and run the point down the wall with the pencil on the panel. The pencil copies the shape of the wall onto the panel: cut to the line and it sits tight. A simple school compass (a pair of compasses) does the job. The trade version is called a scribing compass.",
+      "sketch": "compass",
+      "linkLabel": "The jigsaw I scribe with",
+      "linkHref": "https://link.amazon/B0i0c5CMu"
+    },
+    {
+      "id": "hinges-21mm-from-the-edge",
+      "section": "Wardrobe doors",
+      "title": "Wardrobe door hinges: 21 mm from the edge",
+      "body": "I set the hinge holes on wardrobe doors with their centre 21 mm in from the edge of the door. Keep the same 21 mm on every door and they line up once they're hung.",
+      "sketch": "hinge21",
+      "linkLabel": "Fitted wardrobes I've built",
+      "linkHref": "/services/fitted-wardrobes"
+    },
+    {
+      "id": "hinge-jig-preset-depth",
+      "section": "Wardrobe doors",
+      "title": "Cut the hinge holes with a jig set to depth",
+      "body": "I cut the hinge holes with a hinge jig (a hinge boring jig) that has the depth preset. Every hole comes out the same depth, with no measuring on each door and no risk of drilling through the front.",
+      "sketch": "hingeJig"
+    },
+    {
+      "id": "screws-for-units",
+      "section": "Putting units together",
+      "title": "The screws I use for units: Reisser 3.5 × 40",
+      "body": "For putting units together my choice is Reisser 3.5 × 40 screws: 3.5 mm thick and 40 mm long. Through 18 mm board that leaves 22 mm biting into the next panel.",
+      "sketch": "screw"
+    }
+  ],
+  "ctaHeading": "Rather have it built for you?",
+  "ctaText": "Tell me about the room and I'll come and measure up for a free quote."
+}
