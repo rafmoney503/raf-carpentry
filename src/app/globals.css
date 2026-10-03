@@ -137,6 +137,14 @@ h1, h2, h3, h4, h5 {
 /* Two photos on one line in a post sit side by side */
 .prose-custom p:has(> img + img) { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 2rem 0; }
 .prose-custom p:has(> img + img) img { margin: 0; width: 100%; height: auto; }
+.prose-custom p:has(> img + img + img) { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.prose-custom p:has(> img + img + img) img { padding: 6px; }
+/* A single upright photo: add #narrow to the image address so it doesn't fill the whole column */
+.prose-custom img[src$="#narrow"] { display: block; width: 62%; margin-left: auto; margin-right: auto; }
+.prose-custom img[src$="#slim"] { display: block; width: 40%; margin-left: auto; margin-right: auto; }
+@media (max-width: 640px) { .prose-custom img[src$="#narrow"] { width: 82%; } .prose-custom img[src$="#slim"] { width: 62%; } }
+/* An italic line on its own straight after photos reads as a caption */
+.prose-custom p > em:only-child { display: block; margin-top: -1.1rem; font-family: var(--font-mono); font-style: normal; font-size: 13px; color: var(--color-faint); }
 .prose-custom blockquote { border-left: 2px solid var(--color-accent); padding-left: 1rem; color: var(--color-muted); font-style: italic; margin: 1.5rem 0; }
 .prose-custom ul, .prose-custom ol { color: var(--color-muted); padding-left: 1.5rem; margin-bottom: 1rem; }
 .prose-custom ul { list-style: disc; }

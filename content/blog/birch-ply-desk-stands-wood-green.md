@@ -1,6 +1,6 @@
 ---
 title: Shaped birch ply stands for a home office desk
-date: 2026-10-03T11:00:00.000Z
+date: 2026-04-16T20:05:00.000Z
 excerpt: Two curved stands built up from layers of birch ply and routed to one template, so they come out exactly the same.
 category: Projects
 image: /images/blog/birch-ply-desk-stands-wood-green/hero.jpg
@@ -13,21 +13,35 @@ tools:
     link: 'https://link.amazon/B031DQY1u'
 ---
 
-A home office in Wood Green needed a new desk top with slots for the cables, and two shaped stands to sit on it. The stands have a curved shape, and the pair had to match.
+A home office in Wood Green needed a new desk top with slots for the cables, and two shaped stands to sit on it. The stands have a curved shape, and the pair had to match. Not nearly match. Match.
+
+Making one curved part by hand is fine. Making two the same is where a template earns its keep.
 
 ## Layers of birch ply
 
-Each stand is built up from layers of birch ply, glued together. Birch ply is strong and holds a crisp edge, and the layers show as fine stripes along the curve.
+Each stand is built up from layers of birch ply, glued together into a solid block. Birch ply is strong and holds a crisp edge, and once it is shaped and sanded, the layers show as fine stripes running round the curve.
 
-## One template, two matching stands
+## The template method, step by step
 
-I made a template with the exact curve, clamped it over the glued-up layers and ran the router round it. The bearing on the router bit follows the template, so both stands come out the same shape with a clean edge. Then every edge was sanded smooth.
+1. **Mark out.** Draw the shape on the board.
+2. **Make the template.** Cut one piece in MDF to the exact curve and get it perfect. Every stand will copy it, faults and all.
+3. **Clamp it on.** The template goes over the glued-up layers and is clamped down hard.
+4. **Rout.** A trim router with a bearing bit runs round the template. The bearing rolls along the template edge while the cutter trims the ply underneath to the same line.
+5. **Sand.** Every edge sanded smooth.
 
-![Template clamped over the glued-up birch ply](/images/blog/birch-ply-desk-stands-wood-green/1.jpg) ![The router following the template](/images/blog/birch-ply-desk-stands-wood-green/2.jpg)
+![The shape marked out](/images/blog/birch-ply-desk-stands-wood-green/marked.jpg) ![Template clamped over the layers](/images/blog/birch-ply-desk-stands-wood-green/template.jpg) ![The router following the template](/images/blog/birch-ply-desk-stands-wood-green/routing.jpg)
 
-This is the simplest way I know to make two curved parts that match. Get the template right once, and the router copies it as many times as you need.
+> Get the template right once, and the router copies it as many times as you need.
 
-![Close-up of a finished stand](/images/blog/birch-ply-desk-stands-wood-green/3.jpg) ![The desk top and both stands from above](/images/blog/birch-ply-desk-stands-wood-green/4.jpg)
+Take light passes with the router. Trying to take the whole lot off in one go is how you get burn marks and torn edges, especially on the end grain of the ply.
+
+![Close-up of a finished stand](/images/blog/birch-ply-desk-stands-wood-green/closeup.jpg#narrow)
+
+## The finished desk
+
+The desk top has slots cut through for the cables, and the two stands sit on top. Seen from above, you can check the pair against each other, which is the real test.
+
+![The desk top and both stands from above](/images/blog/birch-ply-desk-stands-wood-green/above.jpg) ![The desk in the room](/images/blog/birch-ply-desk-stands-wood-green/room.jpg)
 
 ## The tools that did the work
 

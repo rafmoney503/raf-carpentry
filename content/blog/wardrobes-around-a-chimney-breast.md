@@ -1,6 +1,6 @@
 ---
 title: Wardrobes built around a chimney breast
-date: 2026-10-03T07:00:00.000Z
+date: 2026-09-30T20:45:00.000Z
 excerpt: PAX frames either side, an MDF bridge over the fireplace and one run of doors, so the whole wall reads as one piece and the fireplace stays on show.
 category: Projects
 image: /images/blog/wardrobes-around-a-chimney-breast/hero.jpg
@@ -17,7 +17,9 @@ tools:
     link: 'https://link.amazon/B0elL28Zc'
 ---
 
-This bedroom in Palmers Green has a chimney breast in the middle of the wall, with an old fireplace worth keeping. So the storage goes either side of it and over the top, and the fireplace stays on show.
+This bedroom in Palmers Green has a chimney breast in the middle of the wall, with an old fireplace worth keeping. Most people would fill the alcoves and call it done. Here the storage goes either side of the chimney breast and over the top of it, and the fireplace stays on show in the middle.
+
+![The whole wall with the fireplace in the middle](/images/blog/wardrobes-around-a-chimney-breast/room.jpg#narrow)
 
 ## How it goes together
 
@@ -25,14 +27,22 @@ IKEA PAX frames stand either side of the chimney breast, each with an MDF box on
 
 An MDF frame bridges the chimney breast and ties both sides together, with cupboards above the fireplace.
 
-![Overhead boxes glued and clamped on the bench](/images/blog/wardrobes-around-a-chimney-breast/1.jpg) ![The MDF bridge over the chimney breast](/images/blog/wardrobes-around-a-chimney-breast/2.jpg)
+![Overhead boxes glued and clamped on the bench](/images/blog/wardrobes-around-a-chimney-breast/boxes.jpg) ![The MDF bridge over the chimney breast](/images/blog/wardrobes-around-a-chimney-breast/bridge.jpg) ![Faced in MDF, ready for doors](/images/blog/wardrobes-around-a-chimney-breast/faced.jpg)
 
 ## One piece, not three
 
-Face frames, top boxes and flat MDF doors with wooden knobs go across the whole wall. That is what makes it read as one piece of furniture rather than two wardrobes and a shelf.
+Two wardrobes and a shelf over a fireplace can look like exactly that. What makes it read as one piece is the face: face frames, top boxes and flat MDF doors with wooden knobs running across the whole wall, all lined up.
+
+> The fireplace is the reason for the shape. Everything else is built around it.
+
+Lining it all up is where the laser level earns its place. A level line across the whole wall means the doors on the left and the doors on the right finish at the same height, even when the floor and ceiling do not agree.
+
+![The left side and the bridge over the fireplace](/images/blog/wardrobes-around-a-chimney-breast/side.jpg) ![Overhead cupboards running towards the bay window](/images/blog/wardrobes-around-a-chimney-breast/bay.jpg)
+
+## Inside
 
 Inside, it is PAX: drawers, baskets and hanging space.
 
-![The whole wall with the fireplace in the middle](/images/blog/wardrobes-around-a-chimney-breast/3.jpg) ![Inside one wardrobe: drawers and hanging space](/images/blog/wardrobes-around-a-chimney-breast/4.jpg)
+![Inside one wardrobe: drawers and hanging space](/images/blog/wardrobes-around-a-chimney-breast/inside.jpg#narrow)
 
 [See every photo of this job](/portfolio/chimney-breast-wardrobes-palmers-green), plus a short walk round the finished wall.

@@ -1,6 +1,6 @@
 ---
 title: Two built-in wardrobes in a loft, made from IKEA PAX
-date: 2026-10-03T08:00:00.000Z
+date: 2026-09-19T10:20:00.000Z
 excerpt: IKEA PAX frames on the inside, MDF panels and full-height doors on the outside, so the wardrobes look built in.
 category: Projects
 image: /images/blog/loft-wardrobes-ikea-pax/hero.jpg
@@ -15,20 +15,30 @@ tools:
     link: 'https://link.amazon/B08MSwRs2'
 ---
 
-This loft room in Palmers Green has a window at one end and a long wall on each side. So it got two wardrobes, one down each side, facing each other.
+This loft room in Palmers Green has a window at one end and a long wall on each side. Two wardrobes, one down each side, facing each other.
+
+The inside of each one is IKEA PAX. The outside is not.
 
 ## Planned in the IKEA planner
 
-Each wardrobe is a run of IKEA PAX frames. I laid out the inside in IKEA's PAX planner first: 199.8 cm wide, 201.2 cm high and 58 cm deep, with drawers, baskets and hanging rails.
+I laid out the inside in IKEA's PAX planner first: 199.8 cm wide, 201.2 cm high and 58 cm deep, with drawers, baskets and hanging rails.
 
-![PAX frames built and stood against the wall](/images/blog/loft-wardrobes-ikea-pax/1.jpg) ![The second run going in on the other side](/images/blog/loft-wardrobes-ikea-pax/2.jpg)
+![The layout in the IKEA PAX planner](/images/blog/loft-wardrobes-ikea-pax/planner.jpg#narrow)
+
+![PAX frames stood against the wall](/images/blog/loft-wardrobes-ikea-pax/frames.jpg) ![The second run going in](/images/blog/loft-wardrobes-ikea-pax/second-side.jpg)
 
 ## Making PAX look built in
 
-PAX frames on their own look like flat-pack. The difference is the boxing in. MDF panels close the gaps up to the ceiling and against the walls, including the sloping wall, and then full-height MDF doors go across the front.
+PAX frames on their own look like flat-pack. The difference is the boxing in. MDF panels close the gaps up to the ceiling and against the walls, including the sloping wall, and full-height MDF doors go across the front.
 
-From the room, each side reads as one built-in piece. Open the doors and it is all IKEA inside: easy to get parts for, and easy to change later.
+Open the doors and it is all IKEA inside: easy to get parts for, and easy to change later.
 
-![Inside: drawers and hanging space](/images/blog/loft-wardrobes-ikea-pax/3.jpg) ![Three doors closed, built in to the ceiling](/images/blog/loft-wardrobes-ikea-pax/4.jpg)
+![Inside: drawers and hanging space](/images/blog/loft-wardrobes-ikea-pax/open.jpg) ![Three doors closed, up to the ceiling](/images/blog/loft-wardrobes-ikea-pax/closed.jpg)
+
+## Before you order PAX for a loft
+
+- Measure the ceiling height at the front and at the back. Lofts are rarely the same.
+- Leave room for the boxing in. The frames are not the finished size.
+- Plan the inside first. Drawers and baskets decide the door layout, not the other way round.
 
 [See every photo of this job](/portfolio/loft-wardrobes-palmers-green), including the planner drawing next to the finished wardrobe.
