@@ -12,7 +12,7 @@ export function getReviews(): ReviewsData {
 }
 
 /* What a review or a job is about, so a wardrobe job shows the wardrobe review first. */
-const TOPICS: RegExp[] = [/wardrobe/i, /book(shel|case)|shel(f|v)/i, /panel/i, /kitchen|pantry/i, /door/i, /cabinet|cupboard/i, /desk|office/i, /seat|bench/i];
+const TOPICS: RegExp[] = [/wardrobe/i, /book(shel|case)|shel(f|v)/i, /panel/i, /kitchen|pantry/i, /door/i, /cabinet|cupboard/i, /desk|office/i, /seat|bench/i, /stud|partition|built walls/i, /flooring|floorboard/i];
 const topicsOf = (text: string) => TOPICS.filter((t) => t.test(text));
 
 /* Up to `max` reviews: one linked to this job first, then the ones about the same kind of work

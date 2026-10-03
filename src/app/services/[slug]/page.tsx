@@ -99,7 +99,29 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
             </ul>
           </Container>
         </section>
-      ) : null}
+      ) : (
+        <section id="jobs" className="scroll-mt-20 border-t border-line">
+          <Container className="grid grid-cols-1 items-center gap-8 py-14 md:grid-cols-12 md:gap-6 md:py-16">
+            {s.image ? (
+              <div className="mount md:col-span-5">
+                <div className="relative aspect-[4/3] overflow-hidden bg-raised">
+                  <Image src={s.image} alt="" fill sizes="(max-width: 768px) 100vw, 500px" className="object-cover" />
+                </div>
+              </div>
+            ) : null}
+            <div className="md:col-span-6 md:col-start-7">
+              <SectionHeading>Photos of these jobs</SectionHeading>
+              <p className="mt-4 max-w-[52ch] text-[16px] leading-relaxed text-muted">
+                There are no photos of this kind of job on the site yet. Ask me on WhatsApp and I will send you pictures of recent ones, or see the fitted furniture on My Work.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <WhatsAppButton text={waText} />
+                <Link href="/portfolio" className="btn btn-ghost">See My Work</Link>
+              </div>
+            </div>
+          </Container>
+        </section>
+      )}
 
       {/* What customers say: the reviews about this kind of work first */}
       <section className="border-t border-line">
@@ -134,7 +156,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
           <div className="grid grid-cols-1 items-end gap-8 md:grid-cols-12 md:gap-6">
             <div className="md:col-span-7">
               <SectionHeading>Want something like this?</SectionHeading>
-              <p className="mt-4 max-w-[52ch] text-muted">Tell me about the room. I&apos;ll come and measure up, then draw it in 3D before anything is cut.</p>
+              <p className="mt-4 max-w-[52ch] text-muted">Tell me about the room. I&apos;ll come and measure up for a free quote.</p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link href={QUOTE_HREF} className="btn btn-primary">Get a quote</Link>
                 <WhatsAppButton text={waText} />

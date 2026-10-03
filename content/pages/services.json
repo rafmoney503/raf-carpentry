@@ -367,6 +367,150 @@
           "answer": "Photos of the space, including anything in the way like pipes or the boiler, and rough sizes. Plan your project lists it all, and the brief there puts it into one message."
         }
       ]
+    },
+    {
+      "slug": "door-fitting",
+      "name": "Door fitting",
+      "titleAccent": "sliding, glass or the original ones.",
+      "metaTitle": "Door fitting in London | Raf Carpentry",
+      "metaDescription": "Door fitting in London: internal doors hung, sliding wooden and glass doors, and original doors made to fit a different frame. Free quote and visit.",
+      "summary": "Internal doors, sliding and glass doors, old doors made to fit.",
+      "intro": "New internal doors hung, sliding wooden and glass doors, and old doors made to fit a different frame. Every opening is measured at the free visit, so the quote is for the doors you actually need.",
+      "image": "/images/services/door-fitting.jpg",
+      "matchTypes": [
+        "Doors"
+      ],
+      "matchTags": [
+        "Glass doors",
+        "Door fitting"
+      ],
+      "points": [
+        {
+          "title": "Internal doors",
+          "description": "New doors hung, with the hinges and handles fitted."
+        },
+        {
+          "title": "Sliding doors",
+          "description": "Wooden or glass. The Haringey doors below hang from new timber fixed into the ceiling."
+        },
+        {
+          "title": "Old doors made to fit",
+          "description": "An original door cut down to fit a smaller frame, so it looks like it has always been there."
+        },
+        {
+          "title": "Measured on site",
+          "description": "Every opening is measured at the free visit, so the quote matches the doors you need."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How much does door fitting cost?",
+          "answer": "Every job is quoted on its own after a free visit, because the number of doors, the type and the state of the frames all change the price."
+        },
+        {
+          "question": "Do you fit sliding doors?",
+          "answer": "Yes, wooden and glass. For the glass doors below, the ceiling was opened along the line of the track and timber fixed between the joists, so the doors had something solid to hang from."
+        },
+        {
+          "question": "What do you need from me for a quote?",
+          "answer": "A photo of each doorway, how many doors, and a picture of the doors you like. Plan your project lists it all, and the brief there puts it into one message."
+        }
+      ]
+    },
+    {
+      "slug": "flooring",
+      "name": "Flooring",
+      "titleAccent": "fitted room by room.",
+      "metaTitle": "Floor fitting in London | Raf Carpentry",
+      "metaDescription": "Floor fitting in London, planned together with any fitted furniture going in. Free quote and visit; every room measured on site.",
+      "summary": "Floors fitted, planned together with any furniture going in.",
+      "intro": "Floors fitted as well as the furniture that stands on them. Tell me the room sizes and the floor you have in mind, and I will come and measure up for a free quote.",
+      "image": "/images/services/flooring.jpg",
+      "matchTypes": [
+        "Flooring"
+      ],
+      "matchTags": [
+        "Flooring",
+        "Floor fitting"
+      ],
+      "points": [
+        {
+          "title": "Measured on site",
+          "description": "Every room is measured at the free visit, including doorways and thresholds."
+        },
+        {
+          "title": "Your choice of floor",
+          "description": "Tell me what you have chosen, or ask and I will talk you through it at the visit."
+        },
+        {
+          "title": "Planned with the furniture",
+          "description": "If wardrobes or cupboards are going in too, the floor and the furniture are planned together."
+        },
+        {
+          "title": "Room left clean",
+          "description": "Offcuts and dust cleared away when I go."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How much does floor fitting cost?",
+          "answer": "Every job is quoted on its own after a free visit, because the size of the room and the type of floor change the price."
+        },
+        {
+          "question": "Do I need to clear the room?",
+          "answer": "Yes, please. Clear the room as much as you can, so I have as much space as possible to work. I leave it clean when I go."
+        },
+        {
+          "question": "What do you need from me for a quote?",
+          "answer": "The rough size of each room, a photo of the floor as it is now, and the floor you have in mind. Plan your project lists it all, and the brief there puts it into one message."
+        }
+      ]
+    },
+    {
+      "slug": "stud-walls",
+      "name": "Stud walls and partitions",
+      "titleAccent": "a new room where you need one.",
+      "metaTitle": "Stud walls and partitions in London | Raf Carpentry",
+      "metaDescription": "Stud walls and partitions built in London: split a room in two, add a box room or close off a space, with a door if you need one. Free quote and visit.",
+      "summary": "Split a room in two, or close off a space, with a door.",
+      "intro": "A stud wall splits one room into two or closes off a space, with a door in it if you need one. Tell me where the wall should go and I will come and measure up for a free quote.",
+      "image": "/images/services/stud-walls.jpg",
+      "matchTypes": [
+        "Stud walls",
+        "Partitions"
+      ],
+      "matchTags": [
+        "Stud wall",
+        "Partition"
+      ],
+      "points": [
+        {
+          "title": "Split a room",
+          "description": "Two bedrooms from one, a box room, a walk-in wardrobe or a utility."
+        },
+        {
+          "title": "Timber framed",
+          "description": "A frame fixed to the floor, ceiling and walls, built to take the boards and plaster."
+        },
+        {
+          "title": "A door if you need one",
+          "description": "A door frame built into the new wall and the door hung."
+        },
+        {
+          "title": "Planned with the furniture",
+          "description": "If a wardrobe or cupboards go against the new wall, they are drawn together in 3D first."
+        }
+      ],
+      "faq": [
+        {
+          "question": "How much does a stud wall cost?",
+          "answer": "Every job is quoted on its own after a free visit, because the length and height of the wall and whether it needs a door change the price."
+        },
+        {
+          "question": "What do you need from me for a quote?",
+          "answer": "Photos of the room, rough sizes, and where you want the new wall and any door. Plan your project lists it all, and the brief there puts it into one message."
+        }
+      ]
     }
   ]
 }
