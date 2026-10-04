@@ -114,6 +114,16 @@
       }
     },
     {
+      "title": "Straight cuts on the rail",
+      "text": "The straight edges cut with a track saw on its rail.",
+      "image": {
+        "src": "/images/projects/curved-seat-kennington/step-6bb165b6.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Track saw on its rail beside a curved offcut"
+      }
+    },
+    {
       "title": "Curved frames",
       "text": "Curved frames cut to match.",
       "image": {
@@ -131,6 +141,16 @@
         "w": 1200,
         "h": 1600,
         "alt": "Storage boxes taking shape"
+      }
+    },
+    {
+      "title": "Bent to the curve",
+      "text": "A thin sheet bent round to follow the curve of the frames.",
+      "image": {
+        "src": "/images/projects/curved-seat-kennington/step-7d7493db.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "A thin sheet bent into a curve on the ground"
       }
     },
     {
@@ -204,5 +224,113 @@
     "includes": "The SketchUp model of the seat (.skp)",
     "price": "£4.99"
   },
-  "blogSlug": "curved-storage-seat-kennington"
+  "blogSlug": "curved-storage-seat-kennington",
+  "buildPhotos": [
+    {
+      "src": "/images/projects/curved-seat-kennington/b-3cc5c27a.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Board on the bench with the cutting rail"
+    },
+    {
+      "src": "/images/projects/curved-seat-kennington/b-634d2363.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "First curved frame on the bench"
+    },
+    {
+      "src": "/images/projects/curved-seat-kennington/b-e891c290.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Curved piece cut from the board"
+    },
+    {
+      "src": "/images/projects/curved-seat-kennington/b-2e429237.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Curved parts on the bench"
+    },
+    {
+      "src": "/images/projects/curved-seat-kennington/b-26001c54.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Curved frames joined up"
+    },
+    {
+      "src": "/images/projects/curved-seat-kennington/b-b4bff63d.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The frame taking shape on the bench"
+    },
+    {
+      "src": "/images/projects/curved-seat-kennington/b-af9c1c81.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Storage boxes between the curved frames"
+    },
+    {
+      "src": "/images/projects/curved-seat-kennington/b-22c1a2a5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The seat carcass on the ground"
+    },
+    {
+      "src": "/images/projects/curved-seat-kennington/b-b1228086.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Looking along the curve"
+    },
+    {
+      "src": "/images/projects/curved-seat-kennington/b-d7a16066.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The curve from the end"
+    },
+    {
+      "src": "/images/projects/curved-seat-kennington/b-4b7729cc.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The seat by the workshop"
+    },
+    {
+      "src": "/images/projects/curved-seat-kennington/b-5ea75805.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Carcass ready to load into the van"
+    },
+    {
+      "src": "/images/projects/curved-seat-kennington/b-9785a52e.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Panelled front going on"
+    },
+    {
+      "src": "/images/projects/curved-seat-kennington/b-40d9226e.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Inside the storage boxes"
+    }
+  ],
+  "clips": [
+    {
+      "src": "/videos/curved-seat-kennington-1373.mp4",
+      "poster": {
+        "src": "/images/projects/curved-seat-kennington/curved-seat-kennington-1373-poster-f78286.jpg",
+        "w": 720,
+        "h": 1280,
+        "alt": "The seat on the trestles before it went in: panelled front and lids up."
+      },
+      "caption": "The seat on the trestles before it went in: panelled front and lids up."
+    },
+    {
+      "src": "/videos/curved-seat-kennington-1366.mp4",
+      "poster": {
+        "src": "/images/projects/curved-seat-kennington/curved-seat-kennington-1366-poster-df4a35.jpg",
+        "w": 720,
+        "h": 1280,
+        "alt": "Panelled fronts going on round the curve."
+      },
+      "caption": "Panelled fronts going on round the curve."
+    }
+  ]
 }

@@ -56,6 +56,16 @@
       }
     },
     {
+      "title": "Cut in the room",
+      "text": "Boards cut to size on trestles in the middle of the room.",
+      "image": {
+        "src": "/images/projects/tv-unit-and-bookcase-haringey/step-e9d50d92.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "MDF boards on trestles in the middle of the living room"
+      }
+    },
+    {
       "title": "Frames and shelves",
       "text": "The front frame went on next, then the shelves, set at heights worked out around the television and the soundbar.",
       "image": {
@@ -116,7 +126,87 @@
       "w": 1200,
       "h": 1600,
       "alt": "TV unit beside the window, with a soundbar on the cupboard top"
+    },
+    {
+      "src": "/images/projects/tv-unit-and-bookcase-haringey/g-4d3b7fb5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "TV unit and fireplace from the window side"
     }
   ],
-  "blogSlug": "tv-unit-and-bookcase-haringey"
+  "blogSlug": "tv-unit-and-bookcase-haringey",
+  "buildPhotos": [
+    {
+      "src": "/images/projects/tv-unit-and-bookcase-haringey/b-2ba4dcf7.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Base cupboard and back panel in the left alcove"
+    },
+    {
+      "src": "/images/projects/tv-unit-and-bookcase-haringey/b-931f4983.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Back panel lining the alcove"
+    },
+    {
+      "src": "/images/projects/tv-unit-and-bookcase-haringey/b-eb6e7b5a.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Shelves going in above the base"
+    },
+    {
+      "src": "/images/projects/tv-unit-and-bookcase-haringey/b-3d4f1b6e.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Shelves going up in the right alcove"
+    },
+    {
+      "src": "/images/projects/tv-unit-and-bookcase-haringey/b-0f5632cf.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Right alcove shelves beside the fireplace"
+    },
+    {
+      "src": "/images/projects/tv-unit-and-bookcase-haringey/b-fbd14fc3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Both alcoves with the fireplace between"
+    },
+    {
+      "src": "/images/projects/tv-unit-and-bookcase-haringey/b-663004c9.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "TV side with its doors on"
+    },
+    {
+      "src": "/images/projects/tv-unit-and-bookcase-haringey/b-2f126c3a.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "TV side, shelves and doors"
+    },
+    {
+      "src": "/images/projects/tv-unit-and-bookcase-haringey/b-2bc95f30.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "TV unit with the bookcase beyond"
+    },
+    {
+      "src": "/images/projects/tv-unit-and-bookcase-haringey/b-f71ed2cd.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Cupboard doors open on the TV side"
+    },
+    {
+      "src": "/images/projects/tv-unit-and-bookcase-haringey/b-55f2acb5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "TV side finished in MDF"
+    },
+    {
+      "src": "/images/projects/tv-unit-and-bookcase-haringey/b-784bb7bb.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Bookcase side with green inset panels"
+    }
+  ]
 }

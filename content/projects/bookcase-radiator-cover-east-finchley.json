@@ -74,6 +74,16 @@
       }
     },
     {
+      "title": "Laser for the shelves",
+      "text": "A laser level throws a line across the bays to set the shelf heights.",
+      "image": {
+        "src": "/images/projects/bookcase-radiator-cover-east-finchley/step-4aa57af6.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Laser line across the back of a bay"
+      }
+    },
+    {
       "title": "Shelves in",
       "text": "Shelves in all three bays and the cupboard bases fronted by the end of day two.",
       "image": {
@@ -118,7 +128,63 @@
       "w": 1600,
       "h": 1200,
       "alt": "All the doors open with the grille doors closed"
+    },
+    {
+      "src": "/images/projects/bookcase-radiator-cover-east-finchley/g-332a42eb.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "The finished wall of shelves with the doors on"
     }
   ],
-  "blogSlug": "bookcase-radiator-cover-east-finchley"
+  "blogSlug": "bookcase-radiator-cover-east-finchley",
+  "buildPhotos": [
+    {
+      "src": "/images/projects/bookcase-radiator-cover-east-finchley/b-275a5d13.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Uprights in either side of the radiator"
+    },
+    {
+      "src": "/images/projects/bookcase-radiator-cover-east-finchley/b-f6113363.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Bench set up in the room with the first bays"
+    },
+    {
+      "src": "/images/projects/bookcase-radiator-cover-east-finchley/b-bae6c652.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Left bay with its back panel"
+    },
+    {
+      "src": "/images/projects/bookcase-radiator-cover-east-finchley/b-91bd3ab2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Shelves in all three bays"
+    },
+    {
+      "src": "/images/projects/bookcase-radiator-cover-east-finchley/b-cfb955b2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Shelves and cupboard bases from across the room"
+    },
+    {
+      "src": "/images/projects/bookcase-radiator-cover-east-finchley/b-ea1c803a.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "The wall of shelves before the doors"
+    }
+  ],
+  "clips": [
+    {
+      "src": "/videos/bookcase-radiator-cover-east-finchley-8058.mp4",
+      "poster": {
+        "src": "/images/projects/bookcase-radiator-cover-east-finchley/bookcase-radiator-cover-east-finchley-8058-poster-293faa.jpg",
+        "w": 720,
+        "h": 1280,
+        "alt": "From the alcove to the bench: the cut plan on the board."
+      },
+      "caption": "From the alcove to the bench: the cut plan on the board."
+    }
+  ]
 }

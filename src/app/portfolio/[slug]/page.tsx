@@ -163,7 +163,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
       {clips.length ? (
         <section className="border-t border-line">
           <Container className="py-16 md:py-24">
-            <SectionHeading>On video</SectionHeading>
+            <SectionHeading>{p.video ? 'More on video' : 'On video'}</SectionHeading>
             <ul className={`mt-10 grid grid-cols-1 gap-x-6 gap-y-10 ${clips.length > 1 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'md:grid-cols-12'}`}>
               {clips.map((c) => (
                 <li key={c.src} className={clips.length > 1 ? 'mx-auto w-full max-w-[340px] sm:mx-0' : 'grid grid-cols-1 items-center gap-8 md:col-span-12 md:grid-cols-12 md:gap-6'}>

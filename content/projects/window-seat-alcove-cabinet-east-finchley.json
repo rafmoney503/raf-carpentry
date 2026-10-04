@@ -97,6 +97,54 @@
       "w": 1200,
       "h": 1600,
       "alt": "The bay and the alcove cabinet together"
+    },
+    {
+      "src": "/images/projects/window-seat-alcove-cabinet-east-finchley/g-2ba06e59.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Alcove cabinet with framed upper doors, from the side"
+    },
+    {
+      "src": "/images/projects/window-seat-alcove-cabinet-east-finchley/g-eb070a76.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Window seat across the bay, grilles at each end"
+    },
+    {
+      "src": "/images/projects/window-seat-alcove-cabinet-east-finchley/g-18c88e48.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Lid up on the window seat, showing the storage"
+    },
+    {
+      "src": "/images/projects/window-seat-alcove-cabinet-east-finchley/g-49b97f91.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Alcove cabinet and window seat together"
+    },
+    {
+      "src": "/images/projects/window-seat-alcove-cabinet-east-finchley/g-b9ab1b1e.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Cabinet and window seat across the room"
+    },
+    {
+      "src": "/images/projects/window-seat-alcove-cabinet-east-finchley/g-06ad11bd.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The whole bay from the far side of the room"
+    }
+  ],
+  "clips": [
+    {
+      "src": "/videos/window-seat-alcove-cabinet-east-finchley-8470.mp4",
+      "poster": {
+        "src": "/images/projects/window-seat-alcove-cabinet-east-finchley/window-seat-alcove-cabinet-east-finchley-8470-poster-360962.jpg",
+        "w": 720,
+        "h": 1280,
+        "alt": "The cabinet and the window seat, with a lid lifted."
+      },
+      "caption": "The cabinet and the window seat, with a lid lifted."
     }
   ]
 }

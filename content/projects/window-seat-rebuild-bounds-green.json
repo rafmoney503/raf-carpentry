@@ -44,6 +44,16 @@
       }
     },
     {
+      "title": "Measured up",
+      "text": "Measurements taken across the old frame before the new timbers were cut.",
+      "image": {
+        "src": "/images/projects/window-seat-rebuild-bounds-green/step-8f417d64.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Tape measure across the old timbers of the seat"
+      }
+    },
+    {
       "title": "New timbers",
       "text": "New timbers fitted underneath.",
       "image": {
@@ -61,6 +71,16 @@
         "w": 1200,
         "h": 1600,
         "alt": "Insulation between the new timbers"
+      }
+    },
+    {
+      "title": "Insulation boards",
+      "text": "A layer of insulation board laid over the top, between battens.",
+      "image": {
+        "src": "/images/projects/window-seat-rebuild-bounds-green/step-72e022e8.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Insulation boards between battens across the window seat"
       }
     },
     {
@@ -96,6 +116,92 @@
       "w": 1200,
       "h": 1600,
       "alt": "Window seat from the room"
+    }
+  ],
+  "buildPhotos": [
+    {
+      "src": "/images/projects/window-seat-rebuild-bounds-green/b-ab9fed56.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The old seat stripped back in the glass box window"
+    },
+    {
+      "src": "/images/projects/window-seat-rebuild-bounds-green/b-afd5b0de.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Old timbers and rubble under the seat"
+    },
+    {
+      "src": "/images/projects/window-seat-rebuild-bounds-green/b-d52b0b59.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Measuring between the old timbers"
+    },
+    {
+      "src": "/images/projects/window-seat-rebuild-bounds-green/b-87ab0b2e.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Measuring the corner of the old frame"
+    },
+    {
+      "src": "/images/projects/window-seat-rebuild-bounds-green/b-4ac5be2f.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Old frame cleared out"
+    },
+    {
+      "src": "/images/projects/window-seat-rebuild-bounds-green/b-7f0784cd.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "New timbers going in across the seat"
+    },
+    {
+      "src": "/images/projects/window-seat-rebuild-bounds-green/b-f567f5ac.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Insulation laid between the timbers"
+    },
+    {
+      "src": "/images/projects/window-seat-rebuild-bounds-green/b-566b2b1e.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Insulation boards going down"
+    },
+    {
+      "src": "/images/projects/window-seat-rebuild-bounds-green/b-a8352861.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Insulation boards across the whole seat"
+    },
+    {
+      "src": "/images/projects/window-seat-rebuild-bounds-green/b-3aef6cc1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Boarded over and ready for the top"
+    },
+    {
+      "src": "/images/projects/window-seat-rebuild-bounds-green/b-216ef9aa.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Boards on, seen from the room"
+    },
+    {
+      "src": "/images/projects/window-seat-rebuild-bounds-green/b-c4ef25b2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Level along the new top"
+    },
+    {
+      "src": "/images/projects/window-seat-rebuild-bounds-green/b-928934ad.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Level along the seat by the glass"
+    },
+    {
+      "src": "/images/projects/window-seat-rebuild-bounds-green/b-e2b111ec.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The new top from the side"
     }
   ]
 }
