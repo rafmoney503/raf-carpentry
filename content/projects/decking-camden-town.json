@@ -71,6 +71,16 @@
       }
     },
     {
+      "title": "Packed level",
+      "text": "Blocks under the joists bring the frame up level.",
+      "image": {
+        "src": "/images/projects/decking-camden-town/step-d3b1c8bd.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Joists sitting on blocks at the far end of the garden"
+      }
+    },
+    {
       "title": "Up to the doors",
       "text": "The frame taken right up to the doors.",
       "image": {
@@ -81,6 +91,26 @@
       }
     },
     {
+      "title": "Boards ready",
+      "text": "The deck boards stacked down the side of the house, ready to go down.",
+      "image": {
+        "src": "/images/projects/decking-camden-town/step-3a034de5.jpg",
+        "w": 900,
+        "h": 1600,
+        "alt": "Stack of deck boards along the side wall"
+      }
+    },
+    {
+      "title": "From the doors out",
+      "text": "The first boards fixed at the doors, working out across the frame.",
+      "image": {
+        "src": "/images/projects/decking-camden-town/step-51979bb0.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "First deck boards fixed at the back doors over the frame"
+      }
+    },
+    {
       "title": "Boards on",
       "text": "Boards fixed down and cut in round the walls.",
       "image": {
@@ -88,6 +118,16 @@
         "w": 1200,
         "h": 1600,
         "alt": "Deck boards going down on the frame"
+      }
+    },
+    {
+      "title": "Edges finished",
+      "text": "A board runs along the edge as a border, and the deck stops neatly at the planters.",
+      "image": {
+        "src": "/images/projects/decking-camden-town/step-7f14b1ae.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Deck edge with a border board by the planters"
       }
     }
   ],
@@ -127,6 +167,122 @@
       "w": 1200,
       "h": 1600,
       "alt": "Deck at the doors to the house"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/g-9dbb18a2.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Deck from the doors to the back fence"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/g-0a594647.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Deck in the evening light"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/g-a703ee5e.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Deck along the side wall"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/g-f5765346.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Deck from the corner by the doors"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/g-8cbed94e.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Deck by the planters at the far end"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/g-9157d2d9.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Deck along the fence by the doors"
+    }
+  ],
+  "buildPhotos": [
+    {
+      "src": "/images/projects/decking-camden-town/b-868676b6.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Garden with weed membrane down"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/b-5b3deff6.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Membrane laid up to the back doors"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/b-48bd9ea0.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Frame being set out from the doors"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/b-880e1d97.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Frame with cross pieces between the joists"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/b-448147ab.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The frame across the whole garden"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/b-f73e2115.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Frame along the side wall"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/b-b06547e3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Frame meeting the far corner"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/b-d822a5da.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Frame running to the plants at the far end"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/b-7561f830.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Frame along the fence"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/b-61c470ce.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Frame up to the sliding doors"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/b-58f00445.jpg",
+      "w": 900,
+      "h": 1600,
+      "alt": "Trestles set up down the side of the house"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/b-9f208f41.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Boards going down, tools on the frame beyond"
+    },
+    {
+      "src": "/images/projects/decking-camden-town/b-001c8035.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Boards laid along the sliding doors"
     }
   ]
 }

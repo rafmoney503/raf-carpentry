@@ -49,6 +49,16 @@
       }
     },
     {
+      "title": "Round the pipes",
+      "text": "The pipes beside the boiler measured up, so the panelling boxes them in neatly.",
+      "image": {
+        "src": "/images/projects/kitchen-panelling-crouch-end/step-dbdf461b.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Tape measure across the pipes beside the boiler"
+      }
+    },
+    {
       "title": "Panels on",
       "text": "V-groove panels go up behind the worktop.",
       "image": {
@@ -56,6 +66,16 @@
         "w": 1200,
         "h": 1600,
         "alt": "V-groove panels going up behind the sink"
+      }
+    },
+    {
+      "title": "Dado on the dining side",
+      "text": "Panelling at dado height round the dining side, finished with skirting.",
+      "image": {
+        "src": "/images/projects/kitchen-panelling-crouch-end/step-c6545e90.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Dado-height panelling beside the dresser"
       }
     },
     {
@@ -76,6 +96,16 @@
         "w": 1200,
         "h": 1600,
         "alt": "Cooker hood boxed in with MDF"
+      }
+    },
+    {
+      "title": "Wall cupboard",
+      "text": "A wall cupboard made up by the window, panelled down the side to match.",
+      "image": {
+        "src": "/images/projects/kitchen-panelling-crouch-end/step-7a1f07f3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Panelled wall cupboard carcass by the window"
       }
     },
     {
@@ -131,6 +161,134 @@
       "w": 1200,
       "h": 1600,
       "alt": "Dining side with the panelling"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/g-48005eef.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Tall unit and worktop from the hall side"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/g-eb77902c.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Wall cupboard, hood and worktop"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/g-5c342859.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Tall unit with the dining side beyond"
+    }
+  ],
+  "buildPhotos": [
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/b-19e2e697.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Battens on the wall by the window and boiler"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/b-5b069503.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Battens along the wall above the worktop"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/b-341fb00d.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Measuring up beside the boiler"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/b-6a92359a.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "First panels up beside the window"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/b-57cb796c.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Panels going up on the dining side"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/b-8a931532.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Dado panelling with its skirting"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/b-89fcce16.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Panelling by the door to the hall"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/b-88782180.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Panelling round the sink and window"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/b-684a4bf4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Laser lines marking out the hood frame"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/b-aff341c1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Hood frame round the old extractor"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/b-b3ce4491.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The hood frame from below"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/b-0cb0e7a7.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Hood boxed in, seen across the kitchen"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/b-347e7c73.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Boxed-in hood and wall cupboard"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/b-9100cecb.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Front of the boxed-in hood"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/b-38edf25f.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Tall unit carcass at the end of the run"
+    },
+    {
+      "src": "/images/projects/kitchen-panelling-crouch-end/b-7c5648f4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Tall unit beside the worktop"
+    }
+  ],
+  "clips": [
+    {
+      "src": "/videos/kitchen-panelling-crouch-end-0487.mp4",
+      "poster": {
+        "src": "/images/projects/kitchen-panelling-crouch-end/kitchen-panelling-crouch-end-0487-poster-3cf314.jpg",
+        "w": 720,
+        "h": 1280,
+        "alt": "The boxed-in hood, with the extractor lights on underneath."
+      },
+      "caption": "The boxed-in hood, with the extractor lights on underneath."
     }
   ]
 }

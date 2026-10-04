@@ -6,6 +6,7 @@ import { Container, SectionHeading } from '@/components/ui';
 import CompareSlider from '@/components/project/CompareSlider';
 import ProjectVideo from '@/components/project/ProjectVideo';
 import ProjectGallery from '@/components/project/ProjectGallery';
+import BuildPhotos from '@/components/project/BuildPhotos';
 import ToolsUsed from '@/components/ToolsUsed';
 import { formatMonth, getAllProjects, getKit, getProject, isPlanReady } from '@/lib/projects';
 import PlanCard from '@/components/project/PlanCard';
@@ -41,6 +42,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   const hasReviews = getReviews().reviews.length > 0;
   const service = serviceForJob(p);
   const stepCount = p.steps.length;
+  // Up to five steps sit in one row on a computer; more wrap into rows of three or four.
+  const stepCols = stepCount <= 5 ? stepCount : stepCount % 3 === 0 ? 3 : 4;
+  const clips = p.clips ?? [];
+  const build = p.buildPhotos ?? [];
   const kit = getKit(p.slug);
 
   return (
@@ -136,7 +141,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         <section className="border-t border-line">
           <Container className="py-16 md:py-24">
             <SectionHeading>How it went together</SectionHeading>
-            <ol className="steps-row mt-10" style={{ ['--steps' as string]: stepCount }}>
+            <ol className="steps-row mt-10" style={{ ['--steps' as string]: stepCols }}>
               {p.steps.map((s, i) => (
                 <li key={s.title}>
                   <div className="mount">
@@ -154,6 +159,25 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         </section>
       ) : null}
 
+      {/* Clips from the job folder */}
+      {clips.length ? (
+        <section className="border-t border-line">
+          <Container className="py-16 md:py-24">
+            <SectionHeading>On video</SectionHeading>
+            <ul className={`mt-10 grid grid-cols-1 gap-x-6 gap-y-10 ${clips.length > 1 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'md:grid-cols-12'}`}>
+              {clips.map((c) => (
+                <li key={c.src} className={clips.length > 1 ? 'mx-auto w-full max-w-[340px] sm:mx-0' : 'grid grid-cols-1 items-center gap-8 md:col-span-12 md:grid-cols-12 md:gap-6'}>
+                  <div className={clips.length > 1 ? '' : 'mx-auto w-full max-w-[340px] md:col-span-4 md:mx-0'}>
+                    <ProjectVideo src={c.src} poster={c.poster.src} label={c.caption} />
+                  </div>
+                  <p className={clips.length > 1 ? 'mt-4 text-[15.5px] leading-relaxed text-muted' : 'max-w-[46ch] text-[17px] leading-relaxed text-muted md:col-span-6 md:col-start-6'}>{c.caption}</p>
+                </li>
+              ))}
+            </ul>
+          </Container>
+        </section>
+      ) : null}
+
       {/* All photos */}
       <section id="photos" className="scroll-mt-24 border-t border-line">
         <Container className="py-16 md:py-24">
@@ -166,6 +190,21 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           </div>
         </Container>
       </section>
+
+      {/* The rest of the build photos */}
+      {build.length ? (
+        <section id="build" className="scroll-mt-24 border-t border-line">
+          <Container className="py-16 md:py-24">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <SectionHeading>More from the build</SectionHeading>
+              <p className="font-mono text-[13px] text-faint">{build.length} photos from the job</p>
+            </div>
+            <div className="mt-10">
+              <BuildPhotos photos={build} title={`${p.title}: the build`} />
+            </div>
+          </Container>
+        </section>
+      ) : null}
 
       {/* Materials and tools, once Raf has confirmed them in his sheet */}
       {kit ? (

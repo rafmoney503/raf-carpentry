@@ -35,7 +35,7 @@
 }
 .steps-row > li { scroll-snap-align: start; }
 @media (min-width: 768px) {
-  .steps-row { grid-auto-flow: row; grid-template-columns: repeat(var(--steps, 4), minmax(0, 1fr)); overflow: visible; margin-inline: 0; padding-inline: 0; }
+  .steps-row { grid-auto-flow: row; grid-template-columns: repeat(var(--steps, 4), minmax(0, 1fr)); row-gap: 48px; overflow: visible; margin-inline: 0; padding-inline: 0; }
 }
 .step-no { font-family: var(--font-mono); font-size: 13px; color: var(--color-accent); }
 

@@ -43,6 +43,10 @@ export type Project = {
   plan?: Plan;
   steps: Step[];
   gallery: Photo[];
+  /* Extra photos from the build ("More from the build", squares, 8 shown then "Show all"). */
+  buildPhotos?: Photo[];
+  /* Short silent clips from the job folder, 720 px wide H.264 in public/videos ("On video"). */
+  clips?: { src: string; poster: Photo; caption: string }[];
   planSale?: PlanSale;
   blogSlug?: string;
   tools?: { name: string; link: string }[];

@@ -61,6 +61,16 @@
   },
   "steps": [
     {
+      "title": "Marked out in tape",
+      "text": "The whole desk marked out on the carpet in tape before anything went in, so every unit had a line to follow.",
+      "image": {
+        "src": "/images/projects/reception-desk-brentwood/step-3af010a9.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Yellow tape lines on the office carpet marking out the desk"
+      }
+    },
+    {
       "title": "Plinths first",
       "text": "Plinth frames built and set out on the floor, so the desk sits level.",
       "image": {
@@ -91,6 +101,26 @@
       }
     },
     {
+      "title": "Storage behind the counter",
+      "text": "Under the top on the staff side, open storage built into the corner by the wall.",
+      "image": {
+        "src": "/images/projects/reception-desk-brentwood/step-b163b6b3.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "Open storage under the top in the corner of the L"
+      }
+    },
+    {
+      "title": "The angled end",
+      "text": "The end of the raised counter faced with a panel cut at an angle.",
+      "image": {
+        "src": "/images/projects/reception-desk-brentwood/step-d01169d6.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "The raised counter with its angled end panel"
+      }
+    },
+    {
       "title": "Painted",
       "text": "Panels and slats painted before the final fit.",
       "image": {
@@ -98,6 +128,16 @@
         "w": 1200,
         "h": 1600,
         "alt": "Painted panels laid out on a protected floor"
+      }
+    },
+    {
+      "title": "Slats on",
+      "text": "Vertical slats fixed along the front of the desk and the side unit.",
+      "image": {
+        "src": "/images/projects/reception-desk-brentwood/step-98a2fb59.jpg",
+        "w": 1113,
+        "h": 1600,
+        "alt": "Slatted front of the side unit and the desk"
       }
     }
   ],
@@ -137,7 +177,141 @@
       "w": 1600,
       "h": 1200,
       "alt": "Side unit with slatted panel"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/g-74f3b2f5.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Drawers and shelves on the staff side"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/g-42be209c.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Raised counter and side unit seen from the window end"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/g-796825cf.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "The angled end panel of the counter"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/g-998d2078.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "Desk and side unit from the doorway"
     }
   ],
-  "blogSlug": "reception-desk-brentwood"
+  "blogSlug": "reception-desk-brentwood",
+  "buildPhotos": [
+    {
+      "src": "/images/projects/reception-desk-brentwood/b-0b075e3f.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Room marked out in tape, first carcasses standing by the wall"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/b-74a6fc19.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Workbench set up in the office with MDF parts around it"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/b-f6bfc12f.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Plinth frames on the carpet beside a carcass"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/b-b809f7ec.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "L-shaped plinth frames following the tape"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/b-c8f0f7d9.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "First carcass in place by the window"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/b-58631e92.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Front panels standing along the tape line"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/b-2b26d9ad.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Side unit carcass on its plinth"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/b-ac3dce6d.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The L-shaped top on, seen from the corner"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/b-f7d2ec66.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Inside the L: open storage under the top"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/b-eab1a5be.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The raised counter by the window"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/b-5385fa63.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Looking along the top of the raised counter"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/b-7a1a6821.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The counter top from the doorway end"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/b-8c80deae.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Floor protection down and the painted panels back in the office"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/b-323ed982.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The painted desk back in place, before the slats"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/b-2c94e706.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The painted L-shaped top from above"
+    },
+    {
+      "src": "/images/projects/reception-desk-brentwood/b-8912fd3a.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The painted desk along the window wall"
+    }
+  ],
+  "clips": [
+    {
+      "src": "/videos/reception-desk-brentwood-8589.mp4",
+      "poster": {
+        "src": "/images/projects/reception-desk-brentwood/reception-desk-brentwood-8589-poster-d4ed9d.jpg",
+        "w": 720,
+        "h": 1280,
+        "alt": "Walking the line: the front panels standing on the tape before the top went on."
+      },
+      "caption": "Walking the line: the front panels standing on the tape before the top went on."
+    }
+  ]
 }

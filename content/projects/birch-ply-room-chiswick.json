@@ -137,7 +137,87 @@
       "w": 1200,
       "h": 1600,
       "alt": "The whole room from the doorway"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/g-05f8ccd6.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Overhead cupboard open"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/g-0baa1622.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Desk under the window with the shelf above"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/g-103a58ac.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Desk with its drawer closed"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/g-e570c90d.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Desk drawer pulled out"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/g-ad31874e.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Tall wardrobe beside the desk"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/g-7a9c5b7b.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Wardrobe drawers pulled out"
     }
   ],
-  "blogSlug": "birch-ply-room-chiswick"
+  "blogSlug": "birch-ply-room-chiswick",
+  "buildPhotos": [
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/b-25a36a8f.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Insulation boards between battens on the outside wall"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/b-ea0e4837.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Insulated wall with battens ready for the ply"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/b-35ebfeae.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Insulation boards fitted round the wiring"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/b-e3248bd5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Bench set up in the room"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/b-a3a8fbd8.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Birch ply on the bench, marked out for cutting"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/b-bfda2dd0.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Wardrobe carcass going in"
+    },
+    {
+      "src": "/images/projects/birch-ply-room-chiswick/b-e31ff90a.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The back wall lined in birch ply"
+    }
+  ]
 }

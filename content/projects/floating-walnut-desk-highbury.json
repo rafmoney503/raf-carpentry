@@ -67,10 +67,10 @@
       "title": "Top on, runners under",
       "text": "The top went on first, with walnut dividers underneath carrying the drawer runners. Once the drawers are in, none of it shows.",
       "image": {
-        "src": "/images/projects/floating-walnut-desk-highbury/s3.jpg",
+        "src": "/images/projects/floating-walnut-desk-highbury/step-02fe6482.jpg",
         "w": 1200,
         "h": 1600,
-        "alt": "The walnut desk top fitted, with drawer runners fixed underneath"
+        "alt": "The top fixed under the window with the drawer runners underneath"
       }
     },
     {
@@ -81,6 +81,16 @@
         "w": 1200,
         "h": 1600,
         "alt": "Yellow spirit level on the fitted desk top"
+      }
+    },
+    {
+      "title": "Drawers in",
+      "text": "The drawers slide in under the top and pull out from underneath, with no handles on show.",
+      "image": {
+        "src": "/images/projects/floating-walnut-desk-highbury/step-d9060f67.jpg",
+        "w": 1200,
+        "h": 1600,
+        "alt": "A walnut drawer pulled out from under the desk"
       }
     }
   ],
@@ -120,7 +130,143 @@
       "w": 1200,
       "h": 1600,
       "alt": "The desk from the far corner"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/g-419ac594.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The desk from the doorway"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/g-db713b5a.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The desk from above"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/g-0a7fd403.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Desk along the window wall"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/g-78ab0ef7.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The front edge of the desk by the window"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/g-e312dab1.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Desk in the afternoon light"
     }
   ],
-  "blogSlug": "floating-walnut-desk-highbury"
+  "blogSlug": "floating-walnut-desk-highbury",
+  "buildPhotos": [
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/b-5d68b622.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Walnut parts on trestles outside the workshop"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/b-d39ede06.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Walnut pieces with tape along the edges"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/b-11707ebb.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The desk parts lined up on trestles"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/b-c9cacd13.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Walnut parts on trestles by the van"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/b-30f466b4.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The empty room before the desk"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/b-81842c12.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Fixing points marked along the wall"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/b-92de8474.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "The top fixed across the room"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/b-f6c19da5.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Top fixed wall to wall under the window"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/b-da2e3313.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Runners under the top, before the drawers"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/b-b30f855a.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Spirit levels along the top"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/b-8fca38b3.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Checking level from the doorway"
+    },
+    {
+      "src": "/images/projects/floating-walnut-desk-highbury/b-b2ae63d0.jpg",
+      "w": 1200,
+      "h": 1600,
+      "alt": "Level checked along the desk by the window"
+    }
+  ],
+  "clips": [
+    {
+      "src": "/videos/floating-walnut-desk-highbury-7612.mp4",
+      "poster": {
+        "src": "/images/projects/floating-walnut-desk-highbury/floating-walnut-desk-highbury-7612-poster-cb97f8.jpg",
+        "w": 720,
+        "h": 1280,
+        "alt": "The finished desk, with a drawer pulled out."
+      },
+      "caption": "The finished desk, with a drawer pulled out."
+    },
+    {
+      "src": "/videos/floating-walnut-desk-highbury-7603.mp4",
+      "poster": {
+        "src": "/images/projects/floating-walnut-desk-highbury/floating-walnut-desk-highbury-7603-poster-97a42a.jpg",
+        "w": 720,
+        "h": 1280,
+        "alt": "Top on and runners underneath, before the drawers went in."
+      },
+      "caption": "Top on and runners underneath, before the drawers went in."
+    },
+    {
+      "src": "/videos/floating-walnut-desk-highbury-7610.mp4",
+      "poster": {
+        "src": "/images/projects/floating-walnut-desk-highbury/floating-walnut-desk-highbury-7610-poster-f2e6b1.jpg",
+        "w": 720,
+        "h": 1280,
+        "alt": "Checking level along the top."
+      },
+      "caption": "Checking level along the top."
+    }
+  ]
 }
