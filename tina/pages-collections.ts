@@ -56,6 +56,17 @@ export const pageCollections: Collection[] = [
       { type: "string", name: "heroSubtitle", label: "Hero text (keep under 20 words)", ui: { component: "textarea" } },
       { type: "image", name: "heroImage", label: "Hero photo" },
       { type: "string", name: "heroImageAlt", label: "Hero photo description (for screen readers)" },
+      {
+        type: "object", name: "heroJobs", label: "Main photo of the day", list: true,
+        description: "The big photo at the top changes once a day, going through these jobs in order. Each links to its job page. Empty list = the Hero photo above.",
+        ui: { itemProps: (item: Record<string, unknown>) => ({ label: (typeof item?.job === "string" && item.job) || "Job" }) },
+        fields: [
+          { type: "string", name: "job", label: "Job (end of the job's address, e.g. floating-walnut-desk-highbury)", required: true },
+          { type: "image", name: "image", label: "Photo (optional: leave empty to use the job's main photo)" },
+          { type: "string", name: "imageAlt", label: "Photo description (only if you chose a photo)" },
+          { type: "string", name: "position", label: "Crop (optional, e.g. 60% 50% moves the picture right)" },
+        ],
+      },
       { type: "string", name: "primaryCtaLabel", label: "Main button label" },
       { type: "string", name: "secondaryCtaLabel", label: "Second button label" },
       {

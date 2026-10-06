@@ -5,10 +5,15 @@ import { getAllPosts } from '@/lib/blog';
 import QuoteCta from '@/components/QuoteCta';
 import Reviews, { GoogleRating } from '@/components/Reviews';
 import { getReviews } from '@/lib/reviews';
+import { formatMonth, getAllProjects } from '@/lib/projects';
 import { QUOTE_HREF, whatsappText, whatsappUrl } from '@/lib/site';
 import SocialIcon from '@/components/SocialIcon';
 import { businessJsonLd, jsonLd, pageMeta } from '@/lib/seo';
 import './home.css';
+
+/* Rebuilt at most once an hour, so the photo of the day changes soon after midnight (London)
+   and new jobs show in "Latest jobs" without a redeploy. */
+export const revalidate = 3600;
 
 export const metadata = pageMeta({
   title: 'Raf Carpentry | Fitted wardrobes and built-in furniture in London',
@@ -24,6 +29,8 @@ export type HomePageData = {
   heroSubtitle: string;
   heroImage: string;
   heroImageAlt: string;
+  /* Main photo of the day: one of these jobs, in turn, a new one each day. */
+  heroJobs?: { job: string; image?: string; imageAlt?: string; position?: string }[];
   primaryCtaLabel: string;
   secondaryCtaLabel: string;
   facts: { value: string; unit?: string; label: string }[];
@@ -59,6 +66,15 @@ function formatDate(value: unknown): string {
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/London' });
 }
 
+/* Days since 1970 by the London calendar, so the photo changes at midnight UK time. */
+function londonDay(now = new Date()) {
+  const [y, m, day] = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' })
+    .format(now)
+    .split('-')
+    .map(Number);
+  return Math.floor(Date.UTC(y, m - 1, day) / 86_400_000);
+}
+
 const tileClass = ['tile-a', 'tile-b', 'tile-c'];
 const tileSizes = ['(max-width: 860px) 100vw, 700px', '(max-width: 860px) 100vw, 490px', '(max-width: 860px) 100vw, 490px'];
 
@@ -67,6 +83,17 @@ export default function HomePage() {
   const posts = getAllPosts().slice(0, 3);
   const hasReviews = getReviews().reviews.length > 0;
   const phoneHref = `tel:${d.phone.replace(/\s/g, '')}`;
+  const projects = getAllProjects();
+  const latest = projects.slice(0, 4);
+
+  // Main photo of the day: the jobs listed in home.json take turns, one per day; each links to its job.
+  const bySlug = new Map(projects.map((p) => [p.slug, p]));
+  const heroOptions = (d.heroJobs ?? []).flatMap((h) => {
+    const p = bySlug.get(h.job);
+    if (!p) return [];
+    return [{ href: `/portfolio/${p.slug}`, src: h.image || p.cover.src, alt: (h.image && h.imageAlt) || p.cover.alt, position: h.position, caption: `${p.title}, ${p.area}` }];
+  });
+  const hero = heroOptions.length ? heroOptions[londonDay() % heroOptions.length] : null;
 
   return (
     <div className="home">
@@ -86,11 +113,25 @@ export default function HomePage() {
           <GoogleRating variant="inline" className="hero-rating anim d3" />
         </div>
         <figure className="hero-visual anim d2">
-          <div className="mount">
-            <div className="photo hero-photo">
-              <Image src={d.heroImage} alt={d.heroImageAlt} fill priority sizes="(max-width: 860px) 100vw, 500px" />
+          {hero ? (
+            <Link href={hero.href} className="hero-link">
+              <div className="mount">
+                <div className="photo hero-photo">
+                  <Image src={hero.src} alt={hero.alt} fill priority sizes="(max-width: 860px) 100vw, 500px" style={hero.position ? { objectPosition: hero.position } : undefined} />
+                </div>
+              </div>
+              <figcaption className="hero-cap">
+                <span>{hero.caption}</span>
+                <span className="hero-cap-go">See the job <span aria-hidden="true">→</span></span>
+              </figcaption>
+            </Link>
+          ) : (
+            <div className="mount">
+              <div className="photo hero-photo">
+                <Image src={d.heroImage} alt={d.heroImageAlt} fill priority sizes="(max-width: 860px) 100vw, 500px" />
+              </div>
             </div>
-          </div>
+          )}
         </figure>
       </section>
 
@@ -137,6 +178,35 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* The newest jobs, straight from the job pages: changes by itself when a job goes up */}
+      {latest.length ? (
+        <section className="sec latest" id="latest">
+          <div className="wrap">
+            <div className="latest-head reveal">
+              <h2 className="h2">Latest jobs</h2>
+              <Link className="link-more" href="/portfolio">
+                All {projects.length} jobs <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+            <ul className="latest-row">
+              {latest.map((p) => (
+                <li key={p.slug} className="reveal">
+                  <Link href={`/portfolio/${p.slug}`} className="latest-card">
+                    <div className="mount">
+                      <div className="photo latest-photo">
+                        <Image src={p.cover.src} alt={p.cover.alt} fill sizes="(max-width: 860px) 68vw, 290px" />
+                      </div>
+                    </div>
+                    <p className="latest-meta">{formatMonth(p.finished)} · {p.area}</p>
+                    <h3>{p.title}</h3>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : null}
 
       <section className="sec process" id="process">
         <div className="wrap grid12">

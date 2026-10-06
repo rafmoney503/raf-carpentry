@@ -20,6 +20,26 @@
 .home .hero-visual { grid-column: 8 / span 5; margin: 0; }
 .home .hero-photo { aspect-ratio: 4 / 5; }
 .home .hero-photo img { object-position: 50% 45%; }
+.home .hero-link { display: block; }
+.home .hero-link .mount { transition: border-color 0.2s; }
+.home .hero-link:hover .mount { border-color: var(--color-accent); }
+.home .hero-cap { margin-top: 14px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; font-family: var(--font-mono); font-size: 13px; line-height: 1.5; color: var(--color-faint); }
+.home .hero-cap-go { color: var(--color-accent); white-space: nowrap; }
+.home .hero-link:hover .hero-cap > span:first-child { color: var(--color-ink); }
+
+/* Latest jobs: the four newest job pages */
+.home .latest { padding-top: 0; }
+.home .latest-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px 32px; margin-bottom: 40px; padding-top: 56px; border-top: 1px solid var(--color-line); }
+.home .latest-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap); }
+.home .latest-card { display: block; }
+.home .latest-card .mount { transition: border-color 0.2s; }
+.home .latest-card:hover .mount { border-color: var(--color-accent); }
+.home .latest-photo { aspect-ratio: 4 / 5; }
+.home .latest-photo img { transition: transform 0.7s var(--ease-soft); }
+.home .latest-card:hover .latest-photo img { transform: scale(1.03); }
+.home .latest-meta { margin-top: 16px; font-family: var(--font-mono); font-size: 13px; color: var(--color-faint); }
+.home .latest-card h3 { margin-top: 6px; font-weight: 620; font-size: 19px; line-height: 1.25; letter-spacing: -0.01em; transition: color 0.2s; }
+.home .latest-card:hover h3 { color: var(--color-accent); }
 
 /* Facts */
 .home .facts { border-top: 1px solid var(--color-line); padding-top: 44px; row-gap: 36px; }
@@ -146,6 +166,10 @@
   .home .tile-a .photo { min-height: 0; aspect-ratio: 4 / 5; }
   .home .tile h3 { font-size: 23px; margin-top: 16px; }
   .home .build-foot { margin-top: 36px; }
+  .home .latest-head { padding-top: 52px; margin-bottom: 28px; }
+  .home .latest-row { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 68%; overflow-x: auto; scroll-snap-type: x mandatory; margin-inline: -20px; padding-inline: 20px; scroll-padding-inline: 20px; padding-bottom: 8px; scrollbar-width: none; }
+  .home .latest-row > li { scroll-snap-align: start; }
+  .home .latest-card h3 { font-size: 18px; }
 
   .home .drawing { position: static; }
   .home .drawing img { max-width: 100%; }

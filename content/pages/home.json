@@ -5,6 +5,30 @@
   "heroSubtitle": "Fitted wardrobes, alcove units and built-ins across London. You see the 3D drawing before I cut a single board.",
   "heroImage": "/images/projects/IMG_8405.jpg",
   "heroImageAlt": "Birch plywood wardrobe with doors open, lit shelves and a stack of drawers",
+  "heroJobs": [
+    {
+      "job": "birch-ply-wardrobe-chiswick",
+      "image": "/images/projects/IMG_8405.jpg",
+      "imageAlt": "Birch plywood wardrobe with doors open, lit shelves and a stack of drawers"
+    },
+    {
+      "job": "floating-walnut-desk-highbury"
+    },
+    {
+      "job": "kitchen-panelling-crouch-end"
+    },
+    {
+      "job": "reception-desk-brentwood",
+      "position": "62% 50%"
+    },
+    {
+      "job": "bookcase-radiator-cover-east-finchley",
+      "position": "40% 50%"
+    },
+    {
+      "job": "tv-unit-and-bookcase-haringey"
+    }
+  ],
   "primaryCtaLabel": "Get a quote",
   "secondaryCtaLabel": "See the work",
   "facts": [
