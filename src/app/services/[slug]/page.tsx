@@ -1,3 +1,4 @@
+import { ViewTransition } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -11,6 +12,8 @@ import { jsonLd, pageMeta, SITE_URL } from '@/lib/seo';
 import { areasFor, getService, getServices, getServicesData, joinAreas, jobsFor } from '@/lib/services';
 import ProjectGallery from '@/components/project/ProjectGallery';
 import '@/app/portfolio/project.css';
+import Joint from '@/components/Joint';
+import JobLink from '@/components/JobLink';
 
 export function generateStaticParams() {
   return getServices().map((s) => ({ slug: s.slug }));
@@ -80,23 +83,25 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
             <ul className="mt-10 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
               {jobs.map((p, i) => (
                 <li key={p.slug}>
-                  <Link href={`/portfolio/${p.slug}`} className="group block">
+                  <JobLink href={`/portfolio/${p.slug}`} cover={p.cover.src} className="group block">
                     <div className="mount transition-colors group-hover:border-accent">
-                      <div className="relative aspect-[3/4] overflow-hidden bg-raised">
-                        <Image
-                          src={p.cover.src}
-                          alt={p.cover.alt}
-                          fill
-                          priority={i < 2}
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px"
-                          className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                        />
-                      </div>
+                      <ViewTransition name={`job-${p.slug}`} share="job-photo">
+                        <div className="relative aspect-[3/4] overflow-hidden bg-raised">
+                          <Image
+                            src={p.cover.src}
+                            alt={p.cover.alt}
+                            fill
+                            priority={i < 2}
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px"
+                            className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                          />
+                        </div>
+                      </ViewTransition>
                     </div>
                     <p className="mt-4 font-mono text-[13px] text-faint">{p.area}, {formatMonth(p.finished)}</p>
                     <h3 className="mt-1.5 text-[20px] font-[620] leading-tight transition-colors group-hover:text-accent">{p.title}</h3>
                     <p className="mt-2 text-[15px] leading-relaxed text-muted">{p.summary}</p>
-                  </Link>
+                  </JobLink>
                 </li>
               ))}
             </ul>
@@ -169,7 +174,8 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
       ) : null}
 
       {/* Quote band and the other services */}
-      <section className="border-t border-line bg-raised">
+      <section className="relative bg-raised">
+        <Joint />
         <Container className="py-14 md:py-20">
           <div className="grid grid-cols-1 items-end gap-8 md:grid-cols-12 md:gap-6">
             <div className="md:col-span-7">

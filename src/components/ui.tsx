@@ -34,7 +34,7 @@ export function PageHeader({
 
 export function SectionHeading({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <h2 className={`font-display text-[30px] font-[650] leading-[1.06] tracking-[-0.025em] md:text-[40px] ${className}`}>{children}</h2>
+    <h2 className={`pencil-u font-display text-[30px] font-[650] leading-[1.06] tracking-[-0.025em] md:text-[40px] ${className}`}>{children}</h2>
   );
 }
 

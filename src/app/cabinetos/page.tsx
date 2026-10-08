@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { readPageJson } from '@/lib/pages';
 import { Container, MountedImage, SectionHeading } from '@/components/ui';
 import { pageMeta } from '@/lib/seo';
+import Joint from '@/components/Joint';
 
 function imageSrc(v: unknown): string {
   if (typeof v === 'string' && v.trim()) return v;
@@ -78,7 +79,8 @@ export default function Cabinetos() {
         </Container>
       ) : null}
 
-      <section id="features" className="border-y border-line bg-raised py-20 md:py-28">
+      <section id="features" className="relative bg-raised py-20 md:py-28">
+        <Joint />
         <Container>
           <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:gap-6">
             <div className="md:col-span-5">
@@ -101,6 +103,7 @@ export default function Cabinetos() {
             </ol>
           </div>
         </Container>
+        <Joint edge="bottom" />
       </section>
 
       <Container className="py-20 md:py-28">

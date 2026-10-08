@@ -1,9 +1,10 @@
 'use client';
+import { ViewTransition } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Container, SectionHeading } from '@/components/ui';
 import { matches } from '@/lib/search';
+import JobLink from '@/components/JobLink';
 
 export type JobCard = {
   slug: string;
@@ -109,18 +110,21 @@ export default function PortfolioBrowser({ jobs, archive, chips }: { jobs: JobCa
           <ul className="grid grid-cols-1 gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-4">
             {shownJobs.map((p, i) => (
               <li key={p.slug}>
-                <Link href={`/portfolio/${p.slug}`} className="group block">
+                <JobLink href={`/portfolio/${p.slug}`} cover={p.cover.src} className="group block">
                   <div className="mount transition-colors group-hover:border-accent">
-                    <div className="relative aspect-[3/4] overflow-hidden bg-raised">
-                      <Image
-                        src={p.cover.src}
-                        alt={p.cover.alt}
-                        fill
-                        priority={i < 2}
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px"
-                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                      />
-                    </div>
+                    {/* same name as the job page's main photo, so the photo grows into it (woodwork.css) */}
+                    <ViewTransition name={`job-${p.slug}`} share="job-photo">
+                      <div className="relative aspect-[3/4] overflow-hidden bg-raised">
+                        <Image
+                          src={p.cover.src}
+                          alt={p.cover.alt}
+                          fill
+                          priority={i < 2}
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px"
+                          className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                        />
+                      </div>
+                    </ViewTransition>
                   </div>
                   <p className="mt-5 font-mono text-[13px] text-faint">
                     {p.area}, {p.month}
@@ -128,7 +132,7 @@ export default function PortfolioBrowser({ jobs, archive, chips }: { jobs: JobCa
                   <h2 className="mt-1.5 text-[21px] font-[620] leading-tight transition-colors group-hover:text-accent">{p.title}</h2>
                   <p className="mt-2 text-[15.5px] leading-relaxed text-muted">{p.summary}</p>
                   <p className="mt-3 font-mono text-[13px] text-ink">{p.meta}</p>
-                </Link>
+                </JobLink>
               </li>
             ))}
           </ul>

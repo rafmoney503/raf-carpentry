@@ -1,0 +1,69 @@
+/* Woodwork motion (8 Oct 2026): how the site moves, kept to joinery and the drawing board.
+   1. Dovetail joints where a grey section meets the paper (src/components/Joint.tsx).
+   2. A pencil stroke under section headings that draws itself as the heading scrolls up.
+   3. On wide screens, a marking-out line with ruler ticks down the left margin, drawn as you scroll.
+   4. Page changes: the job photo grows from its card into the job page; other pages fade across.
+   All CSS: scroll-driven where the browser supports it, otherwise everything simply sits finished.
+   Nothing moves for people who turn motion off. Content is never hidden waiting for an animation. */
+
+/* 1. Dovetail joints */
+.joint { position: absolute; left: 0; right: 0; height: 24px; overflow: hidden; pointer-events: none; z-index: 1; }
+.joint-top { top: -22px; }
+.joint-bottom { bottom: -22px; }
+.joint svg { position: absolute; left: 50%; display: block; translate: -50% 0; }
+.joint-top svg { top: 8px; }
+.joint-bottom svg { top: 0.5px; transform: scaleY(-1); }
+.joint-fill { fill: var(--color-raised); }
+.joint-line { fill: none; stroke: var(--color-line-strong); stroke-width: 1; }
+@keyframes joint-home-top { from { translate: -50% -7px; } to { translate: -50% 0; } }
+@keyframes joint-home-bottom { from { translate: -50% 7px; } to { translate: -50% 0; } }
+
+/* 2. Pencil stroke under section headings */
+.pencil-u::after, .home .h2::after {
+  content: ''; display: block; width: 64px; height: 9px; margin-top: 0.3em;
+  background: var(--color-accent); opacity: 0.75;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 9'%3E%3Cpath d='M2 6.4C12 4.7 22 5.8 33 4.9S52 3.5 62 3' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat 0 0 / 100% 100%;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 9'%3E%3Cpath d='M2 6.4C12 4.7 22 5.8 33 4.9S52 3.5 62 3' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat 0 0 / 100% 100%;
+}
+@keyframes pencil-draw { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* 3. Marking-out line down the left margin (only where there is a margin to put it in) */
+.page-rule { display: none; }
+@media (min-width: 1440px) {
+  .page-rule {
+    display: block; position: absolute; top: 0; bottom: 0; width: 10px; pointer-events: none;
+    left: calc((100% - 1280px) / 2 - 44px);
+    /* a centre line (long dash, short dash) with ruler ticks every 16 px, a longer one every 80 px */
+    background:
+      repeating-linear-gradient(to bottom, color-mix(in srgb, var(--color-accent) 40%, transparent) 0 14px, transparent 14px 19px, color-mix(in srgb, var(--color-accent) 40%, transparent) 19px 22px, transparent 22px 27px) 9px 0 / 1px 100% no-repeat,
+      repeating-linear-gradient(to bottom, color-mix(in srgb, var(--color-accent) 35%, transparent) 0 1px, transparent 1px 80px) 0 0 / 9px 100% no-repeat,
+      repeating-linear-gradient(to bottom, color-mix(in srgb, var(--color-accent) 25%, transparent) 0 1px, transparent 1px 16px) 5px 0 / 4px 100% no-repeat;
+  }
+}
+@keyframes rule-draw { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+
+@supports (animation-timeline: view()) {
+  .joint-top svg { animation: joint-home-top linear both; animation-timeline: view(); animation-range: cover 0% cover 30%; }
+  .joint-bottom svg { animation: joint-home-bottom linear both; animation-timeline: view(); animation-range: cover 0% cover 30%; }
+  /* timed on the stroke itself (a heading can be stretched tall by its grid row) */
+  .pencil-u::after, .home .h2::after { animation: pencil-draw linear both; animation-timeline: view(); animation-range: entry 100% cover 40%; }
+  .page-rule { animation: rule-draw linear both; animation-timeline: scroll(root); }
+}
+
+/* 4. Page changes. A job photo (React <ViewTransition name="job-..."> on the cards and the job page,
+   turned on in next.config.ts) grows from its card into the job page's main photo. The card's photo
+   stays in view all the way and the sharp one fades in over the last part, so it never flashes empty
+   while the big photo loads (JobLink starts loading it when a finger or mouse reaches the card). */
+::view-transition-group(.job-photo) { animation-duration: 420ms; animation-timing-function: var(--ease-soft); }
+::view-transition-old(.job-photo), ::view-transition-new(.job-photo) { height: 100%; object-fit: cover; mix-blend-mode: normal; }
+::view-transition-old(.job-photo) { animation: none; }
+::view-transition-new(.job-photo) { animation: vt-photo-in 420ms linear both; }
+@keyframes vt-photo-in { 0%, 45% { opacity: 0; } 100% { opacity: 1; } }
+/* any other page: the new page rises 10 px into place as it appears (LayoutShell adds the class) */
+.page-enter { animation: page-enter 300ms var(--ease-soft) both; }
+@keyframes page-enter { from { opacity: 0; translate: 0 10px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .joint svg, .pencil-u::after, .home .h2::after, .page-rule, .page-enter { animation: none !important; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation-duration: 0s !important; animation-delay: 0s !important; }
+}

@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    // React <ViewTransition>: job photos grow from their card into the job page; pages fade across (woodwork.css)
+    viewTransition: true,
+  },
 };
 
 export default nextConfig;

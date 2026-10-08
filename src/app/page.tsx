@@ -1,3 +1,4 @@
+import { ViewTransition } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { readPageJson } from '@/lib/pages';
@@ -10,6 +11,8 @@ import { QUOTE_HREF, whatsappText, whatsappUrl } from '@/lib/site';
 import SocialIcon from '@/components/SocialIcon';
 import { businessJsonLd, jsonLd, pageMeta } from '@/lib/seo';
 import './home.css';
+import Joint from '@/components/Joint';
+import JobLink from '@/components/JobLink';
 
 /* Rebuilt at most once an hour, so the photo of the day changes soon after midnight (London)
    and new jobs show in "Latest jobs" without a redeploy. */
@@ -192,15 +195,17 @@ export default function HomePage() {
             <ul className="latest-row">
               {latest.map((p) => (
                 <li key={p.slug} className="reveal">
-                  <Link href={`/portfolio/${p.slug}`} className="latest-card">
+                  <JobLink href={`/portfolio/${p.slug}`} cover={p.cover.src} className="latest-card">
                     <div className="mount">
-                      <div className="photo latest-photo">
-                        <Image src={p.cover.src} alt={p.cover.alt} fill sizes="(max-width: 860px) 68vw, 290px" />
-                      </div>
+                      <ViewTransition name={`job-${p.slug}`} share="job-photo">
+                        <div className="photo latest-photo">
+                          <Image src={p.cover.src} alt={p.cover.alt} fill sizes="(max-width: 860px) 68vw, 290px" />
+                        </div>
+                      </ViewTransition>
                     </div>
                     <p className="latest-meta">{formatMonth(p.finished)} · {p.area}</p>
                     <h3>{p.title}</h3>
-                  </Link>
+                  </JobLink>
                 </li>
               ))}
             </ul>
@@ -209,6 +214,7 @@ export default function HomePage() {
       ) : null}
 
       <section className="sec process" id="process">
+        <Joint />
         <div className="wrap grid12">
           <figure className="drawing reveal">
             <Image src={d.processImage} alt={d.processImageAlt} width={1056} height={1047} sizes="(max-width: 860px) 100vw, 560px" />
@@ -234,6 +240,7 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+        <Joint edge="bottom" />
       </section>
 
       <section className={`sec reviews${hasReviews ? '' : ' sec-tight'}`} id="reviews">

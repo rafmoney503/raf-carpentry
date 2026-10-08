@@ -1,3 +1,4 @@
+import { ViewTransition } from 'react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -19,6 +20,9 @@ import { pageMeta } from '@/lib/seo';
 import Reviews, { GoogleRating } from '@/components/Reviews';
 import { getReviews } from '@/lib/reviews';
 import { serviceForJob } from '@/lib/services';
+import Joint from '@/components/Joint';
+import JobLink from '@/components/JobLink';
+import { JOB_COVER_SIZES } from '@/lib/job-cover';
 
 export function generateStaticParams() {
   return getAllProjects().map((p) => ({ slug: p.slug }));
@@ -61,9 +65,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         <div className="grid grid-cols-1 items-start gap-10 md:grid-cols-12 md:gap-6">
           <figure className="md:col-span-7">
             <div className="mount">
-              <div className="relative overflow-hidden bg-raised" style={{ aspectRatio: `${p.cover.w} / ${p.cover.h}` }}>
-                <Image src={p.cover.src} alt={p.cover.alt} fill priority sizes="(max-width: 768px) 100vw, 700px" className="object-cover" />
-              </div>
+              <ViewTransition name={`job-${p.slug}`} share="job-photo">
+                <div className="relative overflow-hidden bg-raised" style={{ aspectRatio: `${p.cover.w} / ${p.cover.h}` }}>
+                  <Image src={p.cover.src} alt={p.cover.alt} fill priority sizes={JOB_COVER_SIZES} className="object-cover" />
+                </div>
+              </ViewTransition>
             </div>
           </figure>
 
@@ -252,7 +258,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
       </section>
 
       {/* Quote and next job */}
-      <section className="border-t border-line bg-raised">
+      <section className="relative bg-raised">
+        <Joint />
         <Container className="grid grid-cols-1 items-end gap-10 py-16 md:grid-cols-12 md:gap-6 md:py-20">
           <div className="md:col-span-7">
             <SectionHeading>Want something like this?</SectionHeading>
@@ -266,7 +273,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             </a>
           </div>
           {next && next.slug !== p.slug ? (
-            <Link href={`/portfolio/${next.slug}`} className="group md:col-span-4 md:col-start-9">
+            <JobLink href={`/portfolio/${next.slug}`} cover={next.cover.src} className="group md:col-span-4 md:col-start-9">
               <p className="font-mono text-[13px] text-faint">Next job</p>
               <div className="mt-3 flex items-center gap-4">
                 <div className="mount w-24 shrink-0 p-1.5 transition-colors group-hover:border-accent">
@@ -279,7 +286,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
                   <p className="mt-1 font-mono text-[13px] text-faint">{next.area}, {formatMonth(next.finished)}</p>
                 </div>
               </div>
-            </Link>
+            </JobLink>
           ) : null}
         </Container>
       </section>
