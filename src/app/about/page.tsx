@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { readPageJson } from '@/lib/pages';
 import { Container, SectionHeading } from '@/components/ui';
 import SocialIcon, { networkOf } from '@/components/SocialIcon';
+import Logo3D from '@/components/Logo3D';
 import { pageMeta } from '@/lib/seo';
 
 type AboutPageData = {
@@ -92,18 +93,26 @@ export default function About() {
         </Container>
       </section>
 
+      {/* Social links, with the 3D R beside them (under them on a phone): square, up to 480 px */}
       <Container className="py-20 md:py-28">
-        <SectionHeading>Follow the work</SectionHeading>
-        <div className="mt-8 flex flex-wrap gap-3">
-          {d.socialLinks.map((s) => {
-            const net = networkOf(s.url) ?? networkOf(s.label);
-            return (
-              <a key={s.label} href={s.url} target="_blank" rel="noopener" className="btn btn-ghost gap-2.5">
-                {net ? <SocialIcon network={net} size={18} /> : null}
-                {s.label}
-              </a>
-            );
-          })}
+        <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-12 md:gap-6">
+          <div className="md:col-span-5">
+            <SectionHeading>Follow the work</SectionHeading>
+            <div className="mt-8 flex flex-wrap gap-3">
+              {d.socialLinks.map((s) => {
+                const net = networkOf(s.url) ?? networkOf(s.label);
+                return (
+                  <a key={s.label} href={s.url} target="_blank" rel="noopener" className="btn btn-ghost gap-2.5">
+                    {net ? <SocialIcon network={net} size={18} /> : null}
+                    {s.label}
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex md:col-span-6 md:col-start-7 md:justify-end">
+            <Logo3D />
+          </div>
         </div>
       </Container>
     </>
