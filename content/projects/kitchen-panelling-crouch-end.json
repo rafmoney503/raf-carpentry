@@ -290,5 +290,17 @@
       },
       "caption": "The boxed-in hood, with the extractor lights on underneath."
     }
-  ]
+  ],
+  "model3d": {
+    "src": "/models/kitchen-panelling-crouch-end.glb",
+    "poster": {
+      "src": "/images/projects/kitchen-panelling-crouch-end/model-3d.jpg",
+      "w": 1600,
+      "h": 800,
+      "alt": "3D SketchUp model of the kitchen wall: V-groove panelling over the worktop, the boxed-in cooker hood, the wall cupboard, the tall panelled unit and the dado panelling on the dining side"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "The kitchen wall drawn in SketchUp from the photos, at standard sizes rather than measured ones. Open the doors of the wall cupboard and the tall unit, or take it apart to see the battens behind the V-groove sheets.",
+    "standardSizes": true
+  }
 }
