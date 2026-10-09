@@ -88,5 +88,17 @@
       "h": 1600,
       "alt": "Fence and gate across the patio"
     }
-  ]
+  ],
+  "model3d": {
+    "src": "/models/fence-and-gate-ealing.glb",
+    "poster": {
+      "src": "/images/projects/fence-and-gate-ealing/model-3d.jpg",
+      "w": 1600,
+      "h": 800,
+      "alt": "3D SketchUp model of the close-board fence across the patio, with posts, rails and a ledged and braced gate by the brick pier"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "The fence drawn in SketchUp from the photos, at standard sizes rather than measured ones. Open the gate, or take it apart to see the posts, rails and boards.",
+    "standardSizes": true
+  }
 }
