@@ -17,9 +17,10 @@ const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 const FRAME = {
   wide: 'aspect-[4/3] sm:aspect-[16/9] lg:aspect-[2/1]',
   tall: 'aspect-[1/1] sm:aspect-[4/3]',
+  gallery: 'aspect-[4/3] lg:aspect-[16/10]', // the SketchUp page: one shape for every job, so switching doesn't jump
 };
 
-export default function Model3D({ src, poster, label, shape = 'wide' }: { src: string; poster: Photo; label: string; shape?: 'wide' | 'tall' }) {
+export default function Model3D({ src, poster, label, shape = 'wide' }: { src: string; poster: Photo; label: string; shape?: keyof typeof FRAME }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const labelsRef = useRef<HTMLDivElement>(null);

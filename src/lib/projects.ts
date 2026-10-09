@@ -29,7 +29,10 @@ export type Plan = {
 /* The job in 3D: a .glb made from a SketchUp model (scripts/su-to-glb.mjs), with a still of it
    that shows while the 3D loads (or instead of it, with no WebGL). What moves and the sizes come in the .glb.
    Jobs with a drawing put it in plan.model3d; jobs without one put it in model3d (its own section). */
-export type Model3DInfo = { src: string; poster: Photo; title?: string; text?: string; shape?: 'wide' | 'tall' };
+export type Model3DInfo = {
+  src: string; poster: Photo; title?: string; text?: string; shape?: 'wide' | 'tall';
+  standardSizes?: boolean; // drawn at standard sizes from the photos, not measured (shown as a note in the SketchUp page gallery)
+};
 export type Project = {
   slug: string;
   order: number;

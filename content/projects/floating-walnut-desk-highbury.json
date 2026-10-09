@@ -42,6 +42,18 @@
       "value": "4, no handles"
     }
   ],
+  "model3d": {
+    "src": "/models/floating-walnut-desk-highbury.glb",
+    "poster": {
+      "src": "/images/projects/floating-walnut-desk-highbury/model-3d.jpg",
+      "w": 1600,
+      "h": 800,
+      "alt": "3D SketchUp model of the floating walnut desk between two walls, with four drawers under the top"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "The desk drawn in SketchUp from the photos, at standard sizes rather than measured ones. Open the drawers to see how they sit under the top on walnut dividers, with no handles.",
+    "standardSizes": true
+  },
   "steps": [
     {
       "title": "Drawer boxes first",

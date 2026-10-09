@@ -325,6 +325,8 @@ export const pageCollections: Collection[] = [
       { type: "image", name: "heroImage", label: "Hero image" },
       { type: "string", name: "heroImageAlt", label: "Hero image alt" },
       { type: "string", name: "heroImageCaption", label: "Hero image caption" },
+      { type: "string", name: "models3dTitle", label: "3D models: title (the jobs come from each job's 3D model)" },
+      { type: "string", name: "models3dIntro", label: "3D models: intro", ui: { component: "textarea" } },
       { type: "string", name: "benefitsSectionTitle", label: "Benefits section title" },
       { type: "string", name: "benefitsSectionTitleAccent", label: "Benefits section title accent" },
       {

@@ -3,6 +3,7 @@ import { readPageJson } from '@/lib/pages';
 import { Container, MountedImage, SectionHeading } from '@/components/ui';
 import PlanCard from '@/components/project/PlanCard';
 import ScreenGrid from '@/components/project/ScreenGrid';
+import ModelGallery, { type GalleryItem } from '@/components/project/ModelGallery';
 import { formatMonth, getAllProjects, isPlanReady } from '@/lib/projects';
 import { pageMeta } from '@/lib/seo';
 
@@ -13,6 +14,8 @@ type SketchupPageData = {
   heroImage: string;
   heroImageAlt: string;
   heroImageCaption: string;
+  models3dTitle?: string;
+  models3dIntro?: string;
   benefitsSectionTitle: string;
   benefitsSectionTitleAccent: string;
   benefits: { title: string; description: string; icon: string }[];
@@ -52,6 +55,11 @@ export default function SketchUpPage() {
   // Plans appear here by themselves once a job has preview drawings and a Payhip link (or a free download).
   const plans = getAllProjects().filter(isPlanReady);
   const bundle = d.plansBundle?.url ? d.plansBundle : null;
+  // Every job with a 3D SketchUp model (plan.model3d or model3d) shows up in "Real jobs, in 3D" by itself.
+  const models: GalleryItem[] = getAllProjects().flatMap((p) => {
+    const model = p.plan?.model3d ?? p.model3d;
+    return model ? [{ slug: p.slug, title: p.title, area: p.area, model }] : [];
+  });
 
   return (
     <>
@@ -74,6 +82,19 @@ export default function SketchUpPage() {
           </figure>
         </div>
       </Container>
+
+      {models.length > 0 ? (
+        <section id="in-3d" className="scroll-mt-24 border-t border-line">
+          <Container className="py-20 md:py-28">
+            <p className="kicker">In 3D</p>
+            <SectionHeading className="mt-3">{d.models3dTitle ?? 'Real jobs, in 3D'}</SectionHeading>
+            {d.models3dIntro ? <p className="mt-4 max-w-[60ch] text-muted">{d.models3dIntro}</p> : null}
+            <div className="mt-10">
+              <ModelGallery items={models} />
+            </div>
+          </Container>
+        </section>
+      ) : null}
 
       <section className="border-y border-line bg-raised py-20 md:py-28">
         <Container>

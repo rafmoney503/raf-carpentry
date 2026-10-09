@@ -52,7 +52,8 @@
     },
     "title": "The SketchUp model in 3D",
     "text": "The vanity drawn in SketchUp from the photos, at standard vanity sizes rather than measured ones. Open the drawers to see the box in the top drawer that lets the waste pipe through.",
-    "shape": "tall"
+    "shape": "tall",
+    "standardSizes": true
   },
   "steps": [
     {
