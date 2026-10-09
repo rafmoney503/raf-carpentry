@@ -94,5 +94,18 @@
       "alt": "The unit seen from the window"
     }
   ],
-  "blogSlug": "alcove-shelves-newington-green"
+  "blogSlug": "alcove-shelves-newington-green",
+  "model3d": {
+    "src": "/models/alcove-shelves-newington-green.glb",
+    "poster": {
+      "src": "/images/projects/alcove-shelves-newington-green/model-3d.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "3D SketchUp model of the white alcove unit: a low two-door cupboard with four open shelves above and a lit shelf over the cupboard"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "The alcove unit drawn in SketchUp from the photos, at standard sizes rather than measured ones. Open the doors to see the shelf inside the cupboard, or take it apart board by board. The strip under the first shelf glows like the real light.",
+    "shape": "tall",
+    "standardSizes": true
+  }
 }
