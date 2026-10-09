@@ -5,6 +5,7 @@ import PlanCard from '@/components/project/PlanCard';
 import ScreenGrid from '@/components/project/ScreenGrid';
 import { formatMonth, getAllProjects, isPlanReady } from '@/lib/projects';
 import { pageMeta } from '@/lib/seo';
+import Joint from '@/components/Joint';
 
 type SketchupPageData = {
   heroTitle: string;
@@ -75,7 +76,8 @@ export default function SketchUpPage() {
         </div>
       </Container>
 
-      <section className="border-y border-line bg-raised py-20 md:py-28">
+      <section className="relative bg-raised py-20 md:py-28">
+        <Joint />
         <Container>
           <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:gap-6">
             <SectionHeading className="md:col-span-5">
@@ -92,6 +94,7 @@ export default function SketchUpPage() {
             </div>
           </div>
         </Container>
+        <Joint edge="bottom" />
       </section>
 
       <Container className="py-20 md:py-28">
@@ -144,7 +147,8 @@ export default function SketchUpPage() {
         </section>
       ) : null}
 
-      <section id="learn" className="scroll-mt-24 border-t border-line bg-raised">
+      <section id="learn" className="relative scroll-mt-24 bg-raised">
+        <Joint />
         <Container className="grid grid-cols-1 gap-12 py-20 md:grid-cols-12 md:gap-6 md:py-28">
           <div className="md:col-span-5">
             <p className="kicker">{d.learnKicker}</p>

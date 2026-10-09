@@ -1,0 +1,25 @@
+/* Dovetail joints where a grey (raised) section meets the paper, so the sections of a page look
+   joined like boards (src/components/Joint.tsx). As the edge scrolls up the screen the tails slide the
+   last 7 px into place: scroll-driven, so it follows the finger and needs no script. Browsers without
+   scroll-driven animations show the joint finished; nothing moves for people who turn motion off.
+   (8-9 Oct 2026: Raf kept only the joints from the woodwork-motion test; pencil strokes under headings,
+   the margin ruler, the photo growing into the job page and page fades were tried and dropped.) */
+
+.joint { position: absolute; left: 0; right: 0; height: 24px; overflow: hidden; pointer-events: none; z-index: 1; }
+.joint-top { top: -22px; }
+.joint-bottom { bottom: -22px; }
+.joint svg { position: absolute; left: 50%; display: block; translate: -50% 0; }
+.joint-top svg { top: 8px; }
+.joint-bottom svg { top: 0.5px; transform: scaleY(-1); }
+.joint-fill { fill: var(--color-raised); }
+.joint-line { fill: none; stroke: var(--color-line-strong); stroke-width: 1; }
+@keyframes joint-home-top { from { translate: -50% -7px; } to { translate: -50% 0; } }
+@keyframes joint-home-bottom { from { translate: -50% 7px; } to { translate: -50% 0; } }
+
+@supports (animation-timeline: view()) {
+  .joint-top svg { animation: joint-home-top linear both; animation-timeline: view(); animation-range: cover 0% cover 30%; }
+  .joint-bottom svg { animation: joint-home-bottom linear both; animation-timeline: view(); animation-range: cover 0% cover 30%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .joint svg { animation: none !important; }
+}

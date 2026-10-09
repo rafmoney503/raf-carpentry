@@ -8,6 +8,7 @@ import { pageMeta } from '@/lib/seo';
 import { QUOTE_HREF, whatsappText } from '@/lib/site';
 import { getTipsData, tipSections } from '@/lib/tips';
 import { CopyTipLink, TipPhotos } from './tip-extras';
+import Joint from '@/components/Joint';
 
 export function generateMetadata(): Metadata {
   const d = getTipsData();
@@ -99,7 +100,8 @@ export default function TipsPage() {
       ) : null}
 
       {/* For the people reading who would rather not do it themselves */}
-      <section className="border-t border-line bg-raised">
+      <section className="relative bg-raised">
+        <Joint />
         <Container className="py-14 md:py-20">
           <div className="max-w-[60ch]">
             <SectionHeading>{d.ctaHeading || 'Rather have it built for you?'}</SectionHeading>

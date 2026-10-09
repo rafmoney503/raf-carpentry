@@ -12,6 +12,7 @@ import { getAllProjects } from '@/lib/projects';
 import { pageMeta } from '@/lib/seo';
 import Reviews, { GoogleRating } from '@/components/Reviews';
 import { getReviews } from '@/lib/reviews';
+import Joint from '@/components/Joint';
 
 type Item = { title: string; description: string };
 type Material = { name: string; cost: string; bestFor: string; description: string; image: string; imageAlt: string; link: string };
@@ -196,7 +197,8 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Brief builder */}
-      <section id="brief" className="scroll-mt-20 border-t border-line bg-raised">
+      <section id="brief" className="relative scroll-mt-20 bg-raised">
+        <Joint />
         <Container className="py-14 md:py-20">
           <div className="max-w-[60ch]">
             <p className="kicker">Takes two minutes</p>

@@ -11,6 +11,7 @@ import { jsonLd, pageMeta, SITE_URL } from '@/lib/seo';
 import { areasFor, getService, getServices, getServicesData, joinAreas, jobsFor } from '@/lib/services';
 import ProjectGallery from '@/components/project/ProjectGallery';
 import '@/app/portfolio/project.css';
+import Joint from '@/components/Joint';
 
 export function generateStaticParams() {
   return getServices().map((s) => ({ slug: s.slug }));
@@ -169,7 +170,8 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
       ) : null}
 
       {/* Quote band and the other services */}
-      <section className="border-t border-line bg-raised">
+      <section className="relative bg-raised">
+        <Joint />
         <Container className="py-14 md:py-20">
           <div className="grid grid-cols-1 items-end gap-8 md:grid-cols-12 md:gap-6">
             <div className="md:col-span-7">
