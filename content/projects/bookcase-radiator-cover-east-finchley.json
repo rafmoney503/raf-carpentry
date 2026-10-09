@@ -186,5 +186,17 @@
       },
       "caption": "From the alcove to the bench: the cut plan on the board."
     }
-  ]
+  ],
+  "model3d": {
+    "src": "/models/bookcase-radiator-cover-east-finchley.glb",
+    "poster": {
+      "src": "/images/projects/bookcase-radiator-cover-east-finchley/model-3d.jpg",
+      "w": 1600,
+      "h": 800,
+      "alt": "3D SketchUp model of the wall-to-wall bookcase: three bays of shelves over cupboards, with grille doors over the radiator in the middle"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "The whole wall drawn in SketchUp from the photos, at standard sizes rather than measured ones. Open the doors to see the radiator behind the grille and the shelves in the cupboards either side, or take it apart to see the frame and the three bays.",
+    "standardSizes": true
+  }
 }
