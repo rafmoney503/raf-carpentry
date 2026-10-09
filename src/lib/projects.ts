@@ -98,6 +98,12 @@ export function getKit(slug: string): Kit | undefined {
   return kit && (kit.materials.length > 0 || kit.tools.length > 0) ? kit : undefined;
 }
 
+/* A job's 3D SketchUp model, wherever it lives (under the drawing, or its own section). */
+export const modelOf = (p: Project): Model3DInfo | undefined => p.plan?.model3d ?? p.model3d;
+
+/* How many jobs have a 3D model: the number in the "See all N jobs in 3D" links. */
+export const countModels = () => getAllProjects().filter((p) => modelOf(p)).length;
+
 /* Plans that are ready to show: at least one preview and somewhere to buy or download. */
 export function isPlanReady(p: Project): p is Project & { planSale: PlanSale } {
   return Boolean(p.planSale && p.planSale.previews.length > 0 && (p.planSale.buyUrl || p.planSale.freeDownload));

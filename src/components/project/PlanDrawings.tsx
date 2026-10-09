@@ -1,13 +1,14 @@
 'use client';
 import Image from 'next/image';
 import { useState } from 'react';
+import AllIn3DLink from './AllIn3DLink';
 import type { Plan } from '@/lib/projects';
 import Lightbox from './Lightbox';
 import Model3D from './Model3D';
 
 /* The plan next to the real thing, then the job in 3D if it has a model, then any other drawings in a row underneath.
    Every drawing opens in the full-screen viewer; the photo stays put (it is in Photos anyway). */
-export default function PlanDrawings({ plan, title }: { plan: Plan; title: string }) {
+export default function PlanDrawings({ plan, title, modelCount }: { plan: Plan; title: string; modelCount?: number }) {
   const [open, setOpen] = useState<number | null>(null);
   const views = plan.views ?? [];
   const drawings = [
@@ -40,7 +41,7 @@ export default function PlanDrawings({ plan, title }: { plan: Plan; title: strin
       </div>
 
       {plan.model3d ? (
-        <div className="mt-14">
+        <div id="in-3d" className="mt-14 scroll-mt-24">
           <div className="border-t border-line pt-6">
             <h3 className="text-[19px] font-[620] leading-snug">{plan.model3d.title ?? 'In 3D'}</h3>
             {plan.model3d.text ? <p className="mt-2 max-w-[60ch] text-muted">{plan.model3d.text}</p> : null}
@@ -48,6 +49,7 @@ export default function PlanDrawings({ plan, title }: { plan: Plan; title: strin
           <div className="mt-6">
             <Model3D src={plan.model3d.src} poster={plan.model3d.poster} label={plan.model3d.poster.alt} shape={plan.model3d.shape} />
           </div>
+          {modelCount ? <AllIn3DLink count={modelCount} /> : null}
         </div>
       ) : null}
 

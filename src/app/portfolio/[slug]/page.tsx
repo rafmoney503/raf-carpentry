@@ -8,7 +8,8 @@ import ProjectVideo from '@/components/project/ProjectVideo';
 import ProjectGallery from '@/components/project/ProjectGallery';
 import BuildPhotos from '@/components/project/BuildPhotos';
 import ToolsUsed from '@/components/ToolsUsed';
-import { formatMonth, getAllProjects, getKit, getProject, isPlanReady } from '@/lib/projects';
+import { countModels, formatMonth, getAllProjects, getKit, getProject, isPlanReady } from '@/lib/projects';
+import AllIn3DLink from '@/components/project/AllIn3DLink';
 import PlanCard from '@/components/project/PlanCard';
 import ProjectKit from '@/components/project/ProjectKit';
 import PlanDrawings from '@/components/project/PlanDrawings';
@@ -118,19 +119,20 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           <Container className="py-16 md:py-24">
             <SectionHeading>{p.plan.title}</SectionHeading>
             <p className="mt-4 max-w-[56ch] text-muted">{p.plan.text}</p>
-            <PlanDrawings plan={p.plan} title={p.title} />
+            <PlanDrawings plan={p.plan} title={p.title} modelCount={countModels()} />
           </Container>
         </section>
       ) : null}
 
       {p.model3d ? (
-        <section className="border-t border-line">
+        <section id="in-3d" className="scroll-mt-24 border-t border-line">
           <Container className="py-16 md:py-24">
             <SectionHeading>{p.model3d.title ?? 'In 3D'}</SectionHeading>
             {p.model3d.text ? <p className="mt-4 max-w-[56ch] text-muted">{p.model3d.text}</p> : null}
             <div className="mt-10">
               <Model3D src={p.model3d.src} poster={p.model3d.poster} label={p.model3d.poster.alt} shape={p.model3d.shape} />
             </div>
+            <AllIn3DLink count={countModels()} />
           </Container>
         </section>
       ) : null}
