@@ -5,7 +5,9 @@ import type { Metadata } from 'next';
 import { Container, PageHeader, SectionHeading } from '@/components/ui';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import Reviews, { GoogleRating } from '@/components/Reviews';
-import { formatMonth } from '@/lib/projects';
+import { formatMonth, modelOf, countModels } from '@/lib/projects';
+import ModelGallery, { type GalleryItem } from '@/components/project/ModelGallery';
+import AllIn3DLink from '@/components/project/AllIn3DLink';
 import { QUOTE_HREF, whatsappText } from '@/lib/site';
 import { jsonLd, pageMeta, SITE_URL } from '@/lib/seo';
 import { areasFor, getService, getServices, getServicesData, joinAreas, jobsFor } from '@/lib/services';
@@ -30,6 +32,11 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
   const d = getServicesData();
   const jobs = jobsFor(s);
   const areas = areasFor(jobs);
+  // the same jobs in 3D (every job with a SketchUp model), newest first like the list
+  const models: GalleryItem[] = jobs.flatMap((p) => {
+    const model = modelOf(p);
+    return model ? [{ slug: p.slug, title: p.title, area: p.area, model }] : [];
+  });
   const others = getServices().filter((x) => x.slug !== s.slug);
   const waText = whatsappText(`/services/${s.slug}`, s.name);
   const photos = s.photos ?? [];
@@ -125,6 +132,24 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
           </Container>
         </section>
       )}
+
+      {/* The same jobs in 3D, one viewer at a time */}
+      {models.length ? (
+        <section id="in-3d" className="scroll-mt-20 border-t border-line">
+          <Container className="py-14 md:py-20">
+            <div className="max-w-[62ch]">
+              <SectionHeading>{models.length === 1 ? 'This job in 3D' : `These ${models.length} jobs in 3D`}</SectionHeading>
+              <p className="mt-4 text-[16px] leading-relaxed text-muted">
+                Drawn in SketchUp. {models.length > 1 ? 'Pick one, then drag to turn it round or take it apart.' : 'Drag to turn it round or take it apart.'}
+              </p>
+            </div>
+            <div className="mt-10">
+              <ModelGallery items={models} />
+            </div>
+            <AllIn3DLink count={countModels()} className="mt-8" />
+          </Container>
+        </section>
+      ) : null}
 
       {/* Loose photos from the "0 Services" folder (opens full screen) */}
       {photos.length ? (
