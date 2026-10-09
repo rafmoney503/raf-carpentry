@@ -46,6 +46,7 @@ type Pop = { text: string; x: number; y: number; life: number };
 type Phase = 'ready' | 'playing' | 'over';
 
 const BEST_KEY = 'raf_timber_best';
+const RESTART_SECS = 4; // the result shows this long, then a new game starts by itself
 const MUTE_KEY = 'raf_timber_mute';
 
 function rng(seed: number) {
@@ -133,6 +134,8 @@ export default function TimberStackGame() {
   const [newBest, setNewBest] = useState(false);
   const [muted, setMuted] = useState(false);
   const [note, setNote] = useState('');
+  // after a game ends, a new one starts by itself (Raf, 9 Oct 2026): seconds left, or null when stopped
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   useEffect(() => {
     const wrap = wrapRef.current, canvas = canvasRef.current;
@@ -196,7 +199,7 @@ export default function TimberStackGame() {
         if (!soundOff) sounds.thud();
         const isBest = g.score > g.best;
         if (g.score > g.best) { g.best = g.score; try { localStorage.setItem(BEST_KEY, String(g.best)); } catch { /* ignore */ } }
-        setBest(g.best); setNewBest(isBest); setReached(g.reached); setPhase('over');
+        setBest(g.best); setNewBest(isBest); setReached(g.reached); setCountdown(RESTART_SECS); setPhase('over');
         return;
       }
       let x = left, w = overlap;
@@ -246,7 +249,7 @@ export default function TimberStackGame() {
       sounds.wake();
       reset();
       g.phase = 'playing';
-      setScore(0); setHeight(THICK); setReached(''); setNewBest(false); setNote(''); setPhase('playing');
+      setScore(0); setHeight(THICK); setReached(''); setNewBest(false); setNote(''); setCountdown(null); setPhase('playing');
       requestAnimationFrame(() => dropRef.current?.focus({ preventScroll: true }));
     }
     api.current = { start, drop, setMuted: (m) => { soundOff = m; } };
@@ -455,6 +458,17 @@ export default function TimberStackGame() {
 
   const next = MARKS.find((m) => m.mm > height); // the next height mark to aim for
 
+  // count down to the next game; stops if the page is in the background, or the player shares the score
+  useEffect(() => {
+    if (phase !== 'over' || countdown === null) return;
+    const t = setTimeout(() => {
+      if (document.hidden) setCountdown(null);
+      else if (countdown <= 1) api.current?.start();
+      else setCountdown(countdown - 1);
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [phase, countdown]);
+
   const toggleSound = () => {
     const m = !muted;
     setMuted(m);
@@ -463,6 +477,7 @@ export default function TimberStackGame() {
   };
 
   const share = async () => {
+    setCountdown(null);
     const url = 'https://www.rafcarpentry.com/tools/timber-stack';
     const text = `I stacked ${score} ${score === 1 ? 'board' : 'boards'}, ${fmtHeight(height)} high, in Timber Stack. Can you beat it?`;
     try {
@@ -529,18 +544,19 @@ export default function TimberStackGame() {
         ) : null}
 
         {phase === 'over' ? (
-          <div className="absolute inset-0 z-30 grid place-items-end justify-items-center p-3 [animation:fadeInUp_0.5s_0.6s_both] sm:p-5" role="dialog" aria-label="Game over" aria-live="polite">
+          <div className="absolute inset-0 z-30 grid place-items-end justify-items-center p-3 [animation:fadeInUp_0.5s_0.6s_both] sm:p-5" role="dialog" aria-label="Game over" aria-live="polite" onPointerDown={(e) => { if (e.target === e.currentTarget) api.current?.start(); }}>
             <div className="w-full max-w-[340px] rounded-sm border border-line-strong bg-mount p-5 text-center shadow-[0_22px_40px_-28px_rgb(22_25_28/0.55)]">
               <p className="font-mono text-[13px] text-accent">{newBest ? 'New best' : reached ? `Past ${reached.toLowerCase()}` : 'Off the stack'}</p>
               <p className="mt-2 font-display text-[28px] font-[650] leading-tight tracking-[-0.02em]">
                 {score} {score === 1 ? 'board' : 'boards'}, {fmtHeight(height)}
               </p>
-              <p className="mt-1 font-mono text-[13px] text-muted">Best {best} boards</p>
+              <p className="mt-1 font-mono text-[13px] text-muted">Best {best} {best === 1 ? 'board' : 'boards'}</p>
               <div className="mt-5 grid gap-2.5">
                 <button type="button" autoFocus onClick={() => api.current?.start()} className="btn btn-primary w-full">Play again</button>
                 <button type="button" onClick={share} className="btn btn-ghost w-full">Share score</button>
               </div>
               {note ? <p className="mt-3 text-[14px] text-muted">{note}</p> : null}
+              {countdown !== null ? <p className="mt-3 font-mono text-[13px] text-muted">New game in {countdown}</p> : null}
               <Link href={QUOTE_HREF} className="link-more mt-4 justify-center text-[15px]">
                 Get a quote for real woodwork <span aria-hidden="true">→</span>
               </Link>
