@@ -100,7 +100,18 @@
         "alt": "Hand sketch of the seat with the back, front and panels marked",
         "caption": "Hand sketch: front and panels"
       }
-    ]
+    ],
+    "model3d": {
+      "src": "/models/curved-seat-kennington.glb",
+      "poster": {
+        "src": "/images/projects/curved-seat-kennington/model-3d.jpg",
+        "w": 1600,
+        "h": 800,
+        "alt": "3D SketchUp model of the curved storage seat: 1500 mm along the back, 1200 mm along the front, with a lift-up lid and panelled front"
+      },
+      "title": "The SketchUp model in 3D",
+      "text": "The seat in SketchUp: 1500 mm along the back and 1200 mm along the front, as built. The depth and height are standard sizes. Lift the lid to see the two storage boxes."
+    }
   },
   "steps": [
     {
