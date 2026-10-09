@@ -120,7 +120,10 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
   const matFor = (m: THREE.MeshStandardMaterial) => {
     let out = mats.get(m.name);
     if (!out) {
-      out = new THREE.MeshStandardMaterial({ name: m.name, color: m.color.clone(), roughness: m.roughness, metalness: m.metalness, emissive: m.emissive.clone(), emissiveIntensity: m.emissiveIntensity, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+      // see-through materials (glass) keep their own opacity; userData.see is that opacity, which the room fade multiplies
+      const see = m.transparent && m.opacity < 1 ? m.opacity : 1;
+      out = new THREE.MeshStandardMaterial({ name: m.name, color: m.color.clone(), roughness: m.roughness, metalness: m.metalness, emissive: m.emissive.clone(), emissiveIntensity: m.emissiveIntensity, transparent: see < 1, opacity: see, depthWrite: see >= 1, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+      out.userData.see = see;
       mats.set(m.name, out);
       owned.push(out);
     }
@@ -132,7 +135,7 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
       const old = o.material as THREE.MeshStandardMaterial;
       o.material = matFor(old);
       old.dispose();
-      o.castShadow = true;
+      o.castShadow = (o.material as THREE.Material).userData.see >= 1; // glass casts no shadow
       o.receiveShadow = true;
       owned.push(o.geometry);
     } else if (o instanceof THREE.LineSegments) {
@@ -390,7 +393,12 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
       for (const p of pieces) p.g.position.copy(p.off).multiplyScalar(e);
       // the room fades out as the job comes apart, and back in as it goes together
       const a = Math.max(0, 1 - e * 1.6);
-      for (const m of roomMats) { m.transparent = a < 1; m.opacity = a; m.depthWrite = a > 0.6; }
+      for (const m of roomMats) {
+        const see = m.userData.see ?? 1;
+        m.transparent = a < 1 || see < 1;
+        m.opacity = a * see;
+        m.depthWrite = a > 0.6 && see >= 1;
+      }
       roomEdgeMat.opacity = 0.72 * a;
       roomGone = a <= 0.001;
       for (const g of roomPieces) g.visible = !roomGone;
