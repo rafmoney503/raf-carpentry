@@ -76,5 +76,18 @@
       "alt": "Inside the boiler side, with the controls and pipes reachable"
     }
   ],
-  "blogSlug": "alcove-wardrobes-east-finchley"
+  "blogSlug": "alcove-wardrobes-east-finchley",
+  "model3d": {
+    "src": "/models/alcove-wardrobes-east-finchley.glb",
+    "poster": {
+      "src": "/images/projects/alcove-wardrobes-east-finchley/model-3d.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "3D SketchUp model of the two panelled wardrobes either side of the chimney breast, one with a rail and shelves, one built around the boiler"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "Both wardrobes drawn in SketchUp from the photos, at standard sizes rather than measured ones. Open the doors to see the rail and shelves on one side and the narrow shelves and boiler space on the other, or take them apart board by board.",
+    "shape": "tall",
+    "standardSizes": true
+  }
 }
