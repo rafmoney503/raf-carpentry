@@ -23,10 +23,13 @@ export type Plan = {
   imageLabel?: string; // caption under the drawing, default "The plan"
   realLabel?: string; // caption under the photo, default "The real thing"
   views?: (Photo & { caption?: string })[];
-  /* The job in 3D: a .glb made from a SketchUp model (scripts/su-to-glb.mjs), with a still of it
-     that shows while the 3D loads (or instead of it, with no WebGL). Lids and sizes come in the .glb. */
-  model3d?: { src: string; poster: Photo; title?: string; text?: string; shape?: 'wide' | 'tall' };
+  /* The job in 3D, shown under the drawing and the photo (see Model3DInfo). */
+  model3d?: Model3DInfo;
 };
+/* The job in 3D: a .glb made from a SketchUp model (scripts/su-to-glb.mjs), with a still of it
+   that shows while the 3D loads (or instead of it, with no WebGL). What moves and the sizes come in the .glb.
+   Jobs with a drawing put it in plan.model3d; jobs without one put it in model3d (its own section). */
+export type Model3DInfo = { src: string; poster: Photo; title?: string; text?: string; shape?: 'wide' | 'tall' };
 export type Project = {
   slug: string;
   order: number;
@@ -44,6 +47,8 @@ export type Project = {
   /* The drawing next to the finished job. `views` are extra drawings (other SketchUp angles, hand sketches)
      shown as a row underneath; tap any drawing to see it full size. */
   plan?: Plan;
+  /* The job in 3D when it has no drawing (a job with a drawing uses plan.model3d instead). */
+  model3d?: Model3DInfo;
   steps: Step[];
   gallery: Photo[];
   /* Extra photos from the build ("More from the build", squares, 8 shown then "Show all"). */

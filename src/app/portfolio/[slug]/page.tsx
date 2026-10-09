@@ -12,6 +12,7 @@ import { formatMonth, getAllProjects, getKit, getProject, isPlanReady } from '@/
 import PlanCard from '@/components/project/PlanCard';
 import ProjectKit from '@/components/project/ProjectKit';
 import PlanDrawings from '@/components/project/PlanDrawings';
+import Model3D from '@/components/project/Model3D';
 import { BOOKING_URL, QUOTE_HREF, whatsappText } from '@/lib/site';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import '../project.css';
@@ -118,6 +119,18 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             <SectionHeading>{p.plan.title}</SectionHeading>
             <p className="mt-4 max-w-[56ch] text-muted">{p.plan.text}</p>
             <PlanDrawings plan={p.plan} title={p.title} />
+          </Container>
+        </section>
+      ) : null}
+
+      {p.model3d ? (
+        <section className="border-t border-line">
+          <Container className="py-16 md:py-24">
+            <SectionHeading>{p.model3d.title ?? 'In 3D'}</SectionHeading>
+            {p.model3d.text ? <p className="mt-4 max-w-[56ch] text-muted">{p.model3d.text}</p> : null}
+            <div className="mt-10">
+              <Model3D src={p.model3d.src} poster={p.model3d.poster} label={p.model3d.poster.alt} shape={p.model3d.shape} />
+            </div>
           </Container>
         </section>
       ) : null}
