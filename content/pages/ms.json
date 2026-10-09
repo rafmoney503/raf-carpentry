@@ -26,6 +26,13 @@
       "highlight": false
     },
     {
+      "label": "My Work",
+      "subtitle": "Real jobs with photos, build steps and a 3D model of each.",
+      "url": "/portfolio",
+      "icon": "",
+      "highlight": false
+    },
+    {
       "label": "CabinetOS App Waitlist",
       "subtitle": "Cutlists. Boards. Done. A carpenter built this — join free.",
       "url": "/cabinetos",

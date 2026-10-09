@@ -5,7 +5,7 @@ import { getAllPosts } from '@/lib/blog';
 import QuoteCta from '@/components/QuoteCta';
 import Reviews, { GoogleRating } from '@/components/Reviews';
 import { getReviews } from '@/lib/reviews';
-import { formatMonth, getAllProjects } from '@/lib/projects';
+import { countModels, formatMonth, getAllProjects } from '@/lib/projects';
 import { QUOTE_HREF, whatsappText, whatsappUrl } from '@/lib/site';
 import SocialIcon from '@/components/SocialIcon';
 import { businessJsonLd, jsonLd, pageMeta } from '@/lib/seo';
@@ -230,6 +230,9 @@ export default function HomePage() {
               </Link>
               <Link className="link-more" href="/sketchup">
                 {d.processLinkLabel} <span aria-hidden="true">→</span>
+              </Link>
+              <Link className="link-more" href="/sketchup#in-3d">
+                See all {countModels()} jobs in 3D <span aria-hidden="true">→</span>
               </Link>
             </div>
           </div>
