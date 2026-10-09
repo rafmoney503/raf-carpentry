@@ -68,5 +68,17 @@
       "h": 1200,
       "alt": "End of the storage run by the door"
     }
-  ]
+  ],
+  "model3d": {
+    "src": "/models/loft-sliding-door-storage-east-finchley.glb",
+    "poster": {
+      "src": "/images/projects/loft-sliding-door-storage-east-finchley/model-3d.jpg",
+      "w": 1600,
+      "h": 800,
+      "alt": "3D SketchUp model of the MDF frame and two sliding doors along the low wall of the loft, under the roof slope and skylights"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "The storage drawn in SketchUp from the photos, at standard sizes rather than measured ones. Slide a door across to see into the eaves behind, or take the frame and doors apart.",
+    "standardSizes": true
+  }
 }
