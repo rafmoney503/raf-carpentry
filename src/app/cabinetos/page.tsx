@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { readPageJson } from '@/lib/pages';
 import { Container, MountedImage, SectionHeading } from '@/components/ui';
 import { pageMeta } from '@/lib/seo';
+import AppScreens, { type AppScreen } from '@/components/AppScreens';
 
 function imageSrc(v: unknown): string {
   if (typeof v === 'string' && v.trim()) return v;
@@ -25,6 +26,11 @@ type CabinetosPageData = {
   secondaryCtaLabel: string;
   heroImage?: string;
   heroImageAlt?: string;
+  screensKicker?: string;
+  screensTitle?: string;
+  screensTitleAccent?: string;
+  screensIntro?: string;
+  screens?: AppScreen[];
   mockupEmoji: string;
   mockupPlaceholder: string;
   featuresSectionTitle: string;
@@ -54,6 +60,7 @@ export const metadata = pageMeta({
 export default function Cabinetos() {
   const d = readPageJson<CabinetosPageData>('cabinetos.json');
   const heroSrc = imageSrc(d.heroImage);
+  const screens = (d.screens ?? []).filter((s) => s?.label && (imageSrc(s.computer) || imageSrc(s.tablet) || imageSrc(s.phone)));
   const pairs = (d.beforeAfterItems ?? []).filter((p) => imageSrc(p.beforeImage) || imageSrc(p.afterImage));
 
   return (
@@ -70,7 +77,21 @@ export default function Cabinetos() {
         </div>
       </Container>
 
-      {heroSrc ? (
+      {screens.length ? (
+        <section id="screens" aria-labelledby="screens-title" className="pb-20 md:pb-28">
+          <Container>
+            {d.screensKicker ? <p className="kicker mb-4">{d.screensKicker}</p> : null}
+            <SectionHeading>
+              <span id="screens-title">
+                {d.screensTitle}
+                <span className="text-accent">{d.screensTitleAccent}</span>
+              </span>
+            </SectionHeading>
+            {d.screensIntro ? <p className="mt-4 max-w-[60ch] text-pretty text-muted">{d.screensIntro}</p> : null}
+            <AppScreens screens={screens} />
+          </Container>
+        </section>
+      ) : heroSrc ? (
         <Container className="pb-20 md:pb-28">
           <div className="overflow-hidden rounded-sm border border-line-strong bg-[#f6f7f8]">
             <Image src={heroSrc} alt={d.heroImageAlt || 'CabinetOS app'} width={2648} height={1916} priority sizes="(max-width: 1280px) 100vw, 1200px" className="h-auto w-full" />

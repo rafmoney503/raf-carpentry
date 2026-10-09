@@ -7,6 +7,52 @@
   "secondaryCtaLabel": "FAQs",
   "heroImage": "/images/Screenshot 2026-04-10 at 07.59.22.png",
   "heroImageAlt": "Cabinetos app screenshot",
+  "screensKicker": "Inside the app",
+  "screensTitle": "One job, on every ",
+  "screensTitleAccent": "screen size.",
+  "screensIntro": "A demo bedroom job with two wardrobes, a chest of drawers and a night stand, shown in each part of the app on a computer, a tablet and a phone.",
+  "screens": [
+    {
+      "label": "Build",
+      "caption": "Add each unit with its size, doors, drawers and shelves, and the elevation draws itself as you go.",
+      "alt": "the Main bedroom job, two wardrobes, a chest of drawers and a night stand, with a live elevation 3100 mm wide",
+      "computer": "/images/cabinetos/screens/build-computer.webp",
+      "tablet": "/images/cabinetos/screens/build-tablet.webp",
+      "phone": "/images/cabinetos/screens/build-phone.webp"
+    },
+    {
+      "label": "Cutlist",
+      "caption": "Every part listed unit by unit, with its size, thickness, material and edging.",
+      "alt": "the cutlist, 85 parts on 10 boards, each part with its height, width, depth, thickness and edging",
+      "computer": "/images/cabinetos/screens/cutlist-computer.webp",
+      "tablet": "/images/cabinetos/screens/cutlist-tablet.webp",
+      "phone": "/images/cabinetos/screens/cutlist-phone.webp"
+    },
+    {
+      "label": "2D",
+      "caption": "Front, side, top and back drawings, with the width and height of every unit marked.",
+      "alt": "the front drawing with every unit dimensioned: 900, 900, 800 and 500 mm wide",
+      "computer": "/images/cabinetos/screens/2d-computer.webp",
+      "tablet": "/images/cabinetos/screens/2d-tablet.webp",
+      "phone": "/images/cabinetos/screens/2d-phone.webp"
+    },
+    {
+      "label": "3D",
+      "caption": "Turn the whole job in 3D or pull it apart with the explode slider. Showroom mode adds finishes for the client and leaves your materials and cutlist as they are.",
+      "alt": "the job in 3D in Showroom mode, with wood fronts on white cabinets",
+      "computer": "/images/cabinetos/screens/3d-computer.webp",
+      "tablet": "/images/cabinetos/screens/3d-tablet.webp",
+      "phone": "/images/cabinetos/screens/3d-phone.webp"
+    },
+    {
+      "label": "Optimise",
+      "caption": "Each 2440 x 1220 board laid out part by part, with the waste worked out for you.",
+      "alt": "the layout for sheet 1 of 10, a 2440 x 1220 mm board, with 9% waste across the job",
+      "computer": "/images/cabinetos/screens/optimise-computer.webp",
+      "tablet": "/images/cabinetos/screens/optimise-tablet.webp",
+      "phone": "/images/cabinetos/screens/optimise-phone.webp"
+    }
+  ],
   "mockupEmoji": "📱",
   "mockupPlaceholder": "App screenshot / demo video goes here",
   "featuresSectionTitle": "How Cabinetos ",

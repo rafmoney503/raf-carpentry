@@ -25,12 +25,13 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-paper/90 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-3 px-5 md:h-[72px] md:gap-8 md:px-10">
-        <Link href="/" className="flex items-center gap-3 whitespace-nowrap text-[17px] font-semibold tracking-tight">
+      <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-3 px-5 max-[379px]:gap-2 md:h-[72px] md:gap-8 md:px-10">
+        <Link href="/" className="flex items-center gap-3 whitespace-nowrap text-[17px] font-semibold tracking-tight max-[379px]:gap-2 max-[379px]:text-[16px]">
           <span className="h-9 w-9 flex-none overflow-hidden rounded-full bg-[#f4f1ea] ring-1 ring-line-strong">
             <Image src="/images/r-logo-final.png" alt="" width={36} height={36} className="h-full w-full object-cover" />
           </span>
-          Raf Carpentry
+          {/* Very narrow phones (under 350 px) show the R only, so the header never runs off the side. */}
+          <span className="max-[349px]:sr-only">Raf Carpentry</span>
         </Link>
 
         <nav aria-label="Main" className="ml-auto hidden gap-1 lg:flex">
@@ -46,13 +47,13 @@ export default function Navbar() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2.5 lg:ml-0 lg:gap-5">
+        <div className="ml-auto flex items-center gap-2.5 max-[379px]:gap-2 lg:ml-0 lg:gap-5">
           <a href={PHONE_HREF} className="hidden whitespace-nowrap font-mono text-sm text-ink xl:inline">
             {PHONE_DISPLAY}
           </a>
           <Link
             href={quoteHref}
-            className="btn btn-primary btn-sm"
+            className="btn btn-primary btn-sm max-[379px]:px-3.5"
             onClick={(e) => {
               // Already on the page: go back to its top.
               if (pathname === QUOTE_HREF) {
