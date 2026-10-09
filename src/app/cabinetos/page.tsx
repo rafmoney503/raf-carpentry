@@ -1,5 +1,4 @@
 import Image from 'next/image';
-import Link from 'next/link';
 import { readPageJson } from '@/lib/pages';
 import { Container, MountedImage, SectionHeading } from '@/components/ui';
 import { pageMeta } from '@/lib/seo';
@@ -54,6 +53,7 @@ type CabinetosPageData = {
   bottomCtaTitleAccent: string;
   bottomCtaSubtitle: string;
   bottomCtaButtonLabel: string;
+  bottomCtaButtonUrl?: string;
 };
 
 export const metadata = pageMeta({
@@ -65,6 +65,8 @@ export const metadata = pageMeta({
 export default function Cabinetos() {
   const d = readPageJson<CabinetosPageData>('cabinetos.json');
   const heroSrc = imageSrc(d.heroImage);
+  const ctaUrl = d.bottomCtaButtonUrl?.trim() || 'https://www.cabinetos.co.uk';
+  const ctaHost = ctaUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
   const screens = (d.screens ?? []).filter((s) => s?.label && (imageSrc(s.computer) || imageSrc(s.tablet) || imageSrc(s.phone)));
   const pairs = (d.beforeAfterItems ?? []).filter((p) => imageSrc(p.beforeImage) || imageSrc(p.afterImage));
 
@@ -186,7 +188,14 @@ export default function Cabinetos() {
             <p className="mt-4 max-w-[56ch] text-muted">{d.bottomCtaSubtitle}</p>
           </div>
           <div className="md:col-span-4 md:justify-self-end">
-            <Link href="/contact" className="btn btn-primary">{d.bottomCtaButtonLabel}</Link>
+            <a href={ctaUrl} target="_blank" rel="noopener" className="btn btn-primary gap-2.5">
+              {d.bottomCtaButtonLabel}
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5.5 3.5h7v7M12.5 3.5l-9 9" />
+              </svg>
+              <span className="sr-only"> (opens {ctaHost} in a new tab)</span>
+            </a>
+            <p className="mt-3 font-mono text-[13px] text-faint">Opens {ctaHost}</p>
           </div>
         </Container>
       </section>

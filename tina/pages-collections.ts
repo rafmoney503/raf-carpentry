@@ -331,6 +331,7 @@ export const pageCollections: Collection[] = [
       { type: "string", name: "bottomCtaTitleAccent", label: "Bottom CTA title accent" },
       { type: "string", name: "bottomCtaSubtitle", label: "Bottom CTA subtitle", ui: { component: "textarea" } },
       { type: "string", name: "bottomCtaButtonLabel", label: "Bottom CTA button" },
+      { type: "string", name: "bottomCtaButtonUrl", label: "Bottom CTA button link (opens in a new tab, e.g. https://www.cabinetos.co.uk)" },
     ],
   },
   {
