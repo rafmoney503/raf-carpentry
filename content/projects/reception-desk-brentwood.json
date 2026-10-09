@@ -313,5 +313,17 @@
       },
       "caption": "Walking the line: the front panels standing on the tape before the top went on."
     }
-  ]
+  ],
+  "model3d": {
+    "src": "/models/reception-desk-brentwood.glb",
+    "poster": {
+      "src": "/images/projects/reception-desk-brentwood/model-3d.jpg",
+      "w": 1600,
+      "h": 800,
+      "alt": "3D SketchUp model of the L-shaped reception desk with the raised counter, the angled end panel, the slatted front and the side unit"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "The reception desk drawn in SketchUp from the photos, at standard sizes rather than measured ones. Turn it round to see the staff side, open the drawers and the side unit, or take it apart to see how the L goes together.",
+    "standardSizes": true
+  }
 }
