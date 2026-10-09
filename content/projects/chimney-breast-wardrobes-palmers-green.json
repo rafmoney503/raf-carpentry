@@ -143,5 +143,18 @@
       "alt": "Overhead cupboards running towards the bay window"
     }
   ],
-  "blogSlug": "wardrobes-around-a-chimney-breast"
+  "blogSlug": "wardrobes-around-a-chimney-breast",
+  "model3d": {
+    "src": "/models/chimney-breast-wardrobes-palmers-green.glb",
+    "poster": {
+      "src": "/images/projects/chimney-breast-wardrobes-palmers-green/model-3d.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "3D SketchUp model of the wall of wardrobes either side of the chimney breast, joined by a bridge of cupboards over the fireplace"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "The whole wall drawn in SketchUp from the photos, at standard sizes rather than measured ones. Open the doors to see the PAX rails and wire baskets, or take it apart to see the two wardrobes and the bridge over the chimney breast.",
+    "shape": "tall",
+    "standardSizes": true
+  }
 }
