@@ -192,7 +192,7 @@ function Drawing3D() {
 }
 
 /* The cut edge of the board, hatched like a section on a drawing. */
-function hatch(x0: number, x1: number, y0: number, y1: number, step: number) {
+export function hatch(x0: number, x1: number, y0: number, y1: number, step: number) {
   const h = y1 - y0;
   const out: string[] = [];
   for (let x = x0 - h + step; x < x1; x += step) {
@@ -397,7 +397,7 @@ export function isSketch(name: string | undefined): name is SketchName {
 }
 
 /* Graph-paper square: faint 8 px grid lines. */
-const paper: React.CSSProperties = {
+export const graphPaper: React.CSSProperties = {
   backgroundImage:
     'linear-gradient(rgb(37 71 208 / 0.07) 1px, transparent 1px), linear-gradient(90deg, rgb(37 71 208 / 0.07) 1px, transparent 1px)',
   backgroundSize: '8px 8px',
@@ -408,7 +408,7 @@ const paper: React.CSSProperties = {
 export default function Sketch({ name, fallback }: { name?: string; fallback: React.ReactNode }) {
   const Drawing = isSketch(name) ? DRAWINGS[name] : null;
   return (
-    <div className="relative aspect-square w-full overflow-hidden rounded-sm border border-line bg-paper text-ink" style={paper} aria-hidden="true">
+    <div className="relative aspect-square w-full overflow-hidden rounded-sm border border-line bg-paper text-ink" style={graphPaper} aria-hidden="true">
       {Drawing ? (
         <svg viewBox="0 0 80 80" className="h-full w-full font-mono" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <Drawing />

@@ -88,6 +88,9 @@
       "afterAlt": "Workflow with Cabinetos"
     }
   ],
+  "compareKicker": "Before and after",
+  "compareTitle": "Pencil and paper, ",
+  "compareTitleAccent": "or the app.",
   "withoutTitle": "Without Cabinetos",
   "withoutBullets": [
     "Hours of manual calculations",
@@ -102,6 +105,7 @@
     "Zero calculation errors",
     "Professional print-ready outputs"
   ],
+  "compareNote": "The demo job above: the app worked out 85 parts on 10 boards, 9% waste and 52.25 m of edging.",
   "faqSectionTitle": "Frequently ",
   "faqSectionTitleAccent": "Asked",
   "faq": [

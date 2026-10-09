@@ -4,6 +4,7 @@ import { readPageJson } from '@/lib/pages';
 import { Container, MountedImage, SectionHeading } from '@/components/ui';
 import { pageMeta } from '@/lib/seo';
 import AppScreens, { type AppScreen } from '@/components/AppScreens';
+import Compare from './compare';
 
 function imageSrc(v: unknown): string {
   if (typeof v === 'string' && v.trim()) return v;
@@ -38,6 +39,10 @@ type CabinetosPageData = {
   featuresSectionSubtitle: string;
   features: { title: string; description: string; icon: string }[];
   beforeAfterItems?: BeforeAfterItem[];
+  compareKicker?: string;
+  compareTitle?: string;
+  compareTitleAccent?: string;
+  compareNote?: string;
   withoutTitle: string;
   withoutBullets: string[];
   withTitle: string;
@@ -124,43 +129,30 @@ export default function Cabinetos() {
         </Container>
       </section>
 
-      <Container className="py-20 md:py-28">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="rounded-sm border border-line-strong p-7 md:p-9">
-            <h3 className="text-[25px] font-[620] text-muted">{d.withoutTitle}</h3>
-            <ul className="mt-5 space-y-3 text-muted">
-              {d.withoutBullets.map((line, i) => (
-                <li key={i} className="flex gap-3">
-                  <span aria-hidden="true" className="font-mono text-faint">{'✗'}</span>
-                  {line}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-sm border border-accent bg-accent-soft p-7 md:p-9">
-            <h3 className="text-[25px] font-[620] text-accent">{d.withTitle}</h3>
-            <ul className="mt-5 space-y-3 text-ink">
-              {d.withBullets.map((line, i) => (
-                <li key={i} className="flex gap-3">
-                  <span aria-hidden="true" className="font-mono text-accent">{'✓'}</span>
-                  {line}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {pairs.map((pair, idx) => {
-          const b = imageSrc(pair.beforeImage);
-          const a = imageSrc(pair.afterImage);
-          return (
-            <div key={idx} className={`mt-6 grid gap-6 ${b && a ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
-              {b ? <MountedImage src={b} alt={pair.beforeAlt || d.withoutTitle} aspect="aspect-video" /> : null}
-              {a ? <MountedImage src={a} alt={pair.afterAlt || d.withTitle} aspect="aspect-video" /> : null}
-            </div>
-          );
-        })}
-      </Container>
+      <section aria-labelledby={d.compareTitle || d.compareTitleAccent ? 'compare-title' : undefined} className="py-20 md:py-28">
+        <Container>
+          {d.compareKicker ? <p className="kicker mb-4">{d.compareKicker}</p> : null}
+          {d.compareTitle || d.compareTitleAccent ? (
+            <SectionHeading>
+              <span id="compare-title">
+                {d.compareTitle}
+                <span className="text-accent">{d.compareTitleAccent}</span>
+              </span>
+            </SectionHeading>
+          ) : null}
+          <Compare withoutTitle={d.withoutTitle} withTitle={d.withTitle} without={d.withoutBullets ?? []} withList={d.withBullets ?? []} note={d.compareNote} />
+          {pairs.map((pair, idx) => {
+            const b = imageSrc(pair.beforeImage);
+            const a = imageSrc(pair.afterImage);
+            return (
+              <div key={idx} className={`mt-6 grid gap-6 ${b && a ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+                {b ? <MountedImage src={b} alt={pair.beforeAlt || d.withoutTitle} aspect="aspect-video" /> : null}
+                {a ? <MountedImage src={a} alt={pair.afterAlt || d.withTitle} aspect="aspect-video" /> : null}
+              </div>
+            );
+          })}
+        </Container>
+      </section>
 
       <section id="faq" className="border-t border-line py-20 md:py-28">
         <Container>
