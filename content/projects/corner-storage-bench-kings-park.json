@@ -67,7 +67,18 @@
         "alt": "SketchUp view of the bench showing the three panelled fronts",
         "caption": "The same drawing turned round"
       }
-    ]
+    ],
+    "model3d": {
+      "src": "/models/corner-storage-bench-kings-park.glb",
+      "poster": {
+        "src": "/images/projects/corner-storage-bench-kings-park/model-3d.jpg",
+        "w": 1600,
+        "h": 800,
+        "alt": "3D SketchUp model of the L-shaped storage bench: 3000 mm along the wall, 1215 mm round the corner, 400 mm high, with three lift-up lids"
+      },
+      "title": "The SketchUp model in 3D",
+      "text": "The same bench, modelled in SketchUp to the sizes on the drawing. Turn it round, lift the three lids to see the storage, or show the sizes."
+    }
   },
   "steps": [],
   "gallery": [

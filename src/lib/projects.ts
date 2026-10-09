@@ -23,6 +23,9 @@ export type Plan = {
   imageLabel?: string; // caption under the drawing, default "The plan"
   realLabel?: string; // caption under the photo, default "The real thing"
   views?: (Photo & { caption?: string })[];
+  /* The job in 3D: a .glb made from a SketchUp model (scripts/su-to-glb.mjs), with a still of it
+     that shows while the 3D loads (or instead of it, with no WebGL). Lids and sizes come in the .glb. */
+  model3d?: { src: string; poster: Photo; title?: string; text?: string };
 };
 export type Project = {
   slug: string;
