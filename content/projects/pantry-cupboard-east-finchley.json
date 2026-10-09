@@ -68,5 +68,18 @@
       "h": 1200,
       "alt": "Close-up of the tray dividers and cubbies"
     }
-  ]
+  ],
+  "model3d": {
+    "src": "/models/pantry-cupboard-east-finchley.glb",
+    "poster": {
+      "src": "/images/projects/pantry-cupboard-east-finchley/model-3d.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "3D SketchUp model of the pantry cupboard on legs beside the fridge, two doors over open cubbies"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "The pantry drawn in SketchUp from the photos, at standard sizes rather than measured ones. Open the doors to see the shelves and the upright tray dividers, or take it apart to see each board.",
+    "shape": "tall",
+    "standardSizes": true
+  }
 }
