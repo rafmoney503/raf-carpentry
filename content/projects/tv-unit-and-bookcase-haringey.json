@@ -208,5 +208,17 @@
       "h": 1600,
       "alt": "Bookcase side with green inset panels"
     }
-  ]
+  ],
+  "model3d": {
+    "src": "/models/tv-unit-and-bookcase-haringey.glb",
+    "poster": {
+      "src": "/images/projects/tv-unit-and-bookcase-haringey/model-3d.jpg",
+      "w": 1600,
+      "h": 800,
+      "alt": "3D SketchUp model of the TV unit and the bookcase either side of the fireplace, both on panelled cupboard bases"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "Both alcoves drawn in SketchUp from the photos, at standard sizes rather than measured ones. Open the cupboards to see the shelf inside each base, or take it apart to see how the TV unit and the bookcase go together, board by board.",
+    "standardSizes": true
+  }
 }
