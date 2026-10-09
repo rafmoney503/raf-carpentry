@@ -133,5 +133,17 @@
       "h": 1600,
       "alt": "Full-height shelving beside the fireplace"
     }
-  ]
+  ],
+  "model3d": {
+    "src": "/models/alcove-units-palmers-green.glb",
+    "poster": {
+      "src": "/images/projects/alcove-units-palmers-green/model-3d.jpg",
+      "w": 1600,
+      "h": 800,
+      "alt": "3D SketchUp model of the two alcove units either side of the chimney breast: full-height shelves on the left, shelves over a two-door cupboard on the right"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "Both alcoves drawn in SketchUp from the photos, at standard sizes rather than measured ones. Open the cupboard doors, or take it apart to see how each alcove goes together, board by board.",
+    "standardSizes": true
+  }
 }

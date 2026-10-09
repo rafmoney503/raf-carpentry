@@ -18,7 +18,8 @@
 // Output: binary glTF in metres, Y up, the room side facing +Z. Faces are triangulated with
 // three.js (holes kept), edges become line primitives, moves/dims/view ride along as extras,
 // and each part node has extras.part = its name (shown when the part is tapped). A part with the
-// material "Wall" is room context: it stays put when the job is taken apart and can't be tapped.
+// material "Wall" (or a name starting "Room", e.g. "Room: cast iron" for a fireplace) is room context:
+// it stays put when the job is taken apart and can't be tapped.
 // Shown by Model3D.tsx / src/lib/model3d-scene.ts. Checked with gltf-validator: no errors.
 import fs from 'node:fs';
 import { ShapeUtils, Vector2 } from 'three';

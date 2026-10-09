@@ -169,9 +169,11 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
 
   // ---- taking it apart: each top-level piece (with whatever rides on it) sits in its own group, which slides
   // out from the middle of the job; up from the floor rather than from the middle, so nothing sinks below it
+  // room context (walls, a chimney breast, a fireplace): materials called "Wall" or starting "Room"
+  const isRoomMat = (m: THREE.Material) => m.name === 'Wall' || m.name.startsWith('Room');
   const isWall = (o: THREE.Object3D) => {
     let wall = false;
-    o.traverse((m) => { if (m instanceof THREE.Mesh && (m.material as THREE.Material).name === 'Wall') wall = true; });
+    o.traverse((m) => { if (m instanceof THREE.Mesh && isRoomMat(m.material as THREE.Material)) wall = true; });
     return wall;
   };
   const pieces: { g: THREE.Object3D; off: THREE.Vector3 }[] = [];
@@ -191,11 +193,16 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
       const c = boxes[i].getCenter(new THREE.Vector3());
       pieces.push({ g, off: new THREE.Vector3(c.x - mid.x, c.y - solid.min.y, c.z - mid.z).multiplyScalar(APART) });
     });
+    // against a wall, nothing goes back into it: the piece nearest the wall stays there, the rest come forward
+    if (kids.some(isWall) && pieces.length) {
+      const back = Math.min(...pieces.map((p) => p.off.z));
+      if (back < 0) for (const p of pieces) p.off.z -= back;
+    }
   }
 
   // ---- tap a part to see its name (walls are only there for context)
   const pickables: THREE.Mesh[] = [];
-  root.traverse((o) => { if (o instanceof THREE.Mesh && (o.material as THREE.Material).name !== 'Wall') pickables.push(o); });
+  root.traverse((o) => { if (o instanceof THREE.Mesh && !isRoomMat(o.material as THREE.Material)) pickables.push(o); });
   const hlMats = new Map<THREE.Material, THREE.MeshStandardMaterial>();
   let picked: { mesh: THREE.Mesh; base: THREE.Material; at: THREE.Vector3 } | null = null;
   const ray = new THREE.Raycaster();
@@ -259,6 +266,7 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
   const limits = { ...DEFAULT_VIEW, ...info.view };
   let W = 1, H = 1, yaw = limits.yaw, pitch = limits.pitch, dist = 0, need = 0, zoomK = 1;
   const panWant = new THREE.Vector3(), panNow = new THREE.Vector3();
+  const centreNow = new THREE.Vector3(), centreWant = new THREE.Vector3(), base = new THREE.Vector3();
   const right = new THREE.Vector3(), up = new THREE.Vector3();
   const half = box.getSize(new THREE.Vector3()).multiplyScalar(0.5);
   // slide only while zoomed in, and less the further out: at zoom 1 the job is centred again
@@ -270,37 +278,64 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
       THREE.MathUtils.clamp(panWant.z, -half.z * k, half.z * k),
     );
   }
-  const corners = Array.from({ length: 8 }, () => new THREE.Vector3());
-  const fitBox = new THREE.Box3();
+  // framing uses the corners of every part (where it is now: open, apart), not one box round the lot,
+  // so an empty corner of that box (in front of a hearth, say) doesn't push the job off centre
+  const fitMeshes: THREE.Mesh[] = [];
+  root.traverse((o) => { if (o instanceof THREE.Mesh) { o.geometry.computeBoundingBox(); fitMeshes.push(o); } });
+  const pts = Array.from({ length: fitMeshes.length * 8 + labelAt.length }, () => new THREE.Vector3());
+  const partBox = new THREE.Box3();
+  let corners: THREE.Vector3[] = [];
   const q = new THREE.Vector3();
   function place() {
     const dir = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
     const fwd = dir.clone().negate();
     right.crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize();
     up.crossVectors(right, fwd);
-    fitBox.setFromObject(root);
-    if (dimGroup.visible) for (const p of labelAt) fitBox.expandByPoint(p);
-    const { min, max } = fitBox;
+    root.updateMatrixWorld(true);
     let k = 0;
-    for (const x of [min.x, max.x]) for (const y of [min.y, max.y]) for (const z of [min.z, max.z]) corners[k++].set(x, y, z);
+    for (const mesh of fitMeshes) {
+      const { min, max } = partBox.copy(mesh.geometry.boundingBox!).applyMatrix4(mesh.matrixWorld);
+      for (const x of [min.x, max.x]) for (const y of [min.y, max.y]) for (const z of [min.z, max.z]) pts[k++].set(x, y, z);
+    }
+    if (dimGroup.visible) for (const p of labelAt) pts[k++].copy(p);
+    corners = pts.slice(0, k);
     const tv = Math.tan((camera.fov * Math.PI) / 360), th = tv * camera.aspect;
     const m = 0.86; // keep a margin round the edge of the stage
-    need = 0;
-    for (const c of corners) {
-      q.copy(c).sub(target);
-      const x = q.dot(right), y = q.dot(up), z = q.dot(dir);
-      need = Math.max(need, z + Math.abs(x) / (th * m), z + Math.abs(y) / (tv * m));
+    const fit = () => {
+      base.copy(target).add(centreNow);
+      need = 0;
+      for (const c of corners) {
+        q.copy(c).sub(base);
+        const x = q.dot(right), y = q.dot(up), z = q.dot(dir);
+        need = Math.max(need, z + Math.abs(x) / (th * m), z + Math.abs(y) / (tv * m));
+      }
+      // centre the job on the stage: aim at the middle of where its corners land, not the middle of its box
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (const c of corners) {
+        q.copy(c).sub(base);
+        const zc = Math.max(1e-3, need - q.dot(dir)), sx = q.dot(right) / zc, sy = q.dot(up) / zc;
+        x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy); y1 = Math.max(y1, sy);
+      }
+      centreWant.copy(centreNow).addScaledVector(right, ((x0 + x1) / 2) * need).addScaledVector(up, ((y0 + y1) / 2) * need);
+    };
+    if (!dist) {
+      // first frame (or after a resize): settle the framing at once, so the job doesn't drift into place
+      for (let i = 0; i < 8; i++) { fit(); centreNow.copy(centreWant); }
+      fit();
+    } else {
+      fit();
+      centreNow.lerp(centreWant, 0.18);
     }
     const want = need * zoomK;
     dist = dist ? dist + (want - dist) * 0.18 : want; // ease, so opening the lids or zooming doesn't jolt the view
     panNow.lerp(panWant, 0.3);
-    const aim = q.copy(target).add(panNow);
+    const aim = q.copy(target).add(centreNow).add(panNow);
     camera.position.copy(aim).addScaledVector(dir, dist);
     camera.up.set(0, 1, 0);
     camera.lookAt(aim);
     camera.near = Math.max(0.02, dist - span * 1.5); camera.far = dist + span * 3;
     camera.updateProjectionMatrix();
-    return Math.abs(want - dist) > 0.002 || panNow.distanceToSquared(panWant) > 1e-8;
+    return Math.abs(want - dist) > 0.002 || panNow.distanceToSquared(panWant) > 1e-8 || centreNow.distanceToSquared(centreWant) > 1e-8;
   }
   const toNdc = (x: number, y: number) => new THREE.Vector2((x / W) * 2 - 1, 1 - (y / H) * 2);
 
