@@ -219,5 +219,18 @@
       "h": 1600,
       "alt": "The back wall lined in birch ply"
     }
-  ]
+  ],
+  "model3d": {
+    "src": "/models/birch-ply-room-chiswick.glb",
+    "poster": {
+      "src": "/images/projects/birch-ply-room-chiswick/model-3d.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "3D SketchUp model of the birch ply room: tall wardrobe, cupboards overhead, a shelf on black straps and a wall-hung desk"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "The room drawn in SketchUp from the photos, at standard sizes rather than measured ones. Open the doors to see the rail, shelves and drawers in the wardrobe and the shelves overhead, or take it apart board by board.",
+    "shape": "tall",
+    "standardSizes": true
+  }
 }
