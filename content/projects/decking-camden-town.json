@@ -284,5 +284,18 @@
       "h": 1600,
       "alt": "Boards laid along the sliding doors"
     }
-  ]
+  ],
+  "model3d": {
+    "src": "/models/decking-camden-town.glb",
+    "poster": {
+      "src": "/images/projects/decking-camden-town/model-3d.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "3D SketchUp model of the courtyard deck between brick walls: boards running to the far fence over a timber frame on packing blocks and weed membrane"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "The deck drawn in SketchUp from the photos, at standard sizes rather than measured ones. Slide the boards off to see the frame and packing blocks underneath, or take it apart layer by layer.",
+    "shape": "tall",
+    "standardSizes": true
+  }
 }
