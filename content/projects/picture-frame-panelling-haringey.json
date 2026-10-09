@@ -100,5 +100,17 @@
       "alt": "The far wall with panels either side of the doorway"
     }
   ],
-  "blogSlug": "picture-frame-panelling-haringey"
+  "blogSlug": "picture-frame-panelling-haringey",
+  "model3d": {
+    "src": "/models/picture-frame-panelling-haringey.glb",
+    "poster": {
+      "src": "/images/projects/picture-frame-panelling-haringey/model-3d.jpg",
+      "w": 1600,
+      "h": 800,
+      "alt": "3D SketchUp model of one wall of the living room with pine picture-frame mouldings above and below a dado rail, round the door and over the radiator"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "One wall of the room drawn in SketchUp from the photos, at standard sizes rather than measured ones. Turn it to see how the frames line up with the door and the radiator, or take it apart to see each mitred frame.",
+    "standardSizes": true
+  }
 }
