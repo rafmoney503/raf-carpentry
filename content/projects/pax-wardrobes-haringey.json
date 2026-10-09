@@ -107,5 +107,18 @@
       "h": 1600,
       "alt": "Wardrobes beside the doorway"
     }
-  ]
+  ],
+  "model3d": {
+    "src": "/models/pax-wardrobes-haringey.glb",
+    "poster": {
+      "src": "/images/projects/pax-wardrobes-haringey/model-3d.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "3D SketchUp model of the wall of PAX wardrobes with panelled doors and top cupboards up to the ceiling"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "The wall drawn in SketchUp from the photos, at standard IKEA PAX sizes rather than measured ones. Open the doors to see the rails and shelves, or take it apart to see the three PAX frames, the boxes on top and the end panels.",
+    "shape": "tall",
+    "standardSizes": true
+  }
 }
