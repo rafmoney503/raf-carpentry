@@ -121,5 +121,17 @@
       "alt": "The finished desk in the room"
     }
   ],
-  "blogSlug": "birch-ply-desk-stands-wood-green"
+  "blogSlug": "birch-ply-desk-stands-wood-green",
+  "model3d": {
+    "src": "/models/desk-wood-green.glb",
+    "poster": {
+      "src": "/images/projects/desk-wood-green/model-3d.jpg",
+      "w": 1600,
+      "h": 800,
+      "alt": "3D SketchUp model of the birch ply desk top with cable slots and the two shaped stands built up in layers"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "The desk drawn in SketchUp from the photos, at standard sizes rather than measured ones. Lift the stands to see the cable slots, or take it apart to see the five layers of birch ply in each stand.",
+    "standardSizes": true
+  }
 }
