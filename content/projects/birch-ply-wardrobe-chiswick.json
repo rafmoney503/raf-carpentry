@@ -42,6 +42,19 @@
       "value": "Rails, shelves, drawers, lights"
     }
   ],
+  "model3d": {
+    "src": "/models/birch-ply-wardrobe-chiswick.glb",
+    "poster": {
+      "src": "/images/projects/birch-ply-wardrobe-chiswick/model-3d.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "3D SketchUp model of the four-door birch ply wardrobe with rails, shelves, drawers and strip lights inside"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "The wardrobe drawn in SketchUp from the photos, at standard sizes rather than measured ones. Open the doors: the drawers slide out and the floor panels lift out of the two left bays to show the hidden boxes.",
+    "shape": "tall",
+    "standardSizes": true
+  },
   "steps": [
     {
       "title": "Carcasses on a plinth",

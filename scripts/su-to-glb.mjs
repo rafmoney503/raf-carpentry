@@ -3,7 +3,7 @@
 //   node scripts/su-to-glb.mjs scripts/models/<job>.su.json public/models/<job>.glb
 //
 // Input (SketchUp's own axes, millimetres: X along the back wall, Y out from the room (the room is -Y), Z up):
-//   materials: { "<name>": [r,g,b] | { color: [r,g,b], roughness?, metalness? } }
+//   materials: { "<name>": [r,g,b] | { color: [r,g,b], roughness?, metalness?, emissive?: [r,g,b] (glows, e.g. LED strips) } }
 //   geoms:     { "<key>": { v: [x,y,z, ...], f: [[outerLoop, ...innerLoops]], e: [[a,b], ...] } }
 //              one entry per SketchUp component/group definition: faces as vertex-index loops
 //              (holes as inner loops) and SketchUp's visible (not soft) edges
@@ -51,8 +51,8 @@ const lin = (c) => { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0
 const matNames = Object.keys(src.materials ?? { 'MDF 18 mm': [200, 172, 142] });
 const materials = matNames.map((name) => {
   const m = (src.materials ?? {})[name] ?? [200, 172, 142];
-  const { color, roughness = 0.85, metalness = 0 } = Array.isArray(m) ? { color: m } : m;
-  return { name, pbrMetallicRoughness: { baseColorFactor: [...color.map(lin), 1], metallicFactor: metalness, roughnessFactor: roughness } };
+  const { color, roughness = 0.85, metalness = 0, emissive } = Array.isArray(m) ? { color: m } : m;
+  return { name, pbrMetallicRoughness: { baseColorFactor: [...color.map(lin), 1], metallicFactor: metalness, roughnessFactor: roughness }, ...(emissive ? { emissiveFactor: emissive.map(lin) } : {}) };
 });
 const EDGE_MAT = materials.length;
 materials.push({ name: 'Edges', pbrMetallicRoughness: { baseColorFactor: [lin(22), lin(25), lin(28), 1], metallicFactor: 0, roughnessFactor: 1 }, extensions: { KHR_materials_unlit: {} } });

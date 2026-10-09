@@ -95,7 +95,7 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
   const matFor = (m: THREE.MeshStandardMaterial) => {
     let out = mats.get(m.name);
     if (!out) {
-      out = new THREE.MeshStandardMaterial({ color: m.color.clone(), roughness: m.roughness, metalness: m.metalness, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+      out = new THREE.MeshStandardMaterial({ color: m.color.clone(), roughness: m.roughness, metalness: m.metalness, emissive: m.emissive.clone(), emissiveIntensity: m.emissiveIntensity, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
       mats.set(m.name, out);
       owned.push(out);
     }
