@@ -6,7 +6,7 @@ The read-back is `result = {"readback": export_model(), "pad": "x" * 120000}` fr
 export_model() walks the model's groups and component instances and returns
 {geoms: {key: {v, f, e}}, parts: [{n, m, g, t?}], materials: {name: [r, g, b]}} in mm (see su-to-glb.mjs).
 meta.json holds what SketchUp does not: name, source, materials (overrides with roughness, metalness,
-emissive), moves, dims (real sizes only), view, actions, secs. Material colours not in meta come from SketchUp.
+emissive), moves, dims (real sizes only), view, actions, secs, apart. Material colours not in meta come from SketchUp.
 """
 import json
 import sys
@@ -30,7 +30,7 @@ out = {
     'name': meta['name'],
     'source': meta['source'],
     'materials': materials,
-    **{k: meta[k] for k in ('moves', 'dims', 'view', 'actions', 'secs') if k in meta},
+    **{k: meta[k] for k in ('moves', 'dims', 'view', 'actions', 'secs', 'apart') if k in meta},
     'geoms': rb['geoms'],
     'parts': rb['parts'],
 }

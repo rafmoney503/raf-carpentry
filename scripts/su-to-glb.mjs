@@ -15,6 +15,8 @@
 //   dims:      [{ a: [x,y,z], b: [x,y,z], off: [x,y,z], label: "3000 mm" }]  dimension lines
 //   view:      { yaw, pitch, yawMin, yawMax, pitchMin, pitchMax } (radians; yaw 0 = straight at the front)
 //   actions:   { open: "Lift the lids", close: "Close the lids" },  secs: length of the open animation
+//   apart:     ["Window seat", "Alcove cabinet"]: two jobs in one model; parts named "<job>: ..." come apart
+//              round the middle of their own job when the model is taken apart
 // Output: binary glTF in metres, Y up, the room side facing +Z. Faces are triangulated with
 // three.js (holes kept), edges become line primitives, moves/dims/view ride along as extras,
 // and each part node has extras.part = its name (shown when the part is tapped). A part with the
@@ -126,7 +128,7 @@ for (const [owner, mv] of Object.entries(moves)) for (const r of mv.with ?? []) 
 for (const name of [...Object.keys(moves), ...riders.keys()]) if (!parts.some((p) => p.name === name)) fail(`moves: no part called "${name}"`);
 
 const dims = (src.dims ?? []).map((d) => ({ a: conv(d.a), b: conv(d.b), off: conv(d.off), label: d.label }));
-const rootExtras = { ...(dims.length ? { dims } : {}), ...(src.view ? { view: src.view } : {}), ...(src.actions ? { actions: src.actions } : {}), ...(src.secs ? { secs: src.secs } : {}) };
+const rootExtras = { ...(dims.length ? { dims } : {}), ...(src.view ? { view: src.view } : {}), ...(src.actions ? { actions: src.actions } : {}), ...(src.secs ? { secs: src.secs } : {}), ...(src.apart ? { apart: src.apart } : {}) };
 const meshes = [], nodes = [{ name: src.name ?? 'Model', children: [], ...(Object.keys(rootExtras).length ? { extras: rootExtras } : {}) }];
 const nodeOf = new Map();
 for (const p of parts) {

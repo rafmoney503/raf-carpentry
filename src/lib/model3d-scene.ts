@@ -110,9 +110,12 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
 
   // ---- the model: each SketchUp material once, faces pushed back a hair so the edge lines sit on top
   const root = gltf.scene;
-  const info = (root.children[0]?.userData ?? {}) as { dims?: Dim[]; view?: ViewLimits; actions?: { open: string; close: string }; secs?: number };
+  const info = (root.children[0]?.userData ?? {}) as { dims?: Dim[]; view?: ViewLimits; actions?: { open: string; close: string }; secs?: number; apart?: string[] };
+  // room context (walls, a chimney breast, a fireplace): materials called "Wall" or starting "Room"
+  const isRoomMat = (m: THREE.Material) => m.name === 'Wall' || m.name.startsWith('Room');
   const edgeMat = new LineMaterial({ color: INK, linewidth: 1.1, transparent: true, opacity: 0.72 });
-  const owned: { dispose(): void }[] = [edgeMat];
+  const roomEdgeMat = new LineMaterial({ color: INK, linewidth: 1.1, transparent: true, opacity: 0.72 }); // fades with the room
+  const owned: { dispose(): void }[] = [edgeMat, roomEdgeMat];
   const mats = new Map<string, THREE.MeshStandardMaterial>();
   const matFor = (m: THREE.MeshStandardMaterial) => {
     let out = mats.get(m.name);
@@ -134,7 +137,8 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
       owned.push(o.geometry);
     } else if (o instanceof THREE.LineSegments) {
       const g = new LineSegmentsGeometry().setPositions(o.geometry.attributes.position.array as Float32Array);
-      const l = new LineSegments2(g, edgeMat);
+      const sib = o.parent?.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh | undefined;
+      const l = new LineSegments2(g, sib && isRoomMat(sib.material as THREE.Material) ? roomEdgeMat : edgeMat);
       l.name = o.name;
       swaps.push([o, l]);
       owned.push(g);
@@ -168,37 +172,50 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
   scene.add(root);
 
   // ---- taking it apart: each top-level piece (with whatever rides on it) sits in its own group, which slides
-  // out from the middle of the job; up from the floor rather than from the middle, so nothing sinks below it
-  // room context (walls, a chimney breast, a fireplace): materials called "Wall" or starting "Room"
-  const isRoomMat = (m: THREE.Material) => m.name === 'Wall' || m.name.startsWith('Room');
+  // out from the middle of its job, up from the floor rather than from the middle so nothing sinks below it.
+  // A model of two jobs in one room names them in `apart` (e.g. "Window seat", "Alcove cabinet"): parts called
+  // "<that>: ..." come apart round the middle of their own job. The room fades away while the job is apart.
   const isWall = (o: THREE.Object3D) => {
     let wall = false;
     o.traverse((m) => { if (m instanceof THREE.Mesh && isRoomMat(m.material as THREE.Material)) wall = true; });
     return wall;
   };
+  const nameOf = (o: THREE.Object3D) => {
+    let n = '';
+    o.traverse((c) => { if (!n && c.userData.part) n = c.userData.part as string; });
+    return n;
+  };
   const pieces: { g: THREE.Object3D; off: THREE.Vector3 }[] = [];
+  const roomPieces: THREE.Object3D[] = [];
+  const roomMeshes = new Set<THREE.Object3D>();
   const modelNode = root.children[0];
   if (modelNode) {
     root.updateMatrixWorld(true);
     const kids = [...modelNode.children];
     const boxes = kids.map((k) => new THREE.Box3().setFromObject(k));
-    const solid = new THREE.Box3();
-    kids.forEach((k, i) => { if (!isWall(k)) solid.union(boxes[i]); });
-    const mid = solid.getCenter(new THREE.Vector3());
+    const jobOf = (k: THREE.Object3D) => (info.apart ?? []).find((a) => nameOf(k).startsWith(a + ': ')) ?? '';
+    const jobs = new Map<string, THREE.Box3>();
+    kids.forEach((k, i) => {
+      if (isWall(k)) return;
+      const j = jobOf(k);
+      jobs.set(j, (jobs.get(j) ?? new THREE.Box3()).union(boxes[i]));
+    });
     kids.forEach((k, i) => {
       const g = new THREE.Group();
       modelNode.add(g);
       g.add(k);
-      if (isWall(k)) return;
+      if (isWall(k)) {
+        roomPieces.push(g);
+        k.traverse((m) => { if (m instanceof THREE.Mesh) roomMeshes.add(m); });
+        return;
+      }
+      const job = jobs.get(jobOf(k))!, mid = job.getCenter(new THREE.Vector3());
       const c = boxes[i].getCenter(new THREE.Vector3());
-      pieces.push({ g, off: new THREE.Vector3(c.x - mid.x, c.y - solid.min.y, c.z - mid.z).multiplyScalar(APART) });
+      pieces.push({ g, off: new THREE.Vector3(c.x - mid.x, c.y - job.min.y, c.z - mid.z).multiplyScalar(APART) });
     });
-    // against a wall, nothing goes back into it: the piece nearest the wall stays there, the rest come forward
-    if (kids.some(isWall) && pieces.length) {
-      const back = Math.min(...pieces.map((p) => p.off.z));
-      if (back < 0) for (const p of pieces) p.off.z -= back;
-    }
   }
+  const roomMats = [...mats.values()].filter(isRoomMat);
+  let roomGone = false;
 
   // ---- tap a part to see its name (walls are only there for context)
   const pickables: THREE.Mesh[] = [];
@@ -294,6 +311,7 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
     root.updateMatrixWorld(true);
     let k = 0;
     for (const mesh of fitMeshes) {
+      if (roomGone && roomMeshes.has(mesh)) continue;
       const { min, max } = partBox.copy(mesh.geometry.boundingBox!).applyMatrix4(mesh.matrixWorld);
       for (const x of [min.x, max.x]) for (const y of [min.y, max.y]) for (const z of [min.z, max.z]) pts[k++].set(x, y, z);
     }
@@ -370,6 +388,12 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
     setApart(t) {
       const e = ease(Math.min(1, Math.max(0, t)));
       for (const p of pieces) p.g.position.copy(p.off).multiplyScalar(e);
+      // the room fades out as the job comes apart, and back in as it goes together
+      const a = Math.max(0, 1 - e * 1.6);
+      for (const m of roomMats) { m.transparent = a < 1; m.opacity = a; m.depthWrite = a > 0.6; }
+      roomEdgeMat.opacity = 0.72 * a;
+      roomGone = a <= 0.001;
+      for (const g of roomPieces) g.visible = !roomGone;
     },
     zoom(f, at) {
       const nz = THREE.MathUtils.clamp(zoomK * f, ZMIN, ZMAX);
