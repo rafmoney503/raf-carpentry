@@ -37,7 +37,7 @@ const DEVICES: { key: Device; name: string; w: number; h: number; row: string; o
     w: 1230,
     h: 1770,
     row: '(min-width: 1280px) 280px, 22vw',
-    one: '(min-width: 640px) 560px, 100vw',
+    one: '(min-width: 640px) 640px, 100vw',
     icon: <path d="M5 2.5h10v15H5zM9 15h2" />,
   },
   {
@@ -46,12 +46,23 @@ const DEVICES: { key: Device; name: string; w: number; h: number; row: string; o
     w: 780,
     h: 1688,
     row: '(min-width: 1280px) 190px, 15vw',
-    one: '300px',
+    one: '(min-width: 768px) 400px, 330px',
     icon: <path d="M6.5 2.5h7v15h-7zM9.25 15h1.5" />,
   },
 ];
 
-const ONE_WIDTH: Record<Device, string> = { computer: 'w-full', tablet: 'max-w-[560px]', phone: 'max-w-[300px]' };
+/* One size at a time (phones and tablets): as big as the screen allows. On a phone the computer and tablet
+   screenshots run edge to edge; the phone screenshot is about the height of the screen, like the real thing. */
+const ONE_WIDTH: Record<Device, string> = {
+  computer: 'w-full max-sm:-mx-5 max-sm:w-auto',
+  tablet: 'max-w-[640px] max-sm:-mx-5',
+  phone: 'max-w-[330px] md:max-w-[400px]',
+};
+const ONE_FRAME: Record<Device, string> = {
+  computer: 'max-sm:border-x-0 max-sm:px-0 max-sm:py-1.5',
+  tablet: 'max-sm:border-x-0 max-sm:px-0 max-sm:py-1.5',
+  phone: 'max-sm:p-1.5',
+};
 
 const WIDE = '(min-width: 640px)';
 function subscribeWide(onChange: () => void) {
@@ -102,11 +113,11 @@ export default function AppScreens({ screens, title = 'CabinetOS' }: { screens: 
   const altFor = (s: AppScreen, d: (typeof DEVICES)[number]) => `CabinetOS on a ${d.name.toLowerCase()}, ${s.label} page${s.alt ? `: ${s.alt}` : ''}`;
 
   /* One size's frame: the pages loaded so far stacked up, the current one faded in. */
-  const frame = (d: (typeof DEVICES)[number], sizes: string) => (
+  const frame = (d: (typeof DEVICES)[number], sizes: string, extra = '') => (
     <button
       type="button"
       onClick={() => setZoom({ device: d.key, index: page })}
-      className="mount group block w-full cursor-zoom-in text-left hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+      className={`mount group block w-full cursor-zoom-in text-left hover:border-accent focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent ${extra}`}
     >
       <span className="relative block overflow-hidden bg-raised" style={{ aspectRatio: `${d.w} / ${d.h}` }}>
         {screens.map((s, i) => {
@@ -125,14 +136,22 @@ export default function AppScreens({ screens, title = 'CabinetOS' }: { screens: 
             />
           );
         })}
+        {/* says "this opens big" */}
+        <span aria-hidden="true" className="pointer-events-none absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-sm bg-ink/75 text-on-accent transition-colors group-hover:bg-accent">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9.5 2.5h4v4M6.5 13.5h-4v-4M13.5 2.5L9 7M2.5 13.5L7 9" />
+          </svg>
+        </span>
       </span>
-      <span className="sr-only"> (open full size)</span>
+      <span className="sr-only"> (open full screen)</span>
     </button>
   );
 
   const zoomDevice = zoom ? DEVICES.find((d) => d.key === zoom.device)! : null;
   const zoomPhotos = zoomDevice
-    ? screens.filter((s) => s[zoomDevice.key]).map((s) => ({ src: s[zoomDevice.key]!, w: zoomDevice.w, h: zoomDevice.h, alt: altFor(s, zoomDevice) }))
+    ? screens
+        .filter((s) => s[zoomDevice.key])
+        .map((s) => ({ src: s[zoomDevice.key]!, w: zoomDevice.w, h: zoomDevice.h, alt: altFor(s, zoomDevice), caption: `${s.label}, ${zoomDevice.name.toLowerCase()}` }))
     : [];
   const current = screens[page];
 
@@ -208,13 +227,13 @@ export default function AppScreens({ screens, title = 'CabinetOS' }: { screens: 
                   : 'hidden';
             return (
               <div key={d.key} className={`mx-auto ${ONE_WIDTH[d.key]} ${shown}`}>
-                {frame(d, d.one)}
+                {frame(d, d.one, ONE_FRAME[d.key])}
               </div>
             );
           })}
         </div>
 
-        <p className="mt-4 font-mono text-[13px] text-faint">Tap or click any screen to see it full size.</p>
+        <p className="mt-4 font-mono text-[13px] text-faint">Tap or click any screen to open it full screen. On a phone, pinch to zoom in.</p>
       </div>
 
       {zoom && zoomDevice ? (
@@ -227,6 +246,7 @@ export default function AppScreens({ screens, title = 'CabinetOS' }: { screens: 
             show(i);
           }}
           onClose={() => setZoom(null)}
+          fill
         />
       ) : null}
     </div>
