@@ -7,23 +7,27 @@ import type { Model3DScene } from '@/lib/model3d-scene';
 /* The job's SketchUp model in 3D, on its job page (plan.model3d in the job's JSON).
    A still of the model shows straight away; three.js and the model (about 200 KB together)
    only load when the box is close, then the 3D fades in over the still.
-   Drag to turn it (sideways on a phone, so the page still scrolls), lift the lids, show the sizes.
-   It swings slowly until someone touches it, and nothing runs while it is off screen. */
+   Drag to turn it (sideways on a phone, so the page still scrolls), open it (lids, doors, baskets:
+   whatever moves in that model; the button words come from the model), show the sizes.
+   The opening view and how far it turns also come from the model. 'tall' gives tall pieces
+   (wardrobes) a squarer frame. It swings slowly until someone touches it, and nothing runs while it is off screen. */
 
-const YAW0 = -0.22, PITCH0 = 0.52;
-const YAW_MIN = -1.3, YAW_MAX = 0.9, PITCH_MIN = 0.08, PITCH_MAX = 1.25;
-const LID_SECS = 1.3;
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 
-export default function Model3D({ src, poster, label }: { src: string; poster: Photo; label: string }) {
+const FRAME = {
+  wide: 'aspect-[4/3] sm:aspect-[16/9] lg:aspect-[2/1]',
+  tall: 'aspect-[1/1] sm:aspect-[4/3]',
+};
+
+export default function Model3D({ src, poster, label, shape = 'wide' }: { src: string; poster: Photo; label: string; shape?: 'wide' | 'tall' }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const labelsRef = useRef<HTMLDivElement>(null);
   const ctl = useRef({ lids: 0, dims: false, poke: () => {} });
   const [ready, setReady] = useState(false);
-  const [hasLids, setHasLids] = useState(false);
+  const [actions, setActions] = useState<{ open: string; close: string } | null>(null);
   const [dimLabels, setDimLabels] = useState<string[]>([]);
-  const [lidsUp, setLidsUp] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [dimsOn, setDimsOn] = useState(false);
 
   useEffect(() => {
@@ -32,8 +36,9 @@ export default function Model3D({ src, poster, label }: { src: string; poster: P
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let scene: Model3DScene | null = null;
     let disposed = false, loading = false, visible = false, raf = 0, last = 0;
-    let lidT = 0, easing = false, touched = false, swingT = 0;
-    const st = { yaw: YAW0, pitch: PITCH0, vy: 0, vp: 0, dragging: false, px: 0, py: 0 };
+    let openT = 0, easing = false, touched = false, swingT = 0;
+    let lim = { yaw: -0.22, pitch: 0.52, yawMin: -1.3, yawMax: 0.9, pitchMin: 0.08, pitchMax: 1.25 }, secs = 1.3;
+    const st = { yaw: lim.yaw, pitch: lim.pitch, vy: 0, vp: 0, dragging: false, px: 0, py: 0 };
 
     function layout() {
       const W = stage!.clientWidth, H = stage!.clientHeight;
@@ -59,22 +64,22 @@ export default function Model3D({ src, poster, label }: { src: string; poster: P
       last = now;
       if (!touched && !reduced) {
         swingT += dt;
-        st.yaw = YAW0 + 0.32 * Math.sin((swingT * Math.PI * 2) / 16);
+        st.yaw = lim.yaw + 0.32 * Math.sin((swingT * Math.PI * 2) / 16);
       } else if (!st.dragging) {
         const f = Math.pow(0.9, dt * 60);
-        st.yaw = clamp(st.yaw + st.vy * dt * 60, YAW_MIN, YAW_MAX);
-        st.pitch = clamp(st.pitch + st.vp * dt * 60, PITCH_MIN, PITCH_MAX);
+        st.yaw = clamp(st.yaw + st.vy * dt * 60, lim.yawMin, lim.yawMax);
+        st.pitch = clamp(st.pitch + st.vp * dt * 60, lim.pitchMin, lim.pitchMax);
         st.vy *= f; st.vp *= f;
       }
       const want = ctl.current.lids;
-      const step = reduced ? 1 : dt / LID_SECS;
-      lidT = want > lidT ? Math.min(want, lidT + step) : Math.max(want, lidT - step);
-      scene.setLids(lidT);
+      const step = reduced ? 1 : dt / secs;
+      openT = want > openT ? Math.min(want, openT + step) : Math.max(want, openT - step);
+      scene.setOpen(openT);
       scene.setDims(ctl.current.dims);
       scene.view(st.yaw, st.pitch);
       easing = scene.render();
       placeLabels();
-      const moving = (!touched && !reduced) || st.dragging || Math.abs(st.vy) + Math.abs(st.vp) > 1e-4 || lidT !== want || easing;
+      const moving = (!touched && !reduced) || st.dragging || Math.abs(st.vy) + Math.abs(st.vp) > 1e-4 || openT !== want || easing;
       if (moving) raf = requestAnimationFrame(tick);
     }
     const wake = () => { if (!raf && visible && !disposed && scene) { last = performance.now(); raf = requestAnimationFrame(tick); } };
@@ -89,7 +94,9 @@ export default function Model3D({ src, poster, label }: { src: string; poster: P
           if (disposed) { s?.dispose(); return; }
           if (!s) return; // no WebGL: the still stays
           scene = s;
-          setHasLids(s.hasLids);
+          lim = s.limits; secs = s.secs;
+          st.yaw = lim.yaw; st.pitch = lim.pitch;
+          setActions(s.hasMoves ? s.actions : null);
           setDimLabels(s.dimLabels);
           layout();
           scene.view(st.yaw, st.pitch);
@@ -119,8 +126,8 @@ export default function Model3D({ src, poster, label }: { src: string; poster: P
       const dx = e.clientX - st.px, dy = e.clientY - st.py;
       st.px = e.clientX; st.py = e.clientY;
       st.vy = -dx * 0.008; st.vp = e.pointerType === 'mouse' ? dy * 0.006 : 0;
-      st.yaw = clamp(st.yaw + st.vy, YAW_MIN, YAW_MAX);
-      st.pitch = clamp(st.pitch + st.vp, PITCH_MIN, PITCH_MAX);
+      st.yaw = clamp(st.yaw + st.vy, lim.yawMin, lim.yawMax);
+      st.pitch = clamp(st.pitch + st.vp, lim.pitchMin, lim.pitchMax);
     };
     const up = () => { if (st.dragging) { st.dragging = false; wake(); } };
     canvas.addEventListener('pointerdown', down);
@@ -141,13 +148,13 @@ export default function Model3D({ src, poster, label }: { src: string; poster: P
     };
   }, [src]);
 
-  const toggleLids = () => { const v = !lidsUp; setLidsUp(v); ctl.current.lids = v ? 1 : 0; ctl.current.poke(); };
+  const toggleOpen = () => { const v = !isOpen; setIsOpen(v); ctl.current.lids = v ? 1 : 0; ctl.current.poke(); };
   const toggleDims = () => { const v = !dimsOn; setDimsOn(v); ctl.current.dims = v; ctl.current.poke(); };
 
   return (
     <div>
       <div className="mount">
-        <div ref={stageRef} className="relative aspect-[4/3] overflow-hidden bg-white sm:aspect-[16/9] lg:aspect-[2/1]" role="img" aria-label={label}>
+        <div ref={stageRef} className={`relative overflow-hidden bg-white ${FRAME[shape]}`} role="img" aria-label={label}>
           <Image src={poster.src} alt="" fill sizes="(max-width: 768px) 100vw, 1200px" className={`object-contain transition-opacity duration-500 ${ready ? 'opacity-0' : 'opacity-100'}`} />
           <canvas ref={canvasRef} aria-hidden="true" className={`absolute inset-0 block h-full w-full cursor-grab touch-pan-y transition-opacity duration-500 active:cursor-grabbing ${ready ? 'opacity-100' : 'opacity-0'}`} />
           <div ref={labelsRef} aria-hidden="true" className={`pointer-events-none absolute inset-0 ${dimsOn ? '' : 'hidden'}`}>
@@ -158,8 +165,8 @@ export default function Model3D({ src, poster, label }: { src: string; poster: P
         </div>
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        {hasLids ? (
-          <button type="button" onClick={toggleLids} aria-pressed={lidsUp} className="btn btn-ghost btn-sm">{lidsUp ? 'Close the lids' : 'Lift the lids'}</button>
+        {actions ? (
+          <button type="button" onClick={toggleOpen} aria-pressed={isOpen} className="btn btn-ghost btn-sm">{isOpen ? actions.close : actions.open}</button>
         ) : null}
         {dimLabels.length ? (
           <button type="button" onClick={toggleDims} aria-pressed={dimsOn} className="btn btn-ghost btn-sm">{dimsOn ? 'Hide the sizes' : 'Show the sizes'}</button>

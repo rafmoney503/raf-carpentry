@@ -25,7 +25,7 @@ export type Plan = {
   views?: (Photo & { caption?: string })[];
   /* The job in 3D: a .glb made from a SketchUp model (scripts/su-to-glb.mjs), with a still of it
      that shows while the 3D loads (or instead of it, with no WebGL). Lids and sizes come in the .glb. */
-  model3d?: { src: string; poster: Photo; title?: string; text?: string };
+  model3d?: { src: string; poster: Photo; title?: string; text?: string; shape?: 'wide' | 'tall' };
 };
 export type Project = {
   slug: string;

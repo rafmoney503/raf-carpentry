@@ -6,18 +6,23 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 
 /* A job's SketchUp model, turned in 3D on its page (Model3D.tsx loads this file on demand).
    The .glb comes from the model built in Trimble SketchUp and read back face by face
-   (scripts/su-to-glb.mjs): MDF faces, SketchUp's own edge lines, lids that know their hinge line
-   (node extras `hinge: { origin, axis }`) and dimension lines (root extras `dims`).
-   Units: metres, Y up, the room side facing +Z. */
+   (scripts/su-to-glb.mjs): faces with their SketchUp material, SketchUp's own edge lines, parts that
+   move (node extras `move`: a lid or door on its hinge line, or a basket or drawer that slides out, each
+   with its own slot `at` in the open animation; knobs ride along as children) and, on the root node,
+   dimension lines (`dims`), the opening view and its limits (`view`), button words (`actions`) and the
+   animation length (`secs`). Units: metres, Y up, the room side facing +Z. */
 
 export type Model3DScene = {
   /** Stage size in CSS px. */
   resize(w: number, h: number): void;
   /** Orbit: yaw 0 = straight at the front, pitch 0 = level with the floor (radians). */
   view(yaw: number, pitch: number): void;
-  /** 0 = lids shut, 1 = lids up. */
-  setLids(t: number): void;
-  readonly hasLids: boolean;
+  /** 0 = shut, 1 = everything open (lids up, doors open, baskets out). */
+  setOpen(t: number): void;
+  readonly hasMoves: boolean;
+  readonly actions: { open: string; close: string };
+  readonly secs: number;
+  readonly limits: ViewLimits;
   /** Dimension labels: text and where each sits on the stage (CSS px), or null when hidden. */
   readonly dimLabels: string[];
   setDims(on: boolean): void;
@@ -27,11 +32,13 @@ export type Model3DScene = {
   dispose(): void;
 };
 
-type Hinge = { origin: [number, number, number]; axis: [number, number, number]; open?: number };
+type V3 = [number, number, number];
+type Move = { kind: 'hinge'; origin: V3; axis: V3; angle: number; at: [number, number] } | { kind: 'slide'; offset: V3; at: [number, number] };
+export type ViewLimits = { yaw: number; pitch: number; yawMin: number; yawMax: number; pitchMin: number; pitchMax: number };
 type Dim = { a: [number, number, number]; b: [number, number, number]; off: [number, number, number]; label: string };
 
 const INK = 0x16191c, ACCENT = 0x2547d0;
-const LID_OPEN = (80 * Math.PI) / 180;
+const DEFAULT_VIEW: ViewLimits = { yaw: -0.22, pitch: 0.52, yawMin: -1.3, yawMax: 0.9, pitchMin: 0.08, pitchMax: 1.25 };
 
 export async function createModel3D(canvas: HTMLCanvasElement, url: string): Promise<Model3DScene | null> {
   let renderer: THREE.WebGLRenderer;
@@ -79,16 +86,27 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
   const fill = new THREE.DirectionalLight(0xeef2ff, 0.3 * Math.PI);
   scene.add(fill);
 
-  // ---- the model: MDF faces pushed back a hair so SketchUp's edge lines sit on top
+  // ---- the model: each SketchUp material once, faces pushed back a hair so the edge lines sit on top
   const root = gltf.scene;
-  const mdf = new THREE.MeshStandardMaterial({ color: new THREE.Color().setRGB(200 / 255, 172 / 255, 142 / 255, THREE.SRGBColorSpace), roughness: 0.86, metalness: 0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+  const info = (root.children[0]?.userData ?? {}) as { dims?: Dim[]; view?: ViewLimits; actions?: { open: string; close: string }; secs?: number };
   const edgeMat = new LineMaterial({ color: INK, linewidth: 1.1, transparent: true, opacity: 0.72 });
-  const owned: { dispose(): void }[] = [mdf, edgeMat];
+  const owned: { dispose(): void }[] = [edgeMat];
+  const mats = new Map<string, THREE.MeshStandardMaterial>();
+  const matFor = (m: THREE.MeshStandardMaterial) => {
+    let out = mats.get(m.name);
+    if (!out) {
+      out = new THREE.MeshStandardMaterial({ color: m.color.clone(), roughness: m.roughness, metalness: m.metalness, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+      mats.set(m.name, out);
+      owned.push(out);
+    }
+    return out;
+  };
   const swaps: [THREE.Object3D, THREE.Object3D][] = [];
   root.traverse((o) => {
     if (o instanceof THREE.Mesh) {
-      (o.material as THREE.Material).dispose();
-      o.material = mdf;
+      const old = o.material as THREE.MeshStandardMaterial;
+      o.material = matFor(old);
+      old.dispose();
       o.castShadow = true;
       o.receiveShadow = true;
       owned.push(o.geometry);
@@ -107,18 +125,23 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
     if (parent) { parent.add(b); parent.remove(a); }
   }
 
-  // ---- lids: each one hangs from a pivot on its hinge line
-  const lids: { pivot: THREE.Object3D; axis: THREE.Vector3; open: number }[] = [];
-  const hinged: THREE.Object3D[] = [];
-  root.traverse((o) => { if (o.userData.hinge) hinged.push(o); });
-  for (const o of hinged) {
-    const h = o.userData.hinge as Hinge;
-    const pivot = new THREE.Object3D();
-    pivot.position.fromArray(h.origin);
-    o.parent!.add(pivot);
-    pivot.add(o);
-    o.position.set(-h.origin[0], -h.origin[1], -h.origin[2]);
-    lids.push({ pivot, axis: new THREE.Vector3().fromArray(h.axis).normalize(), open: h.open ?? LID_OPEN });
+  // ---- moving parts: lids and doors hang from a pivot on their hinge line, baskets and drawers slide
+  type Mover = { obj: THREE.Object3D; move: Move; axis?: THREE.Vector3; offset?: THREE.Vector3 };
+  const movers: Mover[] = [];
+  const moving: THREE.Object3D[] = [];
+  root.traverse((o) => { if (o.userData.move) moving.push(o); });
+  for (const o of moving) {
+    const move = o.userData.move as Move;
+    if (move.kind === 'hinge') {
+      const pivot = new THREE.Object3D();
+      pivot.position.fromArray(move.origin);
+      o.parent!.add(pivot);
+      pivot.add(o);
+      o.position.set(-move.origin[0], -move.origin[1], -move.origin[2]);
+      movers.push({ obj: pivot, move, axis: new THREE.Vector3().fromArray(move.axis).normalize() });
+    } else {
+      movers.push({ obj: o, move, offset: new THREE.Vector3().fromArray(move.offset) });
+    }
   }
   scene.add(root);
 
@@ -144,7 +167,7 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
   owned.push(floorGeo, floorMat, envRT);
 
   // ---- dimension lines, as on Raf's drawings: line, extension lines and 45 degree ticks
-  const dims = ((root.userData.dims ?? root.children[0]?.userData.dims ?? []) as Dim[]);
+  const dims = info.dims ?? [];
   const dimGroup = new THREE.Group();
   const dimMat = new LineMaterial({ color: ACCENT, linewidth: 1.25, depthTest: false, transparent: true });
   const labelAt: THREE.Vector3[] = [];
@@ -174,7 +197,8 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
   scene.add(dimGroup);
 
   // ---- camera: orbit the job, pulled back just enough to fit what is showing (lids up or down)
-  let W = 1, H = 1, yaw = 0, pitch = 0.5, dist = 0;
+  const limits = { ...DEFAULT_VIEW, ...info.view };
+  let W = 1, H = 1, yaw = limits.yaw, pitch = limits.pitch, dist = 0;
   const corners = Array.from({ length: 8 }, () => new THREE.Vector3());
   const fitBox = new THREE.Box3();
   const q = new THREE.Vector3();
@@ -206,7 +230,10 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
   }
 
   return {
-    hasLids: lids.length > 0,
+    hasMoves: movers.length > 0,
+    actions: info.actions ?? { open: 'Lift the lids', close: 'Close the lids' },
+    secs: info.secs ?? 1.3,
+    limits,
     dimLabels: dims.map((d) => d.label),
     resize(w, h) {
       W = w; H = h;
@@ -218,13 +245,15 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
       place();
     },
     view(y, p) { yaw = y; pitch = p; },
-    setLids(t) {
-      lids.forEach((l, i) => {
-        // one after another, left to right
-        const s = Math.min(1, Math.max(0, (t * (1 + 0.24 * (lids.length - 1)) - 0.24 * i)));
+    setOpen(t) {
+      for (const m of movers) {
+        // each part has its own slot in the animation, so doors open before the baskets come out
+        const [a, b] = m.move.at;
+        const s = Math.min(1, Math.max(0, (t - a) / Math.max(1e-6, b - a)));
         const e = s < 0.5 ? 4 * s * s * s : 1 - Math.pow(-2 * s + 2, 3) / 2;
-        l.pivot.quaternion.setFromAxisAngle(l.axis, l.open * e);
-      });
+        if (m.axis && m.move.kind === 'hinge') m.obj.quaternion.setFromAxisAngle(m.axis, m.move.angle * e);
+        else if (m.offset) m.obj.position.copy(m.offset).multiplyScalar(e);
+      }
     },
     setDims(on) { dimGroup.visible = on && labelAt.length > 0; },
     dimPositions() {

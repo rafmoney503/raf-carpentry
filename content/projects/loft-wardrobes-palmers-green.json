@@ -55,7 +55,19 @@
       "alt": "The finished wardrobe open, with drawers and hanging rails as planned"
     },
     "title": "Planned first, then built",
-    "text": "The inside was laid out in the IKEA PAX planner: 199.8 cm wide, 201.2 cm high and 58 cm deep. The finished wardrobe matches it, drawers and all."
+    "text": "The inside was laid out in the IKEA PAX planner: 199.8 cm wide, 201.2 cm high and 58 cm deep. The finished wardrobe matches it, drawers and all.",
+    "model3d": {
+      "src": "/models/loft-wardrobes-palmers-green.glb",
+      "poster": {
+        "src": "/images/projects/loft-wardrobes-palmers-green/model-3d.jpg",
+        "w": 1600,
+        "h": 1200,
+        "alt": "3D SketchUp model of the PAX wardrobe by the window: two frames with wire baskets and rails behind four MDF doors, 1998 mm wide, 2012 mm high, 580 mm deep"
+      },
+      "title": "The SketchUp model in 3D",
+      "text": "The wardrobe by the window, modelled in SketchUp to the sizes in the IKEA planner: 1998 mm wide, 2012 mm high and 580 mm deep. Open the doors and the baskets slide out. The MDF boxing up to the ceiling is left off.",
+      "shape": "tall"
+    }
   },
   "steps": [
     {
