@@ -16,7 +16,9 @@
 //   view:      { yaw, pitch, yawMin, yawMax, pitchMin, pitchMax } (radians; yaw 0 = straight at the front)
 //   actions:   { open: "Lift the lids", close: "Close the lids" },  secs: length of the open animation
 // Output: binary glTF in metres, Y up, the room side facing +Z. Faces are triangulated with
-// three.js (holes kept), edges become line primitives, moves/dims/view ride along as extras.
+// three.js (holes kept), edges become line primitives, moves/dims/view ride along as extras,
+// and each part node has extras.part = its name (shown when the part is tapped). A part with the
+// material "Wall" is room context: it stays put when the job is taken apart and can't be tapped.
 // Shown by Model3D.tsx / src/lib/model3d-scene.ts. Checked with gltf-validator: no errors.
 import fs from 'node:fs';
 import { ShapeUtils, Vector2 } from 'three';
@@ -130,12 +132,13 @@ for (const p of parts) {
   const prims = [{ attributes: { POSITION: addAccessor(p.pos, 'VEC3'), NORMAL: addAccessor(p.nor, 'VEC3') }, indices: addAccessor(p.idx, 'SCALAR', true), material: p.mat, mode: 4 }];
   if (p.lines.length) prims.push({ attributes: { POSITION: addAccessor(p.lines, 'VEC3') }, material: EDGE_MAT, mode: 1 });
   meshes.push({ name: p.name, primitives: prims });
-  const node = { name: p.name, mesh: meshes.length - 1 };
+  // extras.part keeps the readable name (glTF loaders mangle node names), shown when a part is tapped
+  const node = { name: p.name, mesh: meshes.length - 1, extras: { part: p.name } };
   const mv = moves[p.name];
   if (mv) {
     const at = mv.at ?? [0, 1];
-    if (mv.hinge) node.extras = { move: { kind: 'hinge', origin: conv(mv.hinge.origin), axis: convDir(mv.hinge.axis), angle: (mv.hinge.angle * Math.PI) / 180, at } };
-    else if (mv.slide) node.extras = { move: { kind: 'slide', offset: conv(mv.slide.offset), at } };
+    if (mv.hinge) node.extras.move = { kind: 'hinge', origin: conv(mv.hinge.origin), axis: convDir(mv.hinge.axis), angle: (mv.hinge.angle * Math.PI) / 180, at };
+    else if (mv.slide) node.extras.move = { kind: 'slide', offset: conv(mv.slide.offset), at };
     else fail(`${p.name}: a move needs hinge or slide`);
   }
   nodes.push(node);

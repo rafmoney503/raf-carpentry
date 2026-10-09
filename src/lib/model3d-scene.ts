@@ -10,7 +10,10 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
    move (node extras `move`: a lid or door on its hinge line, or a basket or drawer that slides out, each
    with its own slot `at` in the open animation; knobs ride along as children) and, on the root node,
    dimension lines (`dims`), the opening view and its limits (`view`), button words (`actions`) and the
-   animation length (`secs`). Units: metres, Y up, the room side facing +Z. */
+   animation length (`secs`). Each part node carries its name (extras `part`) for tap-to-name.
+   On top of turning: take it apart (every piece pulled away from the middle, as in an exploded
+   drawing; the bottom stays on the floor, walls stay put), zoom (towards a point) and slide the view
+   while zoomed in. Units: metres, Y up, the room side facing +Z. */
 
 export type Model3DScene = {
   /** Stage size in CSS px. */
@@ -27,6 +30,20 @@ export type Model3DScene = {
   readonly dimLabels: string[];
   setDims(on: boolean): void;
   dimPositions(): ({ x: number; y: number } | null)[];
+  /** 0 = built, 1 = taken apart. */
+  setApart(t: number): void;
+  readonly canApart: boolean;
+  /** Zoom by a factor (below 1 = closer), towards a point on the stage (CSS px) when given. */
+  zoom(f: number, at?: { x: number; y: number }): void;
+  /** Slide the view by CSS px (only while zoomed in). */
+  pan(dx: number, dy: number): void;
+  /** Back to the opening framing: zoom 1, centred. */
+  resetZoom(): void;
+  readonly zoomed: boolean;
+  /** The part under a point on the stage (CSS px): highlights it and returns its name; null clears. */
+  pick(x: number, y: number): string | null;
+  /** Where the picked part's name sits on the stage (CSS px), or null. */
+  pickPosition(): { x: number; y: number } | null;
   /** Draws a frame; true while the camera is still easing to fit (keep drawing). */
   render(): boolean;
   dispose(): void;
@@ -38,6 +55,11 @@ export type ViewLimits = { yaw: number; pitch: number; yawMin: number; yawMax: n
 type Dim = { a: [number, number, number]; b: [number, number, number]; off: [number, number, number]; label: string };
 
 const INK = 0x16191c, ACCENT = 0x2547d0;
+const APART = 0.55; // how far the pieces spread when taken apart (share of their distance from the middle)
+const ZMIN = 0.3, ZMAX = 1.6;
+const ease = (s: number) => (s < 0.5 ? 4 * s * s * s : 1 - Math.pow(-2 * s + 2, 3) / 2);
+/** "Shelf A 1900" -> "Shelf A": heights used to tell shelves apart in the model are not sizes to show. */
+const partName = (n: string) => n.replace(/\s+\d{3,4}$/, '');
 const DEFAULT_VIEW: ViewLimits = { yaw: -0.22, pitch: 0.52, yawMin: -1.3, yawMax: 0.9, pitchMin: 0.08, pitchMax: 1.25 };
 
 export async function createModel3D(canvas: HTMLCanvasElement, url: string): Promise<Model3DScene | null> {
@@ -95,7 +117,7 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
   const matFor = (m: THREE.MeshStandardMaterial) => {
     let out = mats.get(m.name);
     if (!out) {
-      out = new THREE.MeshStandardMaterial({ color: m.color.clone(), roughness: m.roughness, metalness: m.metalness, emissive: m.emissive.clone(), emissiveIntensity: m.emissiveIntensity, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+      out = new THREE.MeshStandardMaterial({ name: m.name, color: m.color.clone(), roughness: m.roughness, metalness: m.metalness, emissive: m.emissive.clone(), emissiveIntensity: m.emissiveIntensity, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
       mats.set(m.name, out);
       owned.push(out);
     }
@@ -144,6 +166,43 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
     }
   }
   scene.add(root);
+
+  // ---- taking it apart: each top-level piece (with whatever rides on it) sits in its own group, which slides
+  // out from the middle of the job; up from the floor rather than from the middle, so nothing sinks below it
+  const isWall = (o: THREE.Object3D) => {
+    let wall = false;
+    o.traverse((m) => { if (m instanceof THREE.Mesh && (m.material as THREE.Material).name === 'Wall') wall = true; });
+    return wall;
+  };
+  const pieces: { g: THREE.Object3D; off: THREE.Vector3 }[] = [];
+  const modelNode = root.children[0];
+  if (modelNode) {
+    root.updateMatrixWorld(true);
+    const kids = [...modelNode.children];
+    const boxes = kids.map((k) => new THREE.Box3().setFromObject(k));
+    const solid = new THREE.Box3();
+    kids.forEach((k, i) => { if (!isWall(k)) solid.union(boxes[i]); });
+    const mid = solid.getCenter(new THREE.Vector3());
+    kids.forEach((k, i) => {
+      const g = new THREE.Group();
+      modelNode.add(g);
+      g.add(k);
+      if (isWall(k)) return;
+      const c = boxes[i].getCenter(new THREE.Vector3());
+      pieces.push({ g, off: new THREE.Vector3(c.x - mid.x, c.y - solid.min.y, c.z - mid.z).multiplyScalar(APART) });
+    });
+  }
+
+  // ---- tap a part to see its name (walls are only there for context)
+  const pickables: THREE.Mesh[] = [];
+  root.traverse((o) => { if (o instanceof THREE.Mesh && (o.material as THREE.Material).name !== 'Wall') pickables.push(o); });
+  const hlMats = new Map<THREE.Material, THREE.MeshStandardMaterial>();
+  let picked: { mesh: THREE.Mesh; base: THREE.Material; at: THREE.Vector3 } | null = null;
+  const ray = new THREE.Raycaster();
+  function unpick() {
+    if (picked) picked.mesh.material = picked.base;
+    picked = null;
+  }
 
   // ---- centre of the job on the floor, and how big it is shut
   const box = new THREE.Box3().setFromObject(root);
@@ -198,15 +257,27 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
 
   // ---- camera: orbit the job, pulled back just enough to fit what is showing (lids up or down)
   const limits = { ...DEFAULT_VIEW, ...info.view };
-  let W = 1, H = 1, yaw = limits.yaw, pitch = limits.pitch, dist = 0;
+  let W = 1, H = 1, yaw = limits.yaw, pitch = limits.pitch, dist = 0, need = 0, zoomK = 1;
+  const panWant = new THREE.Vector3(), panNow = new THREE.Vector3();
+  const right = new THREE.Vector3(), up = new THREE.Vector3();
+  const half = box.getSize(new THREE.Vector3()).multiplyScalar(0.5);
+  // slide only while zoomed in, and less the further out: at zoom 1 the job is centred again
+  function clampPan() {
+    const k = Math.max(0, (1 - zoomK) / (1 - ZMIN));
+    panWant.set(
+      THREE.MathUtils.clamp(panWant.x, -half.x * k, half.x * k),
+      THREE.MathUtils.clamp(panWant.y, -half.y * k * 1.2, half.y * k * 1.2),
+      THREE.MathUtils.clamp(panWant.z, -half.z * k, half.z * k),
+    );
+  }
   const corners = Array.from({ length: 8 }, () => new THREE.Vector3());
   const fitBox = new THREE.Box3();
   const q = new THREE.Vector3();
   function place() {
     const dir = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
     const fwd = dir.clone().negate();
-    const right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize();
-    const up = new THREE.Vector3().crossVectors(right, fwd);
+    right.crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize();
+    up.crossVectors(right, fwd);
     fitBox.setFromObject(root);
     if (dimGroup.visible) for (const p of labelAt) fitBox.expandByPoint(p);
     const { min, max } = fitBox;
@@ -214,20 +285,24 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
     for (const x of [min.x, max.x]) for (const y of [min.y, max.y]) for (const z of [min.z, max.z]) corners[k++].set(x, y, z);
     const tv = Math.tan((camera.fov * Math.PI) / 360), th = tv * camera.aspect;
     const m = 0.86; // keep a margin round the edge of the stage
-    let need = 0;
+    need = 0;
     for (const c of corners) {
       q.copy(c).sub(target);
       const x = q.dot(right), y = q.dot(up), z = q.dot(dir);
       need = Math.max(need, z + Math.abs(x) / (th * m), z + Math.abs(y) / (tv * m));
     }
-    dist = dist ? dist + (need - dist) * 0.18 : need; // ease, so opening the lids doesn't jolt the view
-    camera.position.copy(target).addScaledVector(dir, dist);
+    const want = need * zoomK;
+    dist = dist ? dist + (want - dist) * 0.18 : want; // ease, so opening the lids or zooming doesn't jolt the view
+    panNow.lerp(panWant, 0.3);
+    const aim = q.copy(target).add(panNow);
+    camera.position.copy(aim).addScaledVector(dir, dist);
     camera.up.set(0, 1, 0);
-    camera.lookAt(target);
-    camera.near = Math.max(0.05, dist - span); camera.far = dist + span * 2;
+    camera.lookAt(aim);
+    camera.near = Math.max(0.02, dist - span * 1.5); camera.far = dist + span * 3;
     camera.updateProjectionMatrix();
-    return Math.abs(need - dist) > 0.002;
+    return Math.abs(want - dist) > 0.002 || panNow.distanceToSquared(panWant) > 1e-8;
   }
+  const toNdc = (x: number, y: number) => new THREE.Vector2((x / W) * 2 - 1, 1 - (y / H) * 2);
 
   return {
     hasMoves: movers.length > 0,
@@ -250,12 +325,63 @@ export async function createModel3D(canvas: HTMLCanvasElement, url: string): Pro
         // each part has its own slot in the animation, so doors open before the baskets come out
         const [a, b] = m.move.at;
         const s = Math.min(1, Math.max(0, (t - a) / Math.max(1e-6, b - a)));
-        const e = s < 0.5 ? 4 * s * s * s : 1 - Math.pow(-2 * s + 2, 3) / 2;
+        const e = ease(s);
         if (m.axis && m.move.kind === 'hinge') m.obj.quaternion.setFromAxisAngle(m.axis, m.move.angle * e);
         else if (m.offset) m.obj.position.copy(m.offset).multiplyScalar(e);
       }
     },
     setDims(on) { dimGroup.visible = on && labelAt.length > 0; },
+    canApart: pieces.length > 1,
+    setApart(t) {
+      const e = ease(Math.min(1, Math.max(0, t)));
+      for (const p of pieces) p.g.position.copy(p.off).multiplyScalar(e);
+    },
+    zoom(f, at) {
+      const nz = THREE.MathUtils.clamp(zoomK * f, ZMIN, ZMAX);
+      if (at && need) {
+        // keep the point under the finger or cursor where it is
+        const n = toNdc(at.x, at.y);
+        const tv = Math.tan((camera.fov * Math.PI) / 360), d = need * (zoomK - nz);
+        panWant.addScaledVector(right, n.x * tv * camera.aspect * d).addScaledVector(up, n.y * tv * d);
+      }
+      zoomK = nz;
+      clampPan();
+    },
+    pan(dx, dy) {
+      const k = (2 * dist * Math.tan((camera.fov * Math.PI) / 360)) / H;
+      panWant.addScaledVector(right, -dx * k).addScaledVector(up, dy * k);
+      clampPan();
+    },
+    resetZoom() { zoomK = 1; panWant.set(0, 0, 0); },
+    get zoomed() { return Math.abs(zoomK - 1) > 0.001 || panWant.lengthSq() > 1e-8; },
+    pick(x, y) {
+      unpick();
+      ray.setFromCamera(toNdc(x, y), camera);
+      const hit = ray.intersectObjects(pickables, false)[0];
+      if (!hit) return null;
+      let o: THREE.Object3D | null = hit.object;
+      while (o && !o.userData.part) o = o.parent;
+      if (!o) return null;
+      const mesh = hit.object as THREE.Mesh, base = mesh.material as THREE.MeshStandardMaterial;
+      let hl = hlMats.get(base);
+      if (!hl) {
+        hl = base.clone(); // the part turns a light blueprint blue, keeping its light and shade
+        hl.color.set(ACCENT).lerp(new THREE.Color(0xffffff), 0.42);
+        hl.metalness = 0;
+        hl.emissive.set(ACCENT);
+        hl.emissiveIntensity = 0.08;
+        hlMats.set(base, hl);
+        owned.push(hl);
+      }
+      mesh.material = hl;
+      picked = { mesh, base, at: mesh.worldToLocal(hit.point.clone()) };
+      return partName(o.userData.part as string);
+    },
+    pickPosition() {
+      if (!picked) return null;
+      const s = picked.mesh.localToWorld(picked.at.clone()).project(camera);
+      return s.z > 1 ? null : { x: ((s.x + 1) / 2) * W, y: ((1 - s.y) / 2) * H };
+    },
     dimPositions() {
       if (!dimGroup.visible) return labelAt.map(() => null);
       return labelAt.map((p) => {
