@@ -50,7 +50,7 @@ export default function ToolsPage() {
       </PageHeader>
 
       <Container className="pb-8">
-        {/* Teasers for the free calculator and the workshop tips */}
+        {/* Teasers for the free calculator, the workshop tips and the Timber Stack game */}
         <div className="mb-12 grid grid-cols-1 gap-4 md:mb-16 lg:grid-cols-2">
           <Link
             href="/calculator"
@@ -80,6 +80,22 @@ export default function ToolsPage() {
             <div className="flex items-center gap-5">
               <div className="w-[64px] sm:w-[76px]">
                 <Sketch name="compass" fallback="" />
+              </div>
+              <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+            </div>
+          </Link>
+          <Link
+            href="/tools/timber-stack"
+            className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6 lg:col-span-2"
+          >
+            <div>
+              <p className="font-mono text-[13px] text-accent">Free game</p>
+              <h2 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Timber Stack</h2>
+              <p className="mt-1 text-[15px] text-muted">Drop each board on the stack. Whatever hangs over gets cut off. How high can you go?</p>
+            </div>
+            <div className="flex items-center gap-5">
+              <div className="w-[64px] sm:w-[76px]">
+                <Sketch name="stack" fallback="" />
               </div>
               <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
             </div>

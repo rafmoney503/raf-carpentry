@@ -6,7 +6,7 @@ import { getServices } from '@/lib/services';
 
 /* Every public page, job and blog post, for Google. New jobs and posts are added automatically. */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = ['', '/services', '/portfolio', '/how-it-works', '/blog', '/about', '/contact', '/sketchup', '/cabinetos', '/tools', '/calculator', '/tips'];
+  const pages = ['', '/services', '/portfolio', '/how-it-works', '/blog', '/about', '/contact', '/sketchup', '/cabinetos', '/tools', '/calculator', '/tips', '/tools/timber-stack'];
   const date = (v: unknown) => {
     const d = new Date(v instanceof Date ? v : String(v));
     return Number.isNaN(d.getTime()) ? undefined : d;

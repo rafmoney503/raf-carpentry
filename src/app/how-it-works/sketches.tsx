@@ -10,6 +10,8 @@ export const SKETCHES = [
   'reply', 'visit', 'drawing', 'board', 'fitted',
   // Workshop tips (/tips)
   'skirting', 'backSkirting', 'compass', 'hinge21', 'screw', 'hingeJig',
+  // Timber Stack game card (/tools)
+  'stack',
 ] as const;
 export type SketchName = (typeof SKETCHES)[number];
 
@@ -350,6 +352,25 @@ function HingeJig() {
   );
 }
 
+function Stack() {
+  return (
+    <>
+      {/* boards stacked on a trestle, each a little narrower; the next one slides in, an offcut falls away */}
+      <path d="M10 66h60M18 66l-5 10M28 66l5 10M52 66l-5 10M62 66l5 10" strokeWidth="1.2" />
+      <rect x="14" y="59" width="52" height="7" rx="0.6" />
+      <rect x="18" y="52" width="46" height="7" rx="0.6" />
+      <rect x="18" y="45" width="40" height="7" rx="0.6" />
+      <rect x="23" y="38" width="35" height="7" rx="0.6" />
+      <g className={accent}>
+        <rect x="30" y="20" width="35" height="7" rx="0.6" />
+        <path d="M58 13v32" strokeWidth="1" strokeDasharray="2 2" />
+        <path d="M70 14h-8M64.5 11.5 62 14l2.5 2.5" strokeWidth="1.2" />
+      </g>
+      <rect x="64" y="34" width="9" height="7" rx="0.6" transform="rotate(24 68.5 37.5)" strokeWidth="1.2" />
+    </>
+  );
+}
+
 const DRAWINGS: Record<SketchName, () => React.JSX.Element> = {
   photos: Photos,
   sizes: Sizes,
@@ -368,6 +389,7 @@ const DRAWINGS: Record<SketchName, () => React.JSX.Element> = {
   hinge21: Hinge21,
   screw: Screw,
   hingeJig: HingeJig,
+  stack: Stack,
 };
 
 export function isSketch(name: string | undefined): name is SketchName {
