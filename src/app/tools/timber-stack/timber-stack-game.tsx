@@ -3,18 +3,32 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { QUOTE_HREF } from '@/lib/site';
 
-/* Timber Stack: a board slides in from the right; tap (or Space) to drop it on the stack. Whatever
-   hangs over the board below is cut off and falls away, so the next board is only as wide as what
-   was left. Line one up to within 6 mm and it counts as perfect; three perfects in a row and the
-   board grows back 20 mm. Miss the stack completely and the game is over.
+/* Timber Stack: build the tallest stack you can, until there is almost nothing left to put on top.
+   A board slides in from the right; tap (or Space) to drop it. Whatever hangs over the board below is
+   cut off and falls away, so the next board is only as wide as what was left. Within 8 mm counts as
+   perfect (snaps square); from the third perfect in a row each one grows the board back 20 mm.
+   A tape measure up the left side shows the height (each board is 47 mm sawn timber); passing a
+   height mark (seat, worktop, door, ceiling...) gives the top board 40 mm back. Miss the stack and it's over.
    Units are millimetres across a 1,000 mm play area; the first board is 600 mm. Canvas, no library.
    Best score is kept in this browser only (localStorage), sound can be switched off. */
 
 const WORLD = 1000; // mm across the play area
 const START_W = 600; // mm, the first board
-const PERFECT = 6; // mm either way that still counts as lined up
-const GROW = 20; // mm a board grows back after three perfects in a row
+const THICK = 47; // mm, each board is 47 mm sawn timber: the tape measure counts in these
+const PERFECT = 8; // mm either way that still counts as lined up
+const GROW = 20; // mm a board grows back for each perfect from the third in a row
+const BONUS = 40; // mm the top board grows back when the stack passes a height mark
 const PER_SPECIES = 6; // boards of one timber before the next
+const MARKS = [
+  { mm: 450, label: 'Seat height' },
+  { mm: 900, label: 'Worktop height' },
+  { mm: 1981, label: 'Door height' },
+  { mm: 2400, label: 'Ceiling height' },
+  { mm: 4800, label: 'Upstairs ceiling' },
+  { mm: 7500, label: 'Roof ridge' },
+  { mm: 10000, label: 'Ten metres' },
+];
+const fmtHeight = (mm: number) => (mm < 1000 ? `${Math.round(mm)} mm` : `${(mm / 1000).toFixed(2)} m`);
 // Timber colours for the canvas (face, grain lines, end grain). Canvas needs real colours, not CSS tokens.
 const SPECIES = [
   { base: '#dcc194', grain: '#b08a55', end: '#c4a26c' }, // birch ply
@@ -85,6 +99,15 @@ function makeSounds() {
       g.gain.setValueAtTime(0.18, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
       o.connect(g).connect(c.destination); o.start(t); o.stop(t + 0.2);
     },
+    chime() {
+      const c = ac(); if (!c) return;
+      [784, 1175].forEach((f, i) => {
+        const t = c.currentTime + i * 0.11, o = c.createOscillator(), g = c.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.16, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+        o.connect(g).connect(c.destination); o.start(t); o.stop(t + 0.36);
+      });
+    },
     thud() {
       const c = ac(); if (!c) return;
       const t = c.currentTime, o = c.createOscillator(), g = c.createGain();
@@ -104,6 +127,8 @@ export default function TimberStackGame() {
 
   const [phase, setPhase] = useState<Phase>('ready');
   const [score, setScore] = useState(0);
+  const [height, setHeight] = useState(THICK);
+  const [reached, setReached] = useState('');
   const [best, setBest] = useState(0);
   const [newBest, setNewBest] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -139,7 +164,7 @@ export default function TimberStackGame() {
     const g = {
       phase: 'ready' as Phase, stack: [] as Board[], cur: null as Moving | null,
       pieces: [] as Piece[], dust: [] as Dust[], pops: [] as Pop[],
-      speed: 380, combo: 0, score: 0, best: storedBest,
+      speed: 300, combo: 0, score: 0, best: storedBest, mark: 0, reached: '',
       w: 1, h: 1, s: 1, bp: 28, camY: 0, zoom: 1,
     };
     const yTop = (level: number) => -(level + 1) * g.bp; // the bench top is y = 0, boards stack upwards
@@ -152,7 +177,7 @@ export default function TimberStackGame() {
     function reset() {
       g.stack = [{ x: (WORLD - START_W) / 2, w: START_W, sp: 0, seed: 1 }];
       g.pieces = []; g.dust = []; g.pops = [];
-      g.speed = 380; g.combo = 0; g.score = 0; g.zoom = 1;
+      g.speed = 300; g.combo = 0; g.score = 0; g.zoom = 1; g.mark = 0; g.reached = '';
       g.camY = g.h * 0.8;
       spawn();
     }
@@ -171,7 +196,7 @@ export default function TimberStackGame() {
         if (!soundOff) sounds.thud();
         const isBest = g.score > g.best;
         if (g.score > g.best) { g.best = g.score; try { localStorage.setItem(BEST_KEY, String(g.best)); } catch { /* ignore */ } }
-        setBest(g.best); setNewBest(isBest); setPhase('over');
+        setBest(g.best); setNewBest(isBest); setReached(g.reached); setPhase('over');
         return;
       }
       let x = left, w = overlap;
@@ -199,8 +224,21 @@ export default function TimberStackGame() {
       }
       g.stack.push({ x, w, sp: cur.sp, seed: cur.seed });
       g.score++;
-      g.speed = Math.min(1150, 380 + g.score * 16);
-      setScore(g.score);
+      // passed a height mark: the top board grows back a little, so the stack can keep going
+      const tall = g.stack.length * THICK;
+      while (g.mark < MARKS.length && tall >= MARKS[g.mark].mm) {
+        const m = MARKS[g.mark++];
+        g.reached = m.label;
+        const top2 = g.stack[g.stack.length - 1];
+        const add = Math.min(BONUS, START_W - top2.w);
+        if (add > 0) { top2.w += add; top2.x = Math.max(0, Math.min(WORLD - top2.w, top2.x - add / 2)); }
+        const cx = (top2.x + top2.w / 2) * g.s;
+        g.pops.push({ text: m.label, x: cx, y: yTop(level) - 40, life: 1.6 });
+        if (add > 0) g.pops.push({ text: `+${Math.round(add)} mm`, x: cx, y: yTop(level) - 8, life: 1.6 });
+        if (!soundOff) sounds.chime();
+      }
+      g.speed = Math.min(720, 300 + g.score * 6);
+      setScore(g.score); setHeight(tall); setReached(g.reached);
       spawn();
     }
 
@@ -208,7 +246,7 @@ export default function TimberStackGame() {
       sounds.wake();
       reset();
       g.phase = 'playing';
-      setScore(0); setNewBest(false); setNote(''); setPhase('playing');
+      setScore(0); setHeight(THICK); setReached(''); setNewBest(false); setNote(''); setPhase('playing');
       requestAnimationFrame(() => dropRef.current?.focus({ preventScroll: true }));
     }
     api.current = { start, drop, setMuted: (m) => { soundOff = m; } };
@@ -281,6 +319,20 @@ export default function TimberStackGame() {
 
       ctx!.save();
       ctx!.translate(w / 2, g.camY); ctx!.scale(g.zoom, g.zoom); ctx!.translate(-w / 2, 0);
+      // height marks: a dashed line across with its name, faint once passed
+      ctx!.font = `11px ${monoFont}`; ctx!.textAlign = 'right'; ctx!.textBaseline = 'bottom';
+      for (let i = 0; i < Math.min(MARKS.length, g.mark + 1); i++) {
+        const m = MARKS[i], y = -(m.mm / THICK) * g.bp;
+        ctx!.globalAlpha = i < g.mark ? 0.35 : 0.85;
+        ctx!.strokeStyle = C.accent; ctx!.lineWidth = 1; ctx!.setLineDash([6, 5]);
+        ctx!.beginPath(); ctx!.moveTo(34, y); ctx!.lineTo(w - 6, y); ctx!.stroke();
+        ctx!.setLineDash([]);
+        const label = `${m.label} · ${fmtHeight(m.mm)}`;
+        const tw = ctx!.measureText(label).width + 8;
+        ctx!.fillStyle = C.paper; ctx!.fillRect(w - 8 - tw, y - 16, tw, 14);
+        ctx!.fillStyle = C.accent; ctx!.fillText(label, w - 12, y - 3);
+      }
+      ctx!.globalAlpha = 1;
       drawBench();
       g.stack.forEach((b, i) => drawBoard(b.x * g.s, yTop(i), b.w * g.s, b.sp, b.seed));
       for (const p of g.pieces) {
@@ -301,7 +353,7 @@ export default function TimberStackGame() {
         ctx!.moveTo(X, dy - 5); ctx!.lineTo(X, dy + 5); ctx!.moveTo(X + W, dy - 5); ctx!.lineTo(X + W, dy + 5);
         ctx!.stroke();
         ctx!.globalAlpha = 1;
-        const label = `${Math.round(c.w)} mm`;
+        const label = c.w < 80 ? `only ${Math.round(c.w)} mm left` : `${Math.round(c.w)} mm`;
         ctx!.font = `12px ${monoFont}`; ctx!.textAlign = 'center'; ctx!.textBaseline = 'middle';
         const tw = ctx!.measureText(label).width + 10, cx = X + W / 2;
         ctx!.fillStyle = C.paper; ctx!.fillRect(cx - tw / 2, dy - 8, tw, 16);
@@ -319,6 +371,44 @@ export default function TimberStackGame() {
       }
       ctx!.globalAlpha = 1;
       ctx!.restore();
+      drawTape();
+    }
+
+    /* A builder's tape measure up the left edge: mm ticks, cm numbers, a box at every metre.
+       Zero is the bench top; it follows the stack as the view moves and steps back. */
+    function drawTape() {
+      const TW = 28, k = g.zoom * g.bp / THICK; // screen px per mm
+      const yOf = (mm: number) => g.camY - mm * k;
+      const top = Math.max(0, (g.camY - g.h) / k), bottom = 0;
+      const y0 = Math.min(g.h, yOf(bottom));
+      if (y0 <= 0) return;
+      ctx!.fillStyle = '#f2c94c'; ctx!.fillRect(0, 0, TW, y0);
+      ctx!.fillStyle = 'rgba(22,25,28,0.18)'; ctx!.fillRect(TW, 0, 1, y0);
+      // the metal hook at zero
+      ctx!.fillStyle = '#9aa0a6'; ctx!.fillRect(0, y0 - 3, TW + 4, 4);
+      const maxMm = g.camY / k;
+      const tick = k * 10 >= 3 ? 10 : k * 50 >= 3 ? 50 : 100;
+      const every = k * 100 >= 26 ? 100 : k * 500 >= 26 ? 500 : 1000;
+      ctx!.strokeStyle = C.ink; ctx!.fillStyle = C.ink; ctx!.lineWidth = 1;
+      ctx!.font = `10px ${monoFont}`; ctx!.textAlign = 'right'; ctx!.textBaseline = 'middle';
+      for (let mm = Math.floor(top / tick) * tick; mm <= maxMm; mm += tick) {
+        if (mm <= 0) continue;
+        const y = Math.round(yOf(mm)) + 0.5;
+        if (y < 0 || y > y0) continue;
+        const len = mm % 100 === 0 ? 12 : mm % 50 === 0 ? 8 : 5;
+        ctx!.globalAlpha = 0.8; ctx!.beginPath(); ctx!.moveTo(0, y); ctx!.lineTo(len, y); ctx!.stroke();
+        ctx!.globalAlpha = 1;
+        if (mm % every === 0) {
+          if (mm % 1000 === 0) {
+            ctx!.fillStyle = C.accent; ctx!.fillRect(2, y - 7, TW - 3, 14);
+            ctx!.fillStyle = '#ffffff'; ctx!.textAlign = 'center'; ctx!.fillText(`${mm / 1000}m`, TW / 2 + 1, y);
+            ctx!.fillStyle = C.ink; ctx!.textAlign = 'right';
+          } else {
+            ctx!.fillText(String(mm / 10), TW - 2, y - 6);
+          }
+        }
+      }
+      ctx!.globalAlpha = 1;
     }
 
     function update(dt: number) {
@@ -363,6 +453,8 @@ export default function TimberStackGame() {
     return () => { cancelAnimationFrame(raf); ro.disconnect(); api.current = null; };
   }, []);
 
+  const next = MARKS.find((m) => m.mm > height); // the next height mark to aim for
+
   const toggleSound = () => {
     const m = !muted;
     setMuted(m);
@@ -372,7 +464,7 @@ export default function TimberStackGame() {
 
   const share = async () => {
     const url = 'https://www.rafcarpentry.com/tools/timber-stack';
-    const text = `I stacked ${score} ${score === 1 ? 'board' : 'boards'} in Timber Stack. Can you beat it?`;
+    const text = `I stacked ${score} ${score === 1 ? 'board' : 'boards'}, ${fmtHeight(height)} high, in Timber Stack. Can you beat it?`;
     try {
       if (navigator.share) { await navigator.share({ title: 'Timber Stack', text, url }); return; }
       await navigator.clipboard.writeText(`${text} ${url}`);
@@ -401,23 +493,28 @@ export default function TimberStackGame() {
           onClick={(e) => { if (e.detail === 0) api.current?.drop(); }}
         />
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between p-3">
-          <button
-            type="button"
-            onClick={toggleSound}
-            aria-label={muted ? 'Turn sound on' : 'Turn sound off'}
-            className="pointer-events-auto grid h-10 w-10 place-items-center rounded-sm border border-line bg-mount/90 text-muted transition-colors hover:text-ink"
-          >
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M3 8v4h3l4 3V5L6 8H3z" />
-              {muted ? <path d="M13.5 7.5l5 5M18.5 7.5l-5 5" /> : <path d="M13.5 7a4 4 0 0 1 0 6M15.8 4.8a7 7 0 0 1 0 10.4" />}
-            </svg>
-          </button>
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between py-3 pl-10 pr-3">
+          <p className="min-w-16 pt-2 font-mono text-[13px] text-muted">Best {best}</p>
           <div className="text-center" aria-hidden={phase !== 'playing'}>
             <p className="font-display text-[44px] font-[680] leading-none tracking-[-0.03em] text-ink">{score}</p>
-            <p ref={monoRef} className="mt-1 font-mono text-[12px] text-muted">{score === 1 ? 'board' : 'boards'}</p>
+            <p ref={monoRef} className="mt-1 font-mono text-[12px] text-muted">{score === 1 ? 'board' : 'boards'} · {fmtHeight(height)}</p>
+            {next && phase === 'playing' ? (
+              <p className="mt-0.5 font-mono text-[11px] text-accent">{next.label} in {Math.ceil((next.mm - height) / THICK)}</p>
+            ) : null}
           </div>
-          <p className="min-w-10 pt-2 text-right font-mono text-[13px] text-muted">Best {best}</p>
+          <div className="flex min-w-16 justify-end">
+            <button
+              type="button"
+              onClick={toggleSound}
+              aria-label={muted ? 'Turn sound on' : 'Turn sound off'}
+              className="pointer-events-auto grid h-10 w-10 place-items-center rounded-sm border border-line bg-mount/90 text-muted transition-colors hover:text-ink"
+            >
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 8v4h3l4 3V5L6 8H3z" />
+                {muted ? <path d="M13.5 7.5l5 5M18.5 7.5l-5 5" /> : <path d="M13.5 7a4 4 0 0 1 0 6M15.8 4.8a7 7 0 0 1 0 10.4" />}
+              </svg>
+            </button>
+          </div>
         </div>
 
         {phase === 'ready' ? (
@@ -425,7 +522,7 @@ export default function TimberStackGame() {
             <div className="w-full max-w-[340px] rounded-sm border border-line-strong bg-mount p-6 text-center shadow-[0_22px_40px_-28px_rgb(22_25_28/0.55)]">
               <p className="font-mono text-[13px] text-accent">Free game</p>
               <p className="mt-2 font-display text-[28px] font-[650] leading-tight tracking-[-0.02em]">Timber Stack</p>
-              <p className="mt-3 text-[15px] leading-relaxed text-muted">Tap to drop each board on the stack. Whatever hangs over gets cut off, so the next board is narrower.</p>
+              <p className="mt-3 text-[15px] leading-relaxed text-muted">Build the tallest stack you can. Tap to drop each board: whatever hangs over is cut off, so keep going until there is almost nothing left.</p>
               <button type="button" onClick={() => api.current?.start()} className="btn btn-primary mt-6 w-full">Start</button>
             </div>
           </div>
@@ -434,11 +531,11 @@ export default function TimberStackGame() {
         {phase === 'over' ? (
           <div className="absolute inset-0 z-30 grid place-items-end justify-items-center p-3 [animation:fadeInUp_0.5s_0.6s_both] sm:p-5" role="dialog" aria-label="Game over" aria-live="polite">
             <div className="w-full max-w-[340px] rounded-sm border border-line-strong bg-mount p-5 text-center shadow-[0_22px_40px_-28px_rgb(22_25_28/0.55)]">
-              <p className="font-mono text-[13px] text-accent">{newBest ? 'New best' : 'Off the stack'}</p>
+              <p className="font-mono text-[13px] text-accent">{newBest ? 'New best' : reached ? `Past ${reached.toLowerCase()}` : 'Off the stack'}</p>
               <p className="mt-2 font-display text-[28px] font-[650] leading-tight tracking-[-0.02em]">
-                {score} {score === 1 ? 'board' : 'boards'} high
+                {score} {score === 1 ? 'board' : 'boards'}, {fmtHeight(height)}
               </p>
-              <p className="mt-1 font-mono text-[13px] text-muted">Best {best}</p>
+              <p className="mt-1 font-mono text-[13px] text-muted">Best {best} boards</p>
               <div className="mt-5 grid gap-2.5">
                 <button type="button" autoFocus onClick={() => api.current?.start()} className="btn btn-primary w-full">Play again</button>
                 <button type="button" onClick={share} className="btn btn-ghost w-full">Share score</button>

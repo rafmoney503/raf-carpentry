@@ -8,7 +8,7 @@ import TimberStackGame from './timber-stack-game';
 
 export const metadata = pageMeta({
   title: 'Timber Stack | A free game from Raf Carpentry',
-  description: 'Drop each board on the stack. Whatever hangs over gets cut off. How high can you go?',
+  description: 'Build the tallest stack of timber you can. Whatever hangs over gets cut off. How high can you go?',
   path: '/tools/timber-stack',
   ownImage: true,
 });
@@ -30,10 +30,12 @@ export default function TimberStackPage() {
         <section className="mt-10 border-t border-line pt-8">
           <h2 className="font-display text-[24px] font-[650] tracking-[-0.02em]">How to play</h2>
           <ul className="mt-4 space-y-2.5 text-[16px] leading-relaxed text-muted">
+            <li>The aim: the tallest stack you can build, until there is almost nothing left to put on top.</li>
             <li>A board slides in from the right. Tap the screen, click, or press Space to drop it.</li>
             <li>Any part hanging over the board below is cut off, so the next board is narrower.</li>
-            <li>Line it up to within 6 mm for a perfect drop. Three perfect drops in a row and the board grows back 20 mm.</li>
-            <li>Miss the stack completely and it is over. The boards speed up as the stack grows.</li>
+            <li>Line it up to within 8 mm for a perfect drop. From the third perfect in a row, each one grows the board back 20 mm.</li>
+            <li>Each board is 47 mm timber. The tape measure shows the height, and passing seat, worktop, door or ceiling height gives the top board 40 mm back.</li>
+            <li>Miss the stack completely and it is over.</li>
           </ul>
           <div className="mt-8 flex flex-wrap gap-x-8 gap-y-3">
             <Link href="/calculator" className="link-more">Workshop calculator <span aria-hidden="true">→</span></Link>
