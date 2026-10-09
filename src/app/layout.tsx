@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
-import './woodwork.css';
 import LayoutShell from '@/components/LayoutShell';
 import { Analytics } from '@vercel/analytics/next';
 

@@ -4,7 +4,6 @@ import { Container, SectionHeading } from '@/components/ui';
 import SocialIcon, { networkOf } from '@/components/SocialIcon';
 import Logo3D from '@/components/Logo3D';
 import { pageMeta } from '@/lib/seo';
-import Joint from '@/components/Joint';
 
 type AboutPageData = {
   title: string;
@@ -75,8 +74,7 @@ export default function About() {
         </div>
       </Container>
 
-      <section className="relative bg-raised py-20 md:py-28">
-        <Joint />
+      <section className="border-y border-line bg-raised py-20 md:py-28">
         <Container>
           <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:gap-6">
             <SectionHeading className="md:col-span-5">What makes me different</SectionHeading>
@@ -93,7 +91,6 @@ export default function About() {
             </ol>
           </div>
         </Container>
-        <Joint edge="bottom" />
       </section>
 
       {/* Social links, with the 3D R beside them (under them on a phone): square, up to 480 px */}

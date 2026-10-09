@@ -74,7 +74,7 @@
 .home .tile-link:hover { color: var(--color-accent); }
 
 /* Process */
-.home .process { position: relative; background: var(--color-raised); } /* dovetail joints top and bottom (Joint.tsx) instead of border lines */
+.home .process { background: var(--color-raised); border-block: 1px solid var(--color-line); }
 .home .process .grid12 { align-items: start; row-gap: 56px; }
 .home .drawing { grid-column: 1 / span 6; position: sticky; top: 112px; margin: 0; }
 .home .drawing img { width: 100%; max-width: 560px; height: auto; }

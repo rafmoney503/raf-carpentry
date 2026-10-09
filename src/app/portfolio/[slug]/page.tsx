@@ -19,7 +19,6 @@ import { pageMeta } from '@/lib/seo';
 import Reviews, { GoogleRating } from '@/components/Reviews';
 import { getReviews } from '@/lib/reviews';
 import { serviceForJob } from '@/lib/services';
-import Joint from '@/components/Joint';
 
 export function generateStaticParams() {
   return getAllProjects().map((p) => ({ slug: p.slug }));
@@ -253,8 +252,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
       </section>
 
       {/* Quote and next job */}
-      <section className="relative bg-raised">
-        <Joint />
+      <section className="border-t border-line bg-raised">
         <Container className="grid grid-cols-1 items-end gap-10 py-16 md:grid-cols-12 md:gap-6 md:py-20">
           <div className="md:col-span-7">
             <SectionHeading>Want something like this?</SectionHeading>

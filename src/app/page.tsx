@@ -10,7 +10,6 @@ import { QUOTE_HREF, whatsappText, whatsappUrl } from '@/lib/site';
 import SocialIcon from '@/components/SocialIcon';
 import { businessJsonLd, jsonLd, pageMeta } from '@/lib/seo';
 import './home.css';
-import Joint from '@/components/Joint';
 
 /* Rebuilt at most once an hour, so the photo of the day changes soon after midnight (London)
    and new jobs show in "Latest jobs" without a redeploy. */
@@ -210,7 +209,6 @@ export default function HomePage() {
       ) : null}
 
       <section className="sec process" id="process">
-        <Joint />
         <div className="wrap grid12">
           <figure className="drawing reveal">
             <Image src={d.processImage} alt={d.processImageAlt} width={1056} height={1047} sizes="(max-width: 860px) 100vw, 560px" />
@@ -236,7 +234,6 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        <Joint edge="bottom" />
       </section>
 
       <section className={`sec reviews${hasReviews ? '' : ' sec-tight'}`} id="reviews">
