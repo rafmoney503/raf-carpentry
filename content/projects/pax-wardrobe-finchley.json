@@ -125,5 +125,18 @@
       "h": 1600,
       "alt": "Wardrobe front beside the bedroom window"
     }
-  ]
+  ],
+  "model3d": {
+    "src": "/models/pax-wardrobe-finchley.glb",
+    "poster": {
+      "src": "/images/projects/pax-wardrobe-finchley/model-3d.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "3D SketchUp model of the five-door built-in PAX wardrobe with panelled doors and gold handles"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "The wardrobe drawn in SketchUp from the photos, at standard IKEA PAX sizes rather than measured ones. Open the doors to see the rails, shelves and drawers, or take it apart to see the three frames and the fillers that make it a built-in.",
+    "shape": "tall",
+    "standardSizes": true
+  }
 }
