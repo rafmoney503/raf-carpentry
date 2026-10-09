@@ -100,5 +100,18 @@
       "h": 1600,
       "alt": "The full run of glass doors"
     }
-  ]
+  ],
+  "model3d": {
+    "src": "/models/glass-sliding-doors-haringey.glb",
+    "poster": {
+      "src": "/images/projects/glass-sliding-doors-haringey/model-3d.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "3D SketchUp model of the four black-framed glass sliding doors under their track, with the timber fixed between the ceiling joists above"
+    },
+    "title": "The SketchUp model in 3D",
+    "text": "The doors drawn in SketchUp from the photos, at standard sizes rather than measured ones. Slide the doors open, or take it apart to see the timber fixed between the ceiling joists to carry the track.",
+    "shape": "tall",
+    "standardSizes": true
+  }
 }
