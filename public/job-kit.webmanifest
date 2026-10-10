@@ -1,0 +1,17 @@
+{
+  "id": "/job-kit",
+  "name": "Raf Carpentry Job Kit",
+  "short_name": "Job Kit",
+  "description": "Photos, clips and sizes from each job, sent as you go.",
+  "start_url": "/job-kit",
+  "scope": "/job-kit",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f1f2ef",
+  "theme_color": "#f1f2ef",
+  "icons": [
+    { "src": "/images/job-kit/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/images/job-kit/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/images/job-kit/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

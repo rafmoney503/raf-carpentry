@@ -28,9 +28,14 @@ def taken(path):
     try:
         ex = Image.open(path).getexif()
         sub = ex.get_ifd(0x8769)
-        return (sub.get(36867) or ex.get(306) or '')
+        when = sub.get(36867) or ex.get(306) or ''
     except Exception:
-        return ''
+        when = ''
+    # Job Kit photos have no EXIF (the app strips it); scripts/job-kit-fetch.py sets the file time to when they were taken.
+    if not when and os.path.basename(os.path.dirname(path)) in ('0 Before', '1 Finished', '2 Build steps', '3 Drawings') and os.path.exists(os.path.join(os.path.dirname(os.path.dirname(path)), 'photos.txt')):
+        import time
+        when = time.strftime('%Y:%m:%d %H:%M:%S', time.localtime(os.path.getmtime(path)))
+    return when
 
 
 for slug, folder in JOBS.items():

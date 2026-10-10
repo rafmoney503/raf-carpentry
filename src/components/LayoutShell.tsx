@@ -7,7 +7,8 @@ import HowItWorksFloat from './HowItWorksFloat';
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isMiniSite = pathname === '/ms';
+  // The Instagram mini-site and Raf's Job Kit app stand alone: no menu, footer or floating buttons.
+  const isMiniSite = pathname === '/ms' || pathname?.startsWith('/job-kit');
 
   if (isMiniSite) {
     return <main>{children}</main>;
