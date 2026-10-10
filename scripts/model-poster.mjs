@@ -7,7 +7,19 @@
 //   then: python3 scripts/poster-fit.py <out.png> <poster.jpg> 1600 1200   (tall pieces; 1600 800 for wide ones)
 //
 // Uses the Chromium that Playwright finds (software WebGL), so it is slow: allow a couple of minutes a model.
-import { chromium } from 'playwright';
+import { createRequire } from 'node:module';
+
+// Playwright is not one of the site's packages: use the copy installed with the workspace's tools.
+const { chromium } = (() => {
+  for (const from of [import.meta.url, '/opt/node-tools/node_modules/']) {
+    try {
+      return createRequire(from)('playwright');
+    } catch {
+      /* try the next place */
+    }
+  }
+  throw new Error('Playwright not found: npm i --no-save playwright');
+})();
 
 const [url, out, tab] = process.argv.slice(2);
 if (!url || !out) {

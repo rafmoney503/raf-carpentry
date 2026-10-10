@@ -5,7 +5,14 @@ sizes, what the customer wants, the options to show, later any changes. It reach
 (rafmoney503/raf-job-inbox, branch `job/design-<id>`). This is how it becomes a private page at
 `rafcarpentry.com/d/<code>`, which the app then shows as "Design ready" with Send on WhatsApp.
 
-A scheduled run does this every 2 hours from 7am to 8pm (London). Raf can also say "make the new design".
+A scheduled run does this every 2 hours from about 7am to 9pm (London). Raf can also say "make the new design".
+In a scheduled run both repos are already cloned: /home/claude/raf-carpentry (push) and /home/claude/raf-job-inbox
+(read); the SketchUp and Vercel connectors work there without approvals (tested 10 Oct 2026).
+
+Ground rules: at most 2 requests a run, oldest first. Publish a design only when every option is finished and
+the build passes; if anything fails (SketchUp limit reached, a model won't close, the build breaks), publish
+nothing for that request and say what stopped it in the final reply: the next run tries again. Change only
+content/designs/, public/designs/ and scripts/models/; never the app or other pages.
 
 ## 1. Is there anything to do?
 
@@ -83,6 +90,7 @@ Raf paints or stains anything.
 Copy any existing still to each poster path first so the site builds, then:
 
 ```sh
+[ -d node_modules ] || npm ci
 npm run build && (PORT=3456 npx next start -p 3456 &) ; sleep 8
 node scripts/model-poster.mjs http://localhost:3456/d/<code> /tmp/a.png 1      # 2 for option B ...
 python3 scripts/poster-fit.py /tmp/a.png public/designs/<code>/a-<hash>.jpg 1600 1200
