@@ -25,10 +25,12 @@ import {
 } from './store';
 import { CHUNK, checkSetup, onChange, onStatus, readPin, savePin, sendDetails, wake, type SendState, type Status } from './uploader';
 import { R_MARK } from '@/lib/r-logo';
+import Mark from './mark';
+import { PostsList, PostView, type Pack } from './posts';
 import './job-kit.css';
 
 type Tab = SectionId | 'notes' | 'send';
-type Screen = { name: 'home' } | { name: 'new' } | { name: 'job'; id: string; tab: Tab } | { name: 'settings' };
+type Screen = { name: 'home' } | { name: 'new' } | { name: 'job'; id: string; tab: Tab } | { name: 'settings' } | { name: 'posts' } | { name: 'post'; slug: string };
 
 const field =
   'w-full min-w-0 rounded-sm border border-line-strong bg-mount px-3 text-[16px] text-ink placeholder:text-faint/55 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20';
@@ -45,7 +47,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && (s.name === 'home' || s.name === 'job' || s.name === 'settings')) return s;
+    if (s && (s.name === 'home' || s.name === 'job' || s.name === 'settings' || s.name === 'posts' || s.name === 'post')) return s;
   } catch {
     /* no storage */
   }
@@ -75,7 +77,7 @@ const STATE_TEXT: Record<SendState, string> = {
 /* Jobs already made into pages on the site: Job Kit id -> the page. */
 export type Done = Record<string, { slug: string; title: string }>;
 
-export default function JobKitApp({ done = {} }: { done?: Done }) {
+export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; posts?: Pack[] }) {
   const [ready, setReady] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [items, setItems] = useState<Item[]>([]);
@@ -275,6 +277,8 @@ export default function JobKitApp({ done = {} }: { done?: Done }) {
             jobs={jobs}
             items={items}
             done={done}
+            posts={posts}
+            onPosts={() => go({ name: 'posts' })}
             pin={pin}
             status={status}
             waitingBytes={waitingBytes}
@@ -292,6 +296,10 @@ export default function JobKitApp({ done = {} }: { done?: Done }) {
               go({ name: 'job', id: j.id, tab: 'before' }, false);
             }}
           />
+        ) : screen.name === 'posts' ? (
+          <PostsList packs={posts} onOpen={(slug) => go({ name: 'post', slug })} />
+        ) : screen.name === 'post' ? (
+          posts.find((p) => p.slug === screen.slug) ? <PostView pack={posts.find((p) => p.slug === screen.slug)!} /> : <PostsList packs={posts} onOpen={(slug) => go({ name: 'post', slug })} />
         ) : screen.name === 'settings' ? (
           <Settings
             pin={pin}
@@ -305,6 +313,7 @@ export default function JobKitApp({ done = {} }: { done?: Done }) {
           <JobView
             job={job}
             done={done[job.id]}
+            onPost={done[job.id] && posts.some((p) => p.slug === done[job.id].slug) ? () => go({ name: 'post', slug: done[job.id].slug }) : undefined}
             items={items.filter((i) => i.jobId === job.id)}
             tab={screen.tab}
             busy={busy}
@@ -387,35 +396,6 @@ function TopBar({ status, waiting, waitingBytes, onHome, onStatus }: { status: S
   );
 }
 
-function Mark({ state }: { state: 'waiting' | 'sending' | 'sent' | 'lost' }) {
-  if (state === 'sent')
-    return (
-      <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0" aria-hidden>
-        <circle cx="8" cy="8" r="8" className="fill-accent" />
-        <path d="M4.5 8.2l2.3 2.3 4.7-4.9" className="fill-none stroke-on-accent" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  if (state === 'sending')
-    return (
-      <svg viewBox="0 0 16 16" className="jk-spin h-4 w-4 shrink-0" aria-hidden>
-        <circle cx="8" cy="8" r="6.5" className="fill-none stroke-line-strong" strokeWidth="2" />
-        <path d="M8 1.5a6.5 6.5 0 016.5 6.5" className="fill-none stroke-accent" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    );
-  if (state === 'lost')
-    return (
-      <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0" aria-hidden>
-        <circle cx="8" cy="8" r="8" className="fill-ink" />
-        <path d="M8 4v5M8 11.5v.5" className="fill-none stroke-on-accent" strokeWidth="1.9" strokeLinecap="round" />
-      </svg>
-    );
-  return (
-    <svg viewBox="0 0 16 16" className="h-4 w-4 shrink-0" aria-hidden>
-      <circle cx="8" cy="8" r="6.5" className="fill-none stroke-faint" strokeWidth="1.8" />
-    </svg>
-  );
-}
-
 /* ---------- home ---------- */
 
 /* Home only renders once the app has opened in the browser, so reading the window here is safe. */
@@ -432,6 +412,8 @@ function Home({
   jobs,
   items,
   done,
+  posts,
+  onPosts,
   pin,
   status,
   waitingBytes,
@@ -442,6 +424,8 @@ function Home({
   jobs: Job[];
   items: Item[];
   done: Done;
+  posts: Pack[];
+  onPosts: () => void;
   pin: string;
   status: Status;
   waitingBytes: number;
@@ -498,6 +482,20 @@ function Home({
       <button type="button" onClick={onNew} className="btn btn-primary mt-6 w-full">
         New job
       </button>
+
+      {posts.length ? (
+        <button type="button" onClick={onPosts} className="mt-3 flex w-full items-center justify-between gap-3 rounded-sm border border-line-strong bg-mount px-4 py-3.5 text-left transition-colors hover:border-ink">
+          <span>
+            <span className="block font-semibold">Posts for Instagram, TikTok and YouTube</span>
+            <span className="mt-0.5 block text-[14.5px] text-muted">
+              {posts.length} job{posts.length === 1 ? '' : 's'} ready to share
+            </span>
+          </span>
+          <span aria-hidden className="text-[20px] text-accent">
+            →
+          </span>
+        </button>
+      ) : null}
 
       {jobs.length ? (
         <ul className="mt-7 grid gap-3">
@@ -652,6 +650,7 @@ const TABS: { id: Tab; title: string }[] = [...SECTIONS.map((s) => ({ id: s.id a
 function JobView({
   job,
   done,
+  onPost,
   items,
   tab,
   busy,
@@ -666,6 +665,7 @@ function JobView({
 }: {
   job: Job;
   done?: { slug: string; title: string };
+  onPost?: () => void;
   items: Item[];
   tab: Tab;
   busy: Record<string, number>;
@@ -722,7 +722,7 @@ function JobView({
         {tab === 'notes' ? (
           <NotesForm job={job} onNotes={onNotes} />
         ) : tab === 'send' ? (
-          <SendPanel job={job} done={done} items={items} onSend={onSend} onForget={onForget} onJob={onJob} />
+          <SendPanel job={job} done={done} onPost={onPost} items={items} onSend={onSend} onForget={onForget} onJob={onJob} />
         ) : (
           <SectionView section={SECTIONS.find((s) => s.id === tab)!} job={job} items={live} busy={busy} onAdd={onAdd} onRemove={onRemove} onCaption={onCaption} />
         )}
@@ -1001,6 +1001,7 @@ function Area({ label: l, value, onChange, placeholder }: { label: string; value
 function SendPanel({
   job,
   done,
+  onPost,
   items,
   onSend,
   onForget,
@@ -1008,6 +1009,7 @@ function SendPanel({
 }: {
   job: Job;
   done?: { slug: string; title: string };
+  onPost?: () => void;
   items: Item[];
   onSend: () => Promise<void>;
   onForget: () => Promise<void>;
@@ -1064,9 +1066,16 @@ function SendPanel({
             <Mark state="sent" /> Done: it’s on your website
           </p>
           <p className="mt-1 text-[15px] leading-relaxed text-muted">Claude made the job page from it: {done.title}.</p>
-          <a href={`/portfolio/${done.slug}`} className="btn btn-primary btn-sm mt-3">
-            See the job page
-          </a>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a href={`/portfolio/${done.slug}`} className="btn btn-primary btn-sm">
+              See the job page
+            </a>
+            {onPost ? (
+              <button type="button" className="btn btn-ghost btn-sm" onClick={onPost}>
+                Post it
+              </button>
+            ) : null}
+          </div>
         </div>
       ) : sentToClaude ? (
         <div className="mt-6 rounded-sm border border-accent bg-accent-soft p-4">

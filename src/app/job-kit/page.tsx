@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from 'next';
+import fs from 'fs';
+import path from 'path';
 import { getAllProjects } from '@/lib/projects';
+import type { Pack } from './posts';
 import JobKitApp, { type Done } from './job-kit-app';
 
 /* Raf's Job Kit: a phone app (add to home screen) for the photos, clips, sizes and notes of each job,
@@ -27,5 +30,15 @@ export default function JobKitPage() {
   // The page is rebuilt on every deploy, and making a job page always ends with one.
   const done: Done = {};
   for (const p of getAllProjects()) if (p.jobKit) done[p.jobKit] = { slug: p.slug, title: p.title };
-  return <JobKitApp done={done} />;
+  // Post packs made by scripts/social-pack.py, newest jobs first.
+  const dir = path.join(process.cwd(), 'content/social');
+  const order = new Map(getAllProjects().map((p, i) => [p.slug, i]));
+  const posts: Pack[] = fs.existsSync(dir)
+    ? fs
+        .readdirSync(dir)
+        .filter((f) => f.endsWith('.json'))
+        .map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf-8')) as Pack)
+        .sort((a, b) => (order.get(a.slug) ?? 999) - (order.get(b.slug) ?? 999))
+    : [];
+  return <JobKitApp done={done} posts={posts} />;
 }

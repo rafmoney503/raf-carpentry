@@ -1,0 +1,36 @@
+{
+  "slug": "curved-seat-kennington",
+  "title": "Curved storage seat",
+  "place": "Kennington, London",
+  "reel": [
+    { "clip": "2026-08 Curved Kitchen Seat Kennington/1 Finished/37403CFB-F372-4599-B6E7-87ACCA7486F8.mp4", "from": 10.0, "secs": 4.0, "title": true },
+    { "photo": "s1.jpg", "secs": 0.8, "label": "Curve marked out" },
+    { "photo": "step-6bb165b6.jpg", "secs": 0.8, "label": "Straight cuts on the rail" },
+    { "photo": "s2.jpg", "secs": 0.8, "label": "Curved frames" },
+    { "photo": "b-af9c1c81.jpg", "secs": 0.8, "label": "Boxes between the frames" },
+    { "photo": "step-7d7493db.jpg", "secs": 0.8, "label": "Bent to the curve" },
+    { "photo": "s5.jpg", "secs": 1.0, "label": "Panelled fronts" },
+    { "clip": "2026-08 Curved Kitchen Seat Kennington/1 Finished/IMG_1373.MOV", "from": 5.0, "secs": 4.5 },
+    { "photo": "src:kitchen-bay.jpg", "secs": 2.8, "move": "out", "tag": "In the kitchen bay" },
+    { "end": true, "secs": 2.6 }
+  ],
+  "carousel": [
+    "src:kitchen-bay.jpg",
+    { "photo": "s1.jpg", "label": "Curve marked out" },
+    { "photo": "step-6bb165b6.jpg", "label": "Straight cuts on the rail" },
+    { "photo": "s2.jpg", "label": "Curved frames" },
+    { "photo": "step-7d7493db.jpg", "label": "Bent to the curve" },
+    { "photo": "s5.jpg", "label": "Panelled fronts" },
+    "g2.jpg",
+    "g4.jpg",
+    { "photo": "b-40d9226e.jpg", "label": "Storage under the lids" }
+  ],
+  "captions": {
+    "instagram": "A curved storage seat for a kitchen bay in Kennington.\n\nThe curve was drawn out full size on the board. Then curved frames cut to match, storage boxes built between them, a thin sheet bent round the front and panelled fronts fitted round the curve. Lift the lids for storage underneath.\n\nThere's a 3D model of it on my website: turn it round and lift the lids.\n\n#curvedbench #storagebench #kitchenseating #banquette #fittedfurniture #carpentry #joinery #londoncarpenter #kennington",
+    "tiktok": "No straight lines on this one. A storage seat made to follow a kitchen bay in Kennington.\n\n#curvedbench #carpentry #woodworking #storagebench #londoncarpenter",
+    "youtube": {
+      "title": "Making a curved storage seat for a kitchen bay | Kennington, London",
+      "description": "The curve drawn out full size, curved frames cut to match, storage boxes between them, a thin sheet bent round the front and panelled fronts round the curve.\n\nEvery photo of this job, and a 3D model: https://www.rafcarpentry.com/portfolio/curved-seat-kennington\n\n#shorts #carpentry #woodworking"
+    }
+  }
+}

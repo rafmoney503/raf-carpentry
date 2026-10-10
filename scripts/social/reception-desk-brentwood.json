@@ -1,0 +1,37 @@
+{
+  "slug": "reception-desk-brentwood",
+  "title": "Office reception desk",
+  "place": "Brentwood, Essex",
+  "reel": [
+    { "wipe": ["before.jpg", "after.jpg"], "secs": 3.6, "title": true, "labels": ["Bare MDF", "Finished"] },
+    { "photo": "step-3af010a9.jpg", "secs": 0.8, "label": "Marked out in tape" },
+    { "photo": "s1.jpg", "secs": 0.8, "label": "Plinths first" },
+    { "photo": "s2.jpg", "secs": 0.8, "label": "Carcasses on" },
+    { "photo": "s3.jpg", "secs": 0.8, "label": "The L-shaped top" },
+    { "photo": "step-d01169d6.jpg", "secs": 0.8, "label": "The angled end" },
+    { "photo": "step-98a2fb59.jpg", "secs": 1.0, "label": "Slats on" },
+    { "mounted": "g1.jpg", "secs": 1.7, "label": "Desk and side unit" },
+    { "mounted": "g5.jpg", "secs": 1.5, "label": "From the door" },
+    { "mounted": "g4.jpg", "secs": 1.5, "label": "Shelves on the staff side" },
+    { "end": true, "secs": 2.6 }
+  ],
+  "carousel": [
+    { "photo": "before.jpg", "label": "Bare MDF" },
+    { "photo": "after.jpg", "label": "Finished" },
+    { "photo": "step-3af010a9.jpg", "label": "Marked out in tape" },
+    { "photo": "s1.jpg", "label": "Plinths first" },
+    { "photo": "s3.jpg", "label": "The L-shaped top" },
+    { "photo": "step-98a2fb59.jpg", "label": "Slats on" },
+    { "photo": "g1.jpg", "label": "Desk and side unit" },
+    { "photo": "g5.jpg", "label": "From the door" },
+    { "photo": "g4.jpg", "label": "Shelves on the staff side" }
+  ],
+  "captions": {
+    "instagram": "Reception desk for an office in Brentwood.\n\nThe whole desk was marked out in tape on the carpet first, so every unit had a line to follow. Then plinths, carcasses, the L-shaped top, a raised counter with an angled end, and vertical slats along the front.\n\nSwipe from bare MDF to finished.\n\n#receptiondesk #officefitout #officedesign #fittedfurniture #carpentry #joinery #slatwall #brentwood #essex",
+    "tiktok": "Marked out in tape on the carpet, then built to the line. Office reception desk in Brentwood.\n\n#receptiondesk #officefitout #carpentry #woodworking #beforeandafter",
+    "youtube": {
+      "title": "Building an office reception desk | Brentwood",
+      "description": "Marked out in tape on the carpet, then plinths, carcasses, an L-shaped top, a raised counter with an angled end and vertical slats along the front.\n\nEvery photo of this job: https://www.rafcarpentry.com/portfolio/reception-desk-brentwood\n\n#shorts #carpentry #woodworking"
+    }
+  }
+}

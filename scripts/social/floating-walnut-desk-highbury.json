@@ -1,0 +1,36 @@
+{
+  "slug": "floating-walnut-desk-highbury",
+  "title": "Floating walnut desk",
+  "place": "Highbury, London",
+  "reel": [
+    { "photo": "g1.jpg", "secs": 2.6, "move": "in", "title": true },
+    { "photo": "b-30f466b4.jpg", "secs": 0.8, "label": "The empty room" },
+    { "photo": "b-5d68b622.jpg", "secs": 0.8, "label": "Drawer boxes first" },
+    { "photo": "b-81842c12.jpg", "secs": 0.8, "label": "Fixings marked" },
+    { "photo": "b-92de8474.jpg", "secs": 0.8, "label": "Top on, wall to wall" },
+    { "photo": "b-da2e3313.jpg", "secs": 0.8, "label": "Runners under the top" },
+    { "photo": "s4.jpg", "secs": 0.8, "label": "Level checked" },
+    { "photo": "step-d9060f67.jpg", "secs": 1.0, "label": "Drawers in" },
+    { "clip": "2025-09 Floating Walnut Desk Highbury/1 Finished/IMG_7612.MOV", "from": 12.6, "secs": 8.0 },
+    { "end": true, "secs": 2.6 }
+  ],
+  "carousel": [
+    "g1.jpg",
+    { "photo": "b-30f466b4.jpg", "label": "Before" },
+    { "photo": "b-5d68b622.jpg", "label": "Drawer boxes first" },
+    { "photo": "b-92de8474.jpg", "label": "Top fixed wall to wall" },
+    { "photo": "s4.jpg", "label": "Level checked" },
+    { "photo": "step-d9060f67.jpg", "label": "Drawers in" },
+    "g4.jpg",
+    "g2.jpg",
+    "g-db713b5a.jpg"
+  ],
+  "captions": {
+    "instagram": "Floating walnut desk, wall to wall, in Highbury.\n\nNo legs. The desk is carried by the walls and a batten fixed to a level line, with four walnut drawers built in under the top. They pull out from underneath, so there are no handles on show.\n\nDrawer boxes first, then the level line, then the top, then the drawers.\n\nFitted furniture in London: rafcarpentry.com\n\n#walnut #walnutdesk #floatingdesk #homeoffice #fittedfurniture #carpentry #joinery #londoncarpenter #highbury #islington",
+    "tiktok": "A walnut desk with no legs, and four drawers you don't see until you pull them. Highbury, London.\n\n#walnut #floatingdesk #carpentry #woodworking #londoncarpenter",
+    "youtube": {
+      "title": "Floating walnut desk with hidden drawers | Highbury, London",
+      "description": "A wall-to-wall walnut desk with no legs, carried by the walls and a batten on a level line, with four drawers built in under the top.\n\nEvery photo of this job: https://www.rafcarpentry.com/portfolio/floating-walnut-desk-highbury\n\n#shorts #walnut #carpentry #woodworking"
+    }
+  }
+}
