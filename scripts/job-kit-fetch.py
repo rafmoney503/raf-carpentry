@@ -9,7 +9,7 @@ notes.txt. Clips arrive in 3 MB pieces (name.mov.part01of05 ...) and are joined 
   python3 scripts/job-kit-fetch.py --list                 every job in the inbox, newest first
   python3 scripts/job-kit-fetch.py                        the newest job marked "Send to Claude"
   python3 scripts/job-kit-fetch.py alcove finchley        the newest job whose id, title or area has those words
-  options: --inbox DIR (clone of the inbox, default ../raf-job-inbox next to this repo)
+  options: --inbox DIR (clone of the inbox, default ../raf-job-inbox next to this repo, or /home/claude/raf-job-inbox)
            --out DIR   (default /mnt/user-data/uploads/Documents/Raf Carpentry Projects, where staged Mac folders go)
 
 Output: OUT/<YYYY-MM What Area>/ with 0 Before, 1 Finished (finished photos and the reveal clip), 2 Build steps
@@ -31,7 +31,9 @@ def opt(name, default):
     return default
 
 
-INBOX = opt('--inbox', os.path.join(os.path.dirname(REPO), 'raf-job-inbox'))
+# The clone of the inbox: next to this repo, or where a Claude session clones attached repos.
+_near = [os.path.join(os.path.dirname(REPO), 'raf-job-inbox'), '/home/claude/raf-job-inbox']
+INBOX = opt('--inbox', next((d for d in _near if os.path.isdir(os.path.join(d, '.git'))), _near[0]))
 OUT = opt('--out', '/mnt/user-data/uploads/Documents/Raf Carpentry Projects')
 LIST = '--list' in args
 words = [a.lower() for a in args if not a.startswith('--')]
