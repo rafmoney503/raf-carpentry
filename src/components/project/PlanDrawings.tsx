@@ -47,7 +47,7 @@ export default function PlanDrawings({ plan, title, modelCount }: { plan: Plan; 
             {plan.model3d.text ? <p className="mt-2 max-w-[60ch] text-muted">{plan.model3d.text}</p> : null}
           </div>
           <div className="mt-6">
-            <Model3D src={plan.model3d.src} poster={plan.model3d.poster} label={plan.model3d.poster.alt} shape={plan.model3d.shape} />
+            <Model3D src={plan.model3d.src} poster={plan.model3d.poster} label={plan.model3d.poster.alt} shape={plan.model3d.shape} skp={plan.model3d.skp} />
           </div>
           {modelCount ? <AllIn3DLink count={modelCount} /> : null}
         </div>

@@ -130,7 +130,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             <SectionHeading>{p.model3d.title ?? 'In 3D'}</SectionHeading>
             {p.model3d.text ? <p className="mt-4 max-w-[56ch] text-muted">{p.model3d.text}</p> : null}
             <div className="mt-10">
-              <Model3D src={p.model3d.src} poster={p.model3d.poster} label={p.model3d.poster.alt} shape={p.model3d.shape} />
+              <Model3D src={p.model3d.src} poster={p.model3d.poster} label={p.model3d.poster.alt} shape={p.model3d.shape} skp={p.model3d.skp} />
             </div>
             <AllIn3DLink count={countModels()} />
           </Container>

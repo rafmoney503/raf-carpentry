@@ -52,7 +52,7 @@ export default function ModelGallery({ items }: { items: GalleryItem[] }) {
 
       <div id="model-gallery-view" role={items.length > 1 ? 'tabpanel' : undefined} className={items.length > 1 ? 'mt-8' : undefined}>
         {/* key: a fresh viewer for each job, so the last one is shut down first */}
-        <Model3D key={cur.model.src} src={cur.model.src} poster={cur.model.poster} label={cur.model.poster.alt} shape="gallery" />
+        <Model3D key={cur.model.src} src={cur.model.src} poster={cur.model.poster} label={cur.model.poster.alt} shape="gallery" skp={cur.model.skp} />
         <div className="mt-6 flex flex-wrap items-baseline justify-between gap-x-8 gap-y-2 border-t border-line pt-5">
           <p className="text-[17px]">
             <span className="font-[620]">{cur.title}</span>

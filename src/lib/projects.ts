@@ -32,6 +32,9 @@ export type Plan = {
 export type Model3DInfo = {
   src: string; poster: Photo; title?: string; text?: string; shape?: 'wide' | 'tall';
   standardSizes?: boolean; // drawn at standard sizes from the photos, not measured (shown as a note in the SketchUp page gallery)
+  /* The same model as a SketchUp file to download, filled in by the loader when public/models/<job>.skp exists
+     (made by scripts/su-to-skp-code.py through the SketchUp connector). Not typed into the job JSON. */
+  skp?: { src: string; kb: number };
 };
 export type Project = {
   slug: string;
@@ -70,8 +73,19 @@ export function getAllProjects(): Project[] {
   return fs
     .readdirSync(dir)
     .filter((f) => f.endsWith('.json'))
-    .map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf-8')) as Project)
+    .map((f) => withSkp(JSON.parse(fs.readFileSync(path.join(dir, f), 'utf-8')) as Project))
     .sort((a, b) => b.finished.localeCompare(a.finished) || a.order - b.order);
+}
+
+/* A job's model gets its download (public/models/<job>.skp) when the file is there. Pages are built at deploy
+   time, when public/ is on disk (it is left out of the server functions, see next.config.ts). */
+function withSkp(p: Project): Project {
+  const m = p.plan?.model3d ?? p.model3d;
+  if (!m || m.skp) return p;
+  const src = m.src.replace(/\.glb$/, '.skp');
+  const file = path.join(process.cwd(), 'public', src);
+  if (src !== m.src && fs.existsSync(file)) m.skp = { src, kb: Math.max(1, Math.round(fs.statSync(file).size / 1024)) };
+  return p;
 }
 
 export function getProject(slug: string): Project | undefined {

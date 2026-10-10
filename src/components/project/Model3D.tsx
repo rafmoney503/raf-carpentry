@@ -41,7 +41,7 @@ function IconButton({ label, onClick, children }: { label: string; onClick: () =
   );
 }
 
-export default function Model3D({ src, poster, label, shape = 'wide' }: { src: string; poster: Photo; label: string; shape?: keyof typeof FRAME }) {
+export default function Model3D({ src, poster, label, shape = 'wide', skp }: { src: string; poster: Photo; label: string; shape?: keyof typeof FRAME; skp?: { src: string; kb: number } }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -347,6 +347,14 @@ export default function Model3D({ src, poster, label, shape = 'wide' }: { src: s
         ) : null}
         {dimLabels.length ? (
           <button type="button" onClick={toggleDims} aria-pressed={dimsOn} disabled={isApart} className="btn btn-ghost btn-sm disabled:opacity-45">{dimsOn ? 'Hide the sizes' : 'Show the sizes'}</button>
+        ) : null}
+        {skp ? (
+          // the same model as a SketchUp file: free to download, opens in SketchUp (including the free SketchUp for Web)
+          <a href={skp.src} download className="btn btn-ghost btn-sm gap-2" title="SketchUp file (.skp)">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 2.5v7.5M4.75 6.75 8 10l3.25-3.25M3 13.5h10" /></svg>
+            Download SketchUp file
+            <span className="font-mono text-[12px] font-normal text-faint">{skp.kb < 1024 ? `${skp.kb} KB` : `${(skp.kb / 1024).toFixed(1)} MB`}</span>
+          </a>
         ) : null}
         <p className="font-mono text-[13px] text-faint">{hint}</p>
       </div>
