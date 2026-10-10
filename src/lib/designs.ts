@@ -24,6 +24,8 @@ export type Design = {
   options: DesignOption[];
   notes?: string[]; // what to check, e.g. "Sizes are from the measuring visit on 12 October."
   example?: boolean; // the demo page, labelled as an example
+  request?: string; // the Job Kit design request it answers (its id), so the app can show "Design ready"
+  updatedFor?: string; // the request's readyAt (ISO) this version answers; a later Send changes is still to do
 };
 
 const dir = path.join(process.cwd(), 'content/designs');

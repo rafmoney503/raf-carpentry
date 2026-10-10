@@ -150,3 +150,26 @@ export const TOOLS = [
 
 export const SHOW_OPTIONS = ['Yes', 'Yes, but no faces', 'No'];
 export const REVIEW_OPTIONS = ['Asked', 'Left', 'Not yet'];
+
+/* Design requests (the Designs screen): photos of the space and anything they like, for a 3D design at /d/<code>. */
+export const DESIGN_SPACE: Section = {
+  id: 'before',
+  title: 'The space',
+  kind: 'photo',
+  goal: 1,
+  count: 'files',
+  intro: 'Straight on and from the side. Photos they sent on WhatsApp are fine: save them to Photos, then add them here.',
+  slots: [
+    { id: 'space', label: 'The wall or room', hint: 'The whole wall, floor to ceiling, and the corners.' },
+    { id: 'problems', label: 'Anything in the way', hint: 'Boiler, pipes, sockets, radiator, sloping ceiling, skirting.' },
+  ],
+};
+export const DESIGN_IDEAS: Section = {
+  id: 'drawings',
+  title: 'Sketches and pictures they like',
+  kind: 'photo',
+  goal: 0,
+  count: 'files',
+  intro: 'Your sketch with sizes on it, a picture they sent, a screenshot from Pinterest or Instagram.',
+  slots: [{ id: 'drawing', label: 'Sketches and pictures', hint: 'Anything that shows what they have in mind.' }],
+};

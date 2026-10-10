@@ -72,13 +72,13 @@ if LIST or not jobs:
         photos = sum(1 for i in items if i['kind'] == 'photo')
         clips = sum(1 for i in items if i['kind'] == 'video')
         state = f"sent to Claude {j['readyAt'][:10]}" if j.get('ready') else 'still being filled in'
-        print(f"{j['id']}\n    {j['what']}, {j['area']} ({j['month']}): {photos} photo{'' if photos == 1 else 's'}, {clips} clip{'' if clips == 1 else 's'}, {state}; last upload {j['_when'][:16]}")
+        print(f"{j['id']}\n    {'Design request: ' if j.get('kind') == 'design' else ''}{j['what']}, {j['area']} ({j['month']}): {photos} photo{'' if photos == 1 else 's'}, {clips} clip{'' if clips == 1 else 's'}, {state}; last upload {j['_when'][:16]}")
     sys.exit(0)
 
 if words:
     pick = [j for j in jobs if all(w in f"{j['id']} {j['what']} {j['area']}".lower() for w in words)]
 else:
-    pick = [j for j in jobs if j.get('ready')]
+    pick = [j for j in jobs if j.get('ready') and j.get('kind') != 'design']  # design requests: scripts/design-requests.py
 if not pick:
     sys.exit('No job matches. Try --list.')
 job = pick[0]

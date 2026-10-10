@@ -26,15 +26,26 @@ import {
 import { CHUNK, checkSetup, onChange, onStatus, readPin, savePin, sendDetails, wake, type SendState, type Status } from './uploader';
 import { R_MARK } from '@/lib/r-logo';
 import Mark from './mark';
+import { Area, Chips, field, label, Missing, SectionView } from './parts';
 import { PostsList, PostView, type Pack } from './posts';
+import { DesignsList, DesignView, designState, fetchReady, NewDesign, savedReady, type DesignsReady } from './designs';
 import './job-kit.css';
 
 type Tab = SectionId | 'notes' | 'send';
-type Screen = { name: 'home' } | { name: 'new' } | { name: 'job'; id: string; tab: Tab } | { name: 'settings' } | { name: 'posts' } | { name: 'post'; slug: string };
+type Screen =
+  | { name: 'home' }
+  | { name: 'new' }
+  | { name: 'job'; id: string; tab: Tab }
+  | { name: 'settings' }
+  | { name: 'posts' }
+  | { name: 'post'; slug: string }
+  | { name: 'designs' }
+  | { name: 'design'; id: string }
+  | { name: 'new-design' };
 
-const field =
-  'w-full min-w-0 rounded-sm border border-line-strong bg-mount px-3 text-[16px] text-ink placeholder:text-faint/55 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20';
-const label = 'font-mono text-[12.5px] uppercase tracking-[0.06em] text-faint';
+/* Where "‹ Back" goes when the app was reopened straight onto a screen (no history to go back through). */
+const parentOf = (s: Screen): Screen => (s.name === 'design' || s.name === 'new-design' ? { name: 'designs' } : s.name === 'post' ? { name: 'posts' } : { name: 'home' });
+const backLabel = (s: Screen) => (s.name === 'design' || s.name === 'new-design' ? 'Designs' : s.name === 'post' ? 'Posts' : 'Jobs');
 
 const thisMonth = () => {
   const d = new Date();
@@ -47,7 +58,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && (s.name === 'home' || s.name === 'job' || s.name === 'settings' || s.name === 'posts' || s.name === 'post')) return s;
+    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -86,6 +97,10 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
   const [pin, setPinState] = useState('');
   const [busy, setBusy] = useState<Record<string, number>>({}); // slot key -> photos still being saved
   const [problem, setProblem] = useState('');
+  const [designs, setDesigns] = useState<DesignsReady>({}); // design request id -> its page, once made
+  const checkDesigns = useCallback(() => {
+    void fetchReady(readPin()).then((r) => r && setDesigns(r));
+  }, []);
 
   const reload = useCallback(async () => {
     try {
@@ -98,7 +113,7 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
   }, []);
 
   /* Screens are history entries, so the phone's back gesture works. depth counts the ones made since the
-     app opened: "‹ Jobs" goes back through them, or straight home if the app was reopened on a job. */
+     app opened: "‹ Back" goes back through them, or to the screen above if the app was reopened on one. */
   const depth = useRef(0);
   const go = useCallback((s: Screen, push = true) => {
     setScreenState(s);
@@ -109,13 +124,15 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
     } else history.replaceState({ jk: s }, '');
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
-  const home = useCallback(() => {
+  const back = useCallback(() => {
     if (depth.current > 0) history.back();
-    else go({ name: 'home' }, false);
-  }, [go]);
+    else go(parentOf(screen), false);
+  }, [go, screen]);
 
   useEffect(() => {
     setPinState(readPin());
+    setDesigns(savedReady());
+    checkDesigns();
     const first = loadScreen();
     setScreenState(first);
     history.replaceState({ jk: first }, '');
@@ -127,6 +144,7 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
       if (document.visibilityState === 'visible') {
         void reload();
         wake();
+        checkDesigns();
       }
     };
     const back = (e: PopStateEvent) => {
@@ -148,12 +166,26 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
       document.removeEventListener('visibilitychange', visible);
       window.removeEventListener('popstate', back);
     };
-  }, [reload]);
+  }, [reload, checkDesigns]);
 
-  const job = screen.name === 'job' ? jobs.find((j) => j.id === screen.id) : undefined;
+  const job = screen.name === 'job' || screen.name === 'design' ? jobs.find((j) => j.id === screen.id) : undefined;
   useEffect(() => {
-    if (ready && screen.name === 'job' && !job) go({ name: 'home' }, false);
+    if (ready && (screen.name === 'job' || screen.name === 'design') && !job) go(parentOf(screen), false);
   }, [ready, screen, job, go]);
+  const designJobs = useMemo(() => jobs.filter((j) => j.kind === 'design'), [jobs]);
+
+  const forget = useCallback(
+    async (id: string) => {
+      for (const i of items.filter((x) => x.jobId === id)) {
+        await delFile(i.id);
+        await delItem(i.id);
+      }
+      await delJob(id);
+      await reload();
+      back();
+    },
+    [items, reload, back],
+  );
 
   const waiting = useMemo(() => items.filter((i) => !i.sent && !i.lost), [items]);
   const waitingBytes = waiting.reduce((n, i) => n + Math.max(0, i.bytes - i.sentParts * CHUNK), 0);
@@ -256,7 +288,8 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
         status={status}
         waiting={waiting.length}
         waitingBytes={waitingBytes}
-        onHome={screen.name === 'home' ? undefined : home}
+        onHome={screen.name === 'home' ? undefined : back}
+        backLabel={backLabel(screen)}
         onStatus={() => go({ name: 'settings' })}
       />
       {problem ? (
@@ -274,11 +307,17 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
           <p className="pt-16 text-center font-mono text-[14px] text-faint">Opening…</p>
         ) : screen.name === 'home' ? (
           <Home
-            jobs={jobs}
+            jobs={jobs.filter((j) => j.kind !== 'design')}
             items={items}
             done={done}
             posts={posts}
             onPosts={() => go({ name: 'posts' })}
+            designJobs={designJobs}
+            designs={designs}
+            onDesigns={() => {
+              checkDesigns();
+              go({ name: 'designs' });
+            }}
             pin={pin}
             status={status}
             waitingBytes={waitingBytes}
@@ -288,7 +327,7 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
           />
         ) : screen.name === 'new' ? (
           <NewJob
-            onCancel={home}
+            onCancel={back}
             onCreate={async (j) => {
               await putJob(j);
               await reload();
@@ -296,6 +335,40 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
               go({ name: 'job', id: j.id, tab: 'before' }, false);
             }}
           />
+        ) : screen.name === 'designs' ? (
+          <DesignsList jobs={designJobs} items={items} ready={designs} onNew={() => go({ name: 'new-design' })} onOpen={(id) => go({ name: 'design', id })} />
+        ) : screen.name === 'new-design' ? (
+          <NewDesign
+            onCancel={back}
+            onCreate={async (j) => {
+              await putJob(j);
+              await reload();
+              wake(QUIET_START);
+              go({ name: 'design', id: j.id }, false);
+            }}
+          />
+        ) : screen.name === 'design' ? (
+          job ? (
+            <DesignView
+              key={job.id}
+              job={job}
+              items={items.filter((i) => i.jobId === job.id)}
+              ready={designs[job.id]}
+              busy={busy}
+              onAdd={addFiles}
+              onRemove={removeItem}
+              onCaption={setCaption}
+              onJob={async (change) => {
+                await touch(job.id, change);
+                wake(16_000);
+              }}
+              onSend={async () => {
+                await touch(job.id, (j) => ({ ...j, readyAt: Date.now() }));
+                wake();
+              }}
+              onForget={() => forget(job.id)}
+            />
+          ) : null
         ) : screen.name === 'posts' ? (
           <PostsList packs={posts} onOpen={(slug) => go({ name: 'post', slug })} />
         ) : screen.name === 'post' ? (
@@ -336,15 +409,7 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
               await touch(job.id, (j) => ({ ...j, readyAt: Date.now() }));
               wake();
             }}
-            onForget={async () => {
-              for (const i of items.filter((x) => x.jobId === job.id)) {
-                await delFile(i.id);
-                await delItem(i.id);
-              }
-              await delJob(job.id);
-              await reload();
-              home();
-            }}
+            onForget={() => forget(job.id)}
           />
         ) : null}
       </main>
@@ -356,7 +421,21 @@ const QUIET_START = 2000;
 
 /* ---------- top bar ---------- */
 
-function TopBar({ status, waiting, waitingBytes, onHome, onStatus }: { status: Status; waiting: number; waitingBytes: number; onHome?: () => void; onStatus: () => void }) {
+function TopBar({
+  status,
+  waiting,
+  waitingBytes,
+  onHome,
+  backLabel,
+  onStatus,
+}: {
+  status: Status;
+  waiting: number;
+  waitingBytes: number;
+  onHome?: () => void;
+  backLabel: string;
+  onStatus: () => void;
+}) {
   const s = status.state;
   const text = s === 'sending' ? `Sending, ${waiting} left` : s === 'idle' && waiting ? `${waiting} waiting` : STATE_TEXT[s];
   const good = s === 'idle' && !waiting;
@@ -365,8 +444,8 @@ function TopBar({ status, waiting, waitingBytes, onHome, onStatus }: { status: S
     <header className="sticky top-0 z-30 border-b border-line bg-paper pt-[env(safe-area-inset-top)]">
       <div className="mx-auto flex h-14 max-w-[620px] items-center justify-between gap-3 px-4">
         {onHome ? (
-          <button type="button" onClick={onHome} className="-ml-2 flex h-11 items-center gap-1.5 px-2 text-[15px] font-semibold" aria-label="All jobs">
-            <span aria-hidden className="text-[18px] leading-none">‹</span> Jobs
+          <button type="button" onClick={onHome} className="-ml-2 flex h-11 items-center gap-1.5 px-2 text-[15px] font-semibold" aria-label={`Back to ${backLabel.toLowerCase()}`}>
+            <span aria-hidden className="text-[18px] leading-none">‹</span> {backLabel}
           </button>
         ) : (
           <p className="flex items-center gap-2 font-display text-[19px] font-[680] tracking-[-0.02em]">
@@ -414,6 +493,9 @@ function Home({
   done,
   posts,
   onPosts,
+  designJobs,
+  designs,
+  onDesigns,
   pin,
   status,
   waitingBytes,
@@ -426,6 +508,9 @@ function Home({
   done: Done;
   posts: Pack[];
   onPosts: () => void;
+  designJobs: Job[];
+  designs: DesignsReady;
+  onDesigns: () => void;
   pin: string;
   status: Status;
   waitingBytes: number;
@@ -481,6 +566,16 @@ function Home({
 
       <button type="button" onClick={onNew} className="btn btn-primary mt-6 w-full">
         New job
+      </button>
+
+      <button type="button" onClick={onDesigns} className="mt-3 flex w-full items-center justify-between gap-3 rounded-sm border border-line-strong bg-mount px-4 py-3.5 text-left transition-colors hover:border-ink">
+        <span>
+          <span className="block font-semibold">Designs for customers</span>
+          <span className="mt-0.5 block text-[14.5px] text-muted">{designLine(designJobs, designs)}</span>
+        </span>
+        <span aria-hidden className="text-[20px] text-accent">
+          →
+        </span>
       </button>
 
       {posts.length ? (
@@ -540,6 +635,15 @@ function Home({
       </p>
     </div>
   );
+}
+
+function designLine(list: Job[], ready: DesignsReady) {
+  if (!list.length) return 'A 3D design they can turn round on their phone, before you quote';
+  const states = list.map((j) => designState(j, ready[j.id]));
+  const done = states.filter((s) => s === 'ready' || s === 'updating').length; // an update keeps the link working
+  const coming = states.filter((s) => s === 'waiting' || s === 'sending').length;
+  const parts = [done ? `${done} ready` : '', coming ? `${coming} on the way` : '', list.length - done - coming ? `${list.length - done - coming} not sent yet` : ''].filter(Boolean);
+  return parts.join(' · ');
 }
 
 /* ---------- new job ---------- */
@@ -609,37 +713,6 @@ function NewJob({ onCancel, onCreate }: { onCancel: () => void; onCreate: (j: Jo
         </button>
       </div>
     </form>
-  );
-}
-
-/* A box that still needs filling in, said plainly under it. */
-function Missing({ children }: { children: React.ReactNode }) {
-  return (
-    <span role="alert" className="flex items-center gap-1.5 text-[14.5px] font-semibold text-ink">
-      <Mark state="lost" />
-      {children}
-    </span>
-  );
-}
-
-function Chips({ options, value, onChange, multi }: { options: string[]; value: string[]; onChange: (v: string[]) => void; multi?: boolean }) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {options.map((o) => {
-        const on = value.includes(o);
-        return (
-          <button
-            key={o}
-            type="button"
-            aria-pressed={on}
-            onClick={() => onChange(multi ? (on ? value.filter((v) => v !== o) : [...value, o]) : on ? [] : [o])}
-            className={`min-h-10 rounded-sm border px-3 py-1.5 text-[15px] transition-colors ${on ? 'border-accent bg-accent text-on-accent' : 'border-line-strong bg-mount text-ink hover:border-ink'}`}
-          >
-            {o}
-          </button>
-        );
-      })}
-    </div>
   );
 }
 
@@ -737,172 +810,6 @@ function JobView({
   );
 }
 
-function SectionView({
-  section,
-  job,
-  items,
-  busy,
-  onAdd,
-  onRemove,
-  onCaption,
-}: {
-  section: Section;
-  job: Job;
-  items: Item[];
-  busy: Record<string, number>;
-  onAdd: (jobId: string, section: Section, slot: Slot, files: File[]) => Promise<void>;
-  onRemove: (i: Item) => Promise<void>;
-  onCaption: (i: Item, c: string) => Promise<void>;
-}) {
-  const slots: Slot[] = [...section.slots, ...(section.extra ? [{ id: 'extra', label: section.extra, hint: 'Add a few words so it’s clear what it shows.' }] : [])];
-  return (
-    <div>
-      <p className="text-[15.5px] leading-relaxed text-muted">{section.intro}</p>
-      {section.note ? <p className="mt-2 font-mono text-[13px] leading-relaxed text-faint">{section.note}</p> : null}
-      <ul className="mt-5 grid gap-3">
-        {slots.map((slot) => (
-          <SlotCard
-            key={slot.id}
-            job={job}
-            section={section}
-            slot={slot}
-            items={items.filter((i) => i.section === section.id && i.slot === slot.id)}
-            guide={slot.pairWith ? items.find((i) => i.slot === slot.pairWith) : undefined}
-            saving={busy[`${job.id}:${slot.id}`] || 0}
-            onAdd={onAdd}
-            onRemove={onRemove}
-            onCaption={onCaption}
-          />
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function SlotCard({
-  job,
-  section,
-  slot,
-  items,
-  guide,
-  saving,
-  onAdd,
-  onRemove,
-  onCaption,
-}: {
-  job: Job;
-  section: Section;
-  slot: Slot;
-  items: Item[];
-  guide?: Item;
-  saving: number;
-  onAdd: (jobId: string, section: Section, slot: Slot, files: File[]) => Promise<void>;
-  onRemove: (i: Item) => Promise<void>;
-  onCaption: (i: Item, c: string) => Promise<void>;
-}) {
-  const cam = useRef<HTMLInputElement>(null);
-  const lib = useRef<HTMLInputElement>(null);
-  const [open, setOpen] = useState<string | null>(null);
-  const video = section.kind === 'video';
-  const accept = video ? 'video/*' : 'image/*';
-  const pick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    e.target.value = '';
-    if (files.length) void onAdd(job.id, section, slot, files);
-  };
-  const done = items.length > 0;
-  const shown = items.find((i) => i.id === open);
-
-  return (
-    <li className={`rounded-sm border bg-mount p-3.5 ${done ? 'border-line-strong' : 'border-line'}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="flex items-center gap-2 text-[16.5px] font-semibold leading-snug">
-            {done ? <Mark state="sent" /> : null}
-            {slot.label}
-          </p>
-          {slot.hint ? <p className="mt-1 text-[14.5px] leading-snug text-muted">{slot.hint}</p> : null}
-          {slot.target ? <p className="mt-1 font-mono text-[12.5px] text-faint">{slot.target}</p> : null}
-        </div>
-        {guide?.thumb ? (
-          <figure className="shrink-0 text-center">
-            <img src={guide.thumb} alt="Your before photo from this spot" className="h-[64px] w-[64px] rounded-sm object-cover opacity-90" />
-            <figcaption className="mt-0.5 font-mono text-[11px] text-faint">before</figcaption>
-          </figure>
-        ) : null}
-      </div>
-
-      {items.length || saving ? (
-        <ul className="jk-thumbs mt-3">
-          {items.map((i) => (
-            <li key={i.id}>
-              <button type="button" onClick={() => setOpen(open === i.id ? null : i.id)} className={`jk-thumb ${open === i.id ? 'is-open' : ''}`} aria-label={`${i.kind === 'video' ? 'Clip' : 'Photo'}${i.caption ? `: ${i.caption}` : ''}. Tap for options`}>
-                {i.thumb ? <img src={i.thumb} alt="" /> : <span className="jk-thumb-blank">{i.kind === 'video' ? 'Clip' : 'Photo'}</span>}
-                {i.kind === 'video' ? <span className="jk-len">{i.duration ? `${Math.round(i.duration)} s` : 'clip'}</span> : null}
-                <span className="jk-mark">
-                  <Mark state={i.sent ? 'sent' : 'waiting'} />
-                </span>
-              </button>
-            </li>
-          ))}
-          {Array.from({ length: saving }).map((_, n) => (
-            <li key={`s${n}`}>
-              <span className="jk-thumb jk-saving" aria-label="Saving">
-                <Mark state="sending" />
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      {shown ? <ItemPanel key={shown.id} item={shown} onRemove={() => void onRemove(shown).then(() => setOpen(null))} onCaption={(c) => void onCaption(shown, c)} /> : null}
-
-      <div className="mt-3 flex gap-2">
-        {slot.camera !== false ? (
-          <button type="button" className={`btn btn-sm flex-1 ${done ? 'btn-ghost' : 'btn-primary'}`} onClick={() => cam.current?.click()}>
-            {video ? (done ? 'Film another' : 'Film') : done ? 'Take another' : 'Take photo'}
-          </button>
-        ) : null}
-        <button type="button" className={`btn btn-sm btn-ghost ${slot.camera === false ? 'flex-1' : ''}`} onClick={() => lib.current?.click()}>
-          From Photos
-        </button>
-      </div>
-      <input ref={cam} type="file" accept={accept} capture="environment" className="hidden" onChange={pick} />
-      <input ref={lib} type="file" accept={accept} multiple className="hidden" onChange={pick} />
-    </li>
-  );
-}
-
-function ItemPanel({ item, onRemove, onCaption }: { item: Item; onRemove: () => void; onCaption: (c: string) => void }) {
-  const [caption, setCaption] = useState(item.caption);
-  const [sure, setSure] = useState(false);
-  const long = item.kind === 'video' && item.duration && item.duration > 30;
-  return (
-    <div className="mt-3 rounded-sm border border-line bg-paper p-3">
-      <div className="flex flex-wrap gap-x-3 gap-y-1 font-mono text-[12.5px] text-faint">
-        <span>{mb(item.bytes)}</span>
-        {item.w && item.h ? <span>{item.w} x {item.h}</span> : null}
-        {item.duration ? <span>{Math.round(item.duration)} s</span> : null}
-        <span>{item.sent ? 'sent' : item.sentParts ? `sending, ${item.sentParts} of ${item.parts} pieces` : 'waiting to send'}</span>
-      </div>
-      {long ? <p className="mt-2 text-[14px] leading-snug text-ink">Longer than 30 s. Fine for the time-lapse; the site plays up to 24 s of any other clip, so it will be cut.</p> : null}
-      <label className="mt-2.5 grid gap-1">
-        <span className={label}>What it shows (optional)</span>
-        <input
-          className={`${field} h-11`}
-          value={caption}
-          placeholder={item.slot === 'extra' ? 'e.g. Cut round the boiler pipe' : 'e.g. Left alcove'}
-          onChange={(e) => setCaption(e.target.value)}
-          onBlur={() => caption !== item.caption && onCaption(caption.trim())}
-        />
-      </label>
-      <button type="button" className={`mt-3 h-10 px-0 text-[14.5px] font-semibold ${sure ? 'text-ink underline' : 'text-muted'}`} onClick={() => (sure ? onRemove() : setSure(true))}>
-        {sure ? 'Tap again to delete it' : `Delete this ${item.kind === 'video' ? 'clip' : 'photo'}`}
-      </button>
-    </div>
-  );
-}
-
 /* ---------- notes ---------- */
 
 function NotesForm({ job, onNotes }: { job: Job; onNotes: (n: Notes) => Promise<void> }) {
@@ -984,15 +891,6 @@ function NotesForm({ job, onNotes }: { job: Job; onNotes: (n: Notes) => Promise<
         </a>
       </fieldset>
     </div>
-  );
-}
-
-function Area({ label: l, value, onChange, placeholder }: { label: string; value: string; onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void; placeholder: string }) {
-  return (
-    <label className="grid gap-1.5">
-      <span className={label}>{l}</span>
-      <textarea className={`${field} min-h-[76px] py-2.5 leading-snug`} rows={2} value={value} onChange={onChange} placeholder={placeholder} />
-    </label>
   );
 }
 

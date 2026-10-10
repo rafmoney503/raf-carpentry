@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     "**": ["public/**/*"],
   },
+  /* The Job Kit asks which design requests have a page yet; that route reads content/designs at run time. */
+  outputFileTracingIncludes: {
+    "/api/job-kit/designs": ["./content/designs/*.json"],
+  },
 };
 
 export default nextConfig;

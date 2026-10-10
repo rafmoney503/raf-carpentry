@@ -29,7 +29,9 @@ export type Job = {
   updatedAt: number;
   seq: number; // last number given to a file
   detailsSentAt?: number; // job.json last reached the inbox
-  readyAt?: number; // "Send to Claude" pressed
+  readyAt?: number; // "Send to Claude" pressed (or "Send for design", "Send changes")
+  kind?: 'job' | 'design'; // a design request for a customer, made into a private 3D page (/d/<code>)
+  design?: DesignBrief;
 };
 export type Item = {
   id: string;
@@ -53,6 +55,11 @@ export type Item = {
   sent: boolean;
   lost?: boolean; // the phone dropped the file before it was sent
 };
+
+/* A design request: what the customer wants, the options to show, and changes after they've seen it.
+   The customer's mobile stays on this phone (for the "Send on WhatsApp" button) and is never sent. */
+export type DesignBrief = { brief: string; options: string; mobile: string; changes: { at: number; text: string }[] };
+export const emptyBrief = (): DesignBrief => ({ brief: '', options: '', mobile: '', changes: [] });
 
 export const emptyNotes = (): Notes => ({
   spots: '',
@@ -159,8 +166,9 @@ const sizeLine = (s: Size) => {
   return `- ${s.what.trim() || 'Size'}: ${dims.map((v) => v || '?').join(' x ')}`;
 };
 
-/* notes.txt, in the same shape as the template in each job folder on the Mac. */
+/* notes.txt, in the same shape as the template in each job folder on the Mac (a design request gets its brief instead). */
 export function notesTxt(job: Job, items: Item[]) {
+  if (job.kind === 'design') return designTxt(job, items);
   const n = job.notes;
   const live = items.filter((i) => !i.lost);
   const photos = live.filter((i) => i.kind === 'photo').length;
@@ -221,6 +229,7 @@ export function jobJson(job: Job, items: Item[], ready: boolean) {
   return {
     v: 1,
     app: 'job-kit',
+    kind: job.kind ?? 'job',
     id: job.id,
     what: job.what,
     area: job.area,
@@ -231,5 +240,32 @@ export function jobJson(job: Job, items: Item[], ready: boolean) {
     readyAt: job.readyAt ? new Date(job.readyAt).toISOString() : null,
     updatedAt: new Date(job.updatedAt).toISOString(),
     items: list,
+    // design requests: the brief, the options and every change asked for, oldest first (never the mobile)
+    ...(job.kind === 'design' && job.design
+      ? { design: { brief: job.design.brief, options: job.design.options, changes: job.design.changes.map((c) => ({ at: new Date(c.at).toISOString(), text: c.text })) } }
+      : {}),
   };
+}
+
+function designTxt(job: Job, items: Item[]) {
+  const d = job.design ?? emptyBrief();
+  const sizes = job.notes.sizes.map(sizeLine).filter(Boolean);
+  const photos = items.filter((i) => !i.lost).length;
+  return [
+    `Design request: ${job.what}`,
+    `Area: ${job.area}`,
+    '',
+    'What they want:',
+    d.brief,
+    '',
+    'Options to show:',
+    d.options,
+    '',
+    'Sizes (W x H x D in mm):',
+    ...(sizes.length ? sizes : ['- ']),
+    '',
+    ...(d.changes.length ? ['Changes asked for:', ...d.changes.map((c) => `- ${new Date(c.at).toLocaleDateString('en-GB')}: ${c.text}`), ''] : []),
+    `From the Job Kit app: ${photos} photo${photos === 1 ? '' : 's'}.`,
+    '',
+  ].join('\n');
 }
