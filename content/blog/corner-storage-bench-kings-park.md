@@ -39,3 +39,5 @@ Built in MDF with a simple raised panel on each front, ready for painting.
 ![Two lids open](/images/blog/corner-storage-bench-kings-park/two-lids.jpg#narrow)
 
 [See every photo of this job](/portfolio/corner-storage-bench-kings-park), with the drawing and the finished bench side by side.
+
+There is also a [3D model of it](/portfolio/corner-storage-bench-kings-park#in-3d) on the job page, drawn in SketchUp. Turn it round, open it up or take it apart.

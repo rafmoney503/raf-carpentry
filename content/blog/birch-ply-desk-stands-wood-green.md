@@ -48,3 +48,5 @@ The desk top has slots cut through for the cables, and the two stands sit on top
 The Festool track saw cut the boards to size, the Makita DRT50 trim router did the template work, and the DeWalt DCW210 sander finished the edges.
 
 [See every photo of this job](/portfolio/desk-wood-green).
+
+There is also a [3D model of it](/portfolio/desk-wood-green#in-3d) on the job page, drawn in SketchUp at standard sizes rather than measured ones. Turn it round, open it up or take it apart.

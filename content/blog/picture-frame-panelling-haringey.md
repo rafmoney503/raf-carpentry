@@ -41,3 +41,5 @@ Once it was all up, the room was left for the decorator. Painted the same colour
 ![The room with panelling on every wall](/images/blog/picture-frame-panelling-haringey/room.jpg#narrow)
 
 [See every photo of this job](/portfolio/picture-frame-panelling-haringey).
+
+There is also a [3D model of it](/portfolio/picture-frame-panelling-haringey#in-3d) on the job page, drawn in SketchUp at standard sizes rather than measured ones. Turn it round or take it apart.

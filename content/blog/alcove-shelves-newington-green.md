@@ -36,3 +36,5 @@ The shelf above the cupboard has a light along it. In the day you do not notice 
 All white, to match the walls and the old window shutters next to it, so it looks like it was always part of the room.
 
 [See every photo of this job](/portfolio/alcove-shelves-newington-green).
+
+There is also a [3D model of it](/portfolio/alcove-shelves-newington-green#in-3d) on the job page, drawn in SketchUp at standard sizes rather than measured ones. Turn it round, open it up or take it apart.

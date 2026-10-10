@@ -45,3 +45,5 @@ Both wardrobes have the same doors: flat MDF with applied moulding to make two p
 ![Left wardrobe with its panelled doors](/images/blog/alcove-wardrobes-east-finchley/doors.jpg#slim)
 
 [See every photo of this job](/portfolio/alcove-wardrobes-east-finchley).
+
+There is also a [3D model of it](/portfolio/alcove-wardrobes-east-finchley#in-3d) on the job page, drawn in SketchUp at standard sizes rather than measured ones. Turn it round, open it up or take it apart.

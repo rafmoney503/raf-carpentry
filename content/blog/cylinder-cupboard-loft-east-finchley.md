@@ -36,3 +36,5 @@ The top of the frame follows the ceiling. The bottom track sits flat and level o
 > Before you box in a cylinder or a boiler, ask whoever services it how much room they need. Then leave a bit more.
 
 [See every photo of this job](/portfolio/cylinder-cupboard-loft-east-finchley).
+
+There is also a [3D model of it](/portfolio/cylinder-cupboard-loft-east-finchley#in-3d) on the job page, drawn in SketchUp at standard sizes rather than measured ones. Turn it round, open it up or take it apart.

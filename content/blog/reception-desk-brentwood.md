@@ -56,3 +56,5 @@ This is the view a visitor gets walking in: the raised counter first, then the s
 ![The desk seen from the door](/images/blog/reception-desk-brentwood/from-door.jpg)
 
 [See every photo of this job](/portfolio/reception-desk-brentwood), with a before and after slider of the same corner.
+
+There is also a [3D model of it](/portfolio/reception-desk-brentwood#in-3d) on the job page, drawn in SketchUp at standard sizes rather than measured ones. Turn it round, open it up or take it apart.

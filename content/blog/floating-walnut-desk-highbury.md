@@ -60,3 +60,5 @@ The drawers have no handles at all. You pull them from underneath, so the front 
 > Five hours on site, because the drawers were already built.
 
 [See every photo of this job](/portfolio/floating-walnut-desk-highbury).
+
+There is also a [3D model of it](/portfolio/floating-walnut-desk-highbury#in-3d) on the job page, drawn in SketchUp at standard sizes rather than measured ones. Turn it round, open it up or take it apart.

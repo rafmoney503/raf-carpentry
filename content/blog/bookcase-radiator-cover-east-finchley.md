@@ -60,3 +60,5 @@ Doors on the cupboards either side and the grille doors over the radiator. The a
 It is all MDF, ready for the decorator. Once it is painted and full of books, the grille will be the only clue there is a radiator there at all.
 
 [See every photo of this job](/portfolio/bookcase-radiator-cover-east-finchley).
+
+There is also a [3D model of it](/portfolio/bookcase-radiator-cover-east-finchley#in-3d) on the job page, drawn in SketchUp at standard sizes rather than measured ones. Turn it round, open it up or take it apart.

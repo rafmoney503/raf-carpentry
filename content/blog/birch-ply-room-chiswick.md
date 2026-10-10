@@ -53,3 +53,5 @@ Birch ply is strong, stays flat and does not mind being screwed into near its ed
 The desk drawer pulls out under the top, so the desk itself can stay clear for working.
 
 [See every photo of this job](/portfolio/birch-ply-room-chiswick), plus a timelapse that squeezes eight minutes of the build into sixteen seconds.
+
+There is also a [3D model of it](/portfolio/birch-ply-room-chiswick#in-3d) on the job page, drawn in SketchUp at standard sizes rather than measured ones. Turn it round, open it up or take it apart.

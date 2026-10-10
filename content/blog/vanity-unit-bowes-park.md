@@ -42,3 +42,5 @@ Painted a soft cream, with brass handles. The two lower drawers are deep enough 
 ![Bottom drawer open](/images/blog/vanity-unit-bowes-park/open.jpg#narrow)
 
 [See every photo of this job](/portfolio/vanity-unit-bowes-park).
+
+There is also a [3D model of it](/portfolio/vanity-unit-bowes-park#in-3d) on the job page, drawn in SketchUp at standard sizes rather than measured ones. Turn it round, open it up or take it apart.

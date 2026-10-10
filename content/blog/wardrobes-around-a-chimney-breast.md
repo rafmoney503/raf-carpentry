@@ -46,3 +46,5 @@ Inside, it is PAX: drawers, baskets and hanging space.
 ![Inside one wardrobe: drawers and hanging space](/images/blog/wardrobes-around-a-chimney-breast/inside.jpg#narrow)
 
 [See every photo of this job](/portfolio/chimney-breast-wardrobes-palmers-green), plus a short walk round the finished wall.
+
+There is also a [3D model of it](/portfolio/chimney-breast-wardrobes-palmers-green#in-3d) on the job page, drawn in SketchUp at standard sizes rather than measured ones. Turn it round, open it up or take it apart.

@@ -46,3 +46,5 @@ The right side has shelves over a stack of three drawers. The left has hanging r
 I went back to Chiswick in the spring and fitted out [a whole small room in birch ply](/blog/birch-ply-room-chiswick): wardrobe, cupboards and a desk.
 
 [See every photo of this job](/portfolio/birch-ply-wardrobe-chiswick).
+
+There is also a [3D model of it](/portfolio/birch-ply-wardrobe-chiswick#in-3d) on the job page, drawn in SketchUp at standard sizes rather than measured ones. Turn it round, open it up or take it apart.

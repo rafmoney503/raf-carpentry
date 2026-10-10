@@ -58,3 +58,5 @@ Three days later I went back to see it lived in. TV on, books up, plants back. T
 I also panelled the long wall in the same room that week. That one gets [its own post](/blog/picture-frame-panelling-haringey).
 
 [See every photo of this job](/portfolio/tv-unit-and-bookcase-haringey).
+
+There is also a [3D model of it](/portfolio/tv-unit-and-bookcase-haringey#in-3d) on the job page, drawn in SketchUp at standard sizes rather than measured ones. Turn it round, open it up or take it apart.

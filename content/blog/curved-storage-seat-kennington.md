@@ -66,3 +66,5 @@ On a bench seat, doors at the front get in the way of legs and chair feet. Lift-
 Straight cuts came off the Festool track saw on its rail. The curves were cut with the DeWalt jigsaw, and the Makita trim router and the DeWalt sander took care of the edges.
 
 [See every photo of this job](/portfolio/curved-seat-kennington), including a short clip of the lids opening.
+
+There is also a [3D model of it](/portfolio/curved-seat-kennington#in-3d) on the job page, drawn in SketchUp. Turn it round, open it up or take it apart.
