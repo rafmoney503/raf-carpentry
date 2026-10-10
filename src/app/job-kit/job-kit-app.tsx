@@ -31,7 +31,7 @@ type Tab = SectionId | 'notes' | 'send';
 type Screen = { name: 'home' } | { name: 'new' } | { name: 'job'; id: string; tab: Tab } | { name: 'settings' };
 
 const field =
-  'w-full rounded-sm border border-line-strong bg-mount px-3 text-[16px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20';
+  'w-full min-w-0 rounded-sm border border-line-strong bg-mount px-3 text-[16px] text-ink placeholder:text-faint/55 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20';
 const label = 'font-mono text-[12.5px] uppercase tracking-[0.06em] text-faint';
 
 const thisMonth = () => {
@@ -545,6 +545,8 @@ function NewJob({ onCancel, onCreate }: { onCancel: () => void; onCreate: (j: Jo
   const [month, setMonth] = useState(thisMonth());
   const [kinds, setKinds] = useState<string[]>([]);
   const [tried, setTried] = useState(false);
+  const whatRef = useRef<HTMLInputElement>(null);
+  const areaRef = useRef<HTMLInputElement>(null);
   const ok = what.trim() && area.trim();
 
   return (
@@ -553,7 +555,10 @@ function NewJob({ onCancel, onCreate }: { onCancel: () => void; onCreate: (j: Jo
       onSubmit={(e) => {
         e.preventDefault();
         setTried(true);
-        if (!ok) return;
+        if (!ok) {
+          (what.trim() ? areaRef : whatRef).current?.focus();
+          return;
+        }
         const now = Date.now();
         void onCreate({
           id: newJobId(month, what, area),
@@ -572,14 +577,14 @@ function NewJob({ onCancel, onCreate }: { onCancel: () => void; onCreate: (j: Jo
       <div className="mt-6 grid gap-5">
         <label className="grid gap-1.5">
           <span className={label}>What</span>
-          <input className={`${field} h-12`} value={what} onChange={(e) => setWhat(e.target.value)} placeholder="Alcove wardrobes" autoCapitalize="sentences" />
-          {tried && !what.trim() ? <span className="text-[14px] text-ink">Say what you are building.</span> : null}
+          <input ref={whatRef} className={`${field} h-12 ${tried && !what.trim() ? 'border-ink' : ''}`} value={what} onChange={(e) => setWhat(e.target.value)} placeholder="e.g. Alcove wardrobes" autoCapitalize="sentences" />
+          {tried && !what.trim() ? <Missing>Type what you are building.</Missing> : null}
         </label>
         <label className="grid gap-1.5">
           <span className={label}>Area</span>
-          <input className={`${field} h-12`} value={area} onChange={(e) => setArea(e.target.value)} placeholder="East Finchley" autoCapitalize="words" />
+          <input ref={areaRef} className={`${field} h-12 ${tried && !area.trim() ? 'border-ink' : ''}`} value={area} onChange={(e) => setArea(e.target.value)} placeholder="e.g. East Finchley" autoCapitalize="words" />
           <span className="text-[13.5px] text-faint">Area only, never the client’s name or street.</span>
-          {tried && !area.trim() ? <span className="text-[14px] text-ink">Add the area.</span> : null}
+          {tried && !area.trim() ? <Missing>Type the area.</Missing> : null}
         </label>
         <fieldset className="grid gap-2">
           <legend className={`${label} mb-2`}>Kind of job</legend>
@@ -587,7 +592,7 @@ function NewJob({ onCancel, onCreate }: { onCancel: () => void; onCreate: (j: Jo
         </fieldset>
         <label className="grid gap-1.5">
           <span className={label}>Finished (month)</span>
-          <input type="month" className={`${field} h-12`} value={month} onChange={(e) => setMonth(e.target.value || thisMonth())} />
+          <input type="month" className={`${field} jk-month h-12`} value={month} onChange={(e) => setMonth(e.target.value || thisMonth())} />
         </label>
       </div>
       <div className="mt-8 flex gap-3">
@@ -599,6 +604,16 @@ function NewJob({ onCancel, onCreate }: { onCancel: () => void; onCreate: (j: Jo
         </button>
       </div>
     </form>
+  );
+}
+
+/* A box that still needs filling in, said plainly under it. */
+function Missing({ children }: { children: React.ReactNode }) {
+  return (
+    <span role="alert" className="flex items-center gap-1.5 text-[14.5px] font-semibold text-ink">
+      <Mark state="lost" />
+      {children}
+    </span>
   );
 }
 
@@ -934,9 +949,9 @@ function NotesForm({ job, onNotes }: { job: Job; onNotes: (n: Notes) => Promise<
         </div>
       </fieldset>
 
-      <Area label="Before photo spots" value={n.spots} onChange={text('spots')} placeholder="Doorway, chest height. By the window. From the bed." />
-      <Area label="Materials" value={n.materials} onChange={text('materials')} placeholder="18 mm MDF, MR MDF for the plinth, birch ply shelves" />
-      <Area label="Hardware" value={n.hardware} onChange={text('hardware')} placeholder="Soft-close hinges, full-extension runners, knobs, LED strip" />
+      <Area label="Before photo spots" value={n.spots} onChange={text('spots')} placeholder="e.g. Doorway, chest height. By the window. From the bed." />
+      <Area label="Materials" value={n.materials} onChange={text('materials')} placeholder="e.g. 18 mm MDF, MR MDF for the plinth, birch ply shelves" />
+      <Area label="Hardware" value={n.hardware} onChange={text('hardware')} placeholder="e.g. Soft-close hinges, full-extension runners, knobs, LED strip" />
 
       <fieldset>
         <legend className={`${label} mb-2`}>Tools that did the work</legend>
@@ -944,7 +959,7 @@ function NotesForm({ job, onNotes }: { job: Job; onNotes: (n: Notes) => Promise<
         <input className={`${field} mt-2.5 h-11`} value={n.toolsOther} onChange={text('toolsOther')} placeholder="Anything else" aria-label="Other tools" />
       </fieldset>
 
-      <Area label="What was tricky" value={n.tricky} onChange={text('tricky')} placeholder="Wall 25 mm out of plumb, boiler pipe in the corner" />
+      <Area label="What was tricky" value={n.tricky} onChange={text('tricky')} placeholder="e.g. Wall 25 mm out of plumb, boiler pipe in the corner" />
       <Area label="What the client wanted" value={n.wanted} onChange={text('wanted')} placeholder="What it is for, in their words. No names." />
 
       <fieldset>

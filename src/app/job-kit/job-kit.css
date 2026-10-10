@@ -27,3 +27,7 @@
 .jk-spin { animation: jk-spin 0.9s linear infinite; }
 @keyframes jk-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .jk-spin { animation: none; } }
+
+/* iPhone draws the month box at its own width, past the edge of the screen; make it fill the column like the others. */
+.jk-month { -webkit-appearance: none; appearance: none; display: block; text-align: left; }
+.jk-month::-webkit-date-and-time-value { text-align: left; }
