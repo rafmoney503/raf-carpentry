@@ -1,0 +1,70 @@
+{
+  "code": "example",
+  "title": "Wardrobes either side of a chimney breast",
+  "area": "London",
+  "made": "2026-10-10",
+  "example": true,
+  "intro": "This is what a customer gets before anything is made: their design in 3D, on their phone. Drag to turn it round, use the buttons under it to open the doors or take it apart, and pinch to zoom.",
+  "options": [
+    {
+      "name": "Option A: two wardrobes",
+      "text": "A wardrobe in each alcove with panelled doors: a rail and shelves on one side, narrow shelves and space for the boiler on the other.",
+      "model": {
+        "src": "/models/alcove-wardrobes-east-finchley.glb",
+        "poster": {
+          "src": "/images/projects/alcove-wardrobes-east-finchley/model-3d.jpg",
+          "w": 1600,
+          "h": 1200,
+          "alt": "3D SketchUp model of the two panelled wardrobes either side of the chimney breast, one with a rail and shelves, one built around the boiler"
+        },
+        "shape": "tall"
+      },
+      "sizes": [
+        {
+          "label": "Each wardrobe",
+          "value": "950 x 2450 x 600 mm"
+        },
+        {
+          "label": "Ceiling",
+          "value": "2700 mm"
+        },
+        {
+          "label": "Chimney breast",
+          "value": "1500 mm wide"
+        }
+      ]
+    },
+    {
+      "name": "Option B: with a bridge",
+      "text": "The wardrobes joined by cupboards over the chimney breast, up to the ceiling, with flat doors and wooden knobs.",
+      "model": {
+        "src": "/models/chimney-breast-wardrobes-palmers-green.glb",
+        "poster": {
+          "src": "/images/projects/chimney-breast-wardrobes-palmers-green/model-3d.jpg",
+          "w": 1600,
+          "h": 1200,
+          "alt": "3D SketchUp model of the wall of wardrobes either side of the chimney breast, joined by a bridge of cupboards over the fireplace"
+        },
+        "shape": "tall"
+      },
+      "sizes": [
+        {
+          "label": "Each wardrobe",
+          "value": "1000 mm wide"
+        },
+        {
+          "label": "Ceiling",
+          "value": "2600 mm"
+        },
+        {
+          "label": "Chimney breast",
+          "value": "1350 mm wide"
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "This example is made from two finished jobs, so the two options are different rooms. A real design shows options for the same room, drawn to the sizes measured on the visit.",
+    "Colours on screen are a guide."
+  ]
+}
