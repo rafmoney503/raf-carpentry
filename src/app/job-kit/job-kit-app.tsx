@@ -27,7 +27,7 @@ import { CHUNK, checkSetup, onChange, onStatus, readPin, savePin, sendDetails, w
 import { R_MARK } from '@/lib/r-logo';
 import Mark from './mark';
 import { Area, Chips, field, label, Missing, SectionView, TalkBox } from './parts';
-import { PostsList, PostView, type Pack } from './posts';
+import { PostsList, PostView, postedEverywhere, type Pack } from './posts';
 import { DesignsList, DesignView, designState, fetchReady, NewDesign, savedReady, type DesignsReady } from './designs';
 import './job-kit.css';
 
@@ -174,17 +174,26 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
   }, [ready, screen, job, go]);
   const designJobs = useMemo(() => jobs.filter((j) => j.kind === 'design'), [jobs]);
 
+  /* Off this phone only: the inbox and the website keep everything. */
+  const removeJobs = useCallback(
+    async (ids: string[]) => {
+      for (const id of ids) {
+        for (const i of items.filter((x) => x.jobId === id)) {
+          await delFile(i.id);
+          await delItem(i.id);
+        }
+        await delJob(id);
+      }
+      await reload();
+    },
+    [items, reload],
+  );
   const forget = useCallback(
     async (id: string) => {
-      for (const i of items.filter((x) => x.jobId === id)) {
-        await delFile(i.id);
-        await delItem(i.id);
-      }
-      await delJob(id);
-      await reload();
+      await removeJobs([id]);
       back();
     },
-    [items, reload, back],
+    [removeJobs, back],
   );
 
   const waiting = useMemo(() => items.filter((i) => !i.sent && !i.lost), [items]);
@@ -312,6 +321,7 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
             done={done}
             posts={posts}
             onPosts={() => go({ name: 'posts' })}
+            onClear={removeJobs}
             designJobs={designJobs}
             designs={designs}
             onDesigns={() => {
@@ -493,6 +503,7 @@ function Home({
   done,
   posts,
   onPosts,
+  onClear,
   designJobs,
   designs,
   onDesigns,
@@ -508,6 +519,7 @@ function Home({
   done: Done;
   posts: Pack[];
   onPosts: () => void;
+  onClear: (ids: string[]) => Promise<void>;
   designJobs: Job[];
   designs: DesignsReady;
   onDesigns: () => void;
@@ -519,6 +531,20 @@ function Home({
   onSettings: () => void;
 }) {
   const { standalone, ios } = useStandalone();
+  // Finished: on the website, and nothing of it left to send.
+  const finished = jobs.filter((j) => done[j.id] && !items.some((i) => i.jobId === j.id && !i.sent && !i.lost));
+  const [sure, setSure] = useState(false);
+  const disarm = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const clear = () => {
+    if (disarm.current) clearTimeout(disarm.current);
+    if (!sure) {
+      setSure(true);
+      disarm.current = setTimeout(() => setSure(false), 5000);
+      return;
+    }
+    setSure(false);
+    void onClear(finished.map((j) => j.id));
+  };
   const [install, setInstall] = useState<(Event & { prompt: () => Promise<void> }) | null>(null);
   useEffect(() => {
     const keep = (e: Event) => {
@@ -582,9 +608,7 @@ function Home({
         <button type="button" onClick={onPosts} className="mt-3 flex w-full items-center justify-between gap-3 rounded-sm border border-line-strong bg-mount px-4 py-3.5 text-left transition-colors hover:border-ink">
           <span>
             <span className="block font-semibold">Posts for Instagram, TikTok and YouTube</span>
-            <span className="mt-0.5 block text-[14.5px] text-muted">
-              {posts.length} job{posts.length === 1 ? '' : 's'} ready to share
-            </span>
+            <span className="mt-0.5 block text-[14.5px] text-muted">{postsLine(posts)}</span>
           </span>
           <span aria-hidden className="text-[20px] text-accent">
             →
@@ -629,12 +653,30 @@ function Home({
         <p className="mt-7 font-mono text-[13.5px] text-faint">No jobs yet. Start one on the first visit, before anything moves.</p>
       )}
 
+      {finished.length ? (
+        <div className="mt-4 rounded-sm border border-line-strong bg-mount px-4 py-3.5">
+          <p className="text-[14.5px] leading-relaxed text-muted">
+            {finished.length === 1 ? '1 job is' : `${finished.length} jobs are`} finished and on your website. Clearing takes {finished.length === 1 ? 'it' : 'them'} off this phone only: the inbox and the website keep everything.
+          </p>
+          <button type="button" onClick={clear} className={`btn btn-sm mt-3 ${sure ? 'btn-primary' : 'btn-ghost'}`}>
+            {sure ? `Tap again to clear ${finished.length === 1 ? 'it' : `all ${finished.length}`}` : `Clear finished (${finished.length})`}
+          </button>
+        </div>
+      ) : null}
+
       <p className="mt-8 border-t border-line pt-4 font-mono text-[12.5px] leading-relaxed text-faint">
         On this phone: {waitingBytes ? `${mb(waitingBytes)} waiting to send` : 'nothing waiting, all sent'}.
         {status.state === 'offline' ? ' It sends when the signal is back and the app is open.' : ''}
       </p>
     </div>
   );
+}
+
+function postsLine(posts: Pack[]) {
+  const all = postedEverywhere(posts);
+  const left = posts.length - all;
+  if (!left) return 'All posted';
+  return `${left} to post${all ? `, ${all} posted everywhere` : ''}`;
 }
 
 function designLine(list: Job[], ready: DesignsReady) {

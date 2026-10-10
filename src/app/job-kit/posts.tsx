@@ -35,6 +35,12 @@ function readPosted(): Posted {
   }
 }
 
+/* How many packs are posted on all four, for the home screen's Posts card. */
+export const postedEverywhere = (packs: Pack[]) => {
+  const posted = readPosted();
+  return packs.filter((p) => WHERE.every((w) => posted[p.slug]?.[w])).length;
+};
+
 function usePosted() {
   const [posted, setPosted] = useState<Posted>(() => (typeof window === 'undefined' ? {} : readPosted()));
   const toggle = (slug: string, where: Where) => {
@@ -78,45 +84,64 @@ function copyNow(text: string) {
 
 export function PostsList({ packs, onOpen }: { packs: Pack[]; onOpen: (slug: string) => void }) {
   const { posted } = usePosted();
-  const order = useMemo(() => {
+  // Still to post first; the ones posted everywhere fold away into "Posted" at the bottom.
+  const [todo, all] = useMemo(() => {
     const left = (p: Pack) => WHERE.filter((w) => !posted[p.slug]?.[w]).length;
-    return [...packs].sort((a, b) => Number(left(a) === 0) - Number(left(b) === 0));
+    return [packs.filter((p) => left(p) > 0), packs.filter((p) => left(p) === 0)];
   }, [packs, posted]);
+  const [showPosted, setShowPosted] = useState(false);
+  const card = (p: Pack, next: boolean) => (
+    <li key={p.slug}>
+      <button type="button" onClick={() => onOpen(p.slug)} className="flex w-full items-stretch gap-3 rounded-sm border border-line-strong bg-mount p-2.5 text-left transition-colors hover:border-ink">
+        <img src={p.poster} alt="" className="h-[112px] w-[63px] shrink-0 rounded-sm bg-raised object-cover" />
+        <span className="min-w-0 flex-1 py-0.5">
+          {next ? <span className="kicker block text-[12.5px]">Next up</span> : null}
+          <span className="block truncate text-[16.5px] font-semibold leading-snug">{p.title}</span>
+          <span className="block truncate text-[14.5px] text-muted">{p.place}</span>
+          <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[12px] text-faint">
+            {WHERE.map((w) => (
+              <span key={w} className="inline-flex items-center gap-1">
+                <Mark state={posted[p.slug]?.[w] ? 'sent' : 'waiting'} />
+                {SHORT[w]}
+              </span>
+            ))}
+          </span>
+        </span>
+      </button>
+    </li>
+  );
   return (
     <div className="pt-7">
       <h1 className="font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">Posts</h1>
       <p className="mt-2 text-[15.5px] leading-relaxed text-muted">
         Each job made into a short video, a set of photos and the captions. Tap a button, pick the app, add a sound there and post. About 3 a week keeps the accounts busy.
       </p>
-      {order.length ? (
-        <ul className="mt-6 grid gap-3">
-          {order.map((p, i) => {
-            const done = WHERE.filter((w) => posted[p.slug]?.[w]);
-            return (
-              <li key={p.slug}>
-                <button type="button" onClick={() => onOpen(p.slug)} className="flex w-full items-stretch gap-3 rounded-sm border border-line-strong bg-mount p-2.5 text-left transition-colors hover:border-ink">
-                  <img src={p.poster} alt="" className="h-[112px] w-[63px] shrink-0 rounded-sm bg-raised object-cover" />
-                  <span className="min-w-0 flex-1 py-0.5">
-                    {i === 0 && done.length < WHERE.length ? <span className="kicker block text-[12.5px]">Next up</span> : null}
-                    <span className="block truncate text-[16.5px] font-semibold leading-snug">{p.title}</span>
-                    <span className="block truncate text-[14.5px] text-muted">{p.place}</span>
-                    <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[12px] text-faint">
-                      {WHERE.map((w) => (
-                        <span key={w} className="inline-flex items-center gap-1">
-                          <Mark state={posted[p.slug]?.[w] ? 'sent' : 'waiting'} />
-                          {SHORT[w]}
-                        </span>
-                      ))}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+      {todo.length ? (
+        <ul className="mt-6 grid gap-3">{todo.map((p, i) => card(p, i === 0))}</ul>
+      ) : packs.length ? (
+        <p className="mt-6 rounded-sm border border-accent bg-accent-soft px-4 py-3.5 text-[15px]">
+          <span className="flex items-center gap-2 font-semibold">
+            <Mark state="sent" /> All posted
+          </span>
+          <span className="mt-0.5 block text-muted">New posts appear here when Claude makes them from your next jobs.</span>
+        </p>
       ) : (
         <p className="mt-7 font-mono text-[13.5px] text-faint">No posts ready yet. Claude makes them from finished jobs.</p>
       )}
+
+      {all.length ? (
+        <div className="mt-7 border-t border-line pt-4">
+          <button type="button" onClick={() => setShowPosted((v) => !v)} className="flex h-11 w-full items-center justify-between text-left text-[15.5px] font-semibold" aria-expanded={showPosted}>
+            <span className="flex items-center gap-2">
+              <Mark state="sent" /> Posted everywhere ({all.length})
+            </span>
+            <span aria-hidden className="font-mono text-[13px] text-faint">
+              {showPosted ? 'Hide' : 'Show'}
+            </span>
+          </button>
+          {showPosted ? <ul className="mt-2 grid gap-3 opacity-80">{all.map((p) => card(p, false))}</ul> : null}
+        </div>
+      ) : null}
     </div>
   );
 }
