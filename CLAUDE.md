@@ -10,6 +10,7 @@ Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrob
 - **GitHub**: https://github.com/rafmoney503/raf-carpentry
 - **Stack**: Next.js 16 + Tailwind CSS v4 + TypeScript + TinaCMS
 - **Hosting**: Vercel (free tier, auto-deploys from GitHub main branch)
+- **Server function size (10 Oct 2026)**: blog pages and the sharing pictures (src/lib/og-card.tsx) check or read files in public/ with fs, so Next.js used to trace the whole public folder (photos, videos, models; over 200 MB) into every server function. With the third batch of blog photos the functions reached about 255 MB and Vercel refused the deploy (limit 250 MB; the GitHub status only says 'Deployment has failed'). next.config.ts now has `outputFileTracingExcludes: { '**': ['public/**/*'] }`, which brought each function down to about 41 MB. public/ files are served from the CDN, and the pages that read them are built at deploy time, so nothing needs them inside a function. Check with the .nft.json sizes in .next/server if a deploy fails after adding lots of files.
 - **Blog**: Markdown files in content/blog/ — parsed with gray-matter + remark
 
 ## Design (redesign, October 2026: "drafting paper")
