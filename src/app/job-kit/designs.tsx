@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Mark from './mark';
-import { Area, field, label, Missing, SectionView } from './parts';
+import { Area, field, label, Missing, SectionView, TalkBox } from './parts';
 import { DESIGN_IDEAS, DESIGN_SPACE, type Section, type Slot } from './plan';
 import { emptyBrief, emptyNotes, newJobId, type DesignBrief, type Item, type Job, type Size } from './store';
 
@@ -208,23 +208,26 @@ export function DesignView({
   // Typing saves to the phone after a short pause; leaving the screen saves at once.
   const [d, setD] = useState<DesignBrief>(job.design ?? emptyBrief());
   const [sizes, setSizes] = useState<Size[]>(job.notes.sizes);
-  const latest = useRef({ d, sizes });
+  const [talk, setTalk] = useState(job.notes.talk ?? '');
+  const latest = useRef({ d, sizes, talk });
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const save = (next: { d?: DesignBrief; sizes?: Size[] }) => {
+  const keep = (j: Job): Job => ({ ...j, design: latest.current.d, notes: { ...j.notes, sizes: latest.current.sizes, talk: latest.current.talk } });
+  const save = (next: { d?: DesignBrief; sizes?: Size[]; talk?: string }) => {
     if (next.d) setD(next.d);
     if (next.sizes) setSizes(next.sizes);
-    latest.current = { d: next.d ?? latest.current.d, sizes: next.sizes ?? latest.current.sizes };
+    if (next.talk !== undefined) setTalk(next.talk);
+    latest.current = { d: next.d ?? latest.current.d, sizes: next.sizes ?? latest.current.sizes, talk: next.talk ?? latest.current.talk };
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       timer.current = undefined;
-      void onJob((j) => ({ ...j, design: latest.current.d, notes: { ...j.notes, sizes: latest.current.sizes } }));
+      void onJob(keep);
     }, 700);
   };
   useEffect(
     () => () => {
       if (timer.current) {
         clearTimeout(timer.current);
-        void onJob((j) => ({ ...j, design: latest.current.d, notes: { ...j.notes, sizes: latest.current.sizes } }));
+        void onJob(keep);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -247,7 +250,7 @@ export function DesignView({
     const nextBrief = changeText ? { ...brief, changes: [...brief.changes, { at: Date.now(), text: changeText }] } : brief;
     setD(nextBrief);
     latest.current = { ...latest.current, d: nextBrief };
-    await onJob((j) => ({ ...j, design: nextBrief, notes: { ...j.notes, sizes: latest.current.sizes } }));
+    await onJob(keep);
     await onSend();
   };
 
@@ -300,10 +303,16 @@ export function DesignView({
           </p>
         </div>
       ) : (
-        <p className="mt-4 text-[15.5px] leading-relaxed text-muted">Add what you know (photos, sizes, what they want), then tap Send for design at the bottom. Gaps are fine: anything missing is drawn at standard sizes and the page says so.</p>
+        <p className="mt-4 text-[15.5px] leading-relaxed text-muted">Add what you know (say it, photos, sizes), then tap Send for design at the bottom. Gaps are fine: anything missing is drawn at standard sizes and the page says so.</p>
       )}
 
       <div className="mt-7 grid gap-8">
+        <TalkBox
+          value={talk}
+          onChange={(v) => save({ talk: v })}
+          hint="Walk round the room and say what they want: what goes where, sizes you measured, doors or drawers, colours, anything in the way, the options to show. Messy is fine, Claude sorts it out."
+        />
+
         <section>
           <h2 className="text-[19px] font-[650]">{DESIGN_SPACE.title}</h2>
           <div className="mt-2">

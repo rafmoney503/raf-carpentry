@@ -29,8 +29,9 @@ python3 scripts/design-requests.py --fetch <id>
 ```
 
 prints the code to use (the existing one for an update: keep it, the customer already has the link) and
-`updatedFor` (the request's `readyAt`, copied exactly). Read `notes.txt` (what they want, options, sizes,
-changes, newest last) and look at every photo in `before/` (the space) and `drawings/` (sketches, pictures
+`updatedFor` (the request's `readyAt`, copied exactly). Read `notes.txt` ("Talked through": what Raf said into
+the phone's dictation while walking round the room, unsorted and with the odd misheard word, so read it for
+meaning and trust typed sizes over spoken ones; then what they want, options, sizes, changes, newest last) and look at every photo in `before/` (the space) and `drawings/` (sketches, pictures
 of what they like). For an update, the newest change is what to do; earlier changes are already in.
 
 ## 3. Decide what to draw

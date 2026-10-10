@@ -209,6 +209,32 @@ export function ItemPanel({ item, onRemove, onCaption }: { item: Item; onRemove:
   );
 }
 
+/* "Talk it through": one big box for dictating with the keyboard microphone while walking round the room.
+   The phone turns speech into text (Claude can't listen to audio); messy is fine, it gets sorted later. */
+export function TalkBox({ value, onChange, hint }: { value: string; onChange: (v: string) => void; hint: string }) {
+  return (
+    <label className="grid gap-1.5 rounded-sm border border-accent bg-accent-soft p-3.5">
+      <span className="flex items-center gap-2 text-[17px] font-[650]">
+        <svg aria-hidden viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-accent" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="9" y="3" width="6" height="11" rx="3" />
+          <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+        </svg>
+        Talk it through
+      </span>
+      <span className="text-[14.5px] leading-relaxed text-muted">{hint}</span>
+      <textarea
+        className={`${field} mt-1 min-h-[150px] py-2.5 leading-snug`}
+        rows={6}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Tap here, then the microphone on the keyboard"
+        autoCapitalize="sentences"
+      />
+      <span className="text-[13px] leading-snug text-faint">No microphone on the keyboard? Settings, General, Keyboard, turn on Enable Dictation. Say “full stop” or “new line” as you go.</span>
+    </label>
+  );
+}
+
 export function Area({ label: l, value, onChange, placeholder }: { label: string; value: string; onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void; placeholder: string }) {
   return (
     <label className="grid gap-1.5">

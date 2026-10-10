@@ -110,6 +110,7 @@ for b in branches:
         'photos': len(j.get('items', [])) - len(missing),
         'missing': missing,
         'design': j.get('design', {}),
+        'talk': (j.get('notes', {}).get('talk') or '').strip(),
         'sizes': [s for s in j.get('notes', {}).get('sizes', []) if any((s.get(k) or '').strip() for k in ('w', 'h', 'd'))],
     })
 requests.sort(key=lambda r: r['readyAt'] or '')
@@ -172,6 +173,8 @@ for r in show:
     d = r['design'] or {}
     print(f"{r['id']}  [{r['state']}]" + (f"  code {r['code']}" if r['code'] else ''))
     print(f"    {r['what']}, {r['area']}; sent {(r['readyAt'] or '')[:16]}; {r['photos']} photo{'' if r['photos'] == 1 else 's'}" + (f", {len(r['missing'])} still on the phone" if r['missing'] else ''))
+    if r['talk']:
+        print(f"    said: {r['talk'][:160]}")
     if d.get('brief'):
         print(f"    wants: {d['brief'][:160]}")
     if d.get('options'):

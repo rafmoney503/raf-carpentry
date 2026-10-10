@@ -7,6 +7,7 @@ import { SECTIONS } from './plan';
 
 export type Size = { what: string; w: string; h: string; d: string };
 export type Notes = {
+  talk?: string; // "Talk it through": dictated with the keyboard microphone, unsorted (Claude sorts it)
   spots: string;
   sizes: Size[];
   materials: string;
@@ -62,6 +63,7 @@ export type DesignBrief = { brief: string; options: string; mobile: string; chan
 export const emptyBrief = (): DesignBrief => ({ brief: '', options: '', mobile: '', changes: [] });
 
 export const emptyNotes = (): Notes => ({
+  talk: '',
   spots: '',
   sizes: [{ what: 'The space', w: '', h: '', d: '' }],
   materials: '',
@@ -181,6 +183,7 @@ export function notesTxt(job: Job, items: Item[]) {
     `Finished: ${monthName(job.month)}`,
     `Kind of job: ${job.kinds.join(', ')}`,
     '',
+    ...talkLines(n.talk),
     `Before photo spots: ${n.spots}`,
     '',
     'Sizes (W x H x D in mm):',
@@ -247,6 +250,9 @@ export function jobJson(job: Job, items: Item[], ready: boolean) {
   };
 }
 
+/* What Raf said into "Talk it through", kept as he said it. */
+const talkLines = (t?: string) => (t?.trim() ? ['Talked through (dictated, not sorted yet):', t.trim(), ''] : []);
+
 function designTxt(job: Job, items: Item[]) {
   const d = job.design ?? emptyBrief();
   const sizes = job.notes.sizes.map(sizeLine).filter(Boolean);
@@ -255,6 +261,7 @@ function designTxt(job: Job, items: Item[]) {
     `Design request: ${job.what}`,
     `Area: ${job.area}`,
     '',
+    ...talkLines(job.notes.talk),
     'What they want:',
     d.brief,
     '',

@@ -26,7 +26,7 @@ import {
 import { CHUNK, checkSetup, onChange, onStatus, readPin, savePin, sendDetails, wake, type SendState, type Status } from './uploader';
 import { R_MARK } from '@/lib/r-logo';
 import Mark from './mark';
-import { Area, Chips, field, label, Missing, SectionView } from './parts';
+import { Area, Chips, field, label, Missing, SectionView, TalkBox } from './parts';
 import { PostsList, PostView, type Pack } from './posts';
 import { DesignsList, DesignView, designState, fetchReady, NewDesign, savedReady, type DesignsReady } from './designs';
 import './job-kit.css';
@@ -838,6 +838,12 @@ function NotesForm({ job, onNotes }: { job: Job; onNotes: (n: Notes) => Promise<
   return (
     <div className="grid gap-6">
       <p className="text-[15.5px] leading-relaxed text-muted">Two minutes here means the 3D model is drawn to your real sizes and the page says what you actually used. Leave out what you don’t know.</p>
+
+      <TalkBox
+        value={n.talk ?? ''}
+        onChange={(talk) => save({ ...n, talk })}
+        hint="Easiest on site: say it instead of typing it. Sizes, materials, hardware, what was tricky, what the client wanted. Messy is fine, Claude sorts it into the right places."
+      />
 
       <fieldset>
         <legend className={label}>Sizes in mm (W x H x D)</legend>
