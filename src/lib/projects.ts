@@ -64,6 +64,9 @@ export type Project = {
   planSale?: PlanSale;
   blogSlug?: string;
   tools?: { name: string; link: string }[];
+  /* The Job Kit job this page was made from (its id in the inbox), so the app on Raf's phone can show
+     "On your website" with a link to this page. */
+  jobKit?: string;
 };
 
 const dir = path.join(process.cwd(), 'content/projects');

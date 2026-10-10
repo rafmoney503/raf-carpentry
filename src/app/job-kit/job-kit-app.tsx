@@ -72,7 +72,10 @@ const STATE_TEXT: Record<SendState, string> = {
   error: 'Could not send, trying again soon',
 };
 
-export default function JobKitApp() {
+/* Jobs already made into pages on the site: Job Kit id -> the page. */
+export type Done = Record<string, { slug: string; title: string }>;
+
+export default function JobKitApp({ done = {} }: { done?: Done }) {
   const [ready, setReady] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [items, setItems] = useState<Item[]>([]);
@@ -271,6 +274,7 @@ export default function JobKitApp() {
           <Home
             jobs={jobs}
             items={items}
+            done={done}
             pin={pin}
             status={status}
             waitingBytes={waitingBytes}
@@ -300,6 +304,7 @@ export default function JobKitApp() {
         ) : job ? (
           <JobView
             job={job}
+            done={done[job.id]}
             items={items.filter((i) => i.jobId === job.id)}
             tab={screen.tab}
             busy={busy}
@@ -426,6 +431,7 @@ function useStandalone() {
 function Home({
   jobs,
   items,
+  done,
   pin,
   status,
   waitingBytes,
@@ -435,6 +441,7 @@ function Home({
 }: {
   jobs: Job[];
   items: Item[];
+  done: Done;
   pin: string;
   status: Status;
   waitingBytes: number;
@@ -457,7 +464,7 @@ function Home({
     <div className="pt-7">
       <h1 className="font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">Your jobs</h1>
       <p className="mt-2 text-[15.5px] leading-relaxed text-muted">
-        Photos, clips and sizes for each job, sent to your inbox as you go. Nothing stays on the phone once it is sent.
+        Photos, clips and sizes for each job, sent to your inbox as you go. Everything saves by itself: close the app and carry on from here any time, until the job is finished.
       </p>
 
       {!standalone ? (
@@ -517,7 +524,7 @@ function Home({
                     </span>
                     <span className="mt-0.5 flex items-center gap-1.5 font-mono text-[12.5px] text-faint">
                       <Mark state={left ? 'waiting' : 'sent'} />
-                      {left ? `${left} waiting to send` : j.readyAt ? 'Sent to Claude' : 'All sent'}
+                      {left ? `${left} waiting to send` : done[j.id] ? 'Done: on your website' : j.readyAt ? 'Sent to Claude, waiting for the page' : 'All sent, still open'}
                     </span>
                   </span>
                 </button>
@@ -644,6 +651,7 @@ const TABS: { id: Tab; title: string }[] = [...SECTIONS.map((s) => ({ id: s.id a
 
 function JobView({
   job,
+  done,
   items,
   tab,
   busy,
@@ -657,6 +665,7 @@ function JobView({
   onForget,
 }: {
   job: Job;
+  done?: { slug: string; title: string };
   items: Item[];
   tab: Tab;
   busy: Record<string, number>;
@@ -686,6 +695,7 @@ function JobView({
         <p className="kicker">{monthName(job.month)}</p>
         <h1 className="mt-1 font-display text-[28px] font-[680] leading-[1.05] tracking-[-0.025em]">{job.what}</h1>
         <p className="mt-0.5 text-[15.5px] text-muted">{job.area}</p>
+        <p className="mt-1.5 font-mono text-[12.5px] text-faint">Saves by itself as you go. Come back to it any time from Jobs.</p>
       </div>
 
       <nav ref={tabsRef} className="jk-tabs sticky top-[calc(env(safe-area-inset-top)+56px)] z-20 -mx-4 mt-4 flex gap-1 overflow-x-auto border-b border-line bg-paper px-4" aria-label="Parts of the job">
@@ -712,7 +722,7 @@ function JobView({
         {tab === 'notes' ? (
           <NotesForm job={job} onNotes={onNotes} />
         ) : tab === 'send' ? (
-          <SendPanel job={job} items={items} onSend={onSend} onForget={onForget} onJob={onJob} />
+          <SendPanel job={job} done={done} items={items} onSend={onSend} onForget={onForget} onJob={onJob} />
         ) : (
           <SectionView section={SECTIONS.find((s) => s.id === tab)!} job={job} items={live} busy={busy} onAdd={onAdd} onRemove={onRemove} onCaption={onCaption} />
         )}
@@ -988,7 +998,21 @@ function Area({ label: l, value, onChange, placeholder }: { label: string; value
 
 /* ---------- send ---------- */
 
-function SendPanel({ job, items, onSend, onForget, onJob }: { job: Job; items: Item[]; onSend: () => Promise<void>; onForget: () => Promise<void>; onJob: (change: (j: Job) => Job) => Promise<void> }) {
+function SendPanel({
+  job,
+  done,
+  items,
+  onSend,
+  onForget,
+  onJob,
+}: {
+  job: Job;
+  done?: { slug: string; title: string };
+  items: Item[];
+  onSend: () => Promise<void>;
+  onForget: () => Promise<void>;
+  onJob: (change: (j: Job) => Job) => Promise<void>;
+}) {
   const live = items.filter((i) => !i.lost);
   const lost = items.length - live.length;
   const left = live.filter((i) => !i.sent);
@@ -1034,10 +1058,23 @@ function SendPanel({ job, items, onSend, onForget, onJob }: { job: Job; items: I
         {lost ? ` ${lost} could not be sent (the phone cleared them).` : ''}
       </p>
 
-      {sentToClaude ? (
+      {done ? (
         <div className="mt-6 rounded-sm border border-accent bg-accent-soft p-4">
-          <p className="font-semibold">Sent to Claude</p>
-          <p className="mt-1 text-[15px] leading-relaxed text-muted">Now tell Claude:</p>
+          <p className="flex items-center gap-2 font-semibold">
+            <Mark state="sent" /> Done: it’s on your website
+          </p>
+          <p className="mt-1 text-[15px] leading-relaxed text-muted">Claude made the job page from it: {done.title}.</p>
+          <a href={`/portfolio/${done.slug}`} className="btn btn-primary btn-sm mt-3">
+            See the job page
+          </a>
+        </div>
+      ) : sentToClaude ? (
+        <div className="mt-6 rounded-sm border border-accent bg-accent-soft p-4">
+          <p className="flex items-center gap-2 font-semibold">
+            <Mark state="sent" /> Received in your inbox
+          </p>
+          <p className="mt-1 font-mono text-[12.5px] text-faint">{when(job.detailsSentAt)}</p>
+          <p className="mt-3 text-[15px] leading-relaxed text-muted">Last step: tell Claude</p>
           <p className="mt-2 rounded-sm border border-line bg-mount px-3 py-2.5 font-mono text-[14px]">{say}</p>
           <button
             type="button"
@@ -1054,12 +1091,12 @@ function SendPanel({ job, items, onSend, onForget, onJob }: { job: Job; items: I
           >
             {copied ? 'Copied' : 'Copy'}
           </button>
-          <p className="mt-4 text-[14.5px] leading-relaxed text-muted">Added something after sending? It goes to the inbox by itself; press Send again so the job is marked up to date.</p>
+          <p className="mt-4 text-[14.5px] leading-relaxed text-muted">When the job page is live, this box changes to “Done” with a link to it.</p>
         </div>
       ) : null}
 
-      <button type="button" className="btn btn-primary mt-6 w-full" onClick={() => void onSend()}>
-        {job.readyAt ? 'Send to Claude again' : 'Send to Claude'}
+      <button type="button" className={`btn mt-6 w-full ${job.readyAt ? 'btn-ghost' : 'btn-primary'}`} onClick={() => void onSend()}>
+        {job.readyAt ? 'Added more? Send again' : 'Send to Claude'}
       </button>
       {job.readyAt && !sentToClaude ? (
         <p className="mt-2 font-mono text-[13px] text-faint">{left.length ? 'Marked as finished. Sending the last files first…' : 'Sending the details…'}</p>
@@ -1105,6 +1142,9 @@ function RenameJob({ job, onJob }: { job: Job; onJob: (change: (j: Job) => Job) 
     </span>
   );
 }
+
+const when = (t?: number) =>
+  t ? new Date(t).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
 
 /* ---------- settings ---------- */
 
