@@ -86,7 +86,8 @@ export function DesignsList({ jobs, items, ready, onNew, onOpen }: { jobs: Job[]
           {jobs.map((j) => {
             const st = designState(j, ready[j.id]);
             const thumb = items.find((i) => i.jobId === j.id && i.thumb)?.thumb;
-            const text = { draft: 'Not sent yet', sending: 'Sending…', waiting: `Sent ${when(j.readyAt)}, design on its way`, ready: 'Design ready', updating: 'Changes on their way' }[st];
+            const shared = st === 'ready' && j.sharedAt && j.sharedAt >= (Date.parse(ready[j.id]?.updatedFor ?? '') || 0);
+            const text = { draft: 'Not sent yet', sending: 'Sending…', waiting: `Sent ${when(j.readyAt)}, design on its way`, ready: shared ? 'Sent to the customer' : 'Design ready to send', updating: 'Changes on their way' }[st];
             return (
               <li key={j.id}>
                 <button type="button" onClick={() => onOpen(j.id)} className="flex w-full items-stretch gap-3 rounded-sm border border-line-strong bg-mount p-2.5 text-left transition-colors hover:border-ink">
@@ -116,9 +117,17 @@ export function DesignsList({ jobs, items, ready, onNew, onOpen }: { jobs: Job[]
 
 /* ---------- a new request ---------- */
 
-export function NewDesign({ onCancel, onCreate }: { onCancel: () => void; onCreate: (j: Job) => void | Promise<void> }) {
-  const [what, setWhat] = useState('');
-  const [area, setArea] = useState('');
+export function NewDesign({
+  onCancel,
+  onCreate,
+  initial,
+}: {
+  onCancel: () => void;
+  onCreate: (j: Job) => void | Promise<void>;
+  initial?: { what: string; area: string; mobile?: string; sm8?: string }; // from a ServiceM8 job
+}) {
+  const [what, setWhat] = useState(initial?.what ?? '');
+  const [area, setArea] = useState(initial?.area ?? '');
   const [tried, setTried] = useState(false);
   const whatRef = useRef<HTMLInputElement>(null);
   const areaRef = useRef<HTMLInputElement>(null);
@@ -138,7 +147,8 @@ export function NewDesign({ onCancel, onCreate }: { onCancel: () => void; onCrea
         void onCreate({
           id: `design-${newJobId(month, what, area)}`,
           kind: 'design',
-          design: emptyBrief(),
+          design: { ...emptyBrief(), mobile: initial?.mobile ?? '' },
+          sm8: initial?.sm8,
           what: what.trim(),
           area: area.trim(),
           month,
@@ -268,7 +278,13 @@ export function DesignView({
           {st === 'updating' ? <p className="mt-1 text-[14.5px] leading-relaxed text-muted">The same link updates when they’re done, usually within 2 hours (7am to 8pm). Until then it shows the last version.</p> : null}
           <p className="mt-2 break-all rounded-sm border border-line bg-mount px-3 py-2.5 font-mono text-[13.5px]">{link}</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <a href={whatsappTo(d.mobile, message)} className="btn btn-whatsapp btn-sm" target="_blank" rel="noopener">
+            <a
+              href={whatsappTo(d.mobile, message)}
+              className="btn btn-whatsapp btn-sm"
+              target="_blank"
+              rel="noopener"
+              onClick={() => void onJob((j) => ({ ...keep(j), sharedAt: Date.now() }))}
+            >
               Send on WhatsApp
             </a>
             <button

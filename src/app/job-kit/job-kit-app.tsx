@@ -25,27 +25,52 @@ import {
 } from './store';
 import { CHUNK, checkSetup, onChange, onStatus, readPin, savePin, sendDetails, wake, type SendState, type Status } from './uploader';
 import { R_MARK } from '@/lib/r-logo';
+import type { Status as CurrentStatus } from '@/lib/servicem8';
 import Mark from './mark';
 import { Area, Chips, field, label, Missing, SectionView, TalkBox } from './parts';
 import { PostsList, PostView, postedEverywhere, type Pack } from './posts';
 import { DesignsList, DesignView, designState, fetchReady, NewDesign, savedReady, type DesignsReady } from './designs';
+import {
+  CurrentList,
+  CurrentView,
+  fetchSm8,
+  keepSm8,
+  NewEnquiry,
+  problemText,
+  readMarks,
+  saveMarks,
+  savedSm8,
+  sendEnquiry,
+  sendStatus,
+  shown,
+  stage,
+  todayLines,
+  whatOf,
+  type Marks,
+  type Sm8,
+  type TodayLine,
+} from './current';
 import './job-kit.css';
 
 type Tab = SectionId | 'notes' | 'send';
 type Screen =
   | { name: 'home' }
-  | { name: 'new' }
+  | { name: 'new'; from?: string }
   | { name: 'job'; id: string; tab: Tab }
   | { name: 'settings' }
   | { name: 'posts' }
   | { name: 'post'; slug: string }
   | { name: 'designs' }
   | { name: 'design'; id: string }
-  | { name: 'new-design' };
+  | { name: 'new-design'; from?: string }
+  | { name: 'current' }
+  | { name: 'sm8'; id: string }
+  | { name: 'enquiry' };
 
 /* Where "‹ Back" goes when the app was reopened straight onto a screen (no history to go back through). */
-const parentOf = (s: Screen): Screen => (s.name === 'design' || s.name === 'new-design' ? { name: 'designs' } : s.name === 'post' ? { name: 'posts' } : { name: 'home' });
-const backLabel = (s: Screen) => (s.name === 'design' || s.name === 'new-design' ? 'Designs' : s.name === 'post' ? 'Posts' : 'Jobs');
+const parentOf = (s: Screen): Screen =>
+  s.name === 'design' || s.name === 'new-design' ? { name: 'designs' } : s.name === 'post' ? { name: 'posts' } : s.name === 'sm8' || s.name === 'enquiry' ? { name: 'current' } : { name: 'home' };
+const backLabel = (s: Screen) => (s.name === 'design' || s.name === 'new-design' ? 'Designs' : s.name === 'post' ? 'Posts' : s.name === 'sm8' || s.name === 'enquiry' ? 'Current jobs' : 'Today');
 
 const thisMonth = () => {
   const d = new Date();
@@ -58,7 +83,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design'].includes(s.name)) return s;
+    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -101,6 +126,28 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
   const checkDesigns = useCallback(() => {
     void fetchReady(readPin()).then((r) => r && setDesigns(r));
   }, []);
+  // Current jobs from ServiceM8: the last list at once from the phone, then a fresh one (at most once a minute).
+  const [sm8, setSm8] = useState<Sm8>({ jobs: [], at: 0 });
+  const [marks, setMarks] = useState<Marks>({});
+  const [sm8Loading, setSm8Loading] = useState(false);
+  const lastSm8 = useRef(0);
+  const checkSm8 = useCallback((force = false) => {
+    const pin = readPin();
+    if (!pin || (!force && Date.now() - lastSm8.current < 60_000)) return;
+    lastSm8.current = Date.now();
+    setSm8Loading(true);
+    void fetchSm8(pin, { jobs: [], at: 0 }).then((r) => {
+      setSm8((prev) => (r.error ? { ...prev, error: r.error, detail: r.detail } : r));
+      setSm8Loading(false);
+    });
+  }, []);
+  const mark = useCallback((uuid: string, patch: Marks[string]) => {
+    setMarks((m) => {
+      const next = { ...m, [uuid]: { ...m[uuid], ...patch } };
+      saveMarks(next);
+      return next;
+    });
+  }, []);
 
   const reload = useCallback(async () => {
     try {
@@ -133,6 +180,9 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
     setPinState(readPin());
     setDesigns(savedReady());
     checkDesigns();
+    setSm8(savedSm8());
+    setMarks(readMarks());
+    checkSm8();
     const first = loadScreen();
     setScreenState(first);
     history.replaceState({ jk: first }, '');
@@ -145,6 +195,7 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
         void reload();
         wake();
         checkDesigns();
+        checkSm8();
       }
     };
     const back = (e: PopStateEvent) => {
@@ -166,12 +217,39 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
       document.removeEventListener('visibilitychange', visible);
       window.removeEventListener('popstate', back);
     };
-  }, [reload, checkDesigns]);
+  }, [reload, checkDesigns, checkSm8]);
 
   const job = screen.name === 'job' || screen.name === 'design' ? jobs.find((j) => j.id === screen.id) : undefined;
+  const cur = screen.name === 'sm8' ? sm8.jobs.find((j) => j.uuid === screen.id) : undefined;
+  const from = (screen.name === 'new' || screen.name === 'new-design') && screen.from ? sm8.jobs.find((j) => j.uuid === screen.from) : undefined;
   useEffect(() => {
     if (ready && (screen.name === 'job' || screen.name === 'design') && !job) go(parentOf(screen), false);
-  }, [ready, screen, job, go]);
+    if (ready && screen.name === 'sm8' && !cur && sm8.at) go(parentOf(screen), false);
+  }, [ready, screen, job, cur, sm8.at, go]);
+
+  /* Moving a ServiceM8 job on: shown at once, put back if ServiceM8 says no. */
+  const changeStatus = useCallback(
+    async (uuid: string, status: CurrentStatus) => {
+      const now = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/London' }).replace(' ', 'T').slice(0, 16);
+      let before: Sm8 = { jobs: [], at: 0 };
+      setSm8((s) => {
+        before = s;
+        const next = {
+          ...s,
+          jobs: s.jobs.map((j) => (j.uuid === uuid ? { ...j, status, ...(status === 'Work Order' ? { workOrder: now } : status === 'Completed' ? { completed: now } : {}) } : j)),
+        };
+        keepSm8(next);
+        return next;
+      });
+      const r = await sendStatus(readPin(), uuid, status);
+      if (!r.ok) {
+        setSm8(before);
+        keepSm8(before);
+        setProblem(problemText(r.error, r.detail));
+      }
+    },
+    [],
+  );
   const designJobs = useMemo(() => jobs.filter((j) => j.kind === 'design'), [jobs]);
 
   /* Off this phone only: the inbox and the website keep everything. */
@@ -322,6 +400,20 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
             posts={posts}
             onPosts={() => go({ name: 'posts' })}
             onClear={removeJobs}
+            sm8={sm8}
+            marks={marks}
+            onCurrent={() => {
+              checkSm8();
+              go({ name: 'current' });
+            }}
+            onToday={(l) => {
+              if (l.go === 'current') {
+                checkSm8();
+                go({ name: 'current' });
+              } else if (l.go === 'designs') go({ name: 'designs' });
+              else if (l.go === 'posts') go({ name: 'posts' });
+              else document.getElementById('kit-jobs')?.scrollIntoView({ behavior: 'instant', block: 'start' });
+            }}
             designJobs={designJobs}
             designs={designs}
             onDesigns={() => {
@@ -337,6 +429,8 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
           />
         ) : screen.name === 'new' ? (
           <NewJob
+            key={screen.from ?? 'new'}
+            initial={from ? { what: whatOf(from.description), area: from.area, sm8: from.uuid } : undefined}
             onCancel={back}
             onCreate={async (j) => {
               await putJob(j);
@@ -349,6 +443,8 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
           <DesignsList jobs={designJobs} items={items} ready={designs} onNew={() => go({ name: 'new-design' })} onOpen={(id) => go({ name: 'design', id })} />
         ) : screen.name === 'new-design' ? (
           <NewDesign
+            key={screen.from ?? 'new'}
+            initial={from ? { what: whatOf(from.description), area: from.area, mobile: from.mobile, sm8: from.uuid } : undefined}
             onCancel={back}
             onCreate={async (j) => {
               await putJob(j);
@@ -379,6 +475,54 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
               onForget={() => forget(job.id)}
             />
           ) : null
+        ) : screen.name === 'current' ? (
+          <CurrentList
+            sm8={sm8}
+            marks={marks}
+            kit={jobs}
+            designs={designs}
+            done={done}
+            loading={sm8Loading}
+            onRefresh={() => checkSm8(true)}
+            onNew={() => go({ name: 'enquiry' })}
+            onOpen={(id) => go({ name: 'sm8', id })}
+          />
+        ) : screen.name === 'enquiry' ? (
+          <NewEnquiry
+            onCancel={back}
+            onCreate={async (e) => {
+              const r = await sendEnquiry(readPin(), e);
+              if (!r.ok) return problemText(r.error, r.detail);
+              setSm8((s) => {
+                const next = { ...s, jobs: [r.data.job, ...s.jobs.filter((j) => j.uuid !== r.data.job.uuid)] };
+                keepSm8(next);
+                return next;
+              });
+              go({ name: 'sm8', id: r.data.job.uuid }, false);
+              return '';
+            }}
+          />
+        ) : screen.name === 'sm8' ? (
+          cur ? (
+            <CurrentView
+              key={cur.uuid}
+              job={cur}
+              marks={marks}
+              kit={jobs}
+              designs={designs}
+              done={done}
+              onStatus={(s) => changeStatus(cur.uuid, s)}
+              onMark={(patch) => {
+                mark(cur.uuid, patch);
+                if (patch.hidden) back();
+              }}
+              onDesign={() => go({ name: 'new-design', from: cur.uuid })}
+              onKit={() => go({ name: 'new', from: cur.uuid })}
+              onOpenKit={(k) => go(k.kind === 'design' ? { name: 'design', id: k.id } : { name: 'job', id: k.id, tab: 'before' })}
+            />
+          ) : (
+            <p className="pt-16 text-center font-mono text-[14px] text-faint">Getting the job from ServiceM8…</p>
+          )
         ) : screen.name === 'posts' ? (
           <PostsList packs={posts} onOpen={(slug) => go({ name: 'post', slug })} />
         ) : screen.name === 'post' ? (
@@ -504,6 +648,10 @@ function Home({
   posts,
   onPosts,
   onClear,
+  sm8,
+  marks,
+  onCurrent,
+  onToday,
   designJobs,
   designs,
   onDesigns,
@@ -520,6 +668,10 @@ function Home({
   posts: Pack[];
   onPosts: () => void;
   onClear: (ids: string[]) => Promise<void>;
+  sm8: Sm8;
+  marks: Marks;
+  onCurrent: () => void;
+  onToday: (l: TodayLine) => void;
   designJobs: Job[];
   designs: DesignsReady;
   onDesigns: () => void;
@@ -531,6 +683,7 @@ function Home({
   onSettings: () => void;
 }) {
   const { standalone, ios } = useStandalone();
+  const lines = todayLines({ sm8, marks, kit: [...jobs, ...designJobs], designs, done, postsLeft: posts.length - postedEverywhere(posts) });
   // Finished: on the website, and nothing of it left to send.
   const finished = jobs.filter((j) => done[j.id] && !items.some((i) => i.jobId === j.id && !i.sent && !i.lost));
   const [sure, setSure] = useState(false);
@@ -557,10 +710,8 @@ function Home({
 
   return (
     <div className="pt-7">
-      <h1 className="font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">Your jobs</h1>
-      <p className="mt-2 text-[15.5px] leading-relaxed text-muted">
-        Photos, clips and sizes for each job, sent to your inbox as you go. Everything saves by itself: close the app and carry on from here any time, until the job is finished.
-      </p>
+      <p className="kicker">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+      <h1 className="mt-1 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">Today</h1>
 
       {!standalone ? (
         <div className="mt-5 rounded-sm border border-accent bg-accent-soft px-4 py-3.5 text-[15px] leading-relaxed">
@@ -590,8 +741,41 @@ function Home({
         </button>
       ) : null}
 
-      <button type="button" onClick={onNew} className="btn btn-primary mt-6 w-full">
-        New job
+      <div className="mt-5 rounded-sm border border-line-strong bg-mount px-4 py-3">
+        {lines.length ? (
+          <ul className="divide-y divide-line">
+            {lines.map((l) => (
+              <li key={l.text}>
+                <button type="button" onClick={() => onToday(l)} className="flex min-h-11 w-full items-center gap-2.5 py-2 text-left text-[16px]">
+                  <span aria-hidden className={`h-2.5 w-2.5 shrink-0 rounded-full ${l.urgent ? 'bg-accent' : 'border border-faint'}`} />
+                  <span className={`flex-1 ${l.urgent ? 'font-semibold' : ''}`}>{l.text}</span>
+                  <span aria-hidden className="text-accent">
+                    →
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="flex min-h-11 items-center gap-2 text-[16px]">
+            <Mark state="sent" /> All clear: nothing waiting.
+          </p>
+        )}
+        {sm8.error && sm8.error !== 'offline' && sm8.error !== 'sm8-down' ? (
+          <button type="button" onClick={onCurrent} className="mt-1 block py-1.5 text-left font-mono text-[12.5px] text-faint underline">
+            ServiceM8 needs a look
+          </button>
+        ) : null}
+      </div>
+
+      <button type="button" onClick={onCurrent} className="mt-3 flex w-full items-center justify-between gap-3 rounded-sm border border-line-strong bg-mount px-4 py-3.5 text-left transition-colors hover:border-ink">
+        <span>
+          <span className="block font-semibold">Current jobs</span>
+          <span className="mt-0.5 block text-[14.5px] text-muted">{currentLine(sm8, marks)}</span>
+        </span>
+        <span aria-hidden className="text-[20px] text-accent">
+          →
+        </span>
       </button>
 
       <button type="button" onClick={onDesigns} className="mt-3 flex w-full items-center justify-between gap-3 rounded-sm border border-line-strong bg-mount px-4 py-3.5 text-left transition-colors hover:border-ink">
@@ -616,53 +800,60 @@ function Home({
         </button>
       ) : null}
 
-      {jobs.length ? (
-        <ul className="mt-7 grid gap-3">
-          {jobs.map((j) => {
-            const mine = items.filter((i) => i.jobId === j.id && !i.lost);
-            const photos = mine.filter((i) => i.kind === 'photo').length;
-            const clips = mine.filter((i) => i.kind === 'video').length;
-            const left = mine.filter((i) => !i.sent).length;
-            const sizes = j.notes.sizes.filter((s) => s.w || s.h || s.d).length;
-            const cover = mine.find((i) => i.slot === 'main-upright') ?? [...mine].reverse().find((i) => i.thumb);
-            return (
-              <li key={j.id}>
-                <button type="button" onClick={() => onOpen(j.id)} className="flex w-full items-stretch gap-3 rounded-sm border border-line-strong bg-mount p-2.5 text-left transition-colors hover:border-ink">
-                  <span className="relative block h-[76px] w-[76px] shrink-0 overflow-hidden rounded-sm bg-raised">
-                    {cover?.thumb ? <img src={cover.thumb} alt="" className="h-full w-full object-cover" /> : null}
-                  </span>
-                  <span className="min-w-0 flex-1 py-0.5">
-                    <span className="block truncate text-[16.5px] font-semibold leading-snug">{j.what}</span>
-                    <span className="block truncate text-[14.5px] text-muted">
-                      {j.area} · {monthName(j.month)}
+      <section id="kit-jobs" className="mt-9 scroll-mt-20">
+        <h2 className="font-display text-[24px] font-[680] leading-tight tracking-[-0.02em]">Job Kit jobs</h2>
+        <p className="mt-1.5 text-[15px] leading-relaxed text-muted">Photos, clips and sizes for each job, sent to your inbox as you go. Everything saves by itself.</p>
+        <button type="button" onClick={onNew} className="btn btn-primary mt-4 w-full">
+          New job
+        </button>
+        {jobs.length ? (
+          <ul className="mt-5 grid gap-3">
+            {jobs.map((j) => {
+              const mine = items.filter((i) => i.jobId === j.id && !i.lost);
+              const photos = mine.filter((i) => i.kind === 'photo').length;
+              const clips = mine.filter((i) => i.kind === 'video').length;
+              const left = mine.filter((i) => !i.sent).length;
+              const sizes = j.notes.sizes.filter((s) => s.w || s.h || s.d).length;
+              const cover = mine.find((i) => i.slot === 'main-upright') ?? [...mine].reverse().find((i) => i.thumb);
+              return (
+                <li key={j.id}>
+                  <button type="button" onClick={() => onOpen(j.id)} className="flex w-full items-stretch gap-3 rounded-sm border border-line-strong bg-mount p-2.5 text-left transition-colors hover:border-ink">
+                    <span className="relative block h-[76px] w-[76px] shrink-0 overflow-hidden rounded-sm bg-raised">
+                      {cover?.thumb ? <img src={cover.thumb} alt="" className="h-full w-full object-cover" /> : null}
                     </span>
-                    <span className="mt-1 block font-mono text-[12.5px] text-faint">
-                      {photos} photo{photos === 1 ? '' : 's'} · {clips} clip{clips === 1 ? '' : 's'} · {sizes} size{sizes === 1 ? '' : 's'}
+                    <span className="min-w-0 flex-1 py-0.5">
+                      <span className="block truncate text-[16.5px] font-semibold leading-snug">{j.what}</span>
+                      <span className="block truncate text-[14.5px] text-muted">
+                        {j.area} · {monthName(j.month)}
+                      </span>
+                      <span className="mt-1 block font-mono text-[12.5px] text-faint">
+                        {photos} photo{photos === 1 ? '' : 's'} · {clips} clip{clips === 1 ? '' : 's'} · {sizes} size{sizes === 1 ? '' : 's'}
+                      </span>
+                      <span className="mt-0.5 flex items-center gap-1.5 font-mono text-[12.5px] text-faint">
+                        <Mark state={left ? 'waiting' : 'sent'} />
+                        {left ? `${left} waiting to send` : done[j.id] ? 'Done: on your website' : j.readyAt ? 'Sent to Claude, waiting for the page' : 'All sent, still open'}
+                      </span>
                     </span>
-                    <span className="mt-0.5 flex items-center gap-1.5 font-mono text-[12.5px] text-faint">
-                      <Mark state={left ? 'waiting' : 'sent'} />
-                      {left ? `${left} waiting to send` : done[j.id] ? 'Done: on your website' : j.readyAt ? 'Sent to Claude, waiting for the page' : 'All sent, still open'}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <p className="mt-7 font-mono text-[13.5px] text-faint">No jobs yet. Start one on the first visit, before anything moves.</p>
-      )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="mt-5 font-mono text-[13.5px] text-faint">No jobs yet. Start one on the first visit, before anything moves.</p>
+        )}
 
-      {finished.length ? (
-        <div className="mt-4 rounded-sm border border-line-strong bg-mount px-4 py-3.5">
-          <p className="text-[14.5px] leading-relaxed text-muted">
-            {finished.length === 1 ? '1 job is' : `${finished.length} jobs are`} finished and on your website. Clearing takes {finished.length === 1 ? 'it' : 'them'} off this phone only: the inbox and the website keep everything.
-          </p>
-          <button type="button" onClick={clear} className={`btn btn-sm mt-3 ${sure ? 'btn-primary' : 'btn-ghost'}`}>
-            {sure ? `Tap again to clear ${finished.length === 1 ? 'it' : `all ${finished.length}`}` : `Clear finished (${finished.length})`}
-          </button>
-        </div>
-      ) : null}
+        {finished.length ? (
+          <div className="mt-4 rounded-sm border border-line-strong bg-mount px-4 py-3.5">
+            <p className="text-[14.5px] leading-relaxed text-muted">
+              {finished.length === 1 ? '1 job is' : `${finished.length} jobs are`} finished and on your website. Clearing takes {finished.length === 1 ? 'it' : 'them'} off this phone only: the inbox and the website keep everything.
+            </p>
+            <button type="button" onClick={clear} className={`btn btn-sm mt-3 ${sure ? 'btn-primary' : 'btn-ghost'}`}>
+              {sure ? `Tap again to clear ${finished.length === 1 ? 'it' : `all ${finished.length}`}` : `Clear finished (${finished.length})`}
+            </button>
+          </div>
+        ) : null}
+      </section>
 
       <p className="mt-8 border-t border-line pt-4 font-mono text-[12.5px] leading-relaxed text-faint">
         On this phone: {waitingBytes ? `${mb(waitingBytes)} waiting to send` : 'nothing waiting, all sent'}.
@@ -670,6 +861,16 @@ function Home({
       </p>
     </div>
   );
+}
+
+function currentLine(sm8: Sm8, marks: Marks) {
+  if (!sm8.at) return sm8.error === 'sm8-not-set-up' ? 'ServiceM8 not connected yet' : 'Your ServiceM8 jobs: enquiries, quotes, going ahead';
+  const list = shown(sm8, marks);
+  const quotes = list.filter((j) => j.status === 'Quote');
+  const going = list.filter((j) => j.status === 'Work Order').length;
+  const follow = quotes.filter((j) => stage(j, marks) === 'follow').length;
+  if (!quotes.length && !going) return 'Nothing open in ServiceM8';
+  return [quotes.length ? `${quotes.length} enquir${quotes.length === 1 ? 'y' : 'ies'} and quotes` : '', follow ? `${follow} to follow up` : '', going ? `${going} going ahead` : ''].filter(Boolean).join(' · ');
 }
 
 function postsLine(posts: Pack[]) {
@@ -690,9 +891,9 @@ function designLine(list: Job[], ready: DesignsReady) {
 
 /* ---------- new job ---------- */
 
-function NewJob({ onCancel, onCreate }: { onCancel: () => void; onCreate: (j: Job) => void | Promise<void> }) {
-  const [what, setWhat] = useState('');
-  const [area, setArea] = useState('');
+function NewJob({ onCancel, onCreate, initial }: { onCancel: () => void; onCreate: (j: Job) => void | Promise<void>; initial?: { what: string; area: string; sm8?: string } }) {
+  const [what, setWhat] = useState(initial?.what ?? '');
+  const [area, setArea] = useState(initial?.area ?? '');
   const [month, setMonth] = useState(thisMonth());
   const [kinds, setKinds] = useState<string[]>([]);
   const [tried, setTried] = useState(false);
@@ -718,6 +919,7 @@ function NewJob({ onCancel, onCreate }: { onCancel: () => void; onCreate: (j: Jo
           month,
           kinds,
           notes: emptyNotes(),
+          sm8: initial?.sm8,
           createdAt: now,
           updatedAt: now,
           seq: 0,
