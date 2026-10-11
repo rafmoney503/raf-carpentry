@@ -89,64 +89,61 @@ def _carcass(g, x0, x1, zb, zt, depth, mat, back_mat, back_t):
     box("Back", back_mat, x0 + T, 0, zb + T, x1 - T, -back_t, zt - T, g)
 
 
-def _inside(g, gname, u, xi0, xi1, zb, zt, depth, ikea, slot):
-    """Bottom (baskets, drawers or a shoe shelf), then hanging or shelves, and the top shelf."""
+def _inside(g, gname, sections, xi0, xi1, depth):
+    """The unit's stack, bottom to top, as placed by plan(): baskets, drawers, shoe shelf, shelves, hanging."""
     T = 18
     front = -depth + 2  # just behind the doors
-    za = zb
-    b = u["bottom"]
     pull = depth * 0.62
-    if b == "drawers":
-        for k in range(u["count"]):
-            z0 = zb + k * RULES["drawer"] + 4
-            z1 = zb + (k + 1) * RULES["drawer"] - 4
-            nm = "Drawer %d" % (k + 1)
-            box(nm, MDF, xi0 + 4, front + T, z0, xi1 - 4, front, z1, g)
-            box(nm + " box", MDF, xi0 + 16, front + T, z0 + 10, xi1 - 16, -40, z1 - 45, g)
-            _move(gname + ": " + nm, {"slide": {"offset": [0, -pull, 0]}}, [0.55 + 0.04 * k + slot, 0.92 + slot], [gname + ": " + nm + " box"])
-        za = zb + u["count"] * RULES["drawer"]
-    elif b == "baskets":
-        for k in range(u["count"]):
-            z0 = zb + k * RULES["basket"] + 15
-            z1 = z0 + 115
-            nm = "Basket %d" % (k + 1)
-            bx0, bx1, by0, by1 = xi0 + 12, xi1 - 12, front - 4, -40
-            box(nm, WIRE, bx0, by0 + 8, z0, bx1, by0, z1, g)  # front, with the pull
-            box(nm + " base", WIRE, bx0, by1, z0, bx1, by0 + 8, z0 + 4, g)
-            box(nm + " back rail", WIRE, bx0, by1, z1 - 8, bx1, by1 - 8, z1, g)
-            box(nm + " side rail, left", WIRE, bx0, by1, z1 - 8, bx0 + 8, by0 + 8, z1, g)
-            box(nm + " side rail, right", WIRE, bx1 - 8, by1, z1 - 8, bx1, by0 + 8, z1, g)
-            riders = [gname + ": " + nm + r for r in (" base", " back rail", " side rail, left", " side rail, right")]
-            _move(gname + ": " + nm, {"slide": {"offset": [0, -pull, 0]}}, [0.55 + 0.04 * k + slot, 0.92 + slot], riders)
-        za = zb + u["count"] * RULES["basket"]
-    elif b == "shoes":
-        box("Shoe shelf", MDF, xi0, -T, zb + 110, xi1, front + 20, zb + 128, g)
-        cyl("Shoe rail", RAIL, (xi0, front + 60, zb + 200), "x", 8, xi1 - xi0, 12, g)
-        za = zb + RULES["shoes"]
-    if b != "none":
-        box("Shelf over the " + ("drawers" if b == "drawers" else "baskets" if b == "baskets" else "shoes"), MDF, xi0, -T, za, xi1, front + 20, za + T, g)
-        za += T
-    top = zt
-    if u["topShelf"]:
-        box("Top shelf", MDF, xi0, -T, zt - RULES["topShelfSpace"], xi1, front + 20, zt - RULES["topShelfSpace"] + T, g)
-        top = zt - RULES["topShelfSpace"]
     ry = -depth / 2
-    a = u["above"]
-    if a in ("long", "short", "two"):
-        cyl("Hanging rail", RAIL, (xi0, ry, top - 60), "x", 12.5, xi1 - xi0, 16, g)
-    if a == "short" and top - 60 - 1000 >= za + 300:
-        box("Shelf under the hanging", MDF, xi0, -T, top - 1060, xi1, front + 20, top - 1060 + T, g)
-    if a == "two":
-        mid = za + (top - za) / 2
-        cyl("Hanging rail, lower", RAIL, (xi0, ry, mid - 60), "x", 12.5, xi1 - xi0, 16, g)
-    if a == "shelves" and u["shelves"] > 0:
-        step = (top - za) / (u["shelves"] + 1)
-        for k in range(u["shelves"]):
-            z = za + step * (k + 1) - T / 2
-            box("Shelf %d" % (k + 1), MDF, xi0, -T, z, xi1, front + 20, z + T, g)
+    n_shelf = n_rail = n_dr = n_bk = n_group = 0
+    slide = 0
+    for sec in sections:
+        k, z0, z1 = sec["kind"], sec["z0"], sec["z1"]
+        if k == "drawers":
+            for j in range(sec["count"]):
+                n_dr += 1
+                a = z0 + j * RULES["drawer"] + 4
+                b = z0 + (j + 1) * RULES["drawer"] - 4
+                nm = "Drawer %d" % n_dr
+                box(nm, MDF, xi0 + 4, front + T, a, xi1 - 4, front, b, g)
+                box(nm + " box", MDF, xi0 + 16, front + T, a + 10, xi1 - 16, -40, b - 45, g)
+                _move(gname + ": " + nm, {"slide": {"offset": [0, -pull, 0]}}, [0.55 + 0.03 * slide, 0.9 + 0.01 * slide], [gname + ": " + nm + " box"])
+                slide += 1
+        elif k == "baskets":
+            for j in range(sec["count"]):
+                n_bk += 1
+                a = z0 + j * RULES["basket"] + 15
+                b = a + 115
+                nm = "Basket %d" % n_bk
+                bx0, bx1, by0, by1 = xi0 + 12, xi1 - 12, front - 4, -40
+                box(nm, WIRE, bx0, by0 + 8, a, bx1, by0, b, g)
+                box(nm + " base", WIRE, bx0, by1, a, bx1, by0 + 8, a + 4, g)
+                box(nm + " back rail", WIRE, bx0, by1, b - 8, bx1, by1 - 8, b, g)
+                box(nm + " side rail, left", WIRE, bx0, by1, b - 8, bx0 + 8, by0 + 8, b, g)
+                box(nm + " side rail, right", WIRE, bx1 - 8, by1, b - 8, bx1, by0 + 8, b, g)
+                riders = [gname + ": " + nm + r for r in (" base", " back rail", " side rail, left", " side rail, right")]
+                _move(gname + ": " + nm, {"slide": {"offset": [0, -pull, 0]}}, [0.55 + 0.03 * slide, 0.9 + 0.01 * slide], riders)
+                slide += 1
+        elif k == "shoes":
+            box("Shoe shelf", MDF, xi0, -T, z0 + 110, xi1, front + 20, z0 + 128, g)
+            cyl("Shoe rail", RAIL, (xi0, front + 60, z0 + 200), "x", 8, xi1 - xi0, 12, g)
+        elif k == "shelf":
+            n_shelf += 1
+            box("Shelf %d" % n_shelf, MDF, xi0, -T, z0, xi1, front + 20, z0 + T, g)
+        elif k in ("long", "short"):
+            n_rail += 1
+            cyl("Hanging rail %d (%s)" % (n_rail, "long" if k == "long" else "short"), RAIL, (xi0, ry, z1 - 60), "x", 12.5, xi1 - xi0, 16, g)
+        elif k == "shelves" and sec["count"] > 0:
+            n_group += 1
+            step = (z1 - z0) / (sec["count"] + 1)
+            for j in range(sec["count"]):
+                n_shelf += 1
+                z = z0 + step * (j + 1) - T / 2
+                box("Shelf %d" % n_shelf, MDF, xi0, -T, z, xi1, front + 20, z + T, g)
 
 
 def build_wardrobe(s, p):
+    s = normalise(s)
     ikea = s["build"] == "ikea"
     wardrobe_materials(ikea)
     T = 18
@@ -176,7 +173,7 @@ def build_wardrobe(s, p):
         box("Filler, left", MDF, xl, -CD, 0, xl + f, yf, s["pax"])
         box("Filler, right", MDF, xr, -CD, 0, xr + f, yf, s["pax"])
 
-    zb = 60.0 if ikea else float(RULES["plinth"])
+    zb = float(RULES["paxBase"]) if ikea else float(RULES["plinth"])
     ztop = float(s["pax"]) if ikea else H
     for i, u in enumerate(s["units"]):
         up = p["units"][i]
@@ -193,8 +190,7 @@ def build_wardrobe(s, p):
         # the box's own bottom sits at zb (MDF) or 0 (PAX, bottom shelf at zb)
         if ikea:
             box("Bottom shelf", FRAME_W, x0 + T, -3, zb, x1 - T, -CD + 20, zb + T, g)
-        slot = 0.0
-        _inside(g, gname, u, x0 + T, x1 - T, zb + T, ztop - T, CD, ikea, slot)
+        _inside(g, gname, up["sections"], x0 + T, x1 - T, CD)
 
         # doors: a double's pair hinged at the outer edges; a single hinged towards the nearer end
         nd = up["doors"]

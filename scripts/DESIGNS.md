@@ -46,7 +46,8 @@ of what they like). For an update, the newest change is what to do; earlier chan
 ## 3b. A wardrobe from the planner (fast)
 
 When `--fetch` prints `wardrobe planner: .../wardrobe.json`, Raf filled in the Job Kit's wardrobe planner
-(build MDF or IKEA PAX, layout of doubles = 1 and singles = 0.5, ends, inside of each unit, doors, handles;
+(build MDF or IKEA PAX, layout of doubles = 1 and singles = 0.5, ends, the inside of each unit as a stack of
+pieces bottom to top (baskets, drawers, shelf, shelves, short or long hanging, shoe shelf), doors, handles;
 src/lib/wardrobe.ts). Build it with the template instead of drawing it board by board:
 
 ```sh
@@ -61,7 +62,9 @@ planner can't say (a chimney breast, a sloping ceiling, a boiler) still comes fr
 build those pieces as usual in step 4. The wardrobe's width, ceiling and depth are Raf's measured sizes; the
 heights inside (drawers 200, baskets 160, top shelf 300) are standard, so the notes say "The space is measured;
 the heights inside are standard and can move." Planner warnings (doors too wide, frames don't fit) are built
-anyway, mentioned in the final reply, never on the page.
+anyway, mentioned in the final reply, never on the page. An update whose newest change says "Wardrobe planner changed"
+(Raf's 'Update the 3D design' button) is rebuilt from the new wardrobe.json with the same code and the same option
+letters (new hash in the file names).
 The template is SketchUp helper code (scripts/wardrobe/build.py on su-helpers.py) run locally by
 scripts/wardrobe/local.py. To build the same thing in the SketchUp connector, add `--sketchup code.py`, paste
 that file into build_model, and rerun with `--from-sketchup <saved tool result>` (not tried in the connector yet:

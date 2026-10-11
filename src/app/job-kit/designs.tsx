@@ -365,7 +365,12 @@ export function DesignView({
           </div>
         </fieldset>
 
-        <WardrobePlanner spec={d.wardrobe} sizes={sizes} onChange={(wardrobe) => save({ d: { ...d, wardrobe } })} />
+        <WardrobePlanner
+          spec={d.wardrobe}
+          sizes={sizes}
+          onChange={(wardrobe) => save({ d: { ...d, wardrobe } })}
+          onUpdate={st === 'ready' ? () => void flushAndSend('Wardrobe planner changed: build the new layout') : undefined}
+        />
 
         <div className="grid gap-5">
           <Area label="What they want" value={d.brief} onChange={(e) => save({ d: { ...d, brief: e.target.value } })} placeholder="e.g. Two wardrobes either side of the chimney, rail and shelves, panelled doors, top boxes to the ceiling" />

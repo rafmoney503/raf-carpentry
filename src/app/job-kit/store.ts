@@ -1,6 +1,6 @@
 import type { Kind, SectionId } from './plan';
 import { SECTIONS } from './plan';
-import { plan, specLines, type WardrobeSpec } from '@/lib/wardrobe';
+import { normalise, plan, specLines, type WardrobeSpec } from '@/lib/wardrobe';
 
 /* The Job Kit keeps its jobs on the phone in IndexedDB ("raf-job-kit"): jobs and items (small, with a
    240 px thumbnail each) and, in their own store, the photo and clip files themselves. A file is
@@ -254,7 +254,7 @@ export function jobJson(job: Job, items: Item[], ready: boolean) {
             options: job.design.options,
             changes: job.design.changes.map((c) => ({ at: new Date(c.at).toISOString(), text: c.text })),
             // the wardrobe planner (src/lib/wardrobe.ts): what Raf picked, and the sums the app showed him
-            ...(job.design.wardrobe ? { wardrobe: job.design.wardrobe, wardrobePlan: plan(job.design.wardrobe) } : {}),
+            ...(job.design.wardrobe ? { wardrobe: normalise(job.design.wardrobe), wardrobePlan: plan(normalise(job.design.wardrobe)) } : {}),
           },
         }
       : {}),
@@ -279,7 +279,7 @@ function designTxt(job: Job, items: Item[]) {
     'Options to show:',
     d.options,
     '',
-    ...(d.wardrobe ? ['Wardrobe planner:', ...specLines(d.wardrobe).map((l) => `- ${l}`), ''] : []),
+    ...(d.wardrobe ? ['Wardrobe planner:', ...specLines(normalise(d.wardrobe)).map((l) => `- ${l}`), ''] : []),
     'Sizes (W x H x D in mm):',
     ...(sizes.length ? sizes : ['- ']),
     '',

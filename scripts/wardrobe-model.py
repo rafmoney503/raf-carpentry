@@ -42,6 +42,9 @@ spec = raw.get("design", {}).get("wardrobe") if "design" in raw else raw
 if not spec:
     sys.exit(f"{spec_path}: no wardrobe planner in this request")
 
+ns = {}
+exec(open(os.path.join(HERE, "wardrobe", "plan.py")).read(), ns)
+spec = ns["normalise"](spec)
 readback, meta, p = local.build(spec)
 if code_out:
     open(code_out, "w").write(local.sketchup_code(spec))
@@ -87,13 +90,24 @@ os.makedirs(os.path.dirname(os.path.abspath(glb_out)), exist_ok=True)
 subprocess.run(["node", os.path.join(HERE, "su-to-glb.mjs"), su_out, glb_out], check=True, cwd=os.path.dirname(HERE))
 
 # what the design page says
+def piece_words(pc, last):
+    k, c = pc["kind"], pc["count"]
+    if k == "baskets":
+        return "%d IKEA basket%s" % (c, "" if c == 1 else "s")
+    if k == "drawers":
+        return "%d drawer%s" % (c, "" if c == 1 else "s")
+    if k == "shelves":
+        return "%d shelves" % c
+    if k == "shelf":
+        return "a top shelf" if last else "a shelf"
+    return {"shoes": "a shoe shelf", "short": "short hanging", "long": "long hanging"}[k]
+
+
 def unit_words(u):
-    b = u["bottom"]
-    c = u["count"]
-    bottom = ("%d IKEA basket%s" % (c, "" if c == 1 else "s")) if b == "baskets" else ("%d drawer%s" % (c, "" if c == 1 else "s")) if b == "drawers" else "a shoe shelf" if b == "shoes" else ""
-    above = ("%d shelves" % u["shelves"]) if u["above"] == "shelves" else {"long": "long hanging", "short": "short hanging", "two": "two hanging rails"}[u["above"]]
-    w = (bottom + " under " + above) if bottom else above
-    return w + (" with a top shelf" if u["topShelf"] else "")
+    pcs = u["pieces"]
+    if not pcs:
+        return "left empty"
+    return "from the bottom " + ", ".join(piece_words(pc, i == len(pcs) - 1) for i, pc in enumerate(pcs))
 
 
 parts = []
