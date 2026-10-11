@@ -34,8 +34,11 @@ export type CurrentJob = {
   lost: string | null; // when it was marked Unsuccessful
   scheduledUntil: string | null;
   invoiceSent: boolean;
-  paid: boolean;
+  paid: boolean; // ServiceM8 says paid in full
+  total: number | null; // the job's total in ServiceM8 (the quote, then the invoice), as ServiceM8 shows it
+  payments: Payment[] | null; // null: ServiceM8 wouldn't give them this time
 };
+export type Payment = { amount: number; date: string | null; method: string; deposit: boolean };
 
 export class Sm8Error extends Error {
   constructor(
@@ -105,7 +108,12 @@ function areaOf(j: Row) {
   return pc ? pc.split(/\s+/)[0].toUpperCase() : city;
 }
 
-function shape(j: Row, client?: Row, contact?: Row): CurrentJob {
+const money = (v: unknown) => {
+  const n = Number.parseFloat(str(v).replace(/[^\d.-]/g, ''));
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
+};
+
+function shape(j: Row, client?: Row, contact?: Row, pays?: Row[] | null): CurrentJob {
   const status = (STATUSES as readonly string[]).includes(str(j.status)) ? (str(j.status) as Status) : 'Quote';
   const person = [str(contact?.first), str(contact?.last)].filter(Boolean).join(' ');
   const name = str(client?.name) || person || 'No name';
@@ -129,11 +137,20 @@ function shape(j: Row, client?: Row, contact?: Row): CurrentJob {
     scheduledUntil: when(j.job_is_scheduled_until_stamp),
     invoiceSent: on(j.invoice_sent),
     paid: on(j.payment_received),
+    total: money(j.total_invoice_amount) > 0 ? money(j.total_invoice_amount) : null,
+    payments:
+      pays === null
+        ? null
+        : (pays ?? [])
+            .map((p) => ({ amount: money(p.amount), date: when(p.timestamp), method: str(p.method), deposit: on(p.is_deposit) }))
+            .filter((p) => p.amount !== 0)
+            .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '')),
   };
 }
 
 /* Open quotes, work orders, and the jobs finished or marked unsuccessful in the last 30 days, newest first,
-   with the client and the best contact (the job's own contact, else the client's). Seven requests in two rounds. */
+   with the client, the best contact (the job's own contact, else the client's) and the payments taken.
+   Eight requests in two rounds; if ServiceM8 won't give the payments, the jobs still come, without them. */
 export async function currentJobs(): Promise<CurrentJob[]> {
   const [quotes, orders, done, lost] = await Promise.all(['Quote', 'Work Order', 'Completed', 'Unsuccessful'].map((s) => list('job.json', `active eq 1 and status eq '${s}'`)));
   const cutoff = Date.now() - 30 * 864e5;
@@ -143,11 +160,14 @@ export async function currentJobs(): Promise<CurrentJob[]> {
   };
   const jobs = [...quotes, ...orders, ...done.filter(since('completion_date')), ...lost.filter(since('unsuccessful_date'))].filter((j) => str(j.uuid) && str(j.active) !== '0');
   if (!jobs.length) return [];
-  const [clients, jobContacts, clientContacts] = await Promise.all([
+  const [clients, jobContacts, clientContacts, payments] = await Promise.all([
     list('company.json', 'active eq 1'),
     list('jobcontact.json', 'active eq 1'),
     list('companycontact.json', 'active eq 1'),
+    list('jobpayment.json', 'active eq 1').catch(() => null),
   ]);
+  const paysBy = new Map<string, Row[]>();
+  for (const p of payments ?? []) paysBy.set(str(p.job_uuid), [...(paysBy.get(str(p.job_uuid)) ?? []), p]);
   const clientBy = new Map(clients.map((c) => [str(c.uuid), c]));
   const useful = (c: Row) => str(c.mobile) || str(c.phone) || str(c.email) || str(c.first);
   const rank = (c: Row) => (/^(job|job contact)$/i.test(str(c.type)) ? 0 : /billing/i.test(str(c.type)) ? 1 : 2) - (on(c.is_primary_contact) ? 0.5 : 0);
@@ -156,7 +176,9 @@ export async function currentJobs(): Promise<CurrentJob[]> {
   for (const c of jobContacts) byJob.set(str(c.job_uuid), [...(byJob.get(str(c.job_uuid)) ?? []), c]);
   const byClient = new Map<string, Row[]>();
   for (const c of clientContacts) byClient.set(str(c.company_uuid), [...(byClient.get(str(c.company_uuid)) ?? []), c]);
-  const out = jobs.map((j) => shape(j, clientBy.get(str(j.company_uuid)), best(byJob.get(str(j.uuid)) ?? []) ?? best(byClient.get(str(j.company_uuid)) ?? [])));
+  const out = jobs.map((j) =>
+    shape(j, clientBy.get(str(j.company_uuid)), best(byJob.get(str(j.uuid)) ?? []) ?? best(byClient.get(str(j.company_uuid)) ?? []), payments === null ? null : (paysBy.get(str(j.uuid)) ?? [])),
+  );
   return out.sort((a, b) => (b.created ?? '').localeCompare(a.created ?? ''));
 }
 

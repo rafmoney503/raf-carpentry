@@ -105,6 +105,24 @@ const ago = (t: number) => {
   return d <= 0 ? 'today' : d === 1 ? 'yesterday' : `${d} days ago`;
 };
 
+/* Money, from ServiceM8: the job's total there and the payments recorded against it. */
+export const gbp = (n: number) => `£${n.toLocaleString('en-GB', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
+export function moneyOf(j: CurrentJob) {
+  const payments = j.payments ?? null; // older lists kept on the phone have neither
+  const total = j.total ?? null;
+  const paid = Math.round((payments ?? []).reduce((s, p) => s + p.amount, 0) * 100) / 100;
+  const left = total === null ? null : j.paid ? 0 : Math.max(0, Math.round((total - paid) * 100) / 100);
+  return { total, paid, left, payments };
+}
+function moneyLine(j: CurrentJob) {
+  const { total, paid, left, payments } = moneyOf(j);
+  if (j.status === 'Quote' || j.status === 'Unsuccessful') return total ? `Quote ${gbp(total)}` : '';
+  if (total === null) return paid ? `Paid ${gbp(paid)}` : '';
+  if (left === 0) return `${gbp(total)}, paid in full`;
+  if (payments === null) return gbp(total);
+  return paid ? `${gbp(total)} · paid ${gbp(paid)} · ${gbp(left!)} left` : `${gbp(total)} · nothing paid yet`;
+}
+
 export type Stage = 'new' | 'sent' | 'follow' | 'going' | 'done' | 'lost';
 export const quoteSentAt = (j: CurrentJob, m: Marks) => (Number.isFinite(parse(j.quoteSent)) ? parse(j.quoteSent) : m[j.uuid]?.quoteSentAt);
 export function stage(j: CurrentJob, m: Marks): Stage {
@@ -121,11 +139,12 @@ export function lostList(s: Sm8) {
   return s.jobs.filter((j) => j.status === 'Unsuccessful' && (!Number.isFinite(lostAt(j)) || Date.now() - lostAt(j) < LOST_DAYS * DAY));
 }
 
-/* What shows: everything open, finished ones for 14 days unless hidden; unsuccessful ones are listed apart. */
+/* What shows: everything open; completed ones for 14 days, or while money is still owed (ServiceM8 sends
+   the last 30 days), unless hidden; unsuccessful ones are listed apart. */
 export function shown(s: Sm8, m: Marks) {
   return s.jobs.filter((j) => {
     if (m[j.uuid]?.hidden || j.status === 'Unsuccessful') return false;
-    if (j.status === 'Completed') return Date.now() - (parse(j.completed) || 0) < DONE_DAYS * DAY;
+    if (j.status === 'Completed') return Date.now() - (parse(j.completed) || 0) < DONE_DAYS * DAY || (moneyOf(j).left ?? 0) > 0;
     return true;
   });
 }
@@ -136,8 +155,8 @@ function stageText(j: CurrentJob, m: Marks): [string, 'waiting' | 'sending' | 's
   if (st === 'new') return [`New enquiry${Number.isFinite(created) ? `, ${ago(created)}` : ''}: quote to send`, 'waiting'];
   if (st === 'sent') return [`Quote sent ${ago(quoteSentAt(j, m)!)}`, 'sending'];
   if (st === 'follow') return [`Quote sent ${ago(quoteSentAt(j, m)!)}: follow up?`, 'lost'];
-  if (st === 'going') return [`Going ahead${Number.isFinite(parse(j.workOrder)) ? ` since ${day(parse(j.workOrder))}` : ''}`, 'sending'];
-  if (st === 'done') return [`Finished${Number.isFinite(parse(j.completed)) ? ` ${day(parse(j.completed))}` : ''}${j.paid ? ', paid' : j.invoiceSent ? ', invoice sent' : ''}`, 'sent'];
+  if (st === 'going') return [`Work Order${Number.isFinite(parse(j.workOrder)) ? ` since ${day(parse(j.workOrder))}` : ''}`, 'sending'];
+  if (st === 'done') return [`Completed${Number.isFinite(parse(j.completed)) ? ` ${day(parse(j.completed))}` : ''}${j.invoiceSent && !j.paid ? ', invoice sent' : ''}`, 'sent'];
   const t = lostAt(j);
   return [Number.isFinite(t) ? `Unsuccessful ${day(t)}, drops off ${day(t + LOST_DAYS * DAY)}` : 'Unsuccessful', 'waiting'];
 }
@@ -177,6 +196,8 @@ function linked(j: CurrentJob, kit: Job[], designs: DesignsReady, done: Record<s
 function Card({ j, marks, kit, designs, done, onOpen }: { j: CurrentJob; marks: Marks; kit: Job[]; designs: DesignsReady; done: Record<string, { slug: string }>; onOpen: (uuid: string) => void }) {
   const [text, mark] = stageText(j, marks);
   const { chips } = linked(j, kit, designs, done);
+  const money = moneyLine(j);
+  const owed = j.status === 'Completed' && (moneyOf(j).left ?? 0) > 0;
   return (
     <li>
       <button type="button" onClick={() => onOpen(j.uuid)} className="block w-full rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
@@ -190,6 +211,7 @@ function Card({ j, marks, kit, designs, done, onOpen }: { j: CurrentJob; marks: 
           <Mark state={mark} />
           {text}
         </span>
+        {money ? <span className={`mt-1 block font-mono text-[12.5px] ${owed ? 'font-semibold text-ink' : 'text-faint'}`}>{money}</span> : null}
         {chips.length ? (
           <span className="mt-1.5 flex flex-wrap gap-1.5">
             {chips.map((c) => (
@@ -227,9 +249,9 @@ export function CurrentList({
 }) {
   const list = shown(sm8, marks);
   const groups: [string, CurrentJob[]][] = [
-    ['Enquiries and quotes', list.filter((j) => j.status === 'Quote')],
-    ['Going ahead', list.filter((j) => j.status === 'Work Order')],
-    [`Finished, last ${DONE_DAYS} days`, list.filter((j) => j.status === 'Completed')],
+    ['Quote: enquiries and quotes', list.filter((j) => j.status === 'Quote')],
+    ['Work Order: going ahead', list.filter((j) => j.status === 'Work Order')],
+    [`Completed (last ${DONE_DAYS} days, or still owing)`, list.filter((j) => j.status === 'Completed')],
   ];
   const lost = lostList(sm8);
   const [showLost, setShowLost] = useState(false);
@@ -297,8 +319,8 @@ export function CurrentList({
 
 const STEPS: { status: Status; name: string }[] = [
   { status: 'Quote', name: 'Quote' },
-  { status: 'Work Order', name: 'Going ahead' },
-  { status: 'Completed', name: 'Finished' },
+  { status: 'Work Order', name: 'Work Order' },
+  { status: 'Completed', name: 'Completed' },
 ];
 
 export function CurrentView({
@@ -425,13 +447,13 @@ export function CurrentView({
           {job.status === 'Quote' ? (
             <>
               <button type="button" disabled={busy} className={`btn btn-sm w-full ${sure === 'Work Order' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => move('Work Order')}>
-                {sure === 'Work Order' ? 'Tap again: going ahead' : 'They said yes: going ahead'}
+                {sure === 'Work Order' ? 'Tap again: Work Order' : 'They said yes: move to Work Order'}
               </button>
             </>
           ) : null}
           {job.status === 'Work Order' ? (
             <button type="button" disabled={busy} className={`btn btn-sm w-full ${sure === 'Completed' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => move('Completed')}>
-              {sure === 'Completed' ? 'Tap again: finished' : 'Finished: mark it completed'}
+              {sure === 'Completed' ? 'Tap again: Completed' : 'Job finished: move to Completed'}
             </button>
           ) : null}
           {job.status === 'Completed' ? (
@@ -450,6 +472,8 @@ export function CurrentView({
         </div>
         <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint">Moving a job here moves it in ServiceM8 too. Nothing is ever deleted there.</p>
       </section>
+
+      <MoneyBox job={job} />
 
       <section className="mt-6 grid gap-3">
         <h2 className="text-[19px] font-[650]">From here</h2>
@@ -473,6 +497,59 @@ export function CurrentView({
         )}
       </section>
     </div>
+  );
+}
+
+/* What the job is worth and what has come in, as ServiceM8 has it. */
+function MoneyBox({ job }: { job: CurrentJob }) {
+  const { total, paid, left, payments } = moneyOf(job);
+  const quote = job.status === 'Quote' || job.status === 'Unsuccessful';
+  if (total === null && !payments?.length) return null;
+  return (
+    <section className="mt-6 rounded-sm border border-line-strong bg-mount p-4">
+      <h2 className="text-[19px] font-[650]">Money</h2>
+      <dl className="mt-3 grid grid-cols-3 gap-2">
+        <div>
+          <dt className={label}>{quote ? 'Quote' : 'Total'}</dt>
+          <dd className="mt-0.5 font-mono text-[17px]">{total === null ? '?' : gbp(total)}</dd>
+        </div>
+        {!quote ? (
+          <>
+            <div>
+              <dt className={label}>Paid</dt>
+              <dd className="mt-0.5 font-mono text-[17px]">{payments === null && !job.paid ? '?' : gbp(job.paid && total !== null ? Math.max(paid, total) : paid)}</dd>
+            </div>
+            <div>
+              <dt className={label}>Left</dt>
+              <dd className={`mt-0.5 font-mono text-[17px] ${left ? 'font-semibold' : ''}`}>{left === null || (payments === null && !job.paid) ? '?' : gbp(left)}</dd>
+            </div>
+          </>
+        ) : null}
+      </dl>
+      {payments?.length ? (
+        <ul className="mt-3 grid gap-1 border-t border-line pt-3 font-mono text-[13px] text-muted">
+          {payments.map((p, i) => (
+            <li key={i} className="flex justify-between gap-3">
+              <span>
+                {p.date ? day(parse(p.date)) : 'Payment'}
+                {p.method ? ` · ${p.method}` : ''}
+                {p.deposit ? ' · deposit' : ''}
+              </span>
+              <span className="text-ink">{gbp(p.amount)}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint">
+        {payments === null && !job.paid
+          ? 'ServiceM8 didn’t send the payments this time; Refresh to try again.'
+          : job.paid
+            ? 'ServiceM8 has it as paid in full.'
+            : quote
+              ? 'The quote total as ServiceM8 has it.'
+              : `As ServiceM8 has it${job.invoiceSent ? ', invoice sent' : ''}. Payments are added in ServiceM8.`}
+      </p>
+    </section>
   );
 }
 
@@ -589,7 +666,13 @@ export function todayLines({
   const making = designJobs.filter((d) => ['waiting', 'sending', 'updating'].includes(designState(d, designs[d.id])));
   if (toSend.length) lines.push({ text: `${n(toSend.length, 'design', 'designs')} ready to send`, go: 'designs', urgent: true });
   if (making.length) lines.push({ text: `${n(making.length, 'design', 'designs')} being made`, go: 'designs' });
-  if (going) lines.push({ text: `${n(going, 'job', 'jobs')} going ahead`, go: 'current' });
+  // Completed in ServiceM8 but not fully paid (the last 30 days ServiceM8 sends).
+  const owing = list.filter((j) => j.status === 'Completed' && (moneyOf(j).left ?? 0) > 0 && moneyOf(j).payments !== null);
+  if (owing.length) {
+    const sum = owing.reduce((s, j) => s + (moneyOf(j).left ?? 0), 0);
+    lines.push({ text: `${gbp(sum)} left to collect on ${n(owing.length, 'completed job', 'completed jobs')}`, go: 'current', urgent: true });
+  }
+  if (going) lines.push({ text: `${n(going, 'job', 'jobs')} on Work Order`, go: 'current' });
   const photoJobs = kit.filter((k) => k.kind !== 'design');
   const waitingPage = photoJobs.filter((k) => k.readyAt && !done[k.id]).length;
   const open = photoJobs.filter((k) => !k.readyAt).length;

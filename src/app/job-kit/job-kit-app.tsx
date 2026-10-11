@@ -870,7 +870,7 @@ function currentLine(sm8: Sm8, marks: Marks) {
   const going = list.filter((j) => j.status === 'Work Order').length;
   const follow = quotes.filter((j) => stage(j, marks) === 'follow').length;
   if (!quotes.length && !going) return 'Nothing open in ServiceM8';
-  return [quotes.length ? `${quotes.length} enquir${quotes.length === 1 ? 'y' : 'ies'} and quotes` : '', follow ? `${follow} to follow up` : '', going ? `${going} going ahead` : ''].filter(Boolean).join(' · ');
+  return [quotes.length ? `${quotes.length} enquir${quotes.length === 1 ? 'y' : 'ies'} and quotes` : '', follow ? `${follow} to follow up` : '', going ? `${going} on Work Order` : ''].filter(Boolean).join(' · ');
 }
 
 function postsLine(posts: Pack[]) {
