@@ -1,0 +1,36 @@
+{
+  "code": "bhjhj5rh",
+  "request": "design-2026-10-wardrobe-finchley-d3da",
+  "updatedFor": "2026-10-11T21:41:27.332Z",
+  "title": "Fitted wardrobe with six doors",
+  "area": "Finchley",
+  "made": "2026-10-11",
+  "options": [
+    {
+      "name": "The design",
+      "text": "Three double units in MDF from floor to ceiling on a plinth, with six flat doors and wooden knobs. Inside, from the bottom: on the left 3 drawers, a shelf, short hanging and a top shelf; in the middle 3 shelves, long hanging and a top shelf; on the right 2 drawers, 2 shelves, short hanging and a top shelf.",
+      "model": {
+        "src": "/designs/bhjhj5rh/a-xzik2h.glb",
+        "poster": {
+          "src": "/designs/bhjhj5rh/a-xzik2h.jpg",
+          "w": 1600,
+          "h": 1200,
+          "alt": "3D model of a six-door fitted wardrobe from floor to ceiling with drawers, shelves and hanging rails inside"
+        },
+        "shape": "tall"
+      },
+      "sizes": [
+        { "label": "Width, wall to wall", "value": "3000 mm" },
+        { "label": "Height, to the ceiling", "value": "2400 mm" },
+        { "label": "Depth", "value": "600 mm" },
+        { "label": "Each door", "value": "491 mm" }
+      ]
+    }
+  ],
+  "notes": [
+    "The width, height and depth are the sizes of the space.",
+    "The heights inside (drawers, shelves and rails) are standard ones to start from and can move to suit what you hang and store.",
+    "Made from 18 mm board, backs included, with an end panel at each side.",
+    "Colours on screen are a guide."
+  ]
+}
