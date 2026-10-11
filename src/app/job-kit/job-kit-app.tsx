@@ -236,7 +236,7 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
         before = s;
         const next = {
           ...s,
-          jobs: s.jobs.map((j) => (j.uuid === uuid ? { ...j, status, ...(status === 'Work Order' ? { workOrder: now } : status === 'Completed' ? { completed: now } : {}) } : j)),
+          jobs: s.jobs.map((j) => (j.uuid === uuid ? { ...j, status, ...(status === 'Work Order' ? { workOrder: now } : status === 'Completed' ? { completed: now } : status === 'Unsuccessful' ? { lost: now } : {}) } : j)),
         };
         keepSm8(next);
         return next;

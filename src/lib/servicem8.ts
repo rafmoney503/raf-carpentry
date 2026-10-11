@@ -31,6 +31,7 @@ export type CurrentJob = {
   quoteSent: string | null;
   workOrder: string | null;
   completed: string | null;
+  lost: string | null; // when it was marked Unsuccessful
   scheduledUntil: string | null;
   invoiceSent: boolean;
   paid: boolean;
@@ -124,22 +125,23 @@ function shape(j: Row, client?: Row, contact?: Row): CurrentJob {
     quoteSent: on(j.quote_sent) ? (when(j.quote_sent_stamp) ?? when(j.edit_date)) : null,
     workOrder: when(j.work_order_date),
     completed: when(j.completion_date),
+    lost: when(j.unsuccessful_date),
     scheduledUntil: when(j.job_is_scheduled_until_stamp),
     invoiceSent: on(j.invoice_sent),
     paid: on(j.payment_received),
   };
 }
 
-/* Open quotes, work orders and the jobs finished in the last 30 days, newest first, with the client and the
-   best contact (the job's own contact, else the client's). Six requests in two rounds. */
+/* Open quotes, work orders, and the jobs finished or marked unsuccessful in the last 30 days, newest first,
+   with the client and the best contact (the job's own contact, else the client's). Seven requests in two rounds. */
 export async function currentJobs(): Promise<CurrentJob[]> {
-  const [quotes, orders, done] = await Promise.all(['Quote', 'Work Order', 'Completed'].map((s) => list('job.json', `active eq 1 and status eq '${s}'`)));
+  const [quotes, orders, done, lost] = await Promise.all(['Quote', 'Work Order', 'Completed', 'Unsuccessful'].map((s) => list('job.json', `active eq 1 and status eq '${s}'`)));
   const cutoff = Date.now() - 30 * 864e5;
-  const recent = done.filter((j) => {
-    const t = Date.parse(when(j.completion_date) ?? '');
+  const since = (field: string) => (j: Row) => {
+    const t = Date.parse(when(j[field]) ?? when(j.edit_date) ?? '');
     return Number.isFinite(t) && t >= cutoff;
-  });
-  const jobs = [...quotes, ...orders, ...recent].filter((j) => str(j.uuid) && str(j.active) !== '0');
+  };
+  const jobs = [...quotes, ...orders, ...done.filter(since('completion_date')), ...lost.filter(since('unsuccessful_date'))].filter((j) => str(j.uuid) && str(j.active) !== '0');
   if (!jobs.length) return [];
   const [clients, jobContacts, clientContacts] = await Promise.all([
     list('company.json', 'active eq 1'),

@@ -21,6 +21,7 @@ const MARKS_KEY = 'raf_jobkit_sm8_marks';
 const DRAFT_KEY = 'raf_jobkit_enquiry';
 export const FOLLOW_UP_DAYS = 5;
 const DONE_DAYS = 14;
+export const LOST_DAYS = 30; // unsuccessful ones stay (folded away) this long, then drop off; ServiceM8 keeps them
 
 const read = <T,>(key: string, empty: T): T => {
   try {
@@ -114,7 +115,13 @@ export function stage(j: CurrentJob, m: Marks): Stage {
   if (!sent) return 'new';
   return Date.now() - sent >= FOLLOW_UP_DAYS * DAY ? 'follow' : 'sent';
 }
-/* What shows: everything open, finished ones for 14 days unless hidden, never the ones not going ahead. */
+/* Unsuccessful in the last 30 days, kept apart (folded away) so one can be brought back. */
+const lostAt = (j: CurrentJob) => parse(j.lost);
+export function lostList(s: Sm8) {
+  return s.jobs.filter((j) => j.status === 'Unsuccessful' && (!Number.isFinite(lostAt(j)) || Date.now() - lostAt(j) < LOST_DAYS * DAY));
+}
+
+/* What shows: everything open, finished ones for 14 days unless hidden; unsuccessful ones are listed apart. */
 export function shown(s: Sm8, m: Marks) {
   return s.jobs.filter((j) => {
     if (m[j.uuid]?.hidden || j.status === 'Unsuccessful') return false;
@@ -131,7 +138,8 @@ function stageText(j: CurrentJob, m: Marks): [string, 'waiting' | 'sending' | 's
   if (st === 'follow') return [`Quote sent ${ago(quoteSentAt(j, m)!)}: follow up?`, 'lost'];
   if (st === 'going') return [`Going ahead${Number.isFinite(parse(j.workOrder)) ? ` since ${day(parse(j.workOrder))}` : ''}`, 'sending'];
   if (st === 'done') return [`Finished${Number.isFinite(parse(j.completed)) ? ` ${day(parse(j.completed))}` : ''}${j.paid ? ', paid' : j.invoiceSent ? ', invoice sent' : ''}`, 'sent'];
-  return ['Not going ahead', 'waiting'];
+  const t = lostAt(j);
+  return [Number.isFinite(t) ? `Unsuccessful ${day(t)}, drops off ${day(t + LOST_DAYS * DAY)}` : 'Unsuccessful', 'waiting'];
 }
 
 /* A short "what" for a design or Job Kit job, from ServiceM8's description. */
@@ -166,6 +174,36 @@ function linked(j: CurrentJob, kit: Job[], designs: DesignsReady, done: Record<s
 
 /* ---------- the list ---------- */
 
+function Card({ j, marks, kit, designs, done, onOpen }: { j: CurrentJob; marks: Marks; kit: Job[]; designs: DesignsReady; done: Record<string, { slug: string }>; onOpen: (uuid: string) => void }) {
+  const [text, mark] = stageText(j, marks);
+  const { chips } = linked(j, kit, designs, done);
+  return (
+    <li>
+      <button type="button" onClick={() => onOpen(j.uuid)} className="block w-full rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
+        <span className="flex items-baseline justify-between gap-3">
+          <span className="truncate text-[16.5px] font-semibold leading-snug">{j.name}</span>
+          {j.number ? <span className="shrink-0 font-mono text-[12px] text-faint">#{j.number}</span> : null}
+        </span>
+        {j.area ? <span className="block truncate text-[14.5px] text-muted">{j.area}</span> : null}
+        {j.description ? <span className="mt-1 line-clamp-2 block text-[14.5px] leading-snug">{j.description}</span> : null}
+        <span className="mt-2 flex items-center gap-1.5 font-mono text-[12.5px] text-faint">
+          <Mark state={mark} />
+          {text}
+        </span>
+        {chips.length ? (
+          <span className="mt-1.5 flex flex-wrap gap-1.5">
+            {chips.map((c) => (
+              <span key={c} className="rounded-sm border border-line px-1.5 py-0.5 font-mono text-[11.5px] text-muted">
+                {c}
+              </span>
+            ))}
+          </span>
+        ) : null}
+      </button>
+    </li>
+  );
+}
+
 export function CurrentList({
   sm8,
   marks,
@@ -193,6 +231,8 @@ export function CurrentList({
     ['Going ahead', list.filter((j) => j.status === 'Work Order')],
     [`Finished, last ${DONE_DAYS} days`, list.filter((j) => j.status === 'Completed')],
   ];
+  const lost = lostList(sm8);
+  const [showLost, setShowLost] = useState(false);
   const problem = problemText(sm8.error, sm8.detail, sm8.at);
   return (
     <div className="pt-7">
@@ -220,40 +260,35 @@ export function CurrentList({
               {title} ({js.length})
             </h2>
             <ul className="mt-2.5 grid gap-3">
-              {js.map((j) => {
-                const [text, mark] = stageText(j, marks);
-                const { chips } = linked(j, kit, designs, done);
-                return (
-                  <li key={j.uuid}>
-                    <button type="button" onClick={() => onOpen(j.uuid)} className="block w-full rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
-                      <span className="flex items-baseline justify-between gap-3">
-                        <span className="truncate text-[16.5px] font-semibold leading-snug">{j.name}</span>
-                        {j.number ? <span className="shrink-0 font-mono text-[12px] text-faint">#{j.number}</span> : null}
-                      </span>
-                      {j.area ? <span className="block truncate text-[14.5px] text-muted">{j.area}</span> : null}
-                      {j.description ? <span className="mt-1 line-clamp-2 block text-[14.5px] leading-snug">{j.description}</span> : null}
-                      <span className="mt-2 flex items-center gap-1.5 font-mono text-[12.5px] text-faint">
-                        <Mark state={mark} />
-                        {text}
-                      </span>
-                      {chips.length ? (
-                        <span className="mt-1.5 flex flex-wrap gap-1.5">
-                          {chips.map((c) => (
-                            <span key={c} className="rounded-sm border border-line px-1.5 py-0.5 font-mono text-[11.5px] text-muted">
-                              {c}
-                            </span>
-                          ))}
-                        </span>
-                      ) : null}
-                    </button>
-                  </li>
-                );
-              })}
+              {js.map((j) => (
+                <Card key={j.uuid} j={j} marks={marks} kit={kit} designs={designs} done={done} onOpen={onOpen} />
+              ))}
             </ul>
           </section>
         ) : null,
       )}
       {sm8.at && !list.length ? <p className="mt-7 font-mono text-[13.5px] text-faint">No open jobs in ServiceM8.</p> : null}
+
+      {lost.length ? (
+        <div className="mt-7 border-t border-line pt-4">
+          <button type="button" onClick={() => setShowLost((v) => !v)} className="flex h-11 w-full items-center justify-between text-left text-[15.5px] font-semibold" aria-expanded={showLost}>
+            <span>Unsuccessful, last {LOST_DAYS} days ({lost.length})</span>
+            <span aria-hidden className="font-mono text-[13px] text-faint">
+              {showLost ? 'Hide' : 'Show'}
+            </span>
+          </button>
+          {showLost ? (
+            <>
+              <p className="text-[14px] leading-relaxed text-muted">Kept here in case they come back, then they drop off the Job Kit by themselves. ServiceM8 keeps them under Unsuccessful.</p>
+              <ul className="mt-3 grid gap-3 opacity-80">
+                {lost.map((j) => (
+                  <Card key={j.uuid} j={j} marks={marks} kit={kit} designs={designs} done={done} onOpen={onOpen} />
+                ))}
+              </ul>
+            </>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -342,14 +377,34 @@ export function CurrentView({
 
       <section className="mt-7 rounded-sm border border-line-strong bg-mount p-4">
         <h2 className="text-[19px] font-[650]">Where it’s up to</h2>
+        {/* Tap a step to move the job there (tap again to confirm); Unsuccessful branches off after Quote. */}
         <ol className="mt-3 grid grid-cols-3 gap-1.5">
           {STEPS.map((s, i) => (
-            <li key={s.status} className={`rounded-sm border px-2 py-2 text-center text-[13.5px] ${i === at ? 'border-accent bg-accent text-on-accent' : i < at ? 'border-accent/40 text-accent' : 'border-line text-faint'}`}>
-              {s.name}
+            <li key={s.status}>
+              <button
+                type="button"
+                disabled={busy || i === at}
+                onClick={() => move(s.status)}
+                className={`min-h-11 w-full rounded-sm border px-1.5 py-2 text-center text-[13.5px] leading-tight ${
+                  sure === s.status ? 'border-ink bg-ink text-on-accent' : i === at ? 'border-accent bg-accent text-on-accent' : i < at ? 'border-accent/40 text-accent' : 'border-line text-faint'
+                }`}
+              >
+                {sure === s.status ? 'Tap again' : s.name}
+              </button>
             </li>
           ))}
         </ol>
-        <p className="mt-3 flex items-center gap-1.5 font-mono text-[13px] text-muted">{job.status === 'Unsuccessful' ? 'Not going ahead' : text}</p>
+        <button
+          type="button"
+          disabled={busy || job.status === 'Unsuccessful'}
+          onClick={() => move('Unsuccessful')}
+          className={`mt-1.5 min-h-11 w-full rounded-sm border px-2 py-2 text-center text-[13.5px] ${
+            sure === 'Unsuccessful' ? 'border-ink bg-ink text-on-accent' : job.status === 'Unsuccessful' ? 'border-ink bg-ink text-on-accent' : 'border-dashed border-line-strong text-faint'
+          }`}
+        >
+          {sure === 'Unsuccessful' ? 'Tap again: unsuccessful' : job.status === 'Unsuccessful' ? 'Unsuccessful' : 'Unsuccessful (didn’t go ahead)'}
+        </button>
+        <p className="mt-3 flex items-center gap-1.5 font-mono text-[13px] text-muted">{text}</p>
 
         <div className="mt-4 grid gap-2">
           {st === 'new' ? (
@@ -372,9 +427,6 @@ export function CurrentView({
               <button type="button" disabled={busy} className={`btn btn-sm w-full ${sure === 'Work Order' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => move('Work Order')}>
                 {sure === 'Work Order' ? 'Tap again: going ahead' : 'They said yes: going ahead'}
               </button>
-              <button type="button" disabled={busy} className={`h-10 text-[14.5px] ${sure === 'Unsuccessful' ? 'font-semibold text-ink underline' : 'text-muted'}`} onClick={() => move('Unsuccessful')}>
-                {sure === 'Unsuccessful' ? 'Tap again: not going ahead' : 'Not going ahead'}
-              </button>
             </>
           ) : null}
           {job.status === 'Work Order' ? (
@@ -388,9 +440,12 @@ export function CurrentView({
             </button>
           ) : null}
           {job.status === 'Unsuccessful' ? (
-            <button type="button" disabled={busy} className="btn btn-ghost btn-sm w-full" onClick={() => move('Quote', false)}>
-              Back to Quote
-            </button>
+            <>
+              <p className="text-[14.5px] leading-relaxed text-muted">Folded away under Current jobs for {LOST_DAYS} days in case they come back, then it drops off the Job Kit. ServiceM8 keeps it under Unsuccessful.</p>
+              <button type="button" disabled={busy} className="btn btn-ghost btn-sm w-full" onClick={() => move('Quote', false)}>
+                They came back: back to Quote
+              </button>
+            </>
           ) : null}
         </div>
         <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint">Moving a job here moves it in ServiceM8 too. Nothing is ever deleted there.</p>
