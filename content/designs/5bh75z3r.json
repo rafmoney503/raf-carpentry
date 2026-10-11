@@ -1,0 +1,35 @@
+{
+  "code": "5bh75z3r",
+  "request": "design-2026-10-wardrobe-wood-green-gdcx",
+  "updatedFor": "2026-10-11T19:39:21.279Z",
+  "title": "Wardrobe",
+  "area": "Wood Green",
+  "made": "2026-10-11",
+  "options": [
+    {
+      "name": "The design",
+      "text": "A two-door wardrobe made to fit the space, with flat doors, a shelf at the top, a hanging rail under it and a low shelf for shoes and boxes.",
+      "model": {
+        "src": "/designs/5bh75z3r/a-qsbg2u.glb",
+        "poster": {
+          "src": "/designs/5bh75z3r/a-qsbg2u.jpg",
+          "w": 1600,
+          "h": 1200,
+          "alt": "3D model of a two-door wardrobe with flat doors, a top shelf, a hanging rail and a low shelf"
+        },
+        "shape": "tall"
+      },
+      "sizes": [
+        { "label": "Width", "value": "800 mm" },
+        { "label": "Height", "value": "2200 mm" },
+        { "label": "Depth with doors", "value": "600 mm" }
+      ]
+    }
+  ],
+  "notes": [
+    "Width, height and depth are the measured sizes of the space.",
+    "The inside layout (top shelf, rail and low shelf) and the plinth height are standard sizes for now and can be changed.",
+    "Handles are not shown yet: tell me if you would like knobs, bar handles or push to open doors.",
+    "Colours on screen are a guide."
+  ]
+}
