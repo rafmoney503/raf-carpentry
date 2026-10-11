@@ -257,7 +257,7 @@ export default function HomePage() {
           </div>
           <figure className="app-shot reveal">
             <div className="app-frame">
-              <Image src={d.appImage} alt={d.appImageAlt} width={1600} height={1053} sizes="(max-width: 860px) 100vw, 760px" />
+              <Image src={d.appImage} alt={d.appImageAlt} width={2400} height={1500} sizes="(max-width: 860px) 100vw, 760px" />
             </div>
           </figure>
         </div>
