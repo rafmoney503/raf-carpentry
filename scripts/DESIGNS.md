@@ -45,7 +45,10 @@ of what they like). For an update, the newest change is what to do; earlier chan
 
 ## 3b. A design from a planner (fast)
 
-When `--fetch` prints `<kind> planner: .../<kind>.json`, Raf filled in one of the Job Kit's planners
+When `--fetch` prints `option a: <name> (<kind> planner): .../a-<kind>.json` (and b, c, d), Raf filled in the Job
+Kit's planners: up to 4 per request, in order. **Each planner is one option (one tab) on the page, in the same order,
+named as Raf named it** (the planner's name, e.g. "Wardrobe", "Wardrobe, option B" for a copy he changed,
+"Chest of drawers" for a second piece). Each is one of
 (src/app/job-kit/planners.tsx): **wardrobe** (MDF or IKEA PAX, doubles = 1 and singles = 0.5, ends, the inside of
 each unit as a stack bottom to top, doors, handles; src/lib/wardrobe.ts), **alcove** (beside a chimney breast, one
 side or both, base cupboard or shelves only; src/lib/planners/alcove.ts), **bookcase** (bays, shelves, cupboards
@@ -53,15 +56,17 @@ below or not, ends; bookcase.ts) or **chest** of drawers (columns, drawers, grad
 chest.ts). Build it with the template instead of drawing it board by board:
 
 ```sh
-python3 scripts/planner-model.py /home/claude/design-requests/<id>/<kind>.json \
+python3 scripts/planner-model.py /home/claude/design-requests/<id>/a-<kind>.json \
   scripts/models/design-<code>-a.su.json public/designs/<code>/a-<hash>.glb --name "<title>, <area>"
+# then b-<kind>.json as option b, and so on
 ```
 
 It takes a second or two, and prints the option's `text`, its `sizes`, the planner's warnings (and a `title` for
 the non-wardrobe planners); use them in the page JSON as they are, tidied if needed. The sums come from the same
 TypeScript the app ran (scripts/planner-plan.mjs; the wardrobe has its Python copy in scripts/wardrobe/plan.py),
 so the model matches the drawing Raf saw. Options asked for in the brief ("B: panelled doors", "B: two columns")
-are a copy of the JSON with that field changed, built the same way as b, c. Anything a planner can't say (a
+are a copy of the JSON with that field changed, built the same way as the next letter (only when Raf didn't
+already make them as planner copies). Anything a planner can't say (a
 boiler, a sloping ceiling, a window) still comes from the talk-through and photos: build those pieces as usual in
 step 4. Sizes Raf typed are measured; the planners' own heights (drawers, shelves, base cupboards) are standard,
 so the notes say "The space is measured; the heights inside are standard and can move." Planner warnings are

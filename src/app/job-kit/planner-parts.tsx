@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import Mark from './mark';
 import { field } from './parts';
 
@@ -51,17 +52,45 @@ export function Counter({ value, min, max, onChange, one, many }: { value: numbe
 
 /* The planner's name with an Open / Close switch beside it; closed, it shows one line of what is picked.
    Closing keeps everything as it is. */
-export function PlannerHeader({ title, open, onToggle, summary }: { title: string; open: boolean; onToggle: () => void; summary: string }) {
+export function PlannerHeader({ title, open, onToggle, summary, onCopy }: { title: string; open: boolean; onToggle: () => void; summary: string; onCopy?: () => void }) {
+  const small = 'min-h-9 shrink-0 rounded-sm border border-line-strong bg-mount px-3 text-[14px] hover:border-ink';
   return (
     <div>
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[19px] font-[650]">{title}</h2>
-        <button type="button" aria-expanded={open} onClick={onToggle} className="min-h-9 shrink-0 rounded-sm border border-line-strong bg-mount px-3 text-[14px] hover:border-ink">
-          {open ? 'Close' : 'Open'}
-        </button>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="min-w-0 text-[19px] font-[650] leading-snug">{title}</h2>
+        <div className="flex shrink-0 gap-1.5">
+          {onCopy ? (
+            <button type="button" onClick={onCopy} className={small} aria-label={`Copy ${title} as another option`}>
+              Copy
+            </button>
+          ) : null}
+          <button type="button" aria-expanded={open} onClick={onToggle} className={small}>
+            {open ? 'Close' : 'Open'}
+          </button>
+        </div>
       </div>
       {!open ? <p className="mt-1 font-mono text-[13px] text-faint">{summary}</p> : null}
     </div>
+  );
+}
+
+/* Takes one planner out of the request: tap, then tap again within 5 seconds. */
+export function RemoveButton({ onRemove }: { onRemove: () => void }) {
+  const [sure, setSure] = useState(false);
+  return (
+    <button
+      type="button"
+      className={`h-10 justify-self-start text-[14.5px] ${sure ? 'font-semibold text-ink underline' : 'text-muted'}`}
+      onClick={() => {
+        if (sure) onRemove();
+        else {
+          setSure(true);
+          setTimeout(() => setSure(false), 5000);
+        }
+      }}
+    >
+      {sure ? 'Tap again to remove this planner' : 'Remove this planner'}
+    </button>
   );
 }
 

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import Mark from './mark';
 import { Area, field, label, Missing, SectionView, TalkBox } from './parts';
 import { DESIGN_IDEAS, DESIGN_SPACE, type Section, type Slot } from './plan';
-import { emptyBrief, emptyNotes, newJobId, type DesignBrief, type Item, type Job, type Size } from './store';
+import { emptyBrief, emptyNotes, newJobId, plansOf, type DesignBrief, type Item, type Job, type Size } from './store';
 import { Planners } from './planners';
 
 /* Designs: Raf's requests for a customer's 3D design. He fills in the space (photos), sizes, what they want
@@ -366,9 +366,9 @@ export function DesignView({
         </fieldset>
 
         <Planners
-          specs={{ wardrobe: d.wardrobe, alcove: d.alcove, bookcase: d.bookcase, chest: d.chest }}
+          items={plansOf(d)}
           sizes={sizes}
-          onChange={(next) => save({ d: { ...d, ...next } })}
+          onChange={(plans) => save({ d: { ...d, plans, wardrobe: undefined, alcove: undefined, bookcase: undefined, chest: undefined } })}
           onUpdate={st === 'ready' ? () => void flushAndSend('Planner changed: build the new layout') : undefined}
         />
 

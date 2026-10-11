@@ -1,10 +1,10 @@
 'use client';
 import { label } from './parts';
 import { useState } from 'react';
-import { Counter, DOORS, DoorFront, HANDLES, Num, Pick, PlannerHeader, Problems, Sheet, edge, line } from './planner-parts';
-import type { Size } from './store';
+import { Counter, DOORS, DoorFront, HANDLES, Num, Pick, PlannerHeader, Problems, RemoveButton, Sheet, edge, line } from './planner-parts';
+import { MAX_PLANS, PLAN_NAMES, type PlanItem, type PlanKind, type Size } from './store';
 import { WardrobePlanner } from './wardrobe-planner';
-import { newSpec, type WardrobeSpec } from '@/lib/wardrobe';
+import { newSpec } from '@/lib/wardrobe';
 import { ALCOVE_RULES, fitOf, newAlcove, normaliseAlcove, planAlcove, type AlcoveFit, type AlcoveSpec } from '@/lib/planners/alcove';
 import { BOOKCASE_RULES, newBookcase, planBookcase, type BookcaseSpec } from '@/lib/planners/bookcase';
 import { CHEST_RULES, newChest, planChest, type ChestSpec } from '@/lib/planners/chest';
@@ -14,35 +14,23 @@ import { CHEST_RULES, newChest, planChest, type ChestSpec } from '@/lib/planners
    chest of drawer planner'). One per request: pick it, tap the choices, watch the drawing; the 3D design is
    built straight from it (scripts/planner-model.py). Each saves into the request's design brief. */
 
-export type PlannerSpecs = { wardrobe?: WardrobeSpec; alcove?: AlcoveSpec; bookcase?: BookcaseSpec; chest?: ChestSpec };
-type Kind = keyof PlannerSpecs;
 
-const CHOICES: { kind: Kind; name: string; hint: string }[] = [
+const CHOICES: { kind: PlanKind; name: string; hint: string }[] = [
   { kind: 'wardrobe', name: 'Wardrobe', hint: 'MDF or IKEA PAX, doubles and singles, the inside of each' },
   { kind: 'alcove', name: 'Alcoves', hint: 'Beside a chimney breast, one side or both, base cupboard or shelves only' },
   { kind: 'bookcase', name: 'Bookcase', hint: 'A run of shelves in bays, with or without cupboards below' },
   { kind: 'chest', name: 'Chest of drawers', hint: 'Columns and drawers, plinth or legs' },
 ];
 
-function Card({ title, summary, children, onStop, onUpdate }: { title: string; summary: string; children: React.ReactNode; onStop: () => void; onUpdate?: () => void }) {
+function Card({ title, summary, children, onCopy, onRemove }: { title: string; summary: string; children: React.ReactNode; onCopy?: () => void; onRemove: () => void }) {
   const [open, setOpen] = useState(true);
   return (
     <section className="rounded-sm border border-line-strong bg-mount p-4">
-      <PlannerHeader title={title} open={open} onToggle={() => setOpen(!open)} summary={summary} />
+      <PlannerHeader title={title} open={open} onToggle={() => setOpen(!open)} summary={summary} onCopy={onCopy} />
       {open ? (
         <div className="mt-4 grid gap-5">
           {children}
-          {onUpdate ? (
-            <div className="rounded-sm border border-accent bg-accent-soft p-3">
-              <p className="text-[14.5px] leading-relaxed">Changed something? Send it and the customer’s link shows the new design.</p>
-              <button type="button" className="btn btn-primary btn-sm mt-2 w-full" onClick={onUpdate}>
-                Update the 3D design
-              </button>
-            </div>
-          ) : null}
-          <button type="button" className="h-10 justify-self-start text-[14.5px] text-muted" onClick={onStop}>
-            Use a different planner
-          </button>
+          <RemoveButton onRemove={onRemove} />
         </div>
       ) : null}
     </section>
@@ -410,60 +398,116 @@ function ChestPlanner({ s, onChange }: { s: ChestSpec; onChange: (s: ChestSpec) 
 
 /* ---------- picking one ---------- */
 
-export function Planners({ specs, sizes, onChange, onUpdate }: { specs: PlannerSpecs; sizes: Size[]; onChange: (next: PlannerSpecs) => void; onUpdate?: () => void }) {
-  const active = (Object.keys(specs) as Kind[]).find((k) => specs[k]);
-  const only = (k: Kind, v: PlannerSpecs[Kind] | undefined): PlannerSpecs => ({ wardrobe: undefined, alcove: undefined, bookcase: undefined, chest: undefined, [k]: v });
-  const stop = () => onChange({ wardrobe: undefined, alcove: undefined, bookcase: undefined, chest: undefined });
+const LETTERS = 'ABCD';
+function freshId() {
+  return `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
+}
+
+export function Planners({ items, sizes, onChange, onUpdate }: { items: PlanItem[]; sizes: Size[]; onChange: (next: PlanItem[]) => void; onUpdate?: () => void }) {
+  const [choosing, setChoosing] = useState(false);
   const space = sizes[0];
   const w = Number(space?.w) || 0;
   const h = Number(space?.h) || 0;
   const d = Number(space?.d) || 0;
+  const set = (i: number, it: PlanItem) => onChange(items.map((x, j) => (j === i ? it : x)));
+  const remove = (i: number) => onChange(items.filter((_, j) => j !== i));
+  const full = items.length >= MAX_PLANS;
+  // the tab name on the customer's page: a copy is the next option of the same piece
+  const copy = (i: number) => {
+    if (full) return;
+    const it = items[i];
+    const base = it.name.replace(/, option [A-D]$/, '');
+    const same = items.filter((x) => x.name === base || x.name.startsWith(`${base}, option `)).length;
+    const name = `${base}, option ${LETTERS[same] ?? same + 1}`;
+    const next = [...items];
+    next.splice(i + 1, 0, { ...it, id: freshId(), name, spec: JSON.parse(JSON.stringify(it.spec)) } as PlanItem);
+    onChange(next);
+  };
+  const add = (kind: PlanKind) => {
+    const base = PLAN_NAMES[kind];
+    const taken = items.filter((x) => x.name === base || x.name.startsWith(`${base} `)).length;
+    const name = taken ? `${base} ${taken + 1}` : base;
+    const id = freshId();
+    const it: PlanItem =
+      kind === 'wardrobe'
+        ? { id, name, kind, spec: newSpec(w, h, d) }
+        : kind === 'alcove'
+          ? { id, name, kind, spec: newAlcove(w ? Math.round(w / 2) : 0, h) }
+          : kind === 'bookcase'
+            ? { id, name, kind, spec: newBookcase(w, h) }
+            : { id, name, kind, spec: newChest(w, h, d) };
+    onChange([...items, it]);
+    setChoosing(false);
+  };
 
-  if (!active) {
-    return (
-      <section className="rounded-sm border border-line-strong bg-mount p-4">
-        <h2 className="text-[19px] font-[650]">Plan it</h2>
-        <p className="mt-1 text-[14.5px] leading-relaxed text-muted">Pick what it is, tap the choices and the 3D design is built straight from them.</p>
-        <div className="mt-3 grid gap-2">
-          {CHOICES.map((c) => (
-            <button
-              key={c.kind}
-              type="button"
-              onClick={() =>
-                onChange(
-                  only(
-                    c.kind,
-                    c.kind === 'wardrobe' ? newSpec(w, h, d) : c.kind === 'alcove' ? newAlcove(w ? Math.round(w / 2) : 0, h) : c.kind === 'bookcase' ? newBookcase(w, h) : newChest(w, h, d),
-                  ),
-                )
-              }
-              className="rounded-sm border border-line-strong bg-paper px-3 py-2.5 text-left transition-colors hover:border-ink"
-            >
-              <span className="block text-[16px] font-semibold">{c.name}</span>
-              <span className="block text-[13.5px] text-muted">{c.hint}</span>
-            </button>
-          ))}
-        </div>
-      </section>
-    );
-  }
+  const chooser = (
+    <section className="rounded-sm border border-line-strong bg-mount p-4">
+      <h2 className="text-[19px] font-[650]">{items.length ? 'Add a planner' : 'Plan it'}</h2>
+      <p className="mt-1 text-[14.5px] leading-relaxed text-muted">
+        {items.length ? 'Another piece for the same customer. Each planner is its own tab on their page.' : 'Pick what it is, tap the choices and the 3D design is built straight from them. Add more pieces, or copy one as a second option.'}
+      </p>
+      <div className="mt-3 grid gap-2">
+        {CHOICES.map((c) => (
+          <button key={c.kind} type="button" onClick={() => add(c.kind)} className="rounded-sm border border-line-strong bg-paper px-3 py-2.5 text-left transition-colors hover:border-ink">
+            <span className="block text-[16px] font-semibold">{c.name}</span>
+            <span className="block text-[13.5px] text-muted">{c.hint}</span>
+          </button>
+        ))}
+      </div>
+      {items.length ? (
+        <button type="button" className="mt-2 h-10 text-[14.5px] text-muted" onClick={() => setChoosing(false)}>
+          Cancel
+        </button>
+      ) : null}
+    </section>
+  );
 
-  if (active === 'wardrobe') return <WardrobePlanner spec={specs.wardrobe} sizes={sizes} onChange={(v) => (v ? onChange(only('wardrobe', v)) : stop())} onUpdate={onUpdate} />;
-  if (active === 'alcove')
-    return (
-      <Card title="Alcove planner" summary={alcoveTag(specs.alcove!)} onStop={stop} onUpdate={onUpdate}>
-        <AlcovePlanner s={specs.alcove!} onChange={(v) => onChange(only('alcove', v))} />
-      </Card>
-    );
-  if (active === 'bookcase')
-    return (
-      <Card title="Bookcase planner" summary={`${specs.bookcase!.bays} bays · ${specs.bookcase!.shelves} shelves each · ${specs.bookcase!.width || 0} x ${specs.bookcase!.height}`} onStop={stop} onUpdate={onUpdate}>
-        <BookcasePlanner s={specs.bookcase!} onChange={(v) => onChange(only('bookcase', v))} />
-      </Card>
-    );
   return (
-    <Card title="Chest of drawers planner" summary={`${planChest(specs.chest!).fronts.length} drawers · ${specs.chest!.width} x ${specs.chest!.height} x ${specs.chest!.depth}`} onStop={stop} onUpdate={onUpdate}>
-      <ChestPlanner s={specs.chest!} onChange={(v) => onChange(only('chest', v))} />
-    </Card>
+    <div className="grid gap-4">
+      {items.map((it, i) => {
+        const onCopy = full ? undefined : () => copy(i);
+        const onRemove = () => remove(i);
+        if (it.kind === 'wardrobe')
+          return <WardrobePlanner key={it.id} title={it.name} spec={it.spec} sizes={sizes} onChange={(v) => (v ? set(i, { ...it, spec: v }) : onRemove())} onCopy={onCopy} onRemove={onRemove} />;
+        if (it.kind === 'alcove')
+          return (
+            <Card key={it.id} title={it.name} summary={alcoveTag(it.spec)} onCopy={onCopy} onRemove={onRemove}>
+              <AlcovePlanner s={it.spec} onChange={(v) => set(i, { ...it, spec: v })} />
+            </Card>
+          );
+        if (it.kind === 'bookcase')
+          return (
+            <Card key={it.id} title={it.name} summary={`${it.spec.bays} bays · ${it.spec.shelves} shelves each · ${it.spec.width || 0} x ${it.spec.height}`} onCopy={onCopy} onRemove={onRemove}>
+              <BookcasePlanner s={it.spec} onChange={(v) => set(i, { ...it, spec: v })} />
+            </Card>
+          );
+        return (
+          <Card key={it.id} title={it.name} summary={`${planChest(it.spec).fronts.length} drawers · ${it.spec.width} x ${it.spec.height} x ${it.spec.depth}`} onCopy={onCopy} onRemove={onRemove}>
+            <ChestPlanner s={it.spec} onChange={(v) => set(i, { ...it, spec: v })} />
+          </Card>
+        );
+      })}
+
+      {!items.length || choosing ? (
+        chooser
+      ) : full ? (
+        <p className="font-mono text-[13px] text-faint">{MAX_PLANS} planners is the most for one request: the customer gets {MAX_PLANS} tabs to compare.</p>
+      ) : (
+        <button type="button" className="btn btn-ghost btn-sm w-full" onClick={() => setChoosing(true)}>
+          + Add a planner
+        </button>
+      )}
+
+      {items.length > 1 ? <p className="font-mono text-[12.5px] text-faint">The customer’s page shows these as {items.length} tabs, in this order: {items.map((x) => x.name).join(' / ')}.</p> : null}
+
+      {onUpdate && items.length ? (
+        <div className="rounded-sm border border-accent bg-accent-soft p-3">
+          <p className="text-[14.5px] leading-relaxed">Changed something? Send it and the customer’s link shows the new design, every tab.</p>
+          <button type="button" className="btn btn-primary btn-sm mt-2 w-full" onClick={onUpdate}>
+            Update the 3D design
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }

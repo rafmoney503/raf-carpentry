@@ -65,7 +65,43 @@ export type Item = {
 
 /* A design request: what the customer wants, the options to show, and changes after they've seen it.
    The customer's mobile stays on this phone (for the "Send on WhatsApp" button) and is never sent. */
-export type DesignBrief = { brief: string; options: string; mobile: string; changes: { at: number; text: string }[]; wardrobe?: WardrobeSpec; alcove?: AlcoveSpec; bookcase?: BookcaseSpec; chest?: ChestSpec };
+export type DesignBrief = { brief: string; options: string; mobile: string; changes: { at: number; text: string }[];
+  plans?: PlanItem[]; // the planners, one tab each on the customer's page (Raf, 11 Oct 2026: several pieces, or copies as options)
+  // one planner per request, before the list (still read, turned into plans by plansOf)
+  wardrobe?: WardrobeSpec; alcove?: AlcoveSpec; bookcase?: BookcaseSpec; chest?: ChestSpec };
+
+export type PlanKind = 'wardrobe' | 'alcove' | 'bookcase' | 'chest';
+export type PlanItem =
+  | { id: string; name: string; kind: 'wardrobe'; spec: WardrobeSpec }
+  | { id: string; name: string; kind: 'alcove'; spec: AlcoveSpec }
+  | { id: string; name: string; kind: 'bookcase'; spec: BookcaseSpec }
+  | { id: string; name: string; kind: 'chest'; spec: ChestSpec };
+export const PLAN_NAMES: Record<PlanKind, string> = { wardrobe: 'Wardrobe', alcove: 'Alcoves', bookcase: 'Bookcase', chest: 'Chest of drawers' };
+export const MAX_PLANS = 4;
+
+/* The request's planners, oldest first; a request made before the list had at most one. */
+export function plansOf(d?: DesignBrief): PlanItem[] {
+  if (!d) return [];
+  if (d.plans) return d.plans;
+  if (d.wardrobe) return [{ id: 'p1', name: PLAN_NAMES.wardrobe, kind: 'wardrobe', spec: d.wardrobe }];
+  if (d.alcove) return [{ id: 'p1', name: PLAN_NAMES.alcove, kind: 'alcove', spec: d.alcove }];
+  if (d.bookcase) return [{ id: 'p1', name: PLAN_NAMES.bookcase, kind: 'bookcase', spec: d.bookcase }];
+  if (d.chest) return [{ id: 'p1', name: PLAN_NAMES.chest, kind: 'chest', spec: d.chest }];
+  return [];
+}
+
+function planOfItem(it: PlanItem) {
+  switch (it.kind) {
+    case 'wardrobe':
+      return { spec: normalise(it.spec), plan: plan(normalise(it.spec)), lines: specLines(normalise(it.spec)) };
+    case 'alcove':
+      return { spec: it.spec, plan: planAlcove(it.spec), lines: alcoveLines(it.spec) };
+    case 'bookcase':
+      return { spec: it.spec, plan: planBookcase(it.spec), lines: bookcaseLines(it.spec) };
+    default:
+      return { spec: it.spec, plan: planChest(it.spec), lines: chestLines(it.spec) };
+  }
+}
 export const emptyBrief = (): DesignBrief => ({ brief: '', options: '', mobile: '', changes: [] });
 
 export const emptyNotes = (): Notes => ({
@@ -256,12 +292,11 @@ export function jobJson(job: Job, items: Item[], ready: boolean) {
             brief: job.design.brief,
             options: job.design.options,
             changes: job.design.changes.map((c) => ({ at: new Date(c.at).toISOString(), text: c.text })),
-            // the wardrobe planner (src/lib/wardrobe.ts): what Raf picked, and the sums the app showed him
-            ...(job.design.wardrobe ? { wardrobe: normalise(job.design.wardrobe), wardrobePlan: plan(normalise(job.design.wardrobe)) } : {}),
-            // the other planners (src/lib/planners/): what Raf picked and the sums the app showed him
-            ...(job.design.alcove ? { alcove: job.design.alcove, alcovePlan: planAlcove(job.design.alcove) } : {}),
-            ...(job.design.bookcase ? { bookcase: job.design.bookcase, bookcasePlan: planBookcase(job.design.bookcase) } : {}),
-            ...(job.design.chest ? { chest: job.design.chest, chestPlan: planChest(job.design.chest) } : {}),
+            // the planners (src/lib/wardrobe.ts, src/lib/planners/): one tab each, what Raf picked and the sums the app showed him
+            plans: plansOf(job.design).map((it) => {
+              const o = planOfItem(it);
+              return { id: it.id, name: it.name, kind: it.kind, spec: o.spec, plan: o.plan };
+            }),
           },
         }
       : {}),
@@ -286,10 +321,7 @@ function designTxt(job: Job, items: Item[]) {
     'Options to show:',
     d.options,
     '',
-    ...(d.wardrobe ? ['Wardrobe planner:', ...specLines(normalise(d.wardrobe)).map((l) => `- ${l}`), ''] : []),
-    ...(d.alcove ? ['Alcove planner:', ...alcoveLines(d.alcove).map((l) => `- ${l}`), ''] : []),
-    ...(d.bookcase ? ['Bookcase planner:', ...bookcaseLines(d.bookcase).map((l) => `- ${l}`), ''] : []),
-    ...(d.chest ? ['Chest of drawers planner:', ...chestLines(d.chest).map((l) => `- ${l}`), ''] : []),
+    ...plansOf(d).flatMap((it, i) => [`Planner ${'abcd'[i] ?? i + 1}: ${it.name} (${it.kind})`, ...planOfItem(it).lines.map((l) => `- ${l}`), '']),
     'Sizes (W x H x D in mm):',
     ...(sizes.length ? sizes : ['- ']),
     '',

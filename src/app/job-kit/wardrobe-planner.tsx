@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Mark from './mark';
 import { field, label } from './parts';
-import { PlannerHeader } from './planner-parts';
+import { PlannerHeader, RemoveButton } from './planner-parts';
 import type { Size } from './store';
 import {
   LAYOUTS,
@@ -315,7 +315,7 @@ const ENDS: [End, string][] = [
   ['none', 'Nothing'],
 ];
 
-export function WardrobePlanner({ spec: raw, sizes, onChange, onUpdate }: { spec?: WardrobeSpec; sizes: Size[]; onChange: (s: WardrobeSpec | undefined) => void; onUpdate?: () => void }) {
+export function WardrobePlanner({ spec: raw, sizes, onChange, title = 'Wardrobe planner', onCopy, onRemove }: { spec?: WardrobeSpec; sizes: Size[]; onChange: (s: WardrobeSpec | undefined) => void; title?: string; onCopy?: () => void; onRemove?: () => void }) {
   const [view, setView] = useState<'doors' | 'inside'>('doors');
   const [open, setOpen] = useState(true);
   if (!raw) {
@@ -341,7 +341,7 @@ export function WardrobePlanner({ spec: raw, sizes, onChange, onUpdate }: { spec
 
   return (
     <section className="rounded-sm border border-line-strong bg-mount p-4">
-      <PlannerHeader title="Wardrobe planner" open={open} onToggle={() => setOpen(!open)} summary={`${ikea ? `IKEA PAX ${s.pax}` : 'MDF'} · ${current}${s.width ? ` · ${s.width} wide` : ''}`} />
+      <PlannerHeader title={title} open={open} onToggle={() => setOpen(!open)} onCopy={onCopy} summary={`${ikea ? `IKEA PAX ${s.pax}` : 'MDF'} · ${current}${s.width ? ` · ${s.width} wide` : ''} · ${s.doors} doors`} />
 
       {open ? (
       <div className="mt-4 grid gap-5">
@@ -481,18 +481,7 @@ export function WardrobePlanner({ spec: raw, sizes, onChange, onUpdate }: { spec
           />
         </div>
 
-        {onUpdate ? (
-          <div className="rounded-sm border border-accent bg-accent-soft p-3">
-            <p className="text-[14.5px] leading-relaxed">Changed the layout? Send it and the customer’s link shows the new design.</p>
-            <button type="button" className="btn btn-primary btn-sm mt-2 w-full" onClick={onUpdate}>
-              Update the 3D design
-            </button>
-          </div>
-        ) : null}
-
-        <button type="button" className="h-10 justify-self-start text-[14.5px] text-muted" onClick={() => onChange(undefined)}>
-          Use a different planner
-        </button>
+        <RemoveButton onRemove={onRemove ?? (() => onChange(undefined))} />
       </div>
       ) : null}
     </section>

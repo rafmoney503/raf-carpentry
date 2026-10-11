@@ -160,12 +160,14 @@ if FETCH:
     print(f"  code: {code}" + ('  (existing: update this design, keep the code)' if r['code'] else '  (new)'))
     print(f"  updatedFor: {r['readyAt']}")
     print(f"  read: {os.path.join(dest, 'notes.txt')} and the photos in {dest}/before and {dest}/drawings")
-    for kind in ('wardrobe', 'alcove', 'bookcase', 'chest'):
-        w = (r['design'] or {}).get(kind)
-        if w:
-            wp = os.path.join(dest, f'{kind}.json')
-            json.dump(w, open(wp, 'w'), indent=2)
-            print(f"  {kind} planner: {wp}  (build with scripts/planner-model.py, see scripts/DESIGNS.md step 3b)")
+    plans = (r['design'] or {}).get('plans')
+    if plans is None:  # before the list: at most one planner, under its kind
+        plans = [{'name': k, 'kind': k, 'spec': (r['design'] or {})[k]} for k in ('wardrobe', 'alcove', 'bookcase', 'chest') if (r['design'] or {}).get(k)]
+    for i, pl in enumerate(plans):
+        letter = 'abcd'[i] if i < 4 else str(i + 1)
+        wp = os.path.join(dest, f"{letter}-{pl['kind']}.json")
+        json.dump(pl['spec'], open(wp, 'w'), indent=2)
+        print(f"  option {letter}: {pl['name']} ({pl['kind']} planner): {wp}  (build with scripts/planner-model.py, see scripts/DESIGNS.md step 3b)")
     sys.exit(0)
 
 show = requests if ALL else todo
@@ -185,10 +187,7 @@ for r in show:
         print(f"    wants: {d['brief'][:160]}")
     if d.get('options'):
         print(f"    options: {d['options'][:160]}")
-    if d.get('wardrobe'):
-        print(f"    wardrobe planner: {d['wardrobe'].get('build')}, {len(d['wardrobe'].get('units', []))} units, {d['wardrobe'].get('width')} wide")
-    for kind in ('alcove', 'bookcase', 'chest'):
-        if d.get(kind):
-            print(f"    {kind} planner")
+    for pl in d.get('plans') or [{'name': k, 'kind': k} for k in ('wardrobe', 'alcove', 'bookcase', 'chest') if d.get(k)]:
+        print(f"    planner: {pl['name']} ({pl['kind']})")
     for c in d.get('changes', [])[-3:]:
         print(f"    change {c['at'][:10]}: {c['text'][:160]}")
