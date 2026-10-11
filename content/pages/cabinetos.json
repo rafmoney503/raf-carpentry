@@ -71,7 +71,7 @@
     },
     {
       "title": "Board Optimisation",
-      "description": "Intelligent nesting algorithms that minimise waste and save you up to 15% on materials.",
+      "description": "Nests the parts onto your boards to keep the offcuts small. The demo job above came out at 10 boards and 9% waste.",
       "icon": "📐"
     },
     {
@@ -101,11 +101,54 @@
   "withTitle": "With Cabinetos",
   "withBullets": [
     "Instant parts and cut lists",
-    "Up to 15% less material waste",
-    "Zero calculation errors",
+    "Boards nested to keep waste down",
+    "Every part sized by the same rules",
     "Professional print-ready outputs"
   ],
-  "compareNote": "The demo job above: the app worked out 85 parts on 10 boards, 9% waste and 52.25 m of edging.",
+  "compareNote": "The demo job above: 85 parts on 10 boards, 9% waste and 52.25 m of edging. CabinetOS works out sizes from what you enter, using the rules shown below. Check the cut list against your drawing and your site measurements before you cut: what gets cut is your call.",
+  "sizesKicker": "The rules",
+  "sizesTitle": "How CabinetOS works out ",
+  "sizesTitleAccent": "the sizes.",
+  "sizesIntro": "You enter the outside size of a unit. CabinetOS splits it into boards with the same few rules every time, so any size on the cut list can be checked by hand. Here they are, worked through on one wardrobe.",
+  "sizesEnterTitle": "What you enter",
+  "sizesEnterText": "The outside size, the board and what goes inside. Everything else on the cut list comes from the rules below.",
+  "sizesRules": [
+    {
+      "drawing": "box",
+      "title": "The box",
+      "text": "The top and bottom run the full width of the unit. The sides fit between them, so a side is the height less the plinth and two board thicknesses."
+    },
+    {
+      "drawing": "plinth",
+      "title": "The plinth",
+      "text": "A 100 mm plinth sits under the box, as wide as the unit. The box is what's left above it."
+    },
+    {
+      "drawing": "back",
+      "title": "The back",
+      "text": "An 18 mm back fits inside the box, between the sides and between the top and bottom, so it's as high as the sides."
+    },
+    {
+      "drawing": "shelf",
+      "title": "Shelves and the rail",
+      "text": "Shelves are 2 mm short at each side so they drop in, and stop 2 mm back from the front. Behind them is the back. The hanging rail is as long as a shelf."
+    },
+    {
+      "drawing": "doors",
+      "title": "Doors",
+      "text": "Doors cover the front of the box: 3 mm short at the top, flush at the bottom, 2 mm in at each outside edge and 4 mm apart in a pair. A door over 600 mm wide gets a warning to use two."
+    },
+    {
+      "drawing": "edging",
+      "title": "Edging",
+      "text": "Edging tape goes on the front edge of the top, bottom, sides and shelves, and on all four edges of each door. The back and the plinth get none."
+    }
+  ],
+  "sizesDrawnNote": "Not to scale: boards and gaps are drawn bigger so you can see them.",
+  "sizesPartsTitle": "The whole wardrobe, part by part",
+  "sizesPartsIntro": "What the cut list gives for this wardrobe and where each size comes from. Each part is drawn to the same scale; blue edges get edging tape.",
+  "sizesNoteTitle": "Check before you cut",
+  "sizesNote": "These are the app's starting settings. Change the board thickness, the gaps or how the box goes together, and every size follows. The cut list is only as good as what goes in: check it against your drawing and your site measurements before you cut.",
   "faqSectionTitle": "Frequently ",
   "faqSectionTitleAccent": "Asked",
   "faq": [

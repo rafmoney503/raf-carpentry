@@ -4,6 +4,7 @@ import { Container, MountedImage, SectionHeading } from '@/components/ui';
 import { pageMeta } from '@/lib/seo';
 import AppScreens, { type AppScreen } from '@/components/AppScreens';
 import Compare from './compare';
+import Sizes, { type SizesRule } from './sizes';
 
 function imageSrc(v: unknown): string {
   if (typeof v === 'string' && v.trim()) return v;
@@ -42,6 +43,18 @@ type CabinetosPageData = {
   compareTitle?: string;
   compareTitleAccent?: string;
   compareNote?: string;
+  sizesKicker?: string;
+  sizesTitle?: string;
+  sizesTitleAccent?: string;
+  sizesIntro?: string;
+  sizesEnterTitle?: string;
+  sizesEnterText?: string;
+  sizesRules?: SizesRule[];
+  sizesDrawnNote?: string;
+  sizesPartsTitle?: string;
+  sizesPartsIntro?: string;
+  sizesNoteTitle?: string;
+  sizesNote?: string;
   withoutTitle: string;
   withoutBullets: string[];
   withTitle: string;
@@ -155,6 +168,25 @@ export default function Cabinetos() {
           })}
         </Container>
       </section>
+
+      {d.sizesTitle || d.sizesTitleAccent ? (
+        <Sizes
+          data={{
+            kicker: d.sizesKicker,
+            title: d.sizesTitle,
+            titleAccent: d.sizesTitleAccent,
+            intro: d.sizesIntro,
+            enterTitle: d.sizesEnterTitle,
+            enterText: d.sizesEnterText,
+            rules: d.sizesRules,
+            drawnNote: d.sizesDrawnNote,
+            partsTitle: d.sizesPartsTitle,
+            partsIntro: d.sizesPartsIntro,
+            noteTitle: d.sizesNoteTitle,
+            note: d.sizesNote,
+          }}
+        />
+      ) : null}
 
       <section id="faq" className="border-t border-line py-20 md:py-28">
         <Container>
