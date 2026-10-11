@@ -43,6 +43,30 @@ of what they like). For an update, the newest change is what to do; earlier chan
   drawn from the photos; never anything that identifies the house or the people.
 - Doors and drawers should open (moves in the meta); "Open the doors" / "Close the doors".
 
+## 3b. A wardrobe from the planner (fast)
+
+When `--fetch` prints `wardrobe planner: .../wardrobe.json`, Raf filled in the Job Kit's wardrobe planner
+(build MDF or IKEA PAX, layout of doubles = 1 and singles = 0.5, ends, inside of each unit, doors, handles;
+src/lib/wardrobe.ts). Build it with the template instead of drawing it board by board:
+
+```sh
+python3 scripts/wardrobe-model.py /home/claude/design-requests/<id>/wardrobe.json \
+  scripts/models/design-<code>-a.su.json public/designs/<code>/a-<hash>.glb --name "<title>, <area>"
+```
+
+It takes about a second, and prints the option's `text`, its `sizes` and the planner's warnings (use them in
+the page JSON as they are, tidied if needed). Options asked for in the brief ("B: panelled doors", "B: drawers on
+the right") are a copy of wardrobe.json with that field changed, built the same way as b, c. Anything the
+planner can't say (a chimney breast, a sloping ceiling, a boiler) still comes from the talk-through and photos:
+build those pieces as usual in step 4. The wardrobe's width, ceiling and depth are Raf's measured sizes; the
+heights inside (drawers 200, baskets 160, top shelf 300) are standard, so the notes say "The space is measured;
+the heights inside are standard and can move." Planner warnings (doors too wide, frames don't fit) are built
+anyway, mentioned in the final reply, never on the page.
+The template is SketchUp helper code (scripts/wardrobe/build.py on su-helpers.py) run locally by
+scripts/wardrobe/local.py. To build the same thing in the SketchUp connector, add `--sketchup code.py`, paste
+that file into build_model, and rerun with `--from-sketchup <saved tool result>` (not tried in the connector yet:
+the first time, check the read-back matches the local build).
+
 ## 4. Build each option (same pipeline as the job models, see CLAUDE.md "3D SketchUp models")
 
 1. Trimble SketchUp connector, `build_model`: paste the whole of `scripts/su-helpers.py` at the top, build the

@@ -4,6 +4,7 @@ import Mark from './mark';
 import { Area, field, label, Missing, SectionView, TalkBox } from './parts';
 import { DESIGN_IDEAS, DESIGN_SPACE, type Section, type Slot } from './plan';
 import { emptyBrief, emptyNotes, newJobId, type DesignBrief, type Item, type Job, type Size } from './store';
+import { WardrobePlanner } from './wardrobe-planner';
 
 /* Designs: Raf's requests for a customer's 3D design. He fills in the space (photos), sizes, what they want
    and the options, and taps Send for design; it goes to the inbox like a job. A scheduled Claude run builds it
@@ -363,6 +364,8 @@ export function DesignView({
             </button>
           </div>
         </fieldset>
+
+        <WardrobePlanner spec={d.wardrobe} sizes={sizes} onChange={(wardrobe) => save({ d: { ...d, wardrobe } })} />
 
         <div className="grid gap-5">
           <Area label="What they want" value={d.brief} onChange={(e) => save({ d: { ...d, brief: e.target.value } })} placeholder="e.g. Two wardrobes either side of the chimney, rail and shelves, panelled doors, top boxes to the ceiling" />

@@ -1,5 +1,6 @@
 import type { Kind, SectionId } from './plan';
 import { SECTIONS } from './plan';
+import { plan, specLines, type WardrobeSpec } from '@/lib/wardrobe';
 
 /* The Job Kit keeps its jobs on the phone in IndexedDB ("raf-job-kit"): jobs and items (small, with a
    240 px thumbnail each) and, in their own store, the photo and clip files themselves. A file is
@@ -61,7 +62,7 @@ export type Item = {
 
 /* A design request: what the customer wants, the options to show, and changes after they've seen it.
    The customer's mobile stays on this phone (for the "Send on WhatsApp" button) and is never sent. */
-export type DesignBrief = { brief: string; options: string; mobile: string; changes: { at: number; text: string }[] };
+export type DesignBrief = { brief: string; options: string; mobile: string; changes: { at: number; text: string }[]; wardrobe?: WardrobeSpec };
 export const emptyBrief = (): DesignBrief => ({ brief: '', options: '', mobile: '', changes: [] });
 
 export const emptyNotes = (): Notes => ({
@@ -247,7 +248,15 @@ export function jobJson(job: Job, items: Item[], ready: boolean) {
     items: list,
     // design requests: the brief, the options and every change asked for, oldest first (never the mobile)
     ...(job.kind === 'design' && job.design
-      ? { design: { brief: job.design.brief, options: job.design.options, changes: job.design.changes.map((c) => ({ at: new Date(c.at).toISOString(), text: c.text })) } }
+      ? {
+          design: {
+            brief: job.design.brief,
+            options: job.design.options,
+            changes: job.design.changes.map((c) => ({ at: new Date(c.at).toISOString(), text: c.text })),
+            // the wardrobe planner (src/lib/wardrobe.ts): what Raf picked, and the sums the app showed him
+            ...(job.design.wardrobe ? { wardrobe: job.design.wardrobe, wardrobePlan: plan(job.design.wardrobe) } : {}),
+          },
+        }
       : {}),
   };
 }
@@ -270,6 +279,7 @@ function designTxt(job: Job, items: Item[]) {
     'Options to show:',
     d.options,
     '',
+    ...(d.wardrobe ? ['Wardrobe planner:', ...specLines(d.wardrobe).map((l) => `- ${l}`), ''] : []),
     'Sizes (W x H x D in mm):',
     ...(sizes.length ? sizes : ['- ']),
     '',
