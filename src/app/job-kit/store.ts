@@ -1,6 +1,9 @@
 import type { Kind, SectionId } from './plan';
 import { SECTIONS } from './plan';
 import { normalise, plan, specLines, type WardrobeSpec } from '@/lib/wardrobe';
+import { alcoveLines, planAlcove, type AlcoveSpec } from '@/lib/planners/alcove';
+import { bookcaseLines, planBookcase, type BookcaseSpec } from '@/lib/planners/bookcase';
+import { chestLines, planChest, type ChestSpec } from '@/lib/planners/chest';
 
 /* The Job Kit keeps its jobs on the phone in IndexedDB ("raf-job-kit"): jobs and items (small, with a
    240 px thumbnail each) and, in their own store, the photo and clip files themselves. A file is
@@ -62,7 +65,7 @@ export type Item = {
 
 /* A design request: what the customer wants, the options to show, and changes after they've seen it.
    The customer's mobile stays on this phone (for the "Send on WhatsApp" button) and is never sent. */
-export type DesignBrief = { brief: string; options: string; mobile: string; changes: { at: number; text: string }[]; wardrobe?: WardrobeSpec };
+export type DesignBrief = { brief: string; options: string; mobile: string; changes: { at: number; text: string }[]; wardrobe?: WardrobeSpec; alcove?: AlcoveSpec; bookcase?: BookcaseSpec; chest?: ChestSpec };
 export const emptyBrief = (): DesignBrief => ({ brief: '', options: '', mobile: '', changes: [] });
 
 export const emptyNotes = (): Notes => ({
@@ -255,6 +258,10 @@ export function jobJson(job: Job, items: Item[], ready: boolean) {
             changes: job.design.changes.map((c) => ({ at: new Date(c.at).toISOString(), text: c.text })),
             // the wardrobe planner (src/lib/wardrobe.ts): what Raf picked, and the sums the app showed him
             ...(job.design.wardrobe ? { wardrobe: normalise(job.design.wardrobe), wardrobePlan: plan(normalise(job.design.wardrobe)) } : {}),
+            // the other planners (src/lib/planners/): what Raf picked and the sums the app showed him
+            ...(job.design.alcove ? { alcove: job.design.alcove, alcovePlan: planAlcove(job.design.alcove) } : {}),
+            ...(job.design.bookcase ? { bookcase: job.design.bookcase, bookcasePlan: planBookcase(job.design.bookcase) } : {}),
+            ...(job.design.chest ? { chest: job.design.chest, chestPlan: planChest(job.design.chest) } : {}),
           },
         }
       : {}),
@@ -280,6 +287,9 @@ function designTxt(job: Job, items: Item[]) {
     d.options,
     '',
     ...(d.wardrobe ? ['Wardrobe planner:', ...specLines(normalise(d.wardrobe)).map((l) => `- ${l}`), ''] : []),
+    ...(d.alcove ? ['Alcove planner:', ...alcoveLines(d.alcove).map((l) => `- ${l}`), ''] : []),
+    ...(d.bookcase ? ['Bookcase planner:', ...bookcaseLines(d.bookcase).map((l) => `- ${l}`), ''] : []),
+    ...(d.chest ? ['Chest of drawers planner:', ...chestLines(d.chest).map((l) => `- ${l}`), ''] : []),
     'Sizes (W x H x D in mm):',
     ...(sizes.length ? sizes : ['- ']),
     '',

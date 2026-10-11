@@ -43,32 +43,34 @@ of what they like). For an update, the newest change is what to do; earlier chan
   drawn from the photos; never anything that identifies the house or the people.
 - Doors and drawers should open (moves in the meta); "Open the doors" / "Close the doors".
 
-## 3b. A wardrobe from the planner (fast)
+## 3b. A design from a planner (fast)
 
-When `--fetch` prints `wardrobe planner: .../wardrobe.json`, Raf filled in the Job Kit's wardrobe planner
-(build MDF or IKEA PAX, layout of doubles = 1 and singles = 0.5, ends, the inside of each unit as a stack of
-pieces bottom to top (baskets, drawers, shelf, shelves, short or long hanging, shoe shelf), doors, handles;
-src/lib/wardrobe.ts). Build it with the template instead of drawing it board by board:
+When `--fetch` prints `<kind> planner: .../<kind>.json`, Raf filled in one of the Job Kit's planners
+(src/app/job-kit/planners.tsx): **wardrobe** (MDF or IKEA PAX, doubles = 1 and singles = 0.5, ends, the inside of
+each unit as a stack bottom to top, doors, handles; src/lib/wardrobe.ts), **alcove** (beside a chimney breast, one
+side or both, base cupboard or shelves only; src/lib/planners/alcove.ts), **bookcase** (bays, shelves, cupboards
+below or not, ends; bookcase.ts) or **chest** of drawers (columns, drawers, graduated, top split, plinth or legs;
+chest.ts). Build it with the template instead of drawing it board by board:
 
 ```sh
-python3 scripts/wardrobe-model.py /home/claude/design-requests/<id>/wardrobe.json \
+python3 scripts/planner-model.py /home/claude/design-requests/<id>/<kind>.json \
   scripts/models/design-<code>-a.su.json public/designs/<code>/a-<hash>.glb --name "<title>, <area>"
 ```
 
-It takes about a second, and prints the option's `text`, its `sizes` and the planner's warnings (use them in
-the page JSON as they are, tidied if needed). Options asked for in the brief ("B: panelled doors", "B: drawers on
-the right") are a copy of wardrobe.json with that field changed, built the same way as b, c. Anything the
-planner can't say (a chimney breast, a sloping ceiling, a boiler) still comes from the talk-through and photos:
-build those pieces as usual in step 4. The wardrobe's width, ceiling and depth are Raf's measured sizes; the
-heights inside (drawers 200, baskets 160, top shelf 300) are standard, so the notes say "The space is measured;
-the heights inside are standard and can move." Planner warnings (doors too wide, frames don't fit) are built
-anyway, mentioned in the final reply, never on the page. An update whose newest change says "Wardrobe planner changed"
-(Raf's 'Update the 3D design' button) is rebuilt from the new wardrobe.json with the same code and the same option
-letters (new hash in the file names).
-The template is SketchUp helper code (scripts/wardrobe/build.py on su-helpers.py) run locally by
-scripts/wardrobe/local.py. To build the same thing in the SketchUp connector, add `--sketchup code.py`, paste
-that file into build_model, and rerun with `--from-sketchup <saved tool result>` (not tried in the connector yet:
-the first time, check the read-back matches the local build).
+It takes a second or two, and prints the option's `text`, its `sizes`, the planner's warnings (and a `title` for
+the non-wardrobe planners); use them in the page JSON as they are, tidied if needed. The sums come from the same
+TypeScript the app ran (scripts/planner-plan.mjs; the wardrobe has its Python copy in scripts/wardrobe/plan.py),
+so the model matches the drawing Raf saw. Options asked for in the brief ("B: panelled doors", "B: two columns")
+are a copy of the JSON with that field changed, built the same way as b, c. Anything a planner can't say (a
+boiler, a sloping ceiling, a window) still comes from the talk-through and photos: build those pieces as usual in
+step 4. Sizes Raf typed are measured; the planners' own heights (drawers, shelves, base cupboards) are standard,
+so the notes say "The space is measured; the heights inside are standard and can move." Planner warnings are
+built anyway, mentioned in the final reply, never on the page. An update whose newest change says "Planner
+changed" or "Wardrobe planner changed" (Raf's 'Update the 3D design' button) is rebuilt from the new JSON with the
+same code and option letters (new hash in the file names).
+The templates are SketchUp helper code (scripts/wardrobe/build.py and scripts/planners/build.py on su-helpers.py)
+run locally by scripts/wardrobe/local.py. For the wardrobe, `scripts/wardrobe-model.py ... --sketchup code.py`
+writes the same build as one block for the SketchUp connector (not tried there yet).
 
 ## 4. Build each option (same pipeline as the job models, see CLAUDE.md "3D SketchUp models")
 

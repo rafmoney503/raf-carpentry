@@ -4,7 +4,7 @@ import Mark from './mark';
 import { Area, field, label, Missing, SectionView, TalkBox } from './parts';
 import { DESIGN_IDEAS, DESIGN_SPACE, type Section, type Slot } from './plan';
 import { emptyBrief, emptyNotes, newJobId, type DesignBrief, type Item, type Job, type Size } from './store';
-import { WardrobePlanner } from './wardrobe-planner';
+import { Planners } from './planners';
 
 /* Designs: Raf's requests for a customer's 3D design. He fills in the space (photos), sizes, what they want
    and the options, and taps Send for design; it goes to the inbox like a job. A scheduled Claude run builds it
@@ -365,11 +365,11 @@ export function DesignView({
           </div>
         </fieldset>
 
-        <WardrobePlanner
-          spec={d.wardrobe}
+        <Planners
+          specs={{ wardrobe: d.wardrobe, alcove: d.alcove, bookcase: d.bookcase, chest: d.chest }}
           sizes={sizes}
-          onChange={(wardrobe) => save({ d: { ...d, wardrobe } })}
-          onUpdate={st === 'ready' ? () => void flushAndSend('Wardrobe planner changed: build the new layout') : undefined}
+          onChange={(next) => save({ d: { ...d, ...next } })}
+          onUpdate={st === 'ready' ? () => void flushAndSend('Planner changed: build the new layout') : undefined}
         />
 
         <div className="grid gap-5">
