@@ -1,13 +1,13 @@
 # The wardrobe planner's sums, the same as src/lib/wardrobe.ts (keep the two saying the same thing).
 # No imports: this file is also pasted into the SketchUp connector (build_model) with su-helpers.py and build.py.
 # spec: {build: 'mdf'|'ikea', pax: 2010|2364, width, ceiling, depth,
-#        units: [{type: 'double'|'single', pieces: [{kind, count}, ...bottom to top]}],
+#        units: [{type: 'double'|'mid'|'single', pieces: [{kind, count}, ...bottom to top]}],  (mid = PAX 750)
 #        left, right: 'panel'|'wall'|'none', doors: 'flat'|'shaker'|'panelled', handles: 'knobs'|'bars'|'push'}
 # piece kinds: baskets, drawers (with a count), shoes, shelf, short, long (hanging), shelves (with a count). mm.
 
 RULES = {
     "plinth": 80, "scribe": 20, "panel": 18, "gap": 3, "topBoxFrom": 300, "doorMin": 300, "doorMax": 600,
-    "paxDouble": 1000, "paxSingle": 500, "paxDoor": 497, "paxBase": 60, "fillerMax": 250, "drawer": 200,
+    "paxDouble": 998, "paxMid": 748, "paxSingle": 498, "paxDoor": 497, "paxBase": 60, "fillerMax": 250, "drawer": 200,
     "basket": 160, "shoes": 250, "topShelfSpace": 300, "longNeeds": 1400, "shortNeeds": 1000, "shelfGap": 250,
     "board": 18,
 }
@@ -16,6 +16,18 @@ RULES = {
 def jround(x):
     """Math.round, as in the app (Python's round() rounds halves to even)."""
     return int((x + 0.5) // 1)
+
+
+def unit_doors(t):
+    return 1 if t == "single" else 2
+
+
+def unit_size(t):
+    return 1 if t == "double" else 0.75 if t == "mid" else 0.5
+
+
+def pax_width(t):
+    return RULES["paxDouble"] if t == "double" else RULES["paxMid"] if t == "mid" else RULES["paxSingle"]
 
 
 def take_off(e):
@@ -45,6 +57,8 @@ def normalise(s):
         if u.get("topShelf"):
             pcs.append({"kind": "shelf", "count": 0})
         units.append({"type": u["type"], "pieces": pcs})
+    if s.get("build") != "ikea":  # a 750 unit only exists in PAX: in MDF it becomes a double
+        units = [dict(u, type="double") if u["type"] == "mid" else u for u in units]
     out = dict(s)
     out["units"] = units
     return out
@@ -95,12 +109,12 @@ def plan(s):
     s = normalise(s)
     R = RULES
     units = s["units"]
-    doors = sum(2 if u["type"] == "double" else 1 for u in units)
-    size = sum(1 if u["type"] == "double" else 0.5 for u in units)
+    doors = sum(unit_doors(u["type"]) for u in units)
+    size = sum(unit_size(u["type"]) for u in units)
     avail = s["width"] - take_off(s["left"]) - take_off(s["right"])
     ikea = s["build"] == "ikea"
     share = avail / doors if doors else 0
-    frames = sum(R["paxDouble"] if u["type"] == "double" else R["paxSingle"] for u in units)
+    frames = sum(pax_width(u["type"]) for u in units)
     filler = avail - frames if ikea else 0
     carcass_h = s["pax"] if ikea else s["ceiling"] - R["plinth"]
     above = s["ceiling"] - s["pax"] if ikea else 0
@@ -129,15 +143,15 @@ def plan(s):
     ups = []
     for i, u in enumerate(units):
         if ikea:
-            w = R["paxDouble"] if u["type"] == "double" else R["paxSingle"]
+            w = pax_width(u["type"])
         else:
-            w = 2 * share if u["type"] == "double" else share
+            w = share if u["type"] == "single" else 2 * share
         sections, short = stack(u["pieces"], z0, z1)
         ok = short <= 0
         note = "Empty inside" if not u["pieces"] else ("%d mm to spare" % jround(-short) if ok else "%d mm too much inside" % jround(short))
         if not ok:
             problems.append("Unit %d: %s." % (i + 1, note))
-        ups.append({"x": x, "w": w, "doors": 2 if u["type"] == "double" else 1, "z0": z0, "z1": z1, "sections": sections, "ok": ok, "note": note})
+        ups.append({"x": x, "w": w, "doors": unit_doors(u["type"]), "z0": z0, "z1": z1, "sections": sections, "ok": ok, "note": note})
         x += w
     return {"doors": doors, "size": size, "avail": avail, "doorW": door_w, "filler": filler, "carcassH": carcass_h,
             "above": above, "top": top, "units": ups, "problems": problems}

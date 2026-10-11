@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Mark from './mark';
 import { field, label } from './parts';
+import { PlannerHeader } from './planner-parts';
 import type { Size } from './store';
 import {
   LAYOUTS,
@@ -20,6 +21,8 @@ import {
   type PieceKind,
   type Plan,
   type Unit,
+  type UnitType,
+  unitName,
   type WardrobeSpec,
 } from '@/lib/wardrobe';
 
@@ -72,7 +75,7 @@ function Elevation({ s, p, inside }: { s: WardrobeSpec; p: Plan; inside: boolean
   const L = takeOff(s.left);
   const Rt = takeOff(s.right);
   return (
-    <svg viewBox={`${-pad * 0.9} ${-pad} ${W + pad * 2} ${H + pad * 2.1}`} className="block w-full text-ink" role="img" aria-label={`Front view, ${layoutLabel(s.units)}, ${inside ? 'inside' : 'doors'}`}>
+    <svg viewBox={`${-pad * 0.9} ${-pad} ${W + pad * 2} ${H + pad * 2.1}`} className="block w-full text-ink" role="img" aria-label={`Front view, ${layoutLabel(s.units, s.build)}, ${inside ? 'inside' : 'doors'}`}>
       <defs>
         <pattern id="wp-grid" width="100" height="100" patternUnits="userSpaceOnUse">
           <path d="M100 0H0V100" fill="none" stroke="currentColor" strokeOpacity="0.07" vectorEffect="non-scaling-stroke" />
@@ -186,7 +189,7 @@ function Elevation({ s, p, inside }: { s: WardrobeSpec; p: Plan; inside: boolean
             )}
             {/* unit number and width under the floor line */}
             <text x={(x0 + x1) / 2} y={H + fs * 1.5} textAnchor="middle" fontSize={fs} className="fill-faint font-mono">
-              {s.units[i].type === 'double' ? '1' : '0.5'}
+              {ikea ? { double: '1000', mid: '750', single: '500' }[s.units[i].type] : s.units[i].type === 'double' ? '1' : '0.5'}
             </text>
             {!ikea || u.w ? (
               <text x={(x0 + x1) / 2} y={H + fs * 2.7} textAnchor="middle" fontSize={fs * 0.85} className="fill-faint font-mono">
@@ -235,7 +238,7 @@ function UnitInside({ unit, index, plan: up, ikea, onChange }: { unit: Unit; ind
     <div className="rounded-sm border border-line bg-paper p-3">
       <div className="flex items-baseline justify-between gap-2">
         <p className="font-semibold">
-          Unit {index + 1}: {unit.type}
+          Unit {index + 1}: {unitName(unit.type, ikea ? 'ikea' : 'mdf')}
           <span className="font-mono text-[13px] font-normal text-faint"> · {Math.round(up?.w ?? 0)} mm</span>
         </p>
         <p className={`flex items-center gap-1 font-mono text-[12.5px] ${up?.ok === false ? 'font-semibold text-ink' : 'text-faint'}`}>
@@ -314,6 +317,7 @@ const ENDS: [End, string][] = [
 
 export function WardrobePlanner({ spec: raw, sizes, onChange, onUpdate }: { spec?: WardrobeSpec; sizes: Size[]; onChange: (s: WardrobeSpec | undefined) => void; onUpdate?: () => void }) {
   const [view, setView] = useState<'doors' | 'inside'>('doors');
+  const [open, setOpen] = useState(true);
   if (!raw) {
     const space = sizes[0];
     return (
@@ -330,17 +334,21 @@ export function WardrobePlanner({ spec: raw, sizes, onChange, onUpdate }: { spec
   const p = plan(s);
   const set = (patch: Partial<WardrobeSpec>) => onChange({ ...s, ...patch });
   const setUnit = (i: number, u: Unit) => set({ units: s.units.map((x, j) => (j === i ? u : x)) });
-  const current = layoutLabel(s.units);
+  const current = layoutLabel(s.units, s.build);
   const ikea = s.build === 'ikea';
+  const add = (t: UnitType) => set({ units: withLayout(s.units, [...s.units.map((u) => u.type), t], s.build) });
+  const layouts = LAYOUTS.filter((l) => ikea || !l.ikea).map((l) => ({ ...l, label: layoutLabel(l.units.map((t) => ({ type: t, pieces: [] })), s.build) }));
 
   return (
     <section className="rounded-sm border border-line-strong bg-mount p-4">
-      <h2 className="text-[19px] font-[650]">Wardrobe planner</h2>
+      <PlannerHeader title="Wardrobe planner" open={open} onToggle={() => setOpen(!open)} summary={`${ikea ? `IKEA PAX ${s.pax}` : 'MDF'} · ${current}${s.width ? ` · ${s.width} wide` : ''}`} />
 
+      {open ? (
       <div className="mt-4 grid gap-5">
         <div className="grid gap-2">
           <span className={label}>Build</span>
-          <Pick<'mdf' | 'ikea'> options={[['mdf', 'MDF, floor to ceiling'], ['ikea', 'IKEA PAX']]} value={s.build} onChange={(build) => set({ build })} />
+          <Pick<'mdf' | 'ikea'> options={[['mdf', 'MDF'], ['ikea', 'IKEA PAX']]} value={s.build} onChange={(build) => set(normalise({ ...s, build }))} />
+          <p className="font-mono text-[12px] text-faint">{ikea ? 'PAX frames 1000, 750 and 500 (really 998, 748 and 498), fillers take up the rest.' : 'MDF from floor to ceiling on a plinth, every door the same width.'}</p>
           {ikea ? (
             <Pick<2010 | 2364>
               options={[
@@ -363,22 +371,31 @@ export function WardrobePlanner({ spec: raw, sizes, onChange, onUpdate }: { spec
         </div>
 
         <div className="grid gap-2">
-          <span className={label}>Layout (double = 1, single = 0.5)</span>
+          <span className={label}>{ikea ? 'Layout (PAX frames, left to right)' : 'Layout (double = 1, single = 0.5)'}</span>
           <Pick
-            options={[...LAYOUTS.map((l) => [l.label, l.label] as [string, string]), ...(LAYOUTS.some((l) => l.label === current) ? [] : [[current, current] as [string, string]])]}
+            options={[...layouts.map((l) => [l.label, l.label] as [string, string]), ...(layouts.some((l) => l.label === current) ? [] : [[current, current] as [string, string]])]}
             value={current}
             onChange={(v) => {
-              const l = LAYOUTS.find((x) => x.label === v);
+              const l = layouts.find((x) => x.label === v);
               if (l) set({ units: withLayout(s.units, l.units, s.build) });
             }}
           />
           <div className="flex flex-wrap gap-2">
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => set({ units: withLayout(s.units, [...s.units.map((u) => u.type), 'double'], s.build) })} disabled={s.units.length >= 6}>
-              + Double
-            </button>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => set({ units: withLayout(s.units, [...s.units.map((u) => u.type), 'single'], s.build) })} disabled={s.units.length >= 6}>
-              + Single
-            </button>
+            {(ikea
+              ? ([
+                  ['double', '+ 1000'],
+                  ['mid', '+ 750'],
+                  ['single', '+ 500'],
+                ] as [UnitType, string][])
+              : ([
+                  ['double', '+ Double'],
+                  ['single', '+ Single'],
+                ] as [UnitType, string][])
+            ).map(([t, text]) => (
+              <button key={t} type="button" className="btn btn-ghost btn-sm" onClick={() => add(t)} disabled={s.units.length >= 6}>
+                {text}
+              </button>
+            ))}
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => set({ units: s.units.slice(0, -1) })} disabled={s.units.length <= 1}>
               Remove last
             </button>
@@ -474,9 +491,10 @@ export function WardrobePlanner({ spec: raw, sizes, onChange, onUpdate }: { spec
         ) : null}
 
         <button type="button" className="h-10 justify-self-start text-[14.5px] text-muted" onClick={() => onChange(undefined)}>
-          Not a wardrobe: stop using the planner
+          Use a different planner
         </button>
       </div>
+      ) : null}
     </section>
   );
 }

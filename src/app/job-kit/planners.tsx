@@ -1,10 +1,11 @@
 'use client';
 import { label } from './parts';
-import { Counter, DOORS, DoorFront, HANDLES, Num, Pick, Problems, Sheet, edge, line } from './planner-parts';
+import { useState } from 'react';
+import { Counter, DOORS, DoorFront, HANDLES, Num, Pick, PlannerHeader, Problems, Sheet, edge, line } from './planner-parts';
 import type { Size } from './store';
 import { WardrobePlanner } from './wardrobe-planner';
 import { newSpec, type WardrobeSpec } from '@/lib/wardrobe';
-import { ALCOVE_RULES, newAlcove, planAlcove, type AlcoveSpec } from '@/lib/planners/alcove';
+import { ALCOVE_RULES, fitOf, newAlcove, normaliseAlcove, planAlcove, type AlcoveFit, type AlcoveSpec } from '@/lib/planners/alcove';
 import { BOOKCASE_RULES, newBookcase, planBookcase, type BookcaseSpec } from '@/lib/planners/bookcase';
 import { CHEST_RULES, newChest, planChest, type ChestSpec } from '@/lib/planners/chest';
 
@@ -23,24 +24,27 @@ const CHOICES: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'chest', name: 'Chest of drawers', hint: 'Columns and drawers, plinth or legs' },
 ];
 
-function Card({ title, children, onStop, onUpdate }: { title: string; children: React.ReactNode; onStop: () => void; onUpdate?: () => void }) {
+function Card({ title, summary, children, onStop, onUpdate }: { title: string; summary: string; children: React.ReactNode; onStop: () => void; onUpdate?: () => void }) {
+  const [open, setOpen] = useState(true);
   return (
     <section className="rounded-sm border border-line-strong bg-mount p-4">
-      <h2 className="text-[19px] font-[650]">{title}</h2>
-      <div className="mt-4 grid gap-5">
-        {children}
-        {onUpdate ? (
-          <div className="rounded-sm border border-accent bg-accent-soft p-3">
-            <p className="text-[14.5px] leading-relaxed">Changed something? Send it and the customer’s link shows the new design.</p>
-            <button type="button" className="btn btn-primary btn-sm mt-2 w-full" onClick={onUpdate}>
-              Update the 3D design
-            </button>
-          </div>
-        ) : null}
-        <button type="button" className="h-10 justify-self-start text-[14.5px] text-muted" onClick={onStop}>
-          Use a different planner
-        </button>
-      </div>
+      <PlannerHeader title={title} open={open} onToggle={() => setOpen(!open)} summary={summary} />
+      {open ? (
+        <div className="mt-4 grid gap-5">
+          {children}
+          {onUpdate ? (
+            <div className="rounded-sm border border-accent bg-accent-soft p-3">
+              <p className="text-[14.5px] leading-relaxed">Changed something? Send it and the customer’s link shows the new design.</p>
+              <button type="button" className="btn btn-primary btn-sm mt-2 w-full" onClick={onUpdate}>
+                Update the 3D design
+              </button>
+            </div>
+          ) : null}
+          <button type="button" className="h-10 justify-self-start text-[14.5px] text-muted" onClick={onStop}>
+            Use a different planner
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -66,21 +70,66 @@ const Field = ({ name, children }: { name: string; children: React.ReactNode }) 
 
 /* ---------- alcoves ---------- */
 
-function AlcovePlanner({ s, onChange }: { s: AlcoveSpec; onChange: (s: AlcoveSpec) => void }) {
+function FitEditor({ title, f, onChange }: { title?: string; f: AlcoveFit; onChange: (f: AlcoveFit) => void }) {
+  const set = (patch: Partial<AlcoveFit>) => onChange({ ...f, ...patch });
+  return (
+    <div className={title ? 'grid gap-4 rounded-sm border border-line bg-paper p-3' : 'grid gap-4'}>
+      {title ? <p className="font-semibold">{title}</p> : null}
+      <Field name="Bottom">
+        <Pick
+          options={[
+            ['cupboard', 'Base cupboard'],
+            ['none', 'Shelves only'],
+          ]}
+          value={f.base}
+          onChange={(base) => set({ base })}
+        />
+        {f.base === 'cupboard' ? (
+          <div className="grid grid-cols-3 gap-2">
+            <Num text="Cupboard height" value={f.baseH} onChange={(baseH) => set({ baseH })} />
+            <Num text="Cupboard depth" value={f.baseD} onChange={(baseD) => set({ baseD })} />
+          </div>
+        ) : null}
+      </Field>
+      <Field name="Shelves">
+        <Counter value={f.shelves} min={0} max={10} onChange={(shelves) => set({ shelves })} one="shelf" many="shelves" />
+        <div className="grid grid-cols-3 gap-2">
+          <Num text="Shelf depth" value={f.shelfD} onChange={(shelfD) => set({ shelfD })} />
+        </div>
+      </Field>
+    </div>
+  );
+}
+
+type AlcoveMode = 'same' | 'different' | 'left' | 'right';
+
+function AlcovePlanner({ s: raw, onChange }: { s: AlcoveSpec; onChange: (s: AlcoveSpec) => void }) {
+  const s = normaliseAlcove(raw);
   const p = planAlcove(s);
   const set = (patch: Partial<AlcoveSpec>) => onChange({ ...s, ...patch });
   const R = ALCOVE_RULES;
+  const mode: AlcoveMode = s.sides === 'both' ? (s.same ? 'same' : 'different') : s.sides;
+  const anyBase = p.sides.some((a) => a.base);
   return (
     <>
-      <Field name="Which side">
-        <Pick
+      <Field name="Which alcoves">
+        <Pick<AlcoveMode>
           options={[
-            ['both', 'Both alcoves'],
+            ['same', 'Both, the same'],
+            ['different', 'Both, different'],
             ['left', 'Left only'],
             ['right', 'Right only'],
           ]}
-          value={s.sides}
-          onChange={(sides) => set({ sides })}
+          value={mode}
+          onChange={(m) =>
+            set(
+              m === 'same'
+                ? { sides: 'both', same: true }
+                : m === 'different'
+                  ? { sides: 'both', same: false, right: s.same ? { ...s.left } : s.right }
+                  : { sides: m, same: false, ...(m === 'right' && s.same ? { right: { ...s.left } } : {}) },
+            )
+          }
         />
       </Field>
       <Field name="The space">
@@ -92,30 +141,18 @@ function AlcovePlanner({ s, onChange }: { s: AlcoveSpec; onChange: (s: AlcoveSpe
           <Num text="Ceiling" value={s.ceiling} onChange={(ceiling) => set({ ceiling })} />
         </div>
       </Field>
-      <Field name="Bottom">
-        <Pick
-          options={[
-            ['cupboard', 'Base cupboard'],
-            ['none', 'Shelves only'],
-          ]}
-          value={s.base}
-          onChange={(base) => set({ base })}
-        />
-        {s.base === 'cupboard' ? (
-          <div className="grid grid-cols-3 gap-2">
-            <Num text="Cupboard height" value={s.baseH} onChange={(baseH) => set({ baseH })} />
-            <Num text="Cupboard depth" value={s.baseD} onChange={(baseD) => set({ baseD })} />
-          </div>
-        ) : null}
-      </Field>
-      <Field name="Shelves">
-        <Counter value={s.shelves} min={0} max={10} onChange={(shelves) => set({ shelves })} one="shelf" many="shelves" />
-        <div className="grid grid-cols-3 gap-2">
-          <Num text="Shelf depth" value={s.shelfD} onChange={(shelfD) => set({ shelfD })} />
-        </div>
-      </Field>
 
-      <Drawing summary={`${s.sides === 'both' ? 'Both alcoves' : `${s.sides === 'left' ? 'Left' : 'Right'} alcove`} · ${s.base === 'cupboard' ? `cupboard ${s.baseH} + ` : ''}${s.shelves} shelves`} problems={p.problems} ok={!!p.W}>
+      {mode === 'same' ? <FitEditor f={s.left} onChange={(left) => set({ left, right: { ...left } })} /> : null}
+      {mode === 'different' ? (
+        <div className="grid gap-3">
+          <FitEditor title="Left alcove" f={s.left} onChange={(left) => set({ left })} />
+          <FitEditor title="Right alcove" f={s.right} onChange={(right) => set({ right })} />
+        </div>
+      ) : null}
+      {mode === 'left' ? <FitEditor f={s.left} onChange={(left) => set({ left })} /> : null}
+      {mode === 'right' ? <FitEditor f={s.right} onChange={(right) => set({ right })} /> : null}
+
+      <Drawing summary={alcoveTag(s)} problems={p.problems} ok={!!p.W}>
         <Sheet W={p.W} H={s.ceiling} label="Front view of the alcoves">
           {(Y, fs) => (
             <g>
@@ -149,7 +186,7 @@ function AlcovePlanner({ s, onChange }: { s: AlcoveSpec; onChange: (s: AlcoveSpe
         </Sheet>
       </Drawing>
 
-      {s.base === 'cupboard' ? (
+      {anyBase ? (
         <>
           <Field name="Doors">
             <Pick options={DOORS} value={s.doors} onChange={(doors) => set({ doors })} />
@@ -161,6 +198,13 @@ function AlcovePlanner({ s, onChange }: { s: AlcoveSpec; onChange: (s: AlcoveSpe
       ) : null}
     </>
   );
+}
+
+const fitTag = (f: AlcoveFit) => `${f.base === 'cupboard' ? `cupboard ${f.baseH} + ` : ''}${f.shelves} shelves`;
+function alcoveTag(raw: AlcoveSpec) {
+  const s = normaliseAlcove(raw);
+  if (s.sides === 'both') return s.same ? `Both the same · ${fitTag(s.left)}` : `Left ${fitTag(s.left)} · right ${fitTag(s.right)}`;
+  return `${s.sides === 'left' ? 'Left' : 'Right'} only · ${fitTag(fitOf(s, s.sides))}`;
 }
 
 /* ---------- bookcase ---------- */
@@ -407,18 +451,18 @@ export function Planners({ specs, sizes, onChange, onUpdate }: { specs: PlannerS
   if (active === 'wardrobe') return <WardrobePlanner spec={specs.wardrobe} sizes={sizes} onChange={(v) => (v ? onChange(only('wardrobe', v)) : stop())} onUpdate={onUpdate} />;
   if (active === 'alcove')
     return (
-      <Card title="Alcove planner" onStop={stop} onUpdate={onUpdate}>
+      <Card title="Alcove planner" summary={alcoveTag(specs.alcove!)} onStop={stop} onUpdate={onUpdate}>
         <AlcovePlanner s={specs.alcove!} onChange={(v) => onChange(only('alcove', v))} />
       </Card>
     );
   if (active === 'bookcase')
     return (
-      <Card title="Bookcase planner" onStop={stop} onUpdate={onUpdate}>
+      <Card title="Bookcase planner" summary={`${specs.bookcase!.bays} bays · ${specs.bookcase!.shelves} shelves each · ${specs.bookcase!.width || 0} x ${specs.bookcase!.height}`} onStop={stop} onUpdate={onUpdate}>
         <BookcasePlanner s={specs.bookcase!} onChange={(v) => onChange(only('bookcase', v))} />
       </Card>
     );
   return (
-    <Card title="Chest of drawers planner" onStop={stop} onUpdate={onUpdate}>
+    <Card title="Chest of drawers planner" summary={`${planChest(specs.chest!).fronts.length} drawers · ${specs.chest!.width} x ${specs.chest!.height} x ${specs.chest!.depth}`} onStop={stop} onUpdate={onUpdate}>
       <ChestPlanner s={specs.chest!} onChange={(v) => onChange(only('chest', v))} />
     </Card>
   );

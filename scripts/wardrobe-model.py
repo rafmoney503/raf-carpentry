@@ -113,7 +113,8 @@ def unit_words(u):
 parts = []
 for i, u in enumerate(units):
     parts.append(("the %s" % ("left" if i == 0 else "right" if i == len(units) - 1 else "middle")) if len(units) <= 3 else "unit %d" % (i + 1))
-inside = "; ".join("%s %s, %s" % (parts[i], "double" if u["type"] == "double" else "single", unit_words(u)) for i, u in enumerate(units))
+kind_word = (lambda t: {"double": "1000", "mid": "750", "single": "500"}[t] + " unit") if ikea else (lambda t: "single" if t == "single" else "double")
+inside = "; ".join("%s %s, %s" % (parts[i], kind_word(u["type"]), unit_words(u)) for i, u in enumerate(units))
 build_words = ("IKEA PAX frames %d high" % spec["pax"] + (" with a top box above" if p["top"] == "box" else " with an infill strip above" if p["top"] == "infill" else "")) if ikea else "MDF from floor to ceiling on a plinth"
 text = "%d doors in %s, %s and %s. Inside: %s." % (p["doors"], build_words, doors_words, handle_words, inside)
 sizes = [

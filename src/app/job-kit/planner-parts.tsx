@@ -49,6 +49,22 @@ export function Counter({ value, min, max, onChange, one, many }: { value: numbe
   );
 }
 
+/* The planner's name with an Open / Close switch beside it; closed, it shows one line of what is picked.
+   Closing keeps everything as it is. */
+export function PlannerHeader({ title, open, onToggle, summary }: { title: string; open: boolean; onToggle: () => void; summary: string }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-[19px] font-[650]">{title}</h2>
+        <button type="button" aria-expanded={open} onClick={onToggle} className="min-h-9 shrink-0 rounded-sm border border-line-strong bg-mount px-3 text-[14px] hover:border-ink">
+          {open ? 'Close' : 'Open'}
+        </button>
+      </div>
+      {!open ? <p className="mt-1 font-mono text-[13px] text-faint">{summary}</p> : null}
+    </div>
+  );
+}
+
 export const edge = { vectorEffect: 'non-scaling-stroke' as const, stroke: 'currentColor' };
 export const line = { ...edge, fill: 'none' };
 

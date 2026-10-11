@@ -13,7 +13,9 @@ export type Build = 'mdf' | 'ikea';
 export type End = 'panel' | 'wall' | 'none';
 export type PieceKind = 'baskets' | 'drawers' | 'shoes' | 'shelf' | 'short' | 'long' | 'shelves';
 export type Piece = { kind: PieceKind; count: number };
-export type Unit = { type: 'double' | 'single'; pieces: Piece[] }; // pieces bottom to top
+/* double = 1 (two doors), single = 0.5 (one door); mid = a 750 PAX frame (0.75, two doors), IKEA only. */
+export type UnitType = 'double' | 'mid' | 'single';
+export type Unit = { type: UnitType; pieces: Piece[] }; // pieces bottom to top
 export type WardrobeSpec = {
   build: Build;
   pax: 2010 | 2364;
@@ -35,8 +37,10 @@ export const RULES = {
   topBoxFrom: 300, // suggested
   doorMin: 300, // suggested
   doorMax: 600, // suggested
-  paxDouble: 1000,
-  paxSingle: 500,
+  // PAX frames are sold as 100, 75 and 50 cm but are really 998, 748 and 498 wide (Raf, 11 Oct 2026)
+  paxDouble: 998,
+  paxMid: 748,
+  paxSingle: 498,
   paxDoor: 497,
   paxBase: 60, // the PAX frame's own plinth, under its bottom shelf
   fillerMax: 250, // suggested
@@ -87,9 +91,15 @@ export function addPiece(pieces: Piece[], kind: PieceKind): Piece[] {
   return [...pieces.slice(0, at), p, ...pieces.slice(at)];
 }
 
-export const layoutLabel = (units: Unit[]) => units.map((u) => (u.type === 'double' ? '1' : '0.5')).join(' + ');
+export const unitDoors = (t: UnitType) => (t === 'single' ? 1 : 2);
+export const unitSize = (t: UnitType) => (t === 'double' ? 1 : t === 'mid' ? 0.75 : 0.5);
+export const paxWidth = (t: UnitType) => (t === 'double' ? RULES.paxDouble : t === 'mid' ? RULES.paxMid : RULES.paxSingle);
+const NOMINAL: Record<UnitType, string> = { double: '1000', mid: '750', single: '500' };
+/* MDF layouts read '1 + 0.5'; IKEA layouts read in PAX sizes, '1000 + 500'. */
+export const layoutLabel = (units: Unit[], build: Build = 'mdf') =>
+  units.map((u) => (build === 'ikea' ? NOMINAL[u.type] : u.type === 'double' ? '1' : u.type === 'mid' ? '0.75' : '0.5')).join(' + ');
 
-export const defaultUnit = (type: 'double' | 'single', build: Build = 'mdf'): Unit => ({
+export const defaultUnit = (type: UnitType, build: Build = 'mdf'): Unit => ({
   type,
   pieces:
     type === 'single'
@@ -99,7 +109,7 @@ export const defaultUnit = (type: 'double' | 'single', build: Build = 'mdf'): Un
         : PRESETS[0].pieces.map((p) => ({ ...p })),
 });
 
-export const LAYOUTS: { label: string; units: ('double' | 'single')[] }[] = [
+export const LAYOUTS: { label: string; units: UnitType[]; ikea?: boolean }[] = [
   { label: '1', units: ['double'] },
   { label: '1 + 0.5', units: ['double', 'single'] },
   { label: '0.5 + 1', units: ['single', 'double'] },
@@ -107,15 +117,18 @@ export const LAYOUTS: { label: string; units: ('double' | 'single')[] }[] = [
   { label: '1 + 1 + 0.5', units: ['double', 'double', 'single'] },
   { label: '0.5 + 1 + 0.5', units: ['single', 'double', 'single'] },
   { label: '1 + 1 + 1', units: ['double', 'double', 'double'] },
+  { label: '1 + 0.75', units: ['double', 'mid'], ikea: true },
+  { label: '0.75 + 1', units: ['mid', 'double'], ikea: true },
+  { label: '1 + 1 + 0.75', units: ['double', 'double', 'mid'], ikea: true },
 ];
 
 /* Change the layout but keep what was picked inside each unit, where the type at that place is the same. */
-export function withLayout(units: Unit[], types: ('double' | 'single')[], build: Build = 'mdf'): Unit[] {
+export function withLayout(units: Unit[], types: UnitType[], build: Build = 'mdf'): Unit[] {
   return types.map((t, i) => (units[i]?.type === t ? units[i] : defaultUnit(t, build)));
 }
 
 /* Requests saved before the inside became a stack (bottom + above + top shelf) still open. */
-type OldUnit = { type: 'double' | 'single'; bottom?: string; count?: number; above?: string; shelves?: number; topShelf?: boolean; pieces?: Piece[] };
+type OldUnit = { type: UnitType; bottom?: string; count?: number; above?: string; shelves?: number; topShelf?: boolean; pieces?: Piece[] };
 export function normalise(s: WardrobeSpec): WardrobeSpec {
   const units = (s.units as OldUnit[]).map((u): Unit => {
     if (u.pieces) return { type: u.type, pieces: u.pieces };
@@ -128,7 +141,8 @@ export function normalise(s: WardrobeSpec): WardrobeSpec {
     if (u.topShelf) pieces.push({ kind: 'shelf', count: 0 });
     return { type: u.type, pieces };
   });
-  return { ...s, units };
+  // a 750 unit only exists in PAX: in MDF it becomes a double
+  return { ...s, units: s.build === 'ikea' ? units : units.map((u) => (u.type === 'mid' ? { ...u, type: 'double' as const } : u)) };
 }
 
 export function newSpec(width?: number, ceiling?: number, depth?: number): WardrobeSpec {
@@ -189,12 +203,12 @@ function stack(pieces: Piece[], z0: number, z1: number): { sections: Section[]; 
 export function plan(spec: WardrobeSpec): Plan {
   const s = normalise(spec);
   const R = RULES;
-  const doors = s.units.reduce((n, u) => n + (u.type === 'double' ? 2 : 1), 0);
-  const size = s.units.reduce((n, u) => n + (u.type === 'double' ? 1 : 0.5), 0);
+  const doors = s.units.reduce((n, u) => n + unitDoors(u.type), 0);
+  const size = s.units.reduce((n, u) => n + unitSize(u.type), 0);
   const avail = s.width - takeOff(s.left) - takeOff(s.right);
   const ikea = s.build === 'ikea';
   const share = doors ? avail / doors : 0;
-  const frames = s.units.reduce((n, u) => n + (u.type === 'double' ? R.paxDouble : R.paxSingle), 0);
+  const frames = s.units.reduce((n, u) => n + paxWidth(u.type), 0);
   const filler = ikea ? avail - frames : 0;
   const carcassH = ikea ? s.pax : s.ceiling - R.plinth;
   const above = ikea ? s.ceiling - s.pax : 0;
@@ -215,17 +229,19 @@ export function plan(spec: WardrobeSpec): Plan {
   const z1 = (ikea ? s.pax : s.ceiling) - R.board;
   let x = takeOff(s.left) + (ikea ? Math.max(filler, 0) / 2 : 0);
   const units = s.units.map((u, i) => {
-    const w = ikea ? (u.type === 'double' ? R.paxDouble : R.paxSingle) : u.type === 'double' ? 2 * share : share;
+    const w = ikea ? paxWidth(u.type) : u.type === 'single' ? share : 2 * share;
     const { sections, short } = stack(u.pieces, z0, z1);
     const ok = short <= 0;
     const note = !u.pieces.length ? 'Empty inside' : ok ? `${Math.round(-short)} mm to spare` : `${Math.round(short)} mm too much inside`;
     if (!ok) problems.push(`Unit ${i + 1}: ${note}.`);
-    const p = { x, w, doors: u.type === 'double' ? 2 : 1, z0, z1, sections, ok, note };
+    const p = { x, w, doors: unitDoors(u.type), z0, z1, sections, ok, note };
     x += w;
     return p;
   });
   return { doors, size, avail, doorW, filler, carcassH, above, top, units, problems };
 }
+
+export const unitName = (t: UnitType, build: Build) => (build === 'ikea' ? `PAX ${NOMINAL[t]}` : t === 'single' ? 'single' : 'double');
 
 export const unitText = (u: Unit) => (u.pieces.length ? u.pieces.map(pieceText).join(', ') : 'empty');
 
@@ -236,10 +252,10 @@ export function specLines(s: WardrobeSpec): string[] {
   return [
     `Build: ${s.build === 'ikea' ? `IKEA PAX, ${s.pax} frames` : 'MDF, floor to ceiling'}`,
     `Wall to wall ${s.width} mm, ceiling ${s.ceiling} mm, depth ${s.depth} mm`,
-    `Layout: ${layoutLabel(s.units)} (${p.doors} doors${s.build === 'mdf' && p.doorW > 0 ? ` of ${Math.round(p.doorW)} mm` : ''})`,
+    `Layout: ${layoutLabel(s.units, s.build)} (${p.doors} doors${s.build === 'mdf' && p.doorW > 0 ? ` of ${Math.round(p.doorW)} mm` : ''})`,
     `Left end: ${endWord(s.left)}. Right end: ${endWord(s.right)}.`,
     ...(s.build === 'ikea' ? [`Filler left: ${Math.round(p.filler)} mm. Above the frames: ${p.top === 'box' ? `top box ${p.above} mm` : p.top === 'infill' ? `infill strip ${p.above} mm` : 'nothing'}`] : []),
-    ...s.units.map((u, i) => `Unit ${i + 1} (${u.type}), bottom to top: ${unitText(u)}`),
+    ...s.units.map((u, i) => `Unit ${i + 1} (${unitName(u.type, s.build)}), bottom to top: ${unitText(u)}`),
     `Doors: ${s.doors}. Handles: ${s.handles === 'push' ? 'push to open' : s.handles}.`,
     ...(p.problems.length ? [`Planner warnings: ${p.problems.join(' ')}`] : []),
   ];
