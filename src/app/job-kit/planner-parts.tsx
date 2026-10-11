@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Mark from './mark';
 import { field } from './parts';
 
-/* Pieces shared by the alcove, bookcase and chest planners (the wardrobe planner has its own copies):
+/* Pieces shared by all the planners (the wardrobe planner keeps its own Pick and Num):
    chips that always keep one choice, number boxes in mm, a counter, and the drawing sheet. */
 
 export function Pick<T extends string | number | boolean>({ options, value, onChange }: { options: [T, string][]; value: T; onChange: (v: T) => void }) {
@@ -152,6 +152,21 @@ export function DoorFront({ x0, x1, z0, z1, Y, hingeLeft, style, handles }: { x0
       {handles === 'knobs' ? <circle cx={hx} cy={Y(hz)} r={16} fill="currentColor" /> : null}
       {handles === 'bars' ? <rect x={hx - 7} y={Y(hz + Math.min(150, h / 4))} width={14} height={Math.min(300, h / 2)} fill="currentColor" /> : null}
     </g>
+  );
+}
+
+/* The drawing box every planner uses: one summary line on top, the sheet, then what doesn't fit (or 'It all fits').
+   `extra` sits under the drawing, for a light switch such as the wardrobe's Inside / Doors. */
+export function Drawing({ summary, children, problems, ok, extra }: { summary: string; children: React.ReactNode; problems: string[]; ok: boolean; extra?: React.ReactNode }) {
+  return (
+    <div className="overflow-hidden rounded-sm border border-line-strong bg-mount">
+      <p className="border-b border-line px-3 py-2 font-mono text-[13px] leading-snug">{summary}</p>
+      <div className="px-2 pb-1 pt-2">{children}</div>
+      {extra ? <div className="px-3 pb-2">{extra}</div> : null}
+      <div className="border-t border-line px-3 py-2">
+        <Problems list={problems} ok={ok} />
+      </div>
+    </div>
   );
 }
 

@@ -1,7 +1,7 @@
 'use client';
 import { label } from './parts';
 import { useState } from 'react';
-import { Counter, DOORS, DoorFront, HANDLES, Num, Pick, PlannerHeader, Problems, RemoveButton, Sheet, edge, line } from './planner-parts';
+import { Counter, DOORS, DoorFront, Drawing, HANDLES, Num, Pick, PlannerHeader, RemoveButton, Sheet, edge, line } from './planner-parts';
 import { MAX_PLANS, PLAN_NAMES, type PlanItem, type PlanKind, type Size } from './store';
 import { WardrobePlanner } from './wardrobe-planner';
 import { newSpec } from '@/lib/wardrobe';
@@ -34,18 +34,6 @@ function Card({ title, summary, children, onCopy, onRemove }: { title: string; s
         </div>
       ) : null}
     </section>
-  );
-}
-
-function Drawing({ summary, children, problems, ok }: { summary: string; children: React.ReactNode; problems: string[]; ok: boolean }) {
-  return (
-    <div className="overflow-hidden rounded-sm border border-line-strong bg-mount">
-      <p className="border-b border-line px-3 py-2 font-mono text-[13px] leading-snug">{summary}</p>
-      <div className="px-2 pb-1 pt-2">{children}</div>
-      <div className="border-t border-line px-3 py-2">
-        <Problems list={problems} ok={ok} />
-      </div>
-    </div>
   );
 }
 
