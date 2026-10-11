@@ -1,0 +1,35 @@
+{
+  "code": "q5sx9xck",
+  "request": "design-2026-10-wardrobe-wood-green-gdcx",
+  "updatedFor": "2026-10-11T19:39:21.279Z",
+  "title": "Two-door wardrobe",
+  "area": "Wood Green",
+  "made": "2026-10-11",
+  "options": [
+    {
+      "name": "The design",
+      "text": "A fitted wardrobe filling the space, with two flat doors and wooden knobs. Inside, a shelf at the top over a hanging rail, and a low shelf for shoes.",
+      "model": {
+        "src": "/designs/q5sx9xck/a-1q9d6c.glb",
+        "poster": {
+          "src": "/designs/q5sx9xck/a-1q9d6c.jpg",
+          "w": 1600,
+          "h": 1200,
+          "alt": "3D model of a two-door wardrobe with a top shelf, a hanging rail and a shoe shelf inside"
+        },
+        "shape": "tall"
+      },
+      "sizes": [
+        { "label": "Width", "value": "800 mm" },
+        { "label": "Height", "value": "2200 mm" },
+        { "label": "Depth, doors included", "value": "600 mm" }
+      ]
+    }
+  ],
+  "notes": [
+    "Width, height and depth are the sizes of the space as measured.",
+    "The inside layout is a standard one to start from: shelves and the rail can go wherever suits you.",
+    "Made from 18 mm board, backs included, on a plinth set back from the doors.",
+    "Colours on screen are a guide."
+  ]
+}
