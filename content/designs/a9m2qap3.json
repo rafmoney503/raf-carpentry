@@ -1,0 +1,39 @@
+{
+  "code": "a9m2qap3",
+  "request": "design-2026-10-loft-wardrobe-hatfield-jk2x",
+  "updatedFor": "2026-10-12T18:30:37.553Z",
+  "title": "Loft wardrobe doors on the timber frame",
+  "area": "Hatfield",
+  "made": "2026-10-12",
+  "options": [
+    {
+      "name": "The design",
+      "text": "Three shaker doors fitted on the face of the timber frame you already have. On the left, a pair of tall doors across the wide opening; on the right, one door cut to follow the angle of the sloping beam. A timber stud goes on the left wall so the hinges have something solid to fix to, and the rails inside stay as they are.",
+      "model": {
+        "src": "/designs/a9m2qap3/a-6qz7z5.glb",
+        "poster": {
+          "src": "/designs/a9m2qap3/a-6qz7z5.jpg",
+          "w": 1600,
+          "h": 1200,
+          "alt": "3D model of three shaker doors on a loft timber frame, a pair on the left and one angled door under the sloping beam on the right"
+        },
+        "shape": "tall"
+      },
+      "sizes": [
+        { "label": "Width, wall to wall", "value": "2360 mm" },
+        { "label": "Height, to the ceiling", "value": "2310 mm" },
+        { "label": "Left opening, wall to the post", "value": "about 1475 mm" },
+        { "label": "Right opening, post to the wall", "value": "about 925 mm" },
+        { "label": "Left doors", "value": "about 737 x 2150 mm each" },
+        { "label": "Angled door", "value": "about 870 mm wide, 1185 to 2150 mm high" }
+      ]
+    }
+  ],
+  "notes": [
+    "The width, the height to the ceiling and the two openings either side of the post are measured.",
+    "The angle of the sloping beam, the height where it meets the wall and the depth inside are taken from the photos and will be checked on site.",
+    "The doors are 22 mm MDF shaker doors with a 70 mm frame; these are standard sizes to start from.",
+    "Handles are not shown yet: tell me if you would like knobs, bar handles or push to open doors.",
+    "Colours on screen are a guide."
+  ]
+}
