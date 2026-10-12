@@ -1,6 +1,6 @@
 'use client';
 import { useRef, useState } from 'react';
-import type { CurrentJob, Status } from '@/lib/servicem8';
+import type { Booking, CurrentJob, Staff, Status } from '@/lib/servicem8';
 import Mark from './mark';
 import { field, label, Missing, TalkBox } from './parts';
 import type { DesignsReady } from './designs';
@@ -12,8 +12,10 @@ import type { Job } from './store';
    the morning screen opens at once and with no signal. Things ServiceM8 has no place for stay on the phone
    too: when a quote went out by WhatsApp, and finished jobs hidden from the list. */
 
-export type { CurrentJob };
-export type Sm8 = { jobs: CurrentJob[]; at: number; error?: string; detail?: string };
+export type { Booking, CurrentJob, Staff };
+/* bookings: ServiceM8's schedule from yesterday on (null: ServiceM8 didn't send it this time; missing in a list
+   kept from before the diary existed). */
+export type Sm8 = { jobs: CurrentJob[]; at: number; bookings?: Booking[] | null; staff?: Staff[]; error?: string; detail?: string };
 export type Marks = Record<string, { quoteSentAt?: number; hidden?: boolean }>;
 
 const LIST_KEY = 'raf_jobkit_sm8';
@@ -56,17 +58,20 @@ async function post<T>(pin: string, body: Record<string, unknown>): Promise<{ ok
 
 /* The list, kept on the phone when it arrives. On failure the last list stays, with the reason. */
 export async function fetchSm8(pin: string, before: Sm8): Promise<Sm8> {
-  const r = await post<{ jobs: CurrentJob[]; at: number }>(pin, { action: 'list' });
+  const r = await post<{ jobs: CurrentJob[]; at: number; bookings: Booking[] | null; staff: Staff[] }>(pin, { action: 'list' });
   if (!r.ok) return { ...before, error: r.error, detail: r.detail };
-  const next = { jobs: r.data.jobs, at: r.data.at };
+  const next: Sm8 = { jobs: r.data.jobs, at: r.data.at, bookings: r.data.bookings ?? null, staff: r.data.staff ?? [] };
   write(LIST_KEY, next);
   return next;
 }
-export const keepSm8 = (s: Sm8) => write(LIST_KEY, { jobs: s.jobs, at: s.at });
+export const keepSm8 = (s: Sm8) => write(LIST_KEY, { jobs: s.jobs, at: s.at, bookings: s.bookings, staff: s.staff });
 
 export type Enquiry = { name: string; mobile: string; email: string; address: string; description: string };
 export const sendEnquiry = (pin: string, e: Enquiry) => post<{ job: CurrentJob }>(pin, { action: 'enquiry', ...e });
 export const sendStatus = (pin: string, uuid: string, status: Status) => post<{ ok: true }>(pin, { action: 'status', uuid, status });
+export const sendBooking = (pin: string, b: { job: string; start: string; end: string; staff?: string }) => post<{ booking: Booking }>(pin, { action: 'book', ...b });
+export const sendMove = (pin: string, uuid: string, start: string, end: string) => post<{ ok: true }>(pin, { action: 'move', uuid, start, end });
+export const sendCancel = (pin: string, uuid: string) => post<{ ok: true }>(pin, { action: 'cancel', uuid });
 
 export function problemText(error?: string, detail?: string, at?: number) {
   switch (error) {
@@ -86,6 +91,8 @@ export function problemText(error?: string, detail?: string, at?: number) {
       return 'Wrong PIN: check it in Settings.';
     case 'missing':
       return 'Type the name and what they want.';
+    case 'bad-time':
+      return 'The end has to be after the start.';
     case 'offline':
     case 'sm8-down':
       return `No signal, or ServiceM8 isn’t answering.${at ? ` Showing the list from ${clock(at)}.` : ''}`;
@@ -189,6 +196,349 @@ function linked(j: CurrentJob, kit: Job[], designs: DesignsReady, done: Record<s
   }
   if (job) chips.push(done[job.id] ? 'On your website' : job.readyAt ? 'Photos sent' : 'Job Kit open');
   return { design, job, chips };
+}
+
+/* ---------- the diary: ServiceM8's schedule ---------- */
+
+/* Dates as "YYYY-MM-DD" on this phone (London), times as ServiceM8 sends them, "YYYY-MM-DDTHH:MM". */
+export const localDay = (d = new Date()) => d.toLocaleDateString('sv-SE');
+const addDays = (key: string, n: number) => localDay(new Date(Date.parse(`${key}T12:00`) + n * DAY));
+export function dayLabel(key: string) {
+  const today = localDay();
+  if (key === today) return 'Today';
+  if (key === addDays(today, 1)) return 'Tomorrow';
+  if (key === addDays(today, -1)) return 'Yesterday';
+  return new Date(`${key}T12:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+export const hm = (t: string) => t.slice(11, 16).replace(/^0(\d)/, '$1');
+/* A visit on a Quote job (or a lost one); work once it's going ahead. */
+export const kindOf = (j?: CurrentJob) => (!j || j.status === 'Quote' || j.status === 'Unsuccessful' ? 'Visit' : 'Work');
+
+/* Bookings on a day: starting that day, or running through it. */
+export function bookingsOn(list: Booking[], key: string) {
+  return list.filter((b) => b.start.slice(0, 10) <= key && (b.end ? b.end.slice(0, 10) : b.start.slice(0, 10)) >= key);
+}
+/* "9:00 to 10:00" on its own day; a booking over several days says where it starts or ends. */
+const rel = (key: string) => {
+  const l = dayLabel(key);
+  return ['Today', 'Tomorrow', 'Yesterday'].includes(l) ? l.toLowerCase() : l;
+};
+export function spanText(b: Booking, key: string) {
+  const from = b.start.slice(0, 10) === key ? hm(b.start) : `From ${rel(b.start.slice(0, 10))}`;
+  if (!b.end) return from;
+  return b.end.slice(0, 10) === key ? `${from} to ${hm(b.end)}` : `${from}, until ${rel(b.end.slice(0, 10))} ${hm(b.end)}`;
+}
+const longDay = (key: string) => {
+  const l = dayLabel(key);
+  return l === 'Today' || l === 'Tomorrow' ? l.toLowerCase() : `on ${new Date(`${key}T12:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}`;
+};
+/* The WhatsApp line that confirms a booking with the customer. */
+export function confirmText(j: CurrentJob, b: Booking) {
+  const when = `${longDay(b.start.slice(0, 10))} at ${hm(b.start)}`;
+  return kindOf(j) === 'Visit'
+    ? `Hi ${j.first}, just to confirm I'll come round ${when} to have a look and measure up. Any problem with that time, just let me know.\nRaf`
+    : `Hi ${j.first}, just to confirm I'll be with you ${when}. Any problem with that, just let me know.\nRaf`;
+}
+const maps = (address: string) => `https://maps.apple.com/?daddr=${encodeURIComponent(address.replace(/\s*\n\s*/g, ', '))}`;
+
+export function Diary({ sm8, loading, onRefresh, onOpen }: { sm8: Sm8; loading: boolean; onRefresh: () => void; onOpen: (uuid: string) => void }) {
+  const today = localDay();
+  const list = (sm8.bookings ?? []).filter((b) => (b.end ?? b.start).slice(0, 10) >= today);
+  const last = list.reduce((k, b) => ((b.end ?? b.start).slice(0, 10) > k ? (b.end ?? b.start).slice(0, 10) : k), addDays(today, 1));
+  const days: string[] = [];
+  for (let k = today; k <= last && days.length < 120; k = addDays(k, 1)) if (k === today || k === addDays(today, 1) || bookingsOn(list, k).length) days.push(k);
+  const byUuid = new Map(sm8.jobs.map((j) => [j.uuid, j]));
+  const staffName = new Map((sm8.staff ?? []).map((s) => [s.uuid, s.name]));
+  const manyStaff = (sm8.staff ?? []).length > 1;
+  const problem = problemText(sm8.error, sm8.detail, sm8.at);
+  return (
+    <div className="pt-7">
+      <h1 className="font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">Diary</h1>
+      <p className="mt-2 flex flex-wrap items-center gap-x-3 font-mono text-[13px] text-faint">
+        <span>ServiceM8’s schedule{sm8.at ? `, ${clock(sm8.at)}` : ''}</span>
+        <button type="button" onClick={onRefresh} className="h-9 text-accent underline" disabled={loading}>
+          {loading ? 'Checking…' : 'Refresh'}
+        </button>
+      </p>
+      {problem ? (
+        <p role="alert" className="mt-3 rounded-sm border border-ink bg-mount px-3 py-2.5 text-[14.5px] leading-relaxed">
+          {problem}
+        </p>
+      ) : null}
+      {sm8.at && sm8.bookings === null ? <p className="mt-3 text-[14.5px] leading-relaxed text-muted">ServiceM8 didn’t send the schedule this time. Refresh to try again.</p> : null}
+      {sm8.at && sm8.bookings === undefined ? <p className="mt-3 text-[14.5px] leading-relaxed text-muted">Refresh to get the schedule from ServiceM8.</p> : null}
+      <p className="mt-3 text-[14.5px] leading-relaxed text-muted">Book a visit or work from a job (Current jobs, then the job), or in ServiceM8: both end up here.</p>
+
+      {days.map((k) => {
+        const on = bookingsOn(list, k);
+        const isToday = k === today;
+        return (
+          <section key={k} className="mt-7">
+            <h2 className="font-mono text-[12.5px] uppercase tracking-[0.06em] text-faint">
+              {dayLabel(k)}
+              {isToday || dayLabel(k) === 'Tomorrow' ? `, ${new Date(`${k}T12:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}` : ''}
+            </h2>
+            {on.length ? (
+              <ul className="mt-2.5 grid gap-3">
+                {on.map((b) => {
+                  const j = byUuid.get(b.jobUuid);
+                  const kind = kindOf(j);
+                  const contact = j?.mobile || j?.phone;
+                  return (
+                    <li key={`${b.uuid}-${k}`} className="rounded-sm border border-line-strong bg-mount">
+                      <button type="button" onClick={() => onOpen(b.jobUuid)} className="block w-full px-3.5 py-3 text-left">
+                        <span className="flex items-baseline justify-between gap-3">
+                          <span className="font-mono text-[15px] font-semibold text-ink">{spanText(b, k)}</span>
+                          <span className={`shrink-0 rounded-sm border px-1.5 py-0.5 font-mono text-[11.5px] ${kind === 'Visit' ? 'border-accent text-accent' : 'border-line-strong text-muted'}`}>{kind}</span>
+                        </span>
+                        <span className="mt-1 block truncate text-[16.5px] font-semibold leading-snug">{j?.name ?? 'A job in ServiceM8'}</span>
+                        {j ? (
+                          <span className="block truncate text-[14.5px] text-muted">
+                            {[j.area, j.description ? whatOf(j.description) : ''].filter(Boolean).join(' · ')}
+                          </span>
+                        ) : null}
+                        {manyStaff && staffName.get(b.staffUuid) ? <span className="mt-1 block font-mono text-[12.5px] text-faint">{staffName.get(b.staffUuid)}</span> : null}
+                      </button>
+                      {isToday && j && (j.address || contact) ? (
+                        <div className="flex flex-wrap gap-x-4 border-t border-line px-3.5 py-1.5 text-[14.5px]">
+                          {j.address ? (
+                            <a href={maps(j.address)} className="flex h-10 items-center text-accent underline" target="_blank" rel="noopener">
+                              Directions
+                            </a>
+                          ) : null}
+                          {j.mobile ? (
+                            <a href={wa(j.mobile, `Hi ${j.first}, I'm on my way.\nRaf`)} className="flex h-10 items-center text-accent underline" target="_blank" rel="noopener">
+                              On my way
+                            </a>
+                          ) : null}
+                          {contact ? (
+                            <a href={`tel:${contact.replace(/\s+/g, '')}`} className="flex h-10 items-center text-accent underline">
+                              Call
+                            </a>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="mt-2 font-mono text-[13.5px] text-faint">Nothing booked.</p>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+/* A job's bookings: book a visit or work, move one, cancel one, confirm it on WhatsApp. */
+function BookingsBox({
+  job,
+  bookings,
+  staff,
+  loaded,
+  onBook,
+  onMove,
+  onCancel,
+}: {
+  job: CurrentJob;
+  bookings: Booking[];
+  staff: Staff[];
+  loaded: boolean;
+  onBook: (start: string, end: string, staff?: string) => Promise<string>;
+  onMove: (uuid: string, start: string, end: string) => Promise<string>;
+  onCancel: (uuid: string) => Promise<string>;
+}) {
+  const kind = kindOf(job);
+  const today = localDay();
+  const now = `${today}T${new Date().toTimeString().slice(0, 5)}`;
+  const upcoming = bookings.filter((b) => (b.end ?? b.start) >= now);
+  // lastDay is only set for a booking over several days (moving it keeps its length).
+  const [form, setForm] = useState<null | { uuid?: string; day: string; lastDay?: string; from: string; to: string; staff: string }>(null);
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState('');
+  const [sure, setSure] = useState('');
+  const disarm = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const presets: [string, string, string][] =
+    kind === 'Visit'
+      ? [
+          ['1 hour', '', '+60'],
+          ['30 min', '', '+30'],
+          ['2 hours', '', '+120'],
+        ]
+      : [
+          ['All day', '08:00', '16:00'],
+          ['Morning', '08:00', '12:00'],
+          ['Afternoon', '12:00', '16:00'],
+        ];
+  const plus = (t: string, mins: number) => {
+    const [h, m] = t.split(':').map(Number);
+    const total = Math.min(23 * 60 + 59, h * 60 + m + mins);
+    return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+  };
+  const open = (b?: Booking) => {
+    setProblem('');
+    if (b) {
+      const last = (b.end ?? b.start).slice(0, 10);
+      setForm({ uuid: b.uuid, day: b.start.slice(0, 10), lastDay: last > b.start.slice(0, 10) ? last : undefined, from: b.start.slice(11, 16), to: (b.end ?? b.start).slice(11, 16), staff: b.staffUuid });
+    }
+    else setForm({ day: addDays(today, 1), from: kind === 'Visit' ? '09:00' : '08:00', to: kind === 'Visit' ? '10:00' : '16:00', staff: staff[0]?.uuid ?? '' });
+  };
+  const save = () => {
+    if (!form) return;
+    if (!form.day || !form.from || !form.to || form.lastDay === '') return setProblem('Pick the day and both times.');
+    const start = `${form.day}T${form.from}`;
+    const end = `${form.lastDay ?? form.day}T${form.to}`;
+    if (end <= start) return setProblem('The end has to be after the start.');
+    setBusy(true);
+    setProblem('');
+    void (form.uuid ? onMove(form.uuid, start, end) : onBook(start, end, staff.length > 1 ? form.staff : undefined)).then((err) => {
+      setBusy(false);
+      if (err) setProblem(err);
+      else setForm(null);
+    });
+  };
+  const cancel = (uuid: string) => {
+    if (disarm.current) clearTimeout(disarm.current);
+    if (sure !== uuid) {
+      setSure(uuid);
+      disarm.current = setTimeout(() => setSure(''), 5000);
+      return;
+    }
+    setSure('');
+    setBusy(true);
+    void onCancel(uuid).then((err) => {
+      setBusy(false);
+      if (err) setProblem(err);
+    });
+  };
+  return (
+    <section className="mt-6 rounded-sm border border-line-strong bg-mount p-4">
+      <h2 className="text-[19px] font-[650]">In the diary</h2>
+      {!loaded ? <p className="mt-2 text-[14.5px] text-muted">ServiceM8 didn’t send the schedule this time; Refresh on Current jobs to try again.</p> : null}
+      {loaded && !upcoming.length && !form ? <p className="mt-2 text-[14.5px] text-muted">Nothing booked for this job in ServiceM8.</p> : null}
+      {upcoming.length ? (
+        <ul className="mt-3 grid gap-2.5">
+          {upcoming.map((b) => (
+            <li key={b.uuid} className="rounded-sm border border-line px-3 py-2.5">
+              <p className="text-[15.5px] font-semibold">
+                {dayLabel(b.start.slice(0, 10))}
+                {['Today', 'Tomorrow'].includes(dayLabel(b.start.slice(0, 10))) ? `, ${new Date(`${b.start.slice(0, 10)}T12:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ''}
+              </p>
+              <p className="font-mono text-[13.5px] text-muted">
+                {spanText(b, b.start.slice(0, 10))} · {kind}
+              </p>
+              <div className="mt-1.5 flex flex-wrap gap-x-4 text-[14.5px]">
+                {job.mobile ? (
+                  <a href={wa(job.mobile, confirmText(job, b))} className="flex h-10 items-center text-accent underline" target="_blank" rel="noopener">
+                    Confirm on WhatsApp
+                  </a>
+                ) : null}
+                <button type="button" className="h-10 text-accent underline" disabled={busy} onClick={() => open(b)}>
+                  Move
+                </button>
+                <button type="button" className={`h-10 underline ${sure === b.uuid ? 'font-semibold text-ink' : 'text-muted'}`} disabled={busy} onClick={() => cancel(b.uuid)}>
+                  {sure === b.uuid ? 'Tap again to cancel it' : 'Cancel'}
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {form ? (
+        <div className="mt-4 grid gap-4 border-t border-line pt-4">
+          <p className="font-semibold">{form.uuid ? 'Move the booking' : kind === 'Visit' ? 'Book a visit' : 'Book work'}</p>
+          <label className="grid gap-1.5">
+            <span className={label}>Day</span>
+            <input
+              type="date"
+              className={`${field} h-12`}
+              value={form.day}
+              min={today}
+              onChange={(e) => {
+                const day = e.target.value;
+                // A booking over several days moves as a whole.
+                const shift = form.lastDay && day && form.day ? Math.round((Date.parse(`${day}T12:00`) - Date.parse(`${form.day}T12:00`)) / DAY) : 0;
+                setForm({ ...form, day, ...(form.lastDay ? { lastDay: addDays(form.lastDay, shift) } : {}) });
+              }}
+            />
+          </label>
+          {form.lastDay !== undefined ? (
+            <label className="grid gap-1.5">
+              <span className={label}>Last day</span>
+              <input type="date" className={`${field} h-12`} value={form.lastDay} min={form.day} onChange={(e) => setForm({ ...form, lastDay: e.target.value })} />
+            </label>
+          ) : null}
+          <div className="grid grid-cols-2 gap-3">
+            <label className="grid gap-1.5">
+              <span className={label}>{form.lastDay ? 'Starts at' : 'From'}</span>
+              <input type="time" step={900} className={`${field} h-12`} value={form.from} onChange={(e) => setForm({ ...form, from: e.target.value })} />
+            </label>
+            <label className="grid gap-1.5">
+              <span className={label}>{form.lastDay ? 'Ends at' : 'To'}</span>
+              <input type="time" step={900} className={`${field} h-12`} value={form.to} onChange={(e) => setForm({ ...form, to: e.target.value })} />
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {presets.map(([name, a, b]) => (
+              <button
+                key={name}
+                type="button"
+                className="h-10 rounded-sm border border-line-strong px-3 text-[14px]"
+                onClick={() => setForm({ ...form, ...(b.startsWith('+') ? { to: plus(form.from, Number(b.slice(1))) } : { from: a, to: b }) })}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+          {!form.uuid && staff.length > 1 ? (
+            <div className="grid gap-1.5">
+              <span className={label}>Who</span>
+              <div className="flex flex-wrap gap-2">
+                {staff.map((s) => (
+                  <button
+                    key={s.uuid}
+                    type="button"
+                    onClick={() => setForm({ ...form, staff: s.uuid })}
+                    className={`h-10 rounded-sm border px-3 text-[14px] ${form.staff === s.uuid ? 'border-accent bg-accent text-on-accent' : 'border-line-strong'}`}
+                  >
+                    {s.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {problem ? (
+            <p role="alert" className="rounded-sm border border-ink px-3 py-2.5 text-[14.5px] leading-relaxed">
+              {problem}
+            </p>
+          ) : null}
+          <div className="flex gap-3">
+            <button type="button" className="btn btn-primary btn-sm flex-1" disabled={busy} onClick={save}>
+              {busy ? 'Saving in ServiceM8…' : form.uuid ? 'Move it in ServiceM8' : 'Add to ServiceM8'}
+            </button>
+            <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => setForm(null)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {problem ? (
+            <p role="alert" className="mt-3 rounded-sm border border-ink px-3 py-2.5 text-[14.5px] leading-relaxed">
+              {problem}
+            </p>
+          ) : null}
+          <button type="button" className="btn btn-ghost btn-sm mt-3 w-full" onClick={() => open()}>
+            {kind === 'Visit' ? 'Book a visit' : 'Book work'}
+          </button>
+        </>
+      )}
+      <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint">Booked here or in ServiceM8, it shows in both. Cancelling archives it in ServiceM8, where it can be brought back.</p>
+    </section>
+  );
 }
 
 /* ---------- the list ---------- */
@@ -334,6 +684,12 @@ export function CurrentView({
   onDesign,
   onKit,
   onOpenKit,
+  bookings,
+  staff,
+  bookingsLoaded,
+  onBook,
+  onMove,
+  onCancel,
 }: {
   job: CurrentJob;
   marks: Marks;
@@ -345,6 +701,12 @@ export function CurrentView({
   onDesign: () => void;
   onKit: () => void;
   onOpenKit: (k: Job) => void;
+  bookings: Booking[];
+  staff: Staff[];
+  bookingsLoaded: boolean;
+  onBook: (start: string, end: string, staff?: string) => Promise<string>;
+  onMove: (uuid: string, start: string, end: string) => Promise<string>;
+  onCancel: (uuid: string) => Promise<string>;
 }) {
   const st = stage(job, marks);
   const [text] = stageText(job, marks);
@@ -472,6 +834,8 @@ export function CurrentView({
         </div>
         <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint">Moving a job here moves it in ServiceM8 too. Nothing is ever deleted there.</p>
       </section>
+
+      <BookingsBox job={job} bookings={bookings} staff={staff} loaded={bookingsLoaded} onBook={onBook} onMove={onMove} onCancel={onCancel} />
 
       <MoneyBox job={job} />
 
@@ -635,7 +999,7 @@ export function NewEnquiry({ onCancel, onCreate }: { onCancel: () => void; onCre
 
 /* ---------- the morning summary ---------- */
 
-export type TodayLine = { text: string; go: 'current' | 'designs' | 'posts' | 'jobs'; urgent?: boolean };
+export type TodayLine = { text: string; go: 'current' | 'designs' | 'posts' | 'jobs' | 'diary' | 'sm8'; urgent?: boolean; id?: string; time?: string };
 
 export function todayLines({
   sm8,
@@ -654,6 +1018,20 @@ export function todayLines({
 }): TodayLine[] {
   const lines: TodayLine[] = [];
   const n = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+  // The day's bookings first, each with its time; then tomorrow in one line.
+  const today = localDay();
+  const all = sm8.bookings ?? [];
+  const byUuid = new Map(sm8.jobs.map((j) => [j.uuid, j]));
+  const who = (b: Booking) => {
+    const j = byUuid.get(b.jobUuid);
+    return `${kindOf(j)}: ${j?.name ?? 'a job'}${j?.area ? `, ${j.area}` : ''}`;
+  };
+  const now = all.filter((b) => bookingsOn([b], today).length && (b.end ?? b.start) >= `${today}T${new Date().toTimeString().slice(0, 5)}`);
+  for (const b of now.slice(0, 4)) lines.push({ text: who(b), go: 'sm8', id: b.jobUuid, time: b.start.slice(0, 10) === today ? hm(b.start) : 'Today' });
+  if (now.length > 4) lines.push({ text: `${now.length - 4} more today`, go: 'diary' });
+  const tomorrow = bookingsOn(all, addDays(today, 1));
+  if (tomorrow.length === 1) lines.push({ text: `Tomorrow ${hm(tomorrow[0].start)}, ${who(tomorrow[0])}`, go: 'sm8', id: tomorrow[0].jobUuid });
+  else if (tomorrow.length) lines.push({ text: `Tomorrow: ${tomorrow.length} bookings, first at ${hm(tomorrow[0].start)}`, go: 'diary' });
   const list = shown(sm8, marks);
   const stages = list.map((j) => stage(j, marks));
   const fresh = stages.filter((s) => s === 'new').length;

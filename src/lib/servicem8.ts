@@ -4,7 +4,10 @@ import { randomUUID } from 'crypto';
    ServiceM8; the Job Kit reads them and writes back through /api/job-kit/sm8 (behind the PIN) with the
    account's API key (Vercel env SERVICEM8_API_KEY, full access; needs the Starter plan or above).
    Customer details only travel phone <-> this server <-> ServiceM8: never to the inbox, the website pages or
-   the repo. Nothing here deletes anything in ServiceM8. API: https://api.servicem8.com/api_1.0, X-API-Key
+   the repo. The diary is ServiceM8's own schedule: each booking (a "job activity" with a start and an end) belongs
+   to a job; the Job Kit reads them from yesterday on, and can add, move and cancel one. Cancelling is the only
+   removal anywhere here, and ServiceM8 only archives the booking (active 0, restorable); jobs, clients and
+   payments are never deleted. API: https://api.servicem8.com/api_1.0, X-API-Key
    header, OData-style $filter ("active eq 1 and status eq 'Quote'"), new records return their uuid in the
    x-record-uuid header (or take the uuid we send). SERVICEM8_API overrides the address for local tests. */
 
@@ -39,6 +42,11 @@ export type CurrentJob = {
   payments: Payment[] | null; // null: ServiceM8 wouldn't give them this time
 };
 export type Payment = { amount: number; date: string | null; method: string; deposit: boolean };
+/* A booking in ServiceM8's schedule: a site visit on a Quote job, work on a Work Order job. Times are
+   ServiceM8's local time, "YYYY-MM-DDTHH:MM". */
+export type Booking = { uuid: string; jobUuid: string; start: string; end: string | null; staffUuid: string };
+export type Staff = { uuid: string; name: string };
+export type Current = { jobs: CurrentJob[]; bookings: Booking[] | null; staff: Staff[] };
 
 export class Sm8Error extends Error {
   constructor(
@@ -63,7 +71,7 @@ function when(v: unknown): string | null {
   return m ? `${m[1]}T${m[2] ?? '00:00'}` : null;
 }
 
-async function call(path: string, opts: { method?: 'GET' | 'POST'; query?: Record<string, string>; body?: Row } = {}) {
+async function call(path: string, opts: { method?: 'GET' | 'POST' | 'DELETE'; query?: Record<string, string>; body?: Row } = {}) {
   const url = new URL(`${base()}/${path}`);
   for (const [k, v] of Object.entries(opts.query ?? {})) url.searchParams.set(k, v);
   let res: Response;
@@ -148,24 +156,63 @@ function shape(j: Row, client?: Row, contact?: Row, pays?: Row[] | null): Curren
   };
 }
 
+/* Today's date in London, moved by `days`, as "YYYY-MM-DD". */
+function londonDay(days = 0) {
+  return new Date(Date.now() + days * 864e5).toLocaleDateString('sv-SE', { timeZone: 'Europe/London' });
+}
+
+/* Bookings from `since` on. ServiceM8's filter should take a date ("start_date gt '...'"); if it turns that down,
+   ask for all active ones and pick here. Only scheduled ones count (not time recorded after the work). */
+async function scheduled(since: string): Promise<Row[]> {
+  let acts: Row[];
+  try {
+    acts = await list('jobactivity.json', `active eq 1 and start_date gt '${since} 00:00:00'`);
+  } catch (e) {
+    if (!(e instanceof Sm8Error) || e.code !== 'sm8-error') throw e;
+    acts = await list('jobactivity.json', 'active eq 1');
+  }
+  return acts.filter((a) => str(a.active) !== '0' && on(a.activity_was_scheduled) && (when(a.start_date) ?? '') >= since);
+}
+
+function booking(a: Row): Booking | null {
+  const start = when(a.start_date)?.slice(0, 16);
+  if (!start || !str(a.uuid) || !str(a.job_uuid)) return null;
+  const end = when(a.end_date)?.slice(0, 16);
+  return { uuid: str(a.uuid), jobUuid: str(a.job_uuid), start, end: end && end > start ? end : null, staffUuid: str(a.staff_uuid) };
+}
+
 /* Open quotes, work orders, and the jobs finished or marked unsuccessful in the last 30 days, newest first,
-   with the client, the best contact (the job's own contact, else the client's) and the payments taken.
-   Eight requests in two rounds; if ServiceM8 won't give the payments, the jobs still come, without them. */
-export async function currentJobs(): Promise<CurrentJob[]> {
-  const [quotes, orders, done, lost] = await Promise.all(['Quote', 'Work Order', 'Completed', 'Unsuccessful'].map((s) => list('job.json', `active eq 1 and status eq '${s}'`)));
+   with the client, the best contact (the job's own contact, else the client's) and the payments taken; plus the
+   bookings from yesterday on and the jobs they belong to, and the staff (for who a booking is for). Two rounds of
+   requests; if ServiceM8 won't give the payments or the bookings, the jobs still come, without them. */
+export async function currentJobs(): Promise<Current> {
+  const [[quotes, orders, done, lost], acts, staffRows] = await Promise.all([
+    Promise.all(['Quote', 'Work Order', 'Completed', 'Unsuccessful'].map((s) => list('job.json', `active eq 1 and status eq '${s}'`))),
+    scheduled(londonDay(-1)).catch((): Row[] | null => null),
+    list('staff.json', 'active eq 1').catch((): Row[] => []),
+  ]);
   const cutoff = Date.now() - 30 * 864e5;
   const since = (field: string) => (j: Row) => {
     const t = Date.parse(when(j[field]) ?? when(j.edit_date) ?? '');
     return Number.isFinite(t) && t >= cutoff;
   };
   const jobs = [...quotes, ...orders, ...done.filter(since('completion_date')), ...lost.filter(since('unsuccessful_date'))].filter((j) => str(j.uuid) && str(j.active) !== '0');
-  if (!jobs.length) return [];
-  const [clients, jobContacts, clientContacts, payments] = await Promise.all([
+  const bookings = acts === null ? null : acts.map(booking).filter((b): b is Booking => b !== null);
+  // A booking on a job that isn't in the list above (finished or lost a while ago): fetch that job too.
+  const have = new Set(jobs.map((j) => str(j.uuid)));
+  const missing = [...new Set((bookings ?? []).map((b) => b.jobUuid).filter((u) => !have.has(u)))].slice(0, 20);
+  const staff: Staff[] = staffRows
+    .filter((r) => str(r.uuid) && str(r.active) !== '0')
+    .map((r) => ({ uuid: str(r.uuid), name: [str(r.first), str(r.last)].filter(Boolean).join(' ') || 'Staff' }));
+  if (!jobs.length && !missing.length) return { jobs: [], bookings: bookings ?? null, staff };
+  const [clients, jobContacts, clientContacts, payments, extra] = await Promise.all([
     list('company.json', 'active eq 1'),
     list('jobcontact.json', 'active eq 1'),
     list('companycontact.json', 'active eq 1'),
     list('jobpayment.json', 'active eq 1').catch(() => null),
+    Promise.all(missing.map((u) => call(`job/${u}.json`).then((r) => rows(r.data)[0]).catch(() => undefined))),
   ]);
+  for (const j of extra) if (j && str(j.uuid) && str(j.active) !== '0') jobs.push(j);
   const paysBy = new Map<string, Row[]>();
   for (const p of payments ?? []) paysBy.set(str(p.job_uuid), [...(paysBy.get(str(p.job_uuid)) ?? []), p]);
   const clientBy = new Map(clients.map((c) => [str(c.uuid), c]));
@@ -179,7 +226,12 @@ export async function currentJobs(): Promise<CurrentJob[]> {
   const out = jobs.map((j) =>
     shape(j, clientBy.get(str(j.company_uuid)), best(byJob.get(str(j.uuid)) ?? []) ?? best(byClient.get(str(j.company_uuid)) ?? []), payments === null ? null : (paysBy.get(str(j.uuid)) ?? [])),
   );
-  return out.sort((a, b) => (b.created ?? '').localeCompare(a.created ?? ''));
+  const known = new Set(out.map((j) => j.uuid));
+  return {
+    jobs: out.sort((a, b) => (b.created ?? '').localeCompare(a.created ?? '')),
+    bookings: bookings === null ? null : bookings.filter((b) => known.has(b.jobUuid)).sort((a, b) => a.start.localeCompare(b.start)),
+    staff,
+  };
 }
 
 /* A new enquiry typed into the Job Kit: the client (reused when the name matches one already in ServiceM8),
@@ -215,4 +267,30 @@ export async function createEnquiry(e: { name: string; mobile: string; email: st
 
 export async function setStatus(uuid: string, status: Status) {
   await call(`job/${uuid}.json`, { method: 'POST', body: { status } });
+}
+
+/* ---------- the diary: bookings in ServiceM8's schedule ---------- */
+
+const sm8Time = (t: string) => `${t.slice(0, 10)} ${t.slice(11, 16)}:00`;
+
+/* A new booking on a job. Without a staff member given, it goes to the first active one (a one-person account
+   has only Raf). */
+export async function addBooking(b: { jobUuid: string; start: string; end: string; staffUuid?: string }): Promise<Booking> {
+  let staffUuid = b.staffUuid || '';
+  if (!staffUuid) staffUuid = str((await list('staff.json', 'active eq 1'))[0]?.uuid);
+  const uuid = randomUUID();
+  const made = await call('jobactivity.json', {
+    method: 'POST',
+    body: { uuid, job_uuid: b.jobUuid, staff_uuid: staffUuid || undefined, start_date: sm8Time(b.start), end_date: sm8Time(b.end), activity_was_scheduled: '1' },
+  });
+  return { uuid: made.uuid || uuid, jobUuid: b.jobUuid, start: b.start, end: b.end, staffUuid };
+}
+
+export async function moveBooking(uuid: string, start: string, end: string) {
+  await call(`jobactivity/${uuid}.json`, { method: 'POST', body: { start_date: sm8Time(start), end_date: sm8Time(end) } });
+}
+
+/* ServiceM8 archives it (active 0): gone from the schedule, restorable there. */
+export async function cancelBooking(uuid: string) {
+  await call(`jobactivity/${uuid}.json`, { method: 'DELETE' });
 }

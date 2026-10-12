@@ -33,6 +33,14 @@ import { DesignsList, DesignView, designState, fetchReady, NewDesign, savedReady
 import {
   CurrentList,
   CurrentView,
+  Diary,
+  bookingsOn,
+  dayLabel,
+  hm,
+  localDay,
+  sendBooking,
+  sendCancel,
+  sendMove,
   fetchSm8,
   keepSm8,
   NewEnquiry,
@@ -64,13 +72,25 @@ type Screen =
   | { name: 'design'; id: string }
   | { name: 'new-design'; from?: string }
   | { name: 'current' }
-  | { name: 'sm8'; id: string }
-  | { name: 'enquiry' };
+  | { name: 'sm8'; id: string; from?: 'diary' | 'home' }
+  | { name: 'enquiry' }
+  | { name: 'diary' };
 
 /* Where "‹ Back" goes when the app was reopened straight onto a screen (no history to go back through). */
 const parentOf = (s: Screen): Screen =>
-  s.name === 'design' || s.name === 'new-design' ? { name: 'designs' } : s.name === 'post' ? { name: 'posts' } : s.name === 'sm8' || s.name === 'enquiry' ? { name: 'current' } : { name: 'home' };
-const backLabel = (s: Screen) => (s.name === 'design' || s.name === 'new-design' ? 'Designs' : s.name === 'post' ? 'Posts' : s.name === 'sm8' || s.name === 'enquiry' ? 'Current jobs' : 'Today');
+  s.name === 'design' || s.name === 'new-design'
+    ? { name: 'designs' }
+    : s.name === 'post'
+      ? { name: 'posts' }
+      : s.name === 'sm8' && s.from === 'diary'
+        ? { name: 'diary' }
+        : (s.name === 'sm8' && s.from !== 'home') || s.name === 'enquiry'
+          ? { name: 'current' }
+          : { name: 'home' };
+const backLabel = (s: Screen) => {
+  const p = parentOf(s).name;
+  return p === 'designs' ? 'Designs' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : 'Today';
+};
 
 const thisMonth = () => {
   const d = new Date();
@@ -83,7 +103,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8'].includes(s.name)) return s;
+    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -250,6 +270,41 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
     },
     [],
   );
+  /* The diary: a booking added, moved or cancelled goes to ServiceM8 first, then shows here. */
+  const setBookings = useCallback((change: (b: NonNullable<Sm8['bookings']>) => NonNullable<Sm8['bookings']>) => {
+    setSm8((s) => {
+      const next = { ...s, bookings: change(s.bookings ?? []).sort((a, b) => a.start.localeCompare(b.start)) };
+      keepSm8(next);
+      return next;
+    });
+  }, []);
+  const book = useCallback(
+    async (jobUuid: string, start: string, end: string, staff?: string) => {
+      const r = await sendBooking(readPin(), { job: jobUuid, start, end, staff });
+      if (!r.ok) return problemText(r.error, r.detail);
+      setBookings((list) => [...list.filter((b) => b.uuid !== r.data.booking.uuid), r.data.booking]);
+      return '';
+    },
+    [setBookings],
+  );
+  const moveBooking = useCallback(
+    async (uuid: string, start: string, end: string) => {
+      const r = await sendMove(readPin(), uuid, start, end);
+      if (!r.ok) return problemText(r.error, r.detail);
+      setBookings((list) => list.map((b) => (b.uuid === uuid ? { ...b, start, end } : b)));
+      return '';
+    },
+    [setBookings],
+  );
+  const cancelBooking = useCallback(
+    async (uuid: string) => {
+      const r = await sendCancel(readPin(), uuid);
+      if (!r.ok) return problemText(r.error, r.detail);
+      setBookings((list) => list.filter((b) => b.uuid !== uuid));
+      return '';
+    },
+    [setBookings],
+  );
   const designJobs = useMemo(() => jobs.filter((j) => j.kind === 'design'), [jobs]);
 
   /* Off this phone only: the inbox and the website keep everything. */
@@ -406,11 +461,19 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
               checkSm8();
               go({ name: 'current' });
             }}
+            onDiary={() => {
+              checkSm8();
+              go({ name: 'diary' });
+            }}
             onToday={(l) => {
               if (l.go === 'current') {
                 checkSm8();
                 go({ name: 'current' });
-              } else if (l.go === 'designs') go({ name: 'designs' });
+              } else if (l.go === 'diary') {
+                checkSm8();
+                go({ name: 'diary' });
+              } else if (l.go === 'sm8' && l.id) go({ name: 'sm8', id: l.id, from: 'home' });
+              else if (l.go === 'designs') go({ name: 'designs' });
               else if (l.go === 'posts') go({ name: 'posts' });
               else document.getElementById('kit-jobs')?.scrollIntoView({ behavior: 'instant', block: 'start' });
             }}
@@ -487,6 +550,8 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
             onNew={() => go({ name: 'enquiry' })}
             onOpen={(id) => go({ name: 'sm8', id })}
           />
+        ) : screen.name === 'diary' ? (
+          <Diary sm8={sm8} loading={sm8Loading} onRefresh={() => checkSm8(true)} onOpen={(id) => go({ name: 'sm8', id, from: 'diary' })} />
         ) : screen.name === 'enquiry' ? (
           <NewEnquiry
             onCancel={back}
@@ -519,6 +584,12 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
               onDesign={() => go({ name: 'new-design', from: cur.uuid })}
               onKit={() => go({ name: 'new', from: cur.uuid })}
               onOpenKit={(k) => go(k.kind === 'design' ? { name: 'design', id: k.id } : { name: 'job', id: k.id, tab: 'before' })}
+              bookings={(sm8.bookings ?? []).filter((b) => b.jobUuid === cur.uuid)}
+              staff={sm8.staff ?? []}
+              bookingsLoaded={sm8.bookings !== null}
+              onBook={(start, end, staff) => book(cur.uuid, start, end, staff)}
+              onMove={moveBooking}
+              onCancel={cancelBooking}
             />
           ) : (
             <p className="pt-16 text-center font-mono text-[14px] text-faint">Getting the job from ServiceM8…</p>
@@ -651,6 +722,7 @@ function Home({
   sm8,
   marks,
   onCurrent,
+  onDiary,
   onToday,
   designJobs,
   designs,
@@ -671,6 +743,7 @@ function Home({
   sm8: Sm8;
   marks: Marks;
   onCurrent: () => void;
+  onDiary: () => void;
   onToday: (l: TodayLine) => void;
   designJobs: Job[];
   designs: DesignsReady;
@@ -747,7 +820,11 @@ function Home({
             {lines.map((l) => (
               <li key={l.text}>
                 <button type="button" onClick={() => onToday(l)} className="flex min-h-11 w-full items-center gap-2.5 py-2 text-left text-[16px]">
-                  <span aria-hidden className={`h-2.5 w-2.5 shrink-0 rounded-full ${l.urgent ? 'bg-accent' : 'border border-faint'}`} />
+                  {l.time ? (
+                    <span className="w-[46px] shrink-0 font-mono text-[14px] font-semibold text-accent">{l.time}</span>
+                  ) : (
+                    <span aria-hidden className={`h-2.5 w-2.5 shrink-0 rounded-full ${l.urgent ? 'bg-accent' : 'border border-faint'}`} />
+                  )}
                   <span className={`flex-1 ${l.urgent ? 'font-semibold' : ''}`}>{l.text}</span>
                   <span aria-hidden className="text-accent">
                     →
@@ -767,6 +844,16 @@ function Home({
           </button>
         ) : null}
       </div>
+
+      <button type="button" onClick={onDiary} className="mt-3 flex w-full items-center justify-between gap-3 rounded-sm border border-line-strong bg-mount px-4 py-3.5 text-left transition-colors hover:border-ink">
+        <span>
+          <span className="block font-semibold">Diary</span>
+          <span className="mt-0.5 block text-[14.5px] text-muted">{diaryLine(sm8)}</span>
+        </span>
+        <span aria-hidden className="text-[20px] text-accent">
+          →
+        </span>
+      </button>
 
       <button type="button" onClick={onCurrent} className="mt-3 flex w-full items-center justify-between gap-3 rounded-sm border border-line-strong bg-mount px-4 py-3.5 text-left transition-colors hover:border-ink">
         <span>
@@ -871,6 +958,18 @@ function currentLine(sm8: Sm8, marks: Marks) {
   const follow = quotes.filter((j) => stage(j, marks) === 'follow').length;
   if (!quotes.length && !going) return 'Nothing open in ServiceM8';
   return [quotes.length ? `${quotes.length} enquir${quotes.length === 1 ? 'y' : 'ies'} and quotes` : '', follow ? `${follow} to follow up` : '', going ? `${going} on Work Order` : ''].filter(Boolean).join(' · ');
+}
+
+function diaryLine(sm8: Sm8) {
+  if (!sm8.at || sm8.bookings === undefined) return 'Visits and work booked in ServiceM8';
+  if (sm8.bookings === null) return 'ServiceM8 didn’t send the schedule this time';
+  const today = localDay();
+  const week = Array.from({ length: 7 }, (_, i) => localDay(new Date(Date.now() + i * 864e5)));
+  const now = bookingsOn(sm8.bookings, today).length;
+  const soon = new Set(week.flatMap((k) => bookingsOn(sm8.bookings!, k).map((b) => b.uuid))).size;
+  const next = sm8.bookings.find((b) => b.start.slice(0, 10) > today);
+  if (!soon) return next ? `Nothing this week; next ${dayLabel(next.start.slice(0, 10))}, ${hm(next.start)}` : 'Nothing booked';
+  return [`${now || 'Nothing'} today`, `${soon} in the next 7 days`].join(' · ');
 }
 
 function postsLine(posts: Pack[]) {

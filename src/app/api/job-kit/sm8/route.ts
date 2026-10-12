@@ -1,14 +1,21 @@
 import { guard } from '@/lib/job-kit-server';
-import { createEnquiry, currentJobs, setStatus, sm8SetUp, Sm8Error, STATUSES, type Status } from '@/lib/servicem8';
+import { addBooking, cancelBooking, createEnquiry, currentJobs, moveBooking, setStatus, sm8SetUp, Sm8Error, STATUSES, type Status } from '@/lib/servicem8';
 
 /* The Job Kit's Current jobs (ServiceM8), behind the PIN:
-   { action: 'list' }                                    open quotes, work orders, jobs finished in the last 30 days
+   { action: 'list' }                                    open quotes, work orders, jobs finished in the last 30 days,
+                                                         the bookings from yesterday on, the staff
    { action: 'enquiry', name, mobile, email, address, description }   adds the client and a Quote job
-   { action: 'status', uuid, status }                    moves a job on (never deletes anything) */
+   { action: 'status', uuid, status }                    moves a job on (never deletes anything)
+   { action: 'book', job, start, end, staff? }           adds a booking to ServiceM8's schedule
+   { action: 'move', uuid, start, end }                  moves a booking
+   { action: 'cancel', uuid }                            cancels a booking (ServiceM8 archives it, restorable)
+   Times are London time, "YYYY-MM-DDTHH:MM". */
 export const maxDuration = 30;
 
 const text = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 const noStore = { 'Cache-Control': 'no-store' };
+const isUuid = (v: string) => /^[0-9a-f-]{36}$/i.test(v);
+const isTime = (v: string) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v) && Number.isFinite(Date.parse(v));
 
 export async function POST(req: Request) {
   const stop = await guard(req);
@@ -22,7 +29,7 @@ export async function POST(req: Request) {
   }
   try {
     if (body.action === 'list') {
-      return Response.json({ jobs: await currentJobs(), at: Date.now() }, { headers: noStore });
+      return Response.json({ ...(await currentJobs()), at: Date.now() }, { headers: noStore });
     }
     if (body.action === 'enquiry') {
       const e = {
@@ -38,8 +45,29 @@ export async function POST(req: Request) {
     if (body.action === 'status') {
       const uuid = text(body.uuid, 40);
       const status = text(body.status, 20) as Status;
-      if (!/^[0-9a-f-]{36}$/i.test(uuid) || !STATUSES.includes(status)) return Response.json({ error: 'bad' }, { status: 400 });
+      if (!isUuid(uuid) || !STATUSES.includes(status)) return Response.json({ error: 'bad' }, { status: 400 });
       await setStatus(uuid, status);
+      return Response.json({ ok: true }, { headers: noStore });
+    }
+    if (body.action === 'book' || body.action === 'move') {
+      const start = text(body.start, 16);
+      const end = text(body.end, 16);
+      if (!isTime(start) || !isTime(end) || end <= start) return Response.json({ error: 'bad-time' }, { status: 400 });
+      if (body.action === 'book') {
+        const job = text(body.job, 40);
+        const staff = text(body.staff, 40);
+        if (!isUuid(job) || (staff && !isUuid(staff))) return Response.json({ error: 'bad' }, { status: 400 });
+        return Response.json({ booking: await addBooking({ jobUuid: job, start, end, staffUuid: staff || undefined }) }, { headers: noStore });
+      }
+      const uuid = text(body.uuid, 40);
+      if (!isUuid(uuid)) return Response.json({ error: 'bad' }, { status: 400 });
+      await moveBooking(uuid, start, end);
+      return Response.json({ ok: true }, { headers: noStore });
+    }
+    if (body.action === 'cancel') {
+      const uuid = text(body.uuid, 40);
+      if (!isUuid(uuid)) return Response.json({ error: 'bad' }, { status: 400 });
+      await cancelBooking(uuid);
       return Response.json({ ok: true }, { headers: noStore });
     }
     return Response.json({ error: 'bad' }, { status: 400 });
