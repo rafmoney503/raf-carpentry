@@ -28,6 +28,9 @@ export type Design = {
   updatedFor?: string; // the request's readyAt (ISO) this version answers; a later Send changes is still to do
 };
 
+/* A design as the Job Kit's Design library lists it (from /api/job-kit/designs, behind the PIN). */
+export type LibraryDesign = { code: string; title: string; area: string; made: string; options: string[]; poster: { src: string; w: number; h: number }; words: string };
+
 const dir = path.join(process.cwd(), 'content/designs');
 
 export function getAllDesigns(): Design[] {

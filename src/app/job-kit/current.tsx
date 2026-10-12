@@ -691,6 +691,7 @@ export function CurrentView({
   onStatus,
   onMark,
   onDesign,
+  onLibrary,
   onKit,
   onOpenKit,
   bookings,
@@ -708,6 +709,7 @@ export function CurrentView({
   onStatus: (s: Status) => Promise<void>;
   onMark: (patch: Marks[string]) => void;
   onDesign: () => void;
+  onLibrary: () => void;
   onKit: () => void;
   onOpenKit: (k: Job) => void;
   bookings: Booking[];
@@ -859,6 +861,9 @@ export function CurrentView({
             Make a 3D design for them
           </button>
         )}
+        <button type="button" className="btn btn-ghost w-full" onClick={onLibrary}>
+          Send them a design from the library
+        </button>
         {kitJob ? (
           <button type="button" className="btn btn-ghost w-full" onClick={() => onOpenKit(kitJob)}>
             Open the Job Kit job

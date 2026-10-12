@@ -6,13 +6,16 @@ import type { DesignOption } from '@/lib/designs';
 import { PHONE_DISPLAY, PHONE_HREF, whatsappUrl } from '@/lib/site';
 
 /* The customer's design: a tab per option (when there is more than one), the same 3D viewer as the job pages
-   (turn it, open the doors, take it apart, zoom, full screen), its sizes, and two ready-typed WhatsApp replies. */
-export default function DesignView({ title, area, link, options }: { title: string; area: string; link: string; options: DesignOption[] }) {
+   (turn it, open the doors, take it apart, zoom, full screen), its sizes, and two ready-typed WhatsApp replies.
+   `like`: the same design sent from the Job Kit's Design library to someone else who wants something similar
+   (/d/<code>/like), so the reply is "I'd like something like this" instead of approving it. */
+export default function DesignView({ title, area, link, options, like = false }: { title: string; area: string; link: string; options: DesignOption[]; like?: boolean }) {
   const [i, setI] = useState(0);
   const cur = options[i];
   const name = options.length > 1 ? `${title}, ${cur.name}` : title;
   const happy = `Hi Raf, I'm happy with the design: ${name} (${area}).\n${link}`;
   const change = `Hi Raf, about the design for ${title} (${area}):\n${link}\n\nI'd like to change: `;
+  const similar = `Hi Raf, I'd like something like this: ${name} (${area}).\n${link}\n\nMy room: `;
 
   return (
     <div>
@@ -33,7 +36,9 @@ export default function DesignView({ title, area, link, options }: { title: stri
         </div>
       ) : null}
 
-      {cur.text ? <p className="mt-5 max-w-[62ch] text-[16px] leading-relaxed text-muted">{cur.text}</p> : null}
+      {/* The option's text is written to the customer it was made for ("the frame you already have"), so it stays
+          off the version sent to someone else. */}
+      {cur.text && !like ? <p className="mt-5 max-w-[62ch] text-[16px] leading-relaxed text-muted">{cur.text}</p> : null}
 
       <div className="mt-5">
         {/* key: a fresh viewer for each option, so only one 3D view runs */}
@@ -41,7 +46,9 @@ export default function DesignView({ title, area, link, options }: { title: stri
       </div>
 
       {cur.sizes?.length ? (
-        <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-line pt-5 sm:grid-cols-4">
+        <>
+          {like ? <p className="mt-6 border-t border-line pt-5 font-mono text-[12.5px] uppercase tracking-[0.06em] text-faint">The sizes of this one</p> : null}
+        <dl className={`grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4 ${like ? 'mt-3' : 'mt-6 border-t border-line pt-5'}`}>
           {cur.sizes.map((s) => (
             <div key={s.label}>
               <dt className="font-mono text-[12.5px] uppercase tracking-[0.06em] text-faint">{s.label}</dt>
@@ -49,20 +56,36 @@ export default function DesignView({ title, area, link, options }: { title: stri
             </div>
           ))}
         </dl>
+        </>
       ) : null}
 
       <div className="mt-8 rounded-sm border border-line-strong bg-mount p-5">
-        <p className="font-display text-[22px] font-[650] leading-snug tracking-[-0.02em]">What do you think?</p>
-        <p className="mt-1.5 text-[15.5px] leading-relaxed text-muted">Tell me on WhatsApp. If something needs changing, I’ll update the design and send you the same link again.</p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <a href={whatsappUrl(happy)} className="btn btn-whatsapp gap-2" target="_blank" rel="noopener">
-            <SocialIcon network="whatsapp" size={20} />
-            I’m happy with it
-          </a>
-          <a href={whatsappUrl(change)} className="btn btn-ghost" target="_blank" rel="noopener">
-            Change something
-          </a>
-        </div>
+        {like ? (
+          <>
+            <p className="font-display text-[22px] font-[650] leading-snug tracking-[-0.02em]">Something like this for you?</p>
+            <p className="mt-1.5 text-[15.5px] leading-relaxed text-muted">Tell me about your room on WhatsApp. I’ll draw yours in 3D to your own sizes, so you can look round it the same way.</p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <a href={whatsappUrl(similar)} className="btn btn-whatsapp gap-2" target="_blank" rel="noopener">
+                <SocialIcon network="whatsapp" size={20} />
+                I’d like something like this
+              </a>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="font-display text-[22px] font-[650] leading-snug tracking-[-0.02em]">What do you think?</p>
+            <p className="mt-1.5 text-[15.5px] leading-relaxed text-muted">Tell me on WhatsApp. If something needs changing, I’ll update the design and send you the same link again.</p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <a href={whatsappUrl(happy)} className="btn btn-whatsapp gap-2" target="_blank" rel="noopener">
+                <SocialIcon network="whatsapp" size={20} />
+                I’m happy with it
+              </a>
+              <a href={whatsappUrl(change)} className="btn btn-ghost" target="_blank" rel="noopener">
+                Change something
+              </a>
+            </div>
+          </>
+        )}
         <p className="mt-4 font-mono text-[13px] text-faint">
           Or call me: <a href={PHONE_HREF} className="text-ink underline">{PHONE_DISPLAY}</a>
         </p>

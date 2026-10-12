@@ -30,7 +30,9 @@ import Mark from './mark';
 import { Icon, IconTile, type IconName } from './icons';
 import { Area, Chips, field, label, Missing, SectionView, TalkBox } from './parts';
 import { PostsList, PostView, postedEverywhere, type Pack } from './posts';
-import { DesignsList, DesignView, designState, fetchReady, NewDesign, savedReady, type DesignsReady } from './designs';
+import { DesignsList, DesignView, designState, fetchDesigns, NewDesign, savedLibrary, savedReady, type DesignsReady } from './designs';
+import { Library, type LibraryJob } from './library';
+import type { LibraryDesign } from '@/lib/designs';
 import {
   CurrentList,
   CurrentView,
@@ -75,11 +77,14 @@ type Screen =
   | { name: 'current' }
   | { name: 'sm8'; id: string; from?: 'diary' | 'home' }
   | { name: 'enquiry' }
-  | { name: 'diary' };
+  | { name: 'diary' }
+  | { name: 'library'; from?: 'designs'; for?: string }; // for: a current job (ServiceM8 uuid) to send to
 
 /* Where "‹ Back" goes when the app was reopened straight onto a screen (no history to go back through). */
 const parentOf = (s: Screen): Screen =>
-  s.name === 'design' || s.name === 'new-design'
+  s.name === 'library' && s.for
+    ? { name: 'sm8', id: s.for }
+    : s.name === 'design' || s.name === 'new-design' || (s.name === 'library' && s.from === 'designs')
     ? { name: 'designs' }
     : s.name === 'post'
       ? { name: 'posts' }
@@ -90,7 +95,7 @@ const parentOf = (s: Screen): Screen =>
           : { name: 'home' };
 const backLabel = (s: Screen) => {
   const p = parentOf(s).name;
-  return p === 'designs' ? 'Designs' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : 'Today';
+  return p === 'designs' ? 'Designs' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'sm8' ? 'Job' : 'Today';
 };
 
 const thisMonth = () => {
@@ -104,7 +109,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary'].includes(s.name)) return s;
+    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'library'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -134,7 +139,7 @@ const STATE_TEXT: Record<SendState, string> = {
 /* Jobs already made into pages on the site: Job Kit id -> the page. */
 export type Done = Record<string, { slug: string; title: string }>;
 
-export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; posts?: Pack[] }) {
+export default function JobKitApp({ done = {}, posts = [], models = [] }: { done?: Done; posts?: Pack[]; models?: LibraryJob[] }) {
   const [ready, setReady] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [items, setItems] = useState<Item[]>([]);
@@ -144,8 +149,13 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
   const [busy, setBusy] = useState<Record<string, number>>({}); // slot key -> photos still being saved
   const [problem, setProblem] = useState('');
   const [designs, setDesigns] = useState<DesignsReady>({}); // design request id -> its page, once made
+  const [library, setLibrary] = useState<LibraryDesign[]>([]); // the customer designs, for the Design library
   const checkDesigns = useCallback(() => {
-    void fetchReady(readPin()).then((r) => r && setDesigns(r));
+    void fetchDesigns(readPin()).then((r) => {
+      if (!r) return;
+      setDesigns(r.ready);
+      setLibrary(r.library);
+    });
   }, []);
   // Current jobs from ServiceM8: the last list at once from the phone, then a fresh one (at most once a minute).
   const [sm8, setSm8] = useState<Sm8>({ jobs: [], at: 0 });
@@ -200,6 +210,7 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
   useEffect(() => {
     setPinState(readPin());
     setDesigns(savedReady());
+    setLibrary(savedLibrary());
     checkDesigns();
     setSm8(savedSm8());
     setMarks(readMarks());
@@ -242,6 +253,7 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
 
   const job = screen.name === 'job' || screen.name === 'design' ? jobs.find((j) => j.id === screen.id) : undefined;
   const cur = screen.name === 'sm8' ? sm8.jobs.find((j) => j.uuid === screen.id) : undefined;
+  const sendTo = screen.name === 'library' && screen.for ? sm8.jobs.find((j) => j.uuid === screen.for) : undefined;
   const from = (screen.name === 'new' || screen.name === 'new-design') && screen.from ? sm8.jobs.find((j) => j.uuid === screen.from) : undefined;
   useEffect(() => {
     if (ready && (screen.name === 'job' || screen.name === 'design') && !job) go(parentOf(screen), false);
@@ -484,6 +496,12 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
               checkDesigns();
               go({ name: 'designs' });
             }}
+            libraryCount={library.length + models.length}
+            libraryLine={`${library.length ? `${library.length} made for customers, ` : ''}${models.length} from finished jobs`}
+            onLibrary={() => {
+              checkDesigns();
+              go({ name: 'library' });
+            }}
             pin={pin}
             status={status}
             waitingBytes={waitingBytes}
@@ -504,7 +522,19 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
             }}
           />
         ) : screen.name === 'designs' ? (
-          <DesignsList jobs={designJobs} items={items} ready={designs} onNew={() => go({ name: 'new-design' })} onOpen={(id) => go({ name: 'design', id })} />
+          <DesignsList
+            jobs={designJobs}
+            items={items}
+            ready={designs}
+            onNew={() => go({ name: 'new-design' })}
+            onOpen={(id) => go({ name: 'design', id })}
+            onLibrary={() => {
+              checkDesigns();
+              go({ name: 'library', from: 'designs' });
+            }}
+          />
+        ) : screen.name === 'library' ? (
+          <Library designs={library} models={models} hasPin={Boolean(pin)} to={sendTo ? { name: sendTo.name, first: sendTo.first, mobile: sendTo.mobile || sendTo.phone } : undefined} />
         ) : screen.name === 'new-design' ? (
           <NewDesign
             key={screen.from ?? 'new'}
@@ -583,6 +613,10 @@ export default function JobKitApp({ done = {}, posts = [] }: { done?: Done; post
                 if (patch.hidden) back();
               }}
               onDesign={() => go({ name: 'new-design', from: cur.uuid })}
+              onLibrary={() => {
+                checkDesigns();
+                go({ name: 'library', for: cur.uuid });
+              }}
               onKit={() => go({ name: 'new', from: cur.uuid })}
               onOpenKit={(k) => go(k.kind === 'design' ? { name: 'design', id: k.id } : { name: 'job', id: k.id, tab: 'before' })}
               bookings={(sm8.bookings ?? []).filter((b) => b.jobUuid === cur.uuid)}
@@ -728,6 +762,9 @@ function Home({
   designJobs,
   designs,
   onDesigns,
+  libraryCount,
+  libraryLine,
+  onLibrary,
   pin,
   status,
   waitingBytes,
@@ -749,6 +786,9 @@ function Home({
   designJobs: Job[];
   designs: DesignsReady;
   onDesigns: () => void;
+  libraryCount: number;
+  libraryLine: string;
+  onLibrary: () => void;
   pin: string;
   status: Status;
   waitingBytes: number;
@@ -878,6 +918,19 @@ function Home({
           →
         </span>
       </button>
+
+      {libraryCount ? (
+        <button type="button" onClick={onLibrary} className="mt-3 flex w-full items-center gap-3.5 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
+          <IconTile name="library" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">Design library</span>
+            <span className="mt-0.5 block text-[14.5px] text-muted">{libraryLine}</span>
+          </span>
+          <span aria-hidden className="text-[20px] text-accent">
+            →
+          </span>
+        </button>
+      ) : null}
 
       {posts.length ? (
         <button type="button" onClick={onPosts} className="mt-3 flex w-full items-center gap-3.5 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">

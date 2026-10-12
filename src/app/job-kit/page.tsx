@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import fs from 'fs';
 import path from 'path';
-import { getAllProjects } from '@/lib/projects';
+import { getAllProjects, modelOf } from '@/lib/projects';
+import type { LibraryJob } from './library';
 import type { Pack } from './posts';
 import JobKitApp, { type Done } from './job-kit-app';
 
@@ -40,5 +41,12 @@ export default function JobKitPage() {
         .map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf-8')) as Pack)
         .sort((a, b) => (order.get(a.slug) ?? 999) - (order.get(b.slug) ?? 999))
     : [];
-  return <JobKitApp done={done} posts={posts} />;
+  // Every finished job with a 3D model, for the Design library (public pages, so they can be in the page).
+  const models: LibraryJob[] = getAllProjects().flatMap((p) => {
+    const m = modelOf(p);
+    if (!m) return [];
+    const { src, w, h } = m.poster;
+    return [{ slug: p.slug, title: p.title, area: p.area, finished: p.finished, poster: { src, w, h }, standard: Boolean(m.standardSizes), words: [p.type, ...(p.tags ?? []), p.summary, m.title, m.text, m.poster.alt].filter(Boolean).join(' ') }];
+  });
+  return <JobKitApp done={done} posts={posts} models={models} />;
 }

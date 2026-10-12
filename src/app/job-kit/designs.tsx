@@ -6,6 +6,7 @@ import { Area, field, label, Missing, SectionView, TalkBox } from './parts';
 import { DESIGN_IDEAS, DESIGN_SPACE, type Section, type Slot } from './plan';
 import { emptyBrief, emptyNotes, newJobId, plansOf, type DesignBrief, type Item, type Job, type Size } from './store';
 import { Planners } from './planners';
+import type { LibraryDesign } from '@/lib/designs';
 
 /* Designs: Raf's requests for a customer's 3D design. He fills in the space (photos), sizes, what they want
    and the options, and taps Send for design; it goes to the inbox like a job. A scheduled Claude run builds it
@@ -31,25 +32,30 @@ export function designState(job: Job, ready?: { updatedFor: string }): State {
 /* Which requests have a page: asked for behind the PIN (the codes keep the pages private) and kept on the
    phone for when there's no signal. */
 const READY_KEY = 'raf_jobkit_designs';
-export function savedReady(): DesignsReady {
+const LIBRARY_KEY = 'raf_jobkit_library';
+const readKey = <T,>(key: string, fallback: T): T => {
   try {
-    return JSON.parse(localStorage.getItem(READY_KEY) || '{}') as DesignsReady;
+    return (JSON.parse(localStorage.getItem(key) || 'null') as T) ?? fallback;
   } catch {
-    return {};
+    return fallback;
   }
-}
-export async function fetchReady(pin: string): Promise<DesignsReady | null> {
+};
+export const savedReady = (): DesignsReady => readKey<DesignsReady>(READY_KEY, {});
+/* The customer designs for the Design library, kept on the phone too. */
+export const savedLibrary = (): LibraryDesign[] => readKey<LibraryDesign[]>(LIBRARY_KEY, []);
+export async function fetchDesigns(pin: string): Promise<{ ready: DesignsReady; library: LibraryDesign[] } | null> {
   if (!pin) return null;
   try {
     const res = await fetch('/api/job-kit/designs', { method: 'POST', headers: { 'x-job-kit-pin': pin }, cache: 'no-store' });
     if (!res.ok) return null;
-    const { ready } = (await res.json()) as { ready: DesignsReady };
+    const { ready, library = [] } = (await res.json()) as { ready: DesignsReady; library?: LibraryDesign[] };
     try {
       localStorage.setItem(READY_KEY, JSON.stringify(ready));
+      localStorage.setItem(LIBRARY_KEY, JSON.stringify(library));
     } catch {
       /* no storage */
     }
-    return ready;
+    return { ready, library };
   } catch {
     return null;
   }
@@ -66,14 +72,14 @@ function toIntl(raw: string) {
   return d.replace(/\D/g, '');
 }
 
-function whatsappTo(mobile: string, text: string) {
+export function whatsappTo(mobile: string, text: string) {
   const n = toIntl(mobile);
   return `https://wa.me/${n.length >= 10 ? n : ''}?text=${encodeURIComponent(text)}`;
 }
 
 /* ---------- the list ---------- */
 
-export function DesignsList({ jobs, items, ready, onNew, onOpen }: { jobs: Job[]; items: Item[]; ready: DesignsReady; onNew: () => void; onOpen: (id: string) => void }) {
+export function DesignsList({ jobs, items, ready, onNew, onOpen, onLibrary }: { jobs: Job[]; items: Item[]; ready: DesignsReady; onNew: () => void; onOpen: (id: string) => void; onLibrary?: () => void }) {
   return (
     <div className="pt-7">
       <h1 className="flex items-center gap-3 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">
@@ -86,6 +92,18 @@ export function DesignsList({ jobs, items, ready, onNew, onOpen }: { jobs: Job[]
       <button type="button" onClick={onNew} className="btn btn-primary mt-6 w-full">
         New design
       </button>
+      {onLibrary ? (
+        <button type="button" onClick={onLibrary} className="mt-3 flex w-full items-center gap-3 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
+          <Icon name="library" className="h-[26px] w-[26px] shrink-0 text-accent" />
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">Design library</span>
+            <span className="block text-[14.5px] text-muted">Send a design you’ve made before to someone who wants something similar</span>
+          </span>
+          <span aria-hidden className="text-[20px] text-accent">
+            →
+          </span>
+        </button>
+      ) : null}
       {jobs.length ? (
         <ul className="mt-7 grid gap-3">
           {jobs.map((j) => {
