@@ -1,0 +1,74 @@
+/* Small line icons for the Job Kit's sections, drawn like the site's sketches (round ends, one weight), so each
+   card on the Today screen and each line in the Today list shows where it goes. Decorative: the text says it. */
+
+export type IconName = 'diary' | 'jobs' | 'designs' | 'posts' | 'kit' | 'money';
+
+const PATHS: Record<IconName, React.ReactNode> = {
+  // a diary page with its rings and a few days marked
+  diary: (
+    <>
+      <rect x="3.5" y="5" width="17" height="15.5" rx="1.5" />
+      <path d="M3.5 9.5h17M8 3v4M16 3v4" />
+      <path d="M7.5 13h2M11 13h2M14.5 13h2M7.5 16.5h2M11 16.5h2" strokeWidth="2" />
+    </>
+  ),
+  // a job card on a clipboard
+  jobs: (
+    <>
+      <rect x="5" y="4.5" width="14" height="16.5" rx="1.5" />
+      <rect x="9" y="3" width="6" height="3" rx="1" />
+      <path d="M8.5 10.5h7M8.5 14h7M8.5 17.5h4" />
+    </>
+  ),
+  // a wardrobe in 3D: a box seen from the corner
+  designs: (
+    <>
+      <path d="M12 3.2l7.8 4.4v8.8L12 20.8l-7.8-4.4V7.6z" />
+      <path d="M4.2 7.6L12 12l7.8-4.4M12 12v8.8" />
+    </>
+  ),
+  // a phone playing a clip
+  posts: (
+    <>
+      <rect x="7" y="2.5" width="10" height="19" rx="2" />
+      <path d="M10.6 9.4v5.2l4.2-2.6z" />
+      <path d="M11 18.8h2" />
+    </>
+  ),
+  // the camera for job photos
+  kit: (
+    <>
+      <path d="M3.5 8.5a1.5 1.5 0 0 1 1.5-1.5h2.6l1.6-2.4h5.6L16.4 7H19a1.5 1.5 0 0 1 1.5 1.5v10A1.5 1.5 0 0 1 19 20H5a1.5 1.5 0 0 1-1.5-1.5z" />
+      <circle cx="12" cy="13.2" r="3.6" />
+    </>
+  ),
+  // a pound coin: money still to collect
+  money: (
+    <>
+      <circle cx="12" cy="12" r="8.6" />
+      <path d="M14.6 8.6a2.5 2.5 0 0 0-4.4 1.6v5.6M8.8 12.6h4.4M8.8 15.8h6.6" />
+    </>
+  ),
+};
+
+export function Icon({ name, className = '' }: { name: IconName; className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      {PATHS[name]}
+    </svg>
+  );
+}
+
+/* The icon on a small square of graph paper, for the section cards. */
+const graph: React.CSSProperties = {
+  backgroundImage: 'linear-gradient(rgb(37 71 208 / 0.08) 1px, transparent 1px), linear-gradient(90deg, rgb(37 71 208 / 0.08) 1px, transparent 1px)',
+  backgroundSize: '8px 8px',
+  backgroundPosition: '-1px -1px',
+};
+export function IconTile({ name }: { name: IconName }) {
+  return (
+    <span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-sm border border-line bg-paper text-accent" style={graph}>
+      <Icon name={name} />
+    </span>
+  );
+}

@@ -2,6 +2,7 @@
 import { useRef, useState } from 'react';
 import type { Booking, CurrentJob, Staff, Status } from '@/lib/servicem8';
 import Mark from './mark';
+import { Icon, type IconName } from './icons';
 import { field, label, Missing, TalkBox } from './parts';
 import type { DesignsReady } from './designs';
 import { designState } from './designs';
@@ -253,7 +254,10 @@ export function Diary({ sm8, loading, onRefresh, onOpen }: { sm8: Sm8; loading: 
   const problem = problemText(sm8.error, sm8.detail, sm8.at);
   return (
     <div className="pt-7">
-      <h1 className="font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">Diary</h1>
+      <h1 className="flex items-center gap-3 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">
+        <Icon name="diary" className="h-[32px] w-[32px] shrink-0 text-accent" />
+        Diary
+      </h1>
       <p className="mt-2 flex flex-wrap items-center gap-x-3 font-mono text-[13px] text-faint">
         <span>ServiceM8’s schedule{sm8.at ? `, ${clock(sm8.at)}` : ''}</span>
         <button type="button" onClick={onRefresh} className="h-9 text-accent underline" disabled={loading}>
@@ -608,7 +612,10 @@ export function CurrentList({
   const problem = problemText(sm8.error, sm8.detail, sm8.at);
   return (
     <div className="pt-7">
-      <h1 className="font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">Current jobs</h1>
+      <h1 className="flex items-center gap-3 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">
+        <Icon name="jobs" className="h-[32px] w-[32px] shrink-0 text-accent" />
+        Current jobs
+      </h1>
       <p className="mt-2 flex flex-wrap items-center gap-x-3 font-mono text-[13px] text-faint">
         <span>From ServiceM8{sm8.at ? `, ${clock(sm8.at)}` : ''}</span>
         <button type="button" onClick={onRefresh} className="h-9 text-accent underline" disabled={loading}>
@@ -999,7 +1006,7 @@ export function NewEnquiry({ onCancel, onCreate }: { onCancel: () => void; onCre
 
 /* ---------- the morning summary ---------- */
 
-export type TodayLine = { text: string; go: 'current' | 'designs' | 'posts' | 'jobs' | 'diary' | 'sm8'; urgent?: boolean; id?: string; time?: string };
+export type TodayLine = { text: string; go: 'current' | 'designs' | 'posts' | 'jobs' | 'diary' | 'sm8'; urgent?: boolean; id?: string; time?: string; icon?: IconName };
 
 export function todayLines({
   sm8,
@@ -1048,7 +1055,7 @@ export function todayLines({
   const owing = list.filter((j) => j.status === 'Completed' && (moneyOf(j).left ?? 0) > 0 && moneyOf(j).payments !== null);
   if (owing.length) {
     const sum = owing.reduce((s, j) => s + (moneyOf(j).left ?? 0), 0);
-    lines.push({ text: `${gbp(sum)} left to collect on ${n(owing.length, 'completed job', 'completed jobs')}`, go: 'current', urgent: true });
+    lines.push({ text: `${gbp(sum)} left to collect on ${n(owing.length, 'completed job', 'completed jobs')}`, go: 'current', urgent: true, icon: 'money' });
   }
   if (going) lines.push({ text: `${n(going, 'job', 'jobs')} on Work Order`, go: 'current' });
   const photoJobs = kit.filter((k) => k.kind !== 'design');

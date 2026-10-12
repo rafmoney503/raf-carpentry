@@ -27,6 +27,7 @@ import { CHUNK, checkSetup, onChange, onStatus, readPin, savePin, sendDetails, w
 import { R_MARK } from '@/lib/r-logo';
 import type { Status as CurrentStatus } from '@/lib/servicem8';
 import Mark from './mark';
+import { Icon, IconTile, type IconName } from './icons';
 import { Area, Chips, field, label, Missing, SectionView, TalkBox } from './parts';
 import { PostsList, PostView, postedEverywhere, type Pack } from './posts';
 import { DesignsList, DesignView, designState, fetchReady, NewDesign, savedReady, type DesignsReady } from './designs';
@@ -823,7 +824,7 @@ function Home({
                   {l.time ? (
                     <span className="w-[46px] shrink-0 font-mono text-[14px] font-semibold text-accent">{l.time}</span>
                   ) : (
-                    <span aria-hidden className={`h-2.5 w-2.5 shrink-0 rounded-full ${l.urgent ? 'bg-accent' : 'border border-faint'}`} />
+                    <Icon name={l.icon ?? LINE_ICON[l.go]} className={`h-[22px] w-[22px] shrink-0 ${l.urgent ? 'text-accent' : 'text-faint'}`} />
                   )}
                   <span className={`flex-1 ${l.urgent ? 'font-semibold' : ''}`}>{l.text}</span>
                   <span aria-hidden className="text-accent">
@@ -845,8 +846,9 @@ function Home({
         ) : null}
       </div>
 
-      <button type="button" onClick={onDiary} className="mt-3 flex w-full items-center justify-between gap-3 rounded-sm border border-line-strong bg-mount px-4 py-3.5 text-left transition-colors hover:border-ink">
-        <span>
+      <button type="button" onClick={onDiary} className="mt-3 flex w-full items-center gap-3.5 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
+        <IconTile name="diary" />
+        <span className="min-w-0 flex-1">
           <span className="block font-semibold">Diary</span>
           <span className="mt-0.5 block text-[14.5px] text-muted">{diaryLine(sm8)}</span>
         </span>
@@ -855,8 +857,9 @@ function Home({
         </span>
       </button>
 
-      <button type="button" onClick={onCurrent} className="mt-3 flex w-full items-center justify-between gap-3 rounded-sm border border-line-strong bg-mount px-4 py-3.5 text-left transition-colors hover:border-ink">
-        <span>
+      <button type="button" onClick={onCurrent} className="mt-3 flex w-full items-center gap-3.5 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
+        <IconTile name="jobs" />
+        <span className="min-w-0 flex-1">
           <span className="block font-semibold">Current jobs</span>
           <span className="mt-0.5 block text-[14.5px] text-muted">{currentLine(sm8, marks)}</span>
         </span>
@@ -865,8 +868,9 @@ function Home({
         </span>
       </button>
 
-      <button type="button" onClick={onDesigns} className="mt-3 flex w-full items-center justify-between gap-3 rounded-sm border border-line-strong bg-mount px-4 py-3.5 text-left transition-colors hover:border-ink">
-        <span>
+      <button type="button" onClick={onDesigns} className="mt-3 flex w-full items-center gap-3.5 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
+        <IconTile name="designs" />
+        <span className="min-w-0 flex-1">
           <span className="block font-semibold">Designs for customers</span>
           <span className="mt-0.5 block text-[14.5px] text-muted">{designLine(designJobs, designs)}</span>
         </span>
@@ -876,8 +880,9 @@ function Home({
       </button>
 
       {posts.length ? (
-        <button type="button" onClick={onPosts} className="mt-3 flex w-full items-center justify-between gap-3 rounded-sm border border-line-strong bg-mount px-4 py-3.5 text-left transition-colors hover:border-ink">
-          <span>
+        <button type="button" onClick={onPosts} className="mt-3 flex w-full items-center gap-3.5 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
+          <IconTile name="posts" />
+          <span className="min-w-0 flex-1">
             <span className="block font-semibold">Posts for Instagram, TikTok and YouTube</span>
             <span className="mt-0.5 block text-[14.5px] text-muted">{postsLine(posts)}</span>
           </span>
@@ -888,7 +893,10 @@ function Home({
       ) : null}
 
       <section id="kit-jobs" className="mt-9 scroll-mt-20">
-        <h2 className="font-display text-[24px] font-[680] leading-tight tracking-[-0.02em]">Job Kit jobs</h2>
+        <h2 className="flex items-center gap-2.5 font-display text-[24px] font-[680] leading-tight tracking-[-0.02em]">
+          <Icon name="kit" className="h-[26px] w-[26px] text-accent" />
+          Job Kit jobs
+        </h2>
         <p className="mt-1.5 text-[15px] leading-relaxed text-muted">Photos, clips and sizes for each job, sent to your inbox as you go. Everything saves by itself.</p>
         <button type="button" onClick={onNew} className="btn btn-primary mt-4 w-full">
           New job
@@ -959,6 +967,9 @@ function currentLine(sm8: Sm8, marks: Marks) {
   if (!quotes.length && !going) return 'Nothing open in ServiceM8';
   return [quotes.length ? `${quotes.length} enquir${quotes.length === 1 ? 'y' : 'ies'} and quotes` : '', follow ? `${follow} to follow up` : '', going ? `${going} on Work Order` : ''].filter(Boolean).join(' · ');
 }
+
+/* Each line on the Today list shows the icon of the section it opens. */
+const LINE_ICON: Record<TodayLine['go'], IconName> = { current: 'jobs', designs: 'designs', posts: 'posts', jobs: 'kit', diary: 'diary', sm8: 'diary' };
 
 function diaryLine(sm8: Sm8) {
   if (!sm8.at || sm8.bookings === undefined) return 'Visits and work booked in ServiceM8';

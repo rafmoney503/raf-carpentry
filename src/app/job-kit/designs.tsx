@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { Icon } from './icons';
 import Mark from './mark';
 import { Area, field, label, Missing, SectionView, TalkBox } from './parts';
 import { DESIGN_IDEAS, DESIGN_SPACE, type Section, type Slot } from './plan';
@@ -75,7 +76,10 @@ function whatsappTo(mobile: string, text: string) {
 export function DesignsList({ jobs, items, ready, onNew, onOpen }: { jobs: Job[]; items: Item[]; ready: DesignsReady; onNew: () => void; onOpen: (id: string) => void }) {
   return (
     <div className="pt-7">
-      <h1 className="font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">Designs</h1>
+      <h1 className="flex items-center gap-3 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">
+        <Icon name="designs" className="h-[32px] w-[32px] shrink-0 text-accent" />
+        Designs
+      </h1>
       <p className="mt-2 text-[15.5px] leading-relaxed text-muted">
         A customer’s piece in 3D before you quote: they turn it round, open the doors and look inside on their phone. Fill in what you know and send it; the link appears here.
       </p>

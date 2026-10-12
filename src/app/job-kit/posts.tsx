@@ -1,6 +1,7 @@
 'use client';
 /* eslint-disable @next/next/no-img-element -- small previews of the post packs, straight from public/social */
 import { useEffect, useMemo, useState } from 'react';
+import { Icon } from './icons';
 import Mark from './mark';
 
 /* Posts: ready-made post packs for Instagram, TikTok and YouTube Shorts (scripts/social-pack.py makes them into
@@ -112,7 +113,10 @@ export function PostsList({ packs, onOpen }: { packs: Pack[]; onOpen: (slug: str
   );
   return (
     <div className="pt-7">
-      <h1 className="font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">Posts</h1>
+      <h1 className="flex items-center gap-3 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">
+        <Icon name="posts" className="h-[32px] w-[32px] shrink-0 text-accent" />
+        Posts
+      </h1>
       <p className="mt-2 text-[15.5px] leading-relaxed text-muted">
         Each job made into a short video, a set of photos and the captions. Tap a button, pick the app, add a sound there and post. About 3 a week keeps the accounts busy.
       </p>
