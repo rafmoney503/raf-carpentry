@@ -68,6 +68,7 @@ export default function BriefBuilder({ options, jobs }: { options: BriefOptions;
   const [finish, setFinish] = useState<string[]>([]);
   const [size, setSize] = useState({ w: '', h: '', d: '' });
   const [name, setName] = useState('');
+  const [mobile, setMobile] = useState('');
   const [addr, setAddr] = useState<Address>({ line1: '', area: '', postcode: '' });
   const [parking, setParking] = useState<string[]>([]);
   const [access, setAccess] = useState('');
@@ -103,6 +104,7 @@ export default function BriefBuilder({ options, jobs }: { options: BriefOptions;
     if (timing) lines.push(`When: ${timing}`);
     if (budget) lines.push(`Budget: ${budget}`);
     const where = [
+      mobile.trim() ? `Mobile: ${mobile.trim()}` : '',
       addressText ? `Address: ${addressText}` : '',
       parking.length ? `Parking: ${join(parking)}` : '',
       access.trim() ? `Parking and access: ${access.trim()}` : '',
@@ -111,7 +113,7 @@ export default function BriefBuilder({ options, jobs }: { options: BriefOptions;
     if (notes.trim()) lines.push('', notes.trim());
     lines.push('', 'I will send photos of the space next.');
     return lines.join('\n');
-  }, [job, what, room, uses, material, finish, hasSize, size, name, addressText, parking, access, timing, budget, notes]);
+  }, [job, what, room, uses, material, finish, hasSize, size, name, mobile, addressText, parking, access, timing, budget, notes]);
 
   const mailto = `mailto:${EMAIL}?subject=${encodeURIComponent(`My project brief${what.length ? `: ${what.join(' + ')}` : ''}`.slice(0, 120))}&body=${encodeURIComponent(message.replace('I will send photos of the space next.', 'Photos of the space attached.'))}`;
 
@@ -206,10 +208,22 @@ export default function BriefBuilder({ options, jobs }: { options: BriefOptions;
                 aria-describedby="brief-name-note"
               />
             </label>
-            <p id="brief-name-note" className={`self-end pb-1 text-[13px] leading-snug ${needName && !name.trim() ? 'font-medium text-accent' : 'text-faint'}`}>
-              {needName && !name.trim() ? 'Add your name, then send.' : 'Only sent to me in your message. Nothing is saved on this website.'}
-            </p>
+            <label className="block">
+              <span className="font-mono text-[12px] text-faint">Mobile (optional)</span>
+              <input
+                className={`${input} mt-1`}
+                type="tel"
+                inputMode="tel"
+                placeholder="So I can call you back"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value.replace(/[^\d+ ()-]/g, '').slice(0, 20))}
+                autoComplete="tel"
+              />
+            </label>
           </div>
+          <p id="brief-name-note" className={`mt-2 text-[13px] leading-snug ${needName && !name.trim() ? 'font-medium text-accent' : 'text-faint'}`}>
+            {needName && !name.trim() ? 'Add your name, then send.' : 'Only sent to me in your message. Nothing is saved on this website.'}
+          </p>
           <div className="mt-4">
             <AddressFinder value={addr} onChange={setAddr} inputClass={input} />
           </div>

@@ -2,6 +2,7 @@
 import { useRef, useState } from 'react';
 import type { Booking, CurrentJob, Staff, Status } from '@/lib/servicem8';
 import Mark from './mark';
+import { parseBrief } from './brief-paste';
 import { Icon, type IconName } from './icons';
 import { field, label, Missing, TalkBox } from './parts';
 import type { DesignsReady } from './designs';
@@ -938,6 +939,38 @@ export function NewEnquiry({ onCancel, onCreate }: { onCancel: () => void; onCre
     setE(next);
     write(DRAFT_KEY, next);
   };
+  // A brief from the website (or any WhatsApp message) pasted in fills the boxes; Raf checks them and sends.
+  const [pasted, setPasted] = useState('');
+  const [filled, setFilled] = useState<string[] | null>(null);
+  const [pasteHint, setPasteHint] = useState(false);
+  const pasteRef = useRef<HTMLTextAreaElement>(null);
+  const lastBrief = useRef('');
+  const fillFrom = (raw: string) => {
+    const b = parseBrief(raw);
+    if (!raw.trim()) return;
+    const mine = e.description.trim();
+    const description = !mine || mine === lastBrief.current ? b.description : `${mine}\n\n${b.description}`;
+    lastBrief.current = b.description;
+    const next = { name: b.name || e.name, mobile: b.mobile || e.mobile, email: b.email || e.email, address: b.address || e.address, description };
+    setE(next);
+    write(DRAFT_KEY, next);
+    setFilled(b.found);
+  };
+  const pasteNow = async () => {
+    try {
+      const t = await navigator.clipboard.readText();
+      if (t.trim()) {
+        setPasted(t);
+        fillFrom(t);
+        return;
+      }
+    } catch {
+      /* not allowed here: paste into the box instead */
+    }
+    setPasteHint(true);
+    pasteRef.current?.focus();
+  };
+  const and = (list: string[]) => (list.length > 1 ? `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}` : list[0] ?? '');
   return (
     <form
       className="pt-7"
@@ -964,6 +997,45 @@ export function NewEnquiry({ onCancel, onCreate }: { onCancel: () => void; onCre
     >
       <h1 className="font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">New enquiry</h1>
       <p className="mt-2 text-[15.5px] leading-relaxed text-muted">It goes straight into ServiceM8 as a new client and a Quote job, ready for the quote and the invoice later.</p>
+
+      <div className="mt-5 rounded-sm border border-accent bg-accent-soft px-4 py-3.5">
+        <p className="font-semibold">Got their brief or message on WhatsApp?</p>
+        <p className="mt-1 text-[14.5px] leading-relaxed text-muted">In WhatsApp, press and hold the message and tap Copy. Then come back here.</p>
+        <button type="button" className="btn btn-primary btn-sm mt-3" onClick={() => void pasteNow()}>
+          Paste and fill in
+        </button>
+        <label className="mt-3 grid gap-1.5">
+          <span className={label}>{pasteHint ? 'Press and hold in the box, then tap Paste' : 'Or paste it here'}</span>
+          <textarea
+            ref={pasteRef}
+            className={`${field} min-h-[64px] py-2.5 text-[14.5px] leading-snug`}
+            rows={2}
+            value={pasted}
+            placeholder="Hi Raf, this is…"
+            onChange={(x) => setPasted(x.target.value)}
+            onPaste={(ev) => {
+              const t = ev.clipboardData.getData('text');
+              if (!t) return;
+              ev.preventDefault();
+              setPasted(t);
+              fillFrom(t);
+            }}
+          />
+        </label>
+        {pasted.trim() && !filled ? (
+          <button type="button" className="mt-2 h-10 text-[14.5px] text-accent underline" onClick={() => fillFrom(pasted)}>
+            Fill in from this
+          </button>
+        ) : null}
+        {filled ? (
+          <p role="status" className="mt-2 text-[14.5px] leading-relaxed">
+            Filled in {and(filled)}.{' '}
+            {!e.mobile.trim() ? 'Add their mobile: in WhatsApp tap their name at the top, then press and hold the number to copy it. ' : ''}
+            Check the boxes below, then Add to ServiceM8.
+          </p>
+        ) : null}
+      </div>
+
       <div className="mt-6 grid gap-5">
         <label className="grid gap-1.5">
           <span className={label}>Name</span>
