@@ -1,0 +1,39 @@
+{
+  "code": "hnkd99d5",
+  "request": "design-2026-10-media-wall-tw14-17zh",
+  "updatedFor": "2026-10-12T20:52:57.685Z",
+  "title": "Media wall with lit shelves",
+  "area": "TW14",
+  "made": "2026-10-12",
+  "options": [
+    {
+      "name": "The design",
+      "text": "A full-width media wall drawn from your plan: a run of shaker cupboards with ten doors and brass knobs along the bottom, an open niche on each side with three shelves and a fluted back, and a moulded frame round a 75 inch TV in the middle, finished with a cornice at the ceiling. A warm LED strip runs along the back of every shelf in the niches. Press Open the doors to see inside the cupboards.",
+      "model": {
+        "src": "/designs/hnkd99d5/a-q7qjvf.glb",
+        "poster": {
+          "src": "/designs/hnkd99d5/a-q7qjvf.jpg",
+          "w": 1600,
+          "h": 800,
+          "alt": "3D model of a cream media wall with shaker cupboards along the bottom, lit shelves in a niche on each side and a 75 inch TV in a moulded frame"
+        },
+        "shape": "wide"
+      },
+      "sizes": [
+        { "label": "Width", "value": "4470 mm" },
+        { "label": "Height, to the ceiling", "value": "2400 mm" },
+        { "label": "Cupboards", "value": "570 mm high, ten doors 445 to 450 mm wide" },
+        { "label": "Shelf niches", "value": "800 mm wide each, from the cupboard top to 2100 mm" },
+        { "label": "Frame round the TV", "value": "2270 mm wide" },
+        { "label": "TV", "value": "75 inch, bottom edge at 920 mm" }
+      ]
+    }
+  ],
+  "notes": [
+    "The widths and heights come from your drawing.",
+    "The depths are standard sizes to start from: the wall comes out about 320 mm and the cupboards about 450 mm with the doors. They will be checked on site.",
+    "The fluted backs and the LED strips at the back of the shelves are shown as you asked; the exact strips and where the power goes will be agreed before anything is made.",
+    "The tall glass display cabinet by the kitchen in your picture is not drawn here yet; it can be added.",
+    "The TV is only there to show the size; colours on screen are a guide."
+  ]
+}
