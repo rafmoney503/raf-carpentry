@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react';
 import type { Booking, CurrentJob, Staff, Status } from '@/lib/servicem8';
 import Mark from './mark';
-import { parseBrief } from './brief-paste';
+import { parseBrief, stripInvisible } from './brief-paste';
 import { Icon, type IconName } from './icons';
 import { field, label, Missing, TalkBox } from './parts';
 import type { DesignsReady } from './designs';
@@ -99,6 +99,7 @@ export function problemText(error?: string, detail?: string, at?: number) {
     case 'sm8-down':
       return `No signal, or ServiceM8 isn’t answering.${at ? ` Showing the list from ${clock(at)}.` : ''}`;
     default:
+      if (/character set/i.test(detail ?? '')) return 'ServiceM8 wouldn’t take some of the characters in it (an emoji or an unusual symbol). Take them out and try again.';
       return `ServiceM8 sent back an error${detail ? `: ${detail}` : '.'}`;
   }
 }
@@ -935,7 +936,7 @@ export function NewEnquiry({ onCancel, onCreate }: { onCancel: () => void; onCre
   const [problem, setProblem] = useState('');
   const nameRef = useRef<HTMLInputElement>(null);
   const set = (k: keyof Enquiry, v: string) => {
-    const next = { ...e, [k]: v };
+    const next = { ...e, [k]: stripInvisible(v) };
     setE(next);
     write(DRAFT_KEY, next);
   };
@@ -1061,7 +1062,7 @@ export function NewEnquiry({ onCancel, onCreate }: { onCancel: () => void; onCre
       </div>
       {problem ? (
         <p role="alert" className="mt-5 rounded-sm border border-ink bg-mount px-3 py-2.5 text-[14.5px] leading-relaxed">
-          {problem} What you typed is kept on this phone; try again when there’s signal.
+          {problem} What you typed is kept on this phone, so you can try again.
         </p>
       ) : null}
       <div className="mt-8 flex gap-3">

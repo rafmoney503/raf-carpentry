@@ -71,9 +71,74 @@ function when(v: unknown): string | null {
   return m ? `${m[1]}T${m[2] ?? '00:00'}` : null;
 }
 
-async function call(path: string, opts: { method?: 'GET' | 'POST' | 'DELETE'; query?: Record<string, string>; body?: Row } = {}) {
+/* ---------- text ServiceM8 will take ----------
+   ServiceM8 turned the first real enquiry down (12 Oct 2026) with 400 "Character Set Not Supported". Text copied
+   from WhatsApp carries invisible marks (the direction marks round a copied phone number, the joiners inside
+   emoji) and emoji, which ServiceM8 can't store. So every text sent is tidied first: invisible marks and emoji out;
+   curly quotes, long dashes, "..." and odd spaces made plain; accented letters and the pound sign stay. The body goes
+   as plain ASCII bytes (any other letter written as a JSON \u escape, which ServiceM8 reads back as the same letter). If
+   ServiceM8 still says "character set", the same request goes again with plain English letters only (an accented e
+   becomes e, the pound sign GBP): first as a form, as ServiceM8's own examples send, then as JSON marked UTF-8. */
+const INVISIBLE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u00ad\u180e\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufe00-\ufe0f\ufeff\ufff9-\ufffc]/g;
+const PLAIN_LETTERS: Record<string, string> = { '\u00df': 'ss', '\u00e6': 'ae', '\u00c6': 'AE', '\u0153': 'oe', '\u0152': 'OE', '\u00f8': 'o', '\u00d8': 'O', '\u0142': 'l', '\u0141': 'L', '\u0111': 'd', '\u0110': 'D' };
+
+export function tidy(s: string, plain = false) {
+  let t = s
+    .normalize('NFC')
+    .replace(/\r\n?|[\u0085\u2028\u2029]/g, '\n')
+    .replace(INVISIBLE, '')
+    .replace(/[\t\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000]/g, ' ')
+    .replace(/[\u2018\u2019\u201a\u201b\u2032\u2035]/g, "'")
+    .replace(/[\u201c\u201d\u201e\u201f\u2033\u2036]/g, '"')
+    .replace(/[\u2010-\u2015\u2212]/g, '-')
+    .replace(/\u2026/g, '...')
+    .replace(/[\u{10000}-\u{10FFFF}]/gu, '')
+    .replace(/[\u2300-\u23ff\u2600-\u27bf\u2b00-\u2bff]/g, '') // the older emoji: hearts, ticks, stars, clocks
+    .replace(/[\uD800-\uDFFF]/g, '');
+  if (plain)
+    t = t
+      .replace(/\u00a3\s?/g, 'GBP ')
+      .replace(/\u20ac\s?/g, 'EUR ')
+      .replace(/[\u00d7\u2715]/g, 'x')
+      .replace(/[\u2022\u00b7]/g, '-')
+      .replace(/[\u00ab\u00bb]/g, '"')
+      .replace(/[\u00df\u00e6\u00c6\u0153\u0152\u00f8\u00d8\u0142\u0141\u0111\u0110]/g, (c) => PLAIN_LETTERS[c] ?? '')
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\n\x20-\x7E]/g, '');
+  return t.replace(/ {2,}/g, ' ').replace(/ +\n/g, '\n');
+}
+
+/* A phone number as ServiceM8 should keep it: digits, a leading +, single spaces. */
+const phoneOf = (s: string) =>
+  tidy(s, true)
+    .replace(/\(0\)/g, '')
+    .replace(/[^\d+]+/g, ' ')
+    .replace(/(?!^)\+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+/* Same text once tidied to plain letters, any case and spacing: for "is this the one we sent before?". */
+const sameText = (a: string, b: string) => {
+  const k = (s: string) => tidy(s, true).replace(/\s+/g, ' ').trim().toLowerCase();
+  return k(a) === k(b);
+};
+
+type Send = 'json' | 'form' | 'json-utf8';
+const asciiJson = (o: unknown) => JSON.stringify(o).replace(/[\u007f-\uffff]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`);
+const tidyBody = (b: Row, plain: boolean) =>
+  Object.fromEntries(
+    Object.entries(b)
+      .filter(([, v]) => v !== undefined && v !== null)
+      .map(([k, v]) => [k, typeof v === 'string' ? tidy(v, plain) : String(v)]),
+  ) as Record<string, string>;
+const CONTENT_TYPE: Record<Send, string> = { json: 'application/json', form: 'application/x-www-form-urlencoded', 'json-utf8': 'application/json; charset=UTF-8' };
+
+async function call(path: string, opts: { method?: 'GET' | 'POST' | 'DELETE'; query?: Record<string, string>; body?: Row; send?: Send } = {}): Promise<{ data: unknown; uuid: string }> {
   const url = new URL(`${base()}/${path}`);
   for (const [k, v] of Object.entries(opts.query ?? {})) url.searchParams.set(k, v);
+  const send = opts.send ?? 'json';
+  const body = opts.body ? tidyBody(opts.body, send !== 'json') : undefined;
   let res: Response;
   try {
     res = await fetch(url, {
@@ -81,9 +146,9 @@ async function call(path: string, opts: { method?: 'GET' | 'POST' | 'DELETE'; qu
       headers: {
         'X-API-Key': process.env.SERVICEM8_API_KEY ?? '',
         Accept: 'application/json',
-        ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(body ? { 'Content-Type': CONTENT_TYPE[send] } : {}),
       },
-      body: opts.body ? JSON.stringify(opts.body) : undefined,
+      body: body ? (send === 'form' ? new URLSearchParams(body).toString() : asciiJson(body)) : undefined,
       cache: 'no-store',
       signal: AbortSignal.timeout(20_000),
     });
@@ -95,6 +160,10 @@ async function call(path: string, opts: { method?: 'GET' | 'POST' | 'DELETE'; qu
   if (res.status === 401) throw new Sm8Error('sm8-key', 502, short);
   if (res.status === 403) throw new Sm8Error('sm8-forbidden', 502, short);
   if (res.status === 429) throw new Sm8Error('sm8-busy', 429, short);
+  if (!res.ok && body && res.status === 400 && /character set/i.test(text)) {
+    const next: Send | null = send === 'json' ? 'form' : send === 'form' ? 'json-utf8' : null;
+    if (next) return call(path, { ...opts, send: next });
+  }
   if (!res.ok) throw new Sm8Error('sm8-error', 502, `${res.status} ${short}`);
   let data: unknown = null;
   try {
@@ -234,35 +303,64 @@ export async function currentJobs(): Promise<Current> {
   };
 }
 
-/* A new enquiry typed into the Job Kit: the client (reused when the name matches one already in ServiceM8),
-   its billing contact, a Quote job with the address and what they want, and the job's own contact. */
-export async function createEnquiry(e: { name: string; mobile: string; email: string; address: string; description: string }): Promise<CurrentJob> {
-  const name = e.name.trim();
-  const [first, ...rest] = name.split(/\s+/);
-  const last = rest.join(' ');
-  const person = { first, last, mobile: e.mobile.trim() || undefined, email: e.email.trim() || undefined };
+/* A client already in ServiceM8 with this name, in any case and spacing; a name with an accent also finds the
+   same name saved with plain letters by an earlier try. Asked by name first; if that finds nothing (or ServiceM8
+   won't take the name in a filter), all active clients are read and matched here. */
+async function clientNamed(name: string): Promise<Row | undefined> {
+  const pick = (cs: Row[]) => cs.find((c) => sameText(str(c.name), name));
+  const byName = await list('company.json', `active eq 1 and name eq '${odata(name)}'`).catch((e) => {
+    if (!(e instanceof Sm8Error) || e.code !== 'sm8-error') throw e;
+    return [] as Row[];
+  });
+  return pick(byName) ?? pick(await list('company.json', 'active eq 1'));
+}
 
-  const same = (await list('company.json', `active eq 1 and name eq '${odata(name)}'`)).find((c) => str(c.name).toLowerCase() === name.toLowerCase());
-  let clientUuid = str(same?.uuid);
-  if (!clientUuid) {
+/* A new enquiry typed into the Job Kit: the client (reused when the name matches one already in ServiceM8),
+   its billing contact, a Quote job with the address and what they want, and the job's own contact.
+   Safe to send again after a try that stopped half way (no signal, or ServiceM8 turning one part down): a client
+   with no contact gets its billing contact, and a Quote job of that client with the same description is used
+   instead of making a second one (it gets its job contact if it has none). */
+export async function createEnquiry(e: { name: string; mobile: string; email: string; address: string; description: string }): Promise<CurrentJob> {
+  const name = tidy(e.name).replace(/\s+/g, ' ').trim();
+  const address = tidy(e.address).trim();
+  const description = tidy(e.description).trim();
+  const [first, ...rest] = name.split(' ');
+  const person = { first, last: rest.join(' '), mobile: phoneOf(e.mobile) || undefined, email: tidy(e.email).replace(/\s+/g, '') || undefined };
+  const none = (rs: Row[] | null) => rs !== null && rs.length === 0; // known to have none (not just "couldn't check")
+
+  let clientUuid = str((await clientNamed(name))?.uuid);
+  const newClient = !clientUuid;
+  if (newClient) {
     const uuid = randomUUID();
-    const made = await call('company.json', { method: 'POST', body: { uuid, name, address: e.address.trim() || undefined } });
+    const made = await call('company.json', { method: 'POST', body: { uuid, name, address: address || undefined } });
     clientUuid = made.uuid || uuid;
+  }
+  if (newClient || none(await list('companycontact.json', `active eq 1 and company_uuid eq '${clientUuid}'`).catch(() => null))) {
     await call('companycontact.json', { method: 'POST', body: { uuid: randomUUID(), company_uuid: clientUuid, ...person, type: 'BILLING', is_primary_contact: '1' } });
   }
 
-  const jobUuid = randomUUID();
-  const made = await call('job.json', {
-    method: 'POST',
-    body: { uuid: jobUuid, company_uuid: clientUuid, status: 'Quote', job_address: e.address.trim() || undefined, job_description: e.description.trim() },
-  });
-  const uuid = made.uuid || jobUuid;
-  await call('jobcontact.json', { method: 'POST', body: { uuid: randomUUID(), job_uuid: uuid, ...person, type: 'JOB' } });
+  let uuid = '';
+  if (!newClient) {
+    const quotes = await list('job.json', `active eq 1 and company_uuid eq '${clientUuid}' and status eq 'Quote'`).catch((): Row[] => []);
+    uuid = str(quotes.find((j) => sameText(str(j.job_description), description))?.uuid);
+  }
+  const again = Boolean(uuid);
+  if (!again) {
+    const jobUuid = randomUUID();
+    const made = await call('job.json', {
+      method: 'POST',
+      body: { uuid: jobUuid, company_uuid: clientUuid, status: 'Quote', job_address: address || undefined, job_description: description },
+    });
+    uuid = made.uuid || jobUuid;
+  }
+  if (!again || none(await list('jobcontact.json', `active eq 1 and job_uuid eq '${uuid}'`).catch(() => null))) {
+    await call('jobcontact.json', { method: 'POST', body: { uuid: randomUUID(), job_uuid: uuid, ...person, type: 'JOB' } });
+  }
 
   // Read it back for the job number ServiceM8 gives it; if that fails, what we sent is enough.
   const back = rows((await call(`job/${uuid}.json`).catch(() => ({ data: null }))).data)[0];
   const now = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/London' }).replace(' ', 'T').slice(0, 16);
-  return shape(back ?? { uuid, status: 'Quote', job_address: e.address, job_description: e.description, date: now }, { name }, { ...person, type: 'JOB' });
+  return shape(back ?? { uuid, status: 'Quote', job_address: address, job_description: description, date: now }, { name }, { ...person, type: 'JOB' });
 }
 
 export async function setStatus(uuid: string, status: Status) {

@@ -24,11 +24,18 @@ const URL_LINE = /^https?:\/\/\S+$/i;
 const WA_PREFIX = /^\[\d{1,2}\/\d{1,2}\/\d{2,4},?\s+\d{1,2}:\d{2}(?::\d{2})?\]\s+([^:]+):\s?/;
 const PHONE = /(?:\+44\s?7|\b07)\d{3}[\s-]?\d{3}[\s-]?\d{3}\b/;
 
+/* Invisible marks that come along when copying from WhatsApp (the direction marks round a copied phone number,
+   zero-width joiners): ServiceM8 turns text with them down ("Character Set Not Supported"), and they split a
+   number so it isn't found. The server tidies everything again before ServiceM8 (src/lib/servicem8.ts tidy). */
+const INVISIBLE = /[\u00AD\u180E\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g;
+export const stripInvisible = (s: string) => s.replace(INVISIBLE, '');
+
 export function parseBrief(raw: string): PastedBrief {
   let sender = '';
   const text = raw
     .replace(/\r/g, '')
-    .replace(/\u00a0/g, ' ')
+    .replace(INVISIBLE, '')
+    .replace(/[\u00a0\u202f]/g, ' ')
     .replace(/[\u2018\u2019]/g, "'")
     .split('\n')
     .map((l) => {
