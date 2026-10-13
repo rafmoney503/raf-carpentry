@@ -132,6 +132,14 @@ h1, h2, h3, h4, h5 {
 .delay-4 { animation-delay: 0.32s; }
 .delay-5 { animation-delay: 0.4s; }
 
+/* The saved count on the Plan your project button pops when something is saved (src/lib/saved.ts). */
+@keyframes savedPop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+.saved-pop { animation: savedPop 0.35s var(--ease-soft) both; }
+
 /* Blog post body */
 .prose-custom h2 { font-family: var(--font-display); color: var(--color-ink); margin: 2.25rem 0 1rem; font-size: 1.6rem; font-weight: 650; }
 .prose-custom h3 { font-family: var(--font-display); color: var(--color-ink); margin: 1.75rem 0 0.75rem; font-size: 1.3rem; font-weight: 620; }

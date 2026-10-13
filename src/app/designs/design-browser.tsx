@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import Model3D from '@/components/project/Model3D';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import SaveButton from '@/components/SaveButton';
+import { useSaved, type SavedItem } from '@/lib/saved';
 import type { Model3DInfo } from '@/lib/projects';
 import { QUOTE_HREF } from '@/lib/site';
 
@@ -16,9 +18,16 @@ export type BrowserItem = { id: string; title: string; area: string; when: strin
 
 const SITE = 'https://www.rafcarpentry.com';
 
+/* What the heart saves for the brief: a finished job links to its page, a public customer design to its /like page. */
+const toSaved = (it: BrowserItem): SavedItem =>
+  it.job
+    ? { id: `job:${it.job}`, title: it.title, area: it.area, href: `/portfolio/${it.job}`, image: it.model.poster.src }
+    : { id: `design:${it.code}`, title: it.title, area: it.area, href: `/d/${it.code}/like`, image: it.model.poster.src };
+
 export default function DesignBrowser({ items, heading }: { items: BrowserItem[]; heading: string }) {
   const [i, setI] = useState(0);
   const view = useRef<HTMLDivElement>(null);
+  const saved = useSaved();
 
   // A link with #<id> opens on that design.
   useEffect(() => {
@@ -59,7 +68,20 @@ export default function DesignBrowser({ items, heading }: { items: BrowserItem[]
             </Link>
           ) : null}
           <WhatsAppButton text={message} label={cur.job ? 'WhatsApp me about it' : 'I’d like something like this'} />
+          <SaveButton item={toSaved(cur)} />
         </div>
+        <p className="mt-3 max-w-[60ch] text-[14.5px] leading-relaxed text-muted" aria-live="polite">
+          {saved.length ? (
+            <>
+              {saved.length} saved for your brief.{' '}
+              <Link href="/how-it-works#brief" className="font-medium text-accent hover:underline">
+                Open your brief
+              </Link>
+            </>
+          ) : (
+            'Save the ones you like as you look round. They go into your brief with their links, so I see exactly what you mean.'
+          )}
+        </p>
         {cur.job ? (
           <p className="mt-4">
             <Link href={`/portfolio/${cur.job}`} className="link-more">
@@ -77,7 +99,7 @@ export default function DesignBrowser({ items, heading }: { items: BrowserItem[]
             {items.map((it, k) => {
               const on = k === i;
               return (
-                <li key={it.id}>
+                <li key={it.id} className="relative">
                   <button type="button" onClick={() => pick(k)} aria-current={on ? 'true' : undefined} className="group block w-full text-left">
                     <span className={`mount block p-1.5 transition-colors ${on ? 'border-accent' : 'group-hover:border-ink'}`}>
                       <span className="relative block aspect-[4/3] overflow-hidden bg-white">
@@ -87,6 +109,7 @@ export default function DesignBrowser({ items, heading }: { items: BrowserItem[]
                     <span className={`mt-2.5 block text-[15px] font-[620] leading-snug ${on ? 'text-accent' : ''}`}>{it.title}</span>
                     <span className="mt-0.5 block font-mono text-[12.5px] text-faint">{it.area}</span>
                   </button>
+                  <SaveButton item={toSaved(it)} variant="icon" className="absolute right-3 top-3" />
                 </li>
               );
             })}

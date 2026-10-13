@@ -17,6 +17,7 @@ import PlanDrawings from '@/components/project/PlanDrawings';
 import Model3D from '@/components/project/Model3D';
 import { BOOKING_URL, QUOTE_HREF, whatsappText } from '@/lib/site';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import SaveButton from '@/components/SaveButton';
 import '../project.css';
 import { pageMeta } from '@/lib/seo';
 import Reviews, { GoogleRating } from '@/components/Reviews';
@@ -91,6 +92,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
               <Link href={`${QUOTE_HREF}?job=${p.slug}`} className="btn btn-primary">Get a quote</Link>
               <WhatsAppButton text={waText} />
+              <SaveButton item={{ id: `job:${p.slug}`, title: p.title, area: p.area, href: `/portfolio/${p.slug}`, image: p.cover.src }} />
               <a href="#photos" className="link-more">
                 All {p.gallery.length + 1} photos <span aria-hidden="true">↓</span>
               </a>

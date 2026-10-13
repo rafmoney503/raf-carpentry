@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Container, SectionHeading } from '@/components/ui';
 import { matches } from '@/lib/search';
+import SaveButton from '@/components/SaveButton';
 
 export type JobCard = {
   slug: string;
@@ -108,7 +109,7 @@ export default function PortfolioBrowser({ jobs, archive, chips }: { jobs: JobCa
         {shownJobs.length > 0 ? (
           <ul className="grid grid-cols-1 gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-4">
             {shownJobs.map((p, i) => (
-              <li key={p.slug}>
+              <li key={p.slug} className="relative">
                 <Link href={`/portfolio/${p.slug}`} className="group block">
                   <div className="mount transition-colors group-hover:border-accent">
                     <div className="relative aspect-[3/4] overflow-hidden bg-raised">
@@ -129,6 +130,7 @@ export default function PortfolioBrowser({ jobs, archive, chips }: { jobs: JobCa
                   <p className="mt-2 text-[15.5px] leading-relaxed text-muted">{p.summary}</p>
                   <p className="mt-3 font-mono text-[13px] text-ink">{p.meta}</p>
                 </Link>
+                <SaveButton item={{ id: `job:${p.slug}`, title: p.title, area: p.area, href: `/portfolio/${p.slug}`, image: p.cover.src }} variant="icon" className="absolute right-4 top-4" />
               </li>
             ))}
           </ul>

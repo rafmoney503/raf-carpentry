@@ -49,9 +49,24 @@ export function parseBrief(raw: string): PastedBrief {
   const fields: Record<string, string> = {};
   const notes: string[] = [];
   let name = '';
+  // "Things I liked:" (saved with the hearts on the website) is followed by a title line and a link for each,
+  // up to the next empty line: the titles become one "Liked:" line.
+  let liked: string[] | null = null;
   for (const line of lines) {
     if (!line) {
+      if (liked) {
+        if (liked.length) fields.Liked = liked.join(' + ');
+        liked = null;
+      }
       if (notes.length && notes[notes.length - 1] !== '') notes.push('');
+      continue;
+    }
+    if (/^things i liked:?$/i.test(line)) {
+      liked = [];
+      continue;
+    }
+    if (liked) {
+      if (!URL_LINE.test(line)) liked.push(line);
       continue;
     }
     const hello = line.match(/^hi raf[,.!]?\s*(?:this is\s+(.+?)\s*[.!]\s*)?here is my brief from your website\.?$/i);
@@ -68,6 +83,7 @@ export function parseBrief(raw: string): PastedBrief {
     }
     notes.push(line);
   }
+  if (liked?.length) fields.Liked = liked.join(' + ');
   while (notes.length && notes[notes.length - 1] === '') notes.pop();
   while (notes.length && notes[0] === '') notes.shift();
   const fromBrief = Boolean(name || fields.What || fields.Address || Object.keys(fields).length >= 2);
@@ -83,7 +99,7 @@ export function parseBrief(raw: string): PastedBrief {
   let description: string;
   if (fromBrief) {
     const first = fields.What || 'Enquiry';
-    const rest = ['Rooms', 'For', 'Material', 'Finish', 'Rough size', 'When', 'Budget', 'Parking', 'Parking and access', 'Something like your job']
+    const rest = ['Rooms', 'For', 'Material', 'Finish', 'Rough size', 'When', 'Budget', 'Parking', 'Parking and access', 'Something like your job', 'Liked']
       .filter((k) => fields[k])
       .map((k) => `${k === 'Rooms' && !fields.Rooms.includes('+') ? 'Room' : k}: ${fields[k]}`);
     description = [first, ...rest, ...(notes.length ? ['', ...notes] : []), '', 'From the website brief.'].join('\n');

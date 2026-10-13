@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { PHONE_DISPLAY, PHONE_HREF, QUOTE_HREF } from '@/lib/site';
 import type { MenuPanel } from '@/lib/menu-panels';
 import MenuPanelView, { MenuTags } from './MenuPanel';
+import SiteSearch from './SiteSearch';
 
 const links = [
   { href: '/services', label: 'Services' },
@@ -22,16 +23,20 @@ const links = [
 /* Each menu item has a panel (src/lib/menu-panels.ts): on a computer it drops down when the mouse rests on the
    item (after a short pause, so passing over the menu doesn't flash it) or when the item gets keyboard focus, and
    closes when the mouse leaves the menu and panel, on Escape, or on a new page. Touch screens never get it: a tap
-   goes straight to the page. On the phone menu the same tags open under a + beside each item. */
+   goes straight to the page. On the phone menu the same tags open under a + beside each item.
+   Search (src/components/SiteSearch.tsx): the magnifier on a computer (or / or Ctrl+K) opens it under the header;
+   on a phone it is the box at the top of the menu. */
 export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel> }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const [shown, setShown] = useState<string | null>(null); // computer: the item whose panel is open
   const [expanded, setExpanded] = useState<string | null>(null); // phone menu: the item whose tags are open
+  const [searching, setSearching] = useState(false); // computer: the search panel is open
+  const [phoneSearch, setPhoneSearch] = useState(false); // phone menu: something is typed in its search box
   const openTimer = useRef(0);
   const closeTimer = useRef(0);
   const show = (href: string, now = false) => {
-    if (!menu[href]) return;
+    if (!menu[href] || searching) return;
     window.clearTimeout(openTimer.current);
     window.clearTimeout(closeTimer.current);
     if (now || shown) setShown(href);
@@ -47,15 +52,35 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
     setShown(null);
     setOpen(false);
     setExpanded(null);
+    setSearching(false);
+    setPhoneSearch(false);
   }, [pathname]);
   useEffect(() => {
-    if (!shown) return;
+    if (!shown && !searching) return;
     const key = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setShown(null);
+      if (e.key === 'Escape') {
+        setShown(null);
+        setSearching(false);
+      }
     };
     document.addEventListener('keydown', key);
     return () => document.removeEventListener('keydown', key);
-  }, [shown]);
+  }, [shown, searching]);
+  // "/" or Ctrl+K (Cmd+K on a Mac) opens search on a computer, unless the visitor is typing somewhere.
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      const typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+      const k = e.key.toLowerCase();
+      if (((k === '/' && !typing) || (k === 'k' && (e.ctrlKey || e.metaKey))) && window.matchMedia('(min-width: 1024px)').matches) {
+        e.preventDefault();
+        setShown(null);
+        setSearching(true);
+      }
+    };
+    document.addEventListener('keydown', key);
+    return () => document.removeEventListener('keydown', key);
+  }, []);
   useEffect(
     () => () => {
       window.clearTimeout(openTimer.current);
@@ -75,7 +100,7 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setShown(null);
       }}
     >
-      <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-3 px-5 max-[379px]:gap-2 md:h-[72px] md:gap-8 md:px-10">
+      <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-3 px-5 max-[379px]:gap-2 md:h-[72px] md:gap-8 md:px-10 lg:gap-4 xl:gap-8">
         <Link href="/" className="flex items-center gap-3 whitespace-nowrap text-[17px] font-semibold tracking-tight max-[379px]:gap-2 max-[379px]:text-[16px]">
           <span className="h-9 w-9 flex-none overflow-hidden rounded-full bg-[#f4f1ea] ring-1 ring-line-strong">
             <Image src="/images/r-logo-final.png" alt="" width={36} height={36} className="h-full w-full object-cover" />
@@ -101,7 +126,23 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2.5 max-[379px]:gap-2 lg:ml-0 lg:gap-5">
+        <div className="ml-auto flex items-center gap-2.5 max-[379px]:gap-2 lg:ml-0 lg:gap-3 xl:gap-5">
+          <button
+            type="button"
+            onClick={() => {
+              setShown(null);
+              setSearching((v) => !v);
+            }}
+            aria-label={searching ? 'Close search' : 'Search the website'}
+            aria-expanded={searching}
+            aria-controls="site-search"
+            title="Search (/)"
+            className={`hidden h-11 w-11 items-center justify-center rounded-sm border text-ink transition-colors lg:inline-flex ${searching ? 'border-ink bg-mount' : 'border-line-strong hover:border-ink'}`}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              {searching ? <path d="M6 6l12 12M18 6L6 18" /> : <><circle cx="10.5" cy="10.5" r="6.5" /><path d="M15.5 15.5L21 21" /></>}
+            </svg>
+          </button>
           <a href={PHONE_HREF} className="hidden whitespace-nowrap font-mono text-sm text-ink xl:inline">
             {PHONE_DISPLAY}
           </a>
@@ -133,6 +174,17 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
         </div>
       </div>
 
+      {searching ? (
+        <>
+          <div aria-hidden="true" onClick={() => setSearching(false)} className="absolute inset-x-0 top-full hidden h-[100dvh] bg-paper/60 lg:block" />
+          <div id="site-search" className="absolute inset-x-0 top-full hidden border-b border-line-strong bg-mount shadow-[0_24px_48px_rgb(22_25_28_/_0.12)] lg:block">
+            <div className="mx-auto max-w-[1280px] px-10 pb-8 pt-6">
+              <SiteSearch layout="panel" autoFocus onPick={() => setSearching(false)} />
+            </div>
+          </div>
+        </>
+      ) : null}
+
       {panel ? (
         <div
           id="menu-panel"
@@ -148,7 +200,10 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
 
       {open && (
         <nav aria-label="Mobile" className="max-h-[calc(100dvh-64px)] overflow-y-auto border-t border-line bg-paper px-5 pb-6 pt-2 lg:hidden">
-          {[...links, { href: '/how-it-works', label: 'Plan your project' }, { href: '/contact', label: 'Contact' }].map((l) => {
+          <div className="pb-2 pt-2">
+            <SiteSearch layout="menu" onPick={() => setOpen(false)} onActive={setPhoneSearch} />
+          </div>
+          {phoneSearch ? null : [...links, { href: '/how-it-works', label: 'Plan your project' }, { href: '/contact', label: 'Contact' }].map((l) => {
             const p = menu[l.href];
             const isOpen = expanded === l.href;
             return (
@@ -190,9 +245,11 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
               </div>
             );
           })}
-          <a href={PHONE_HREF} className="mt-5 block font-mono text-[15px] text-ink">
-            {PHONE_DISPLAY}
-          </a>
+          {phoneSearch ? null : (
+            <a href={PHONE_HREF} className="mt-5 block font-mono text-[15px] text-ink">
+              {PHONE_DISPLAY}
+            </a>
+          )}
         </nav>
       )}
     </header>

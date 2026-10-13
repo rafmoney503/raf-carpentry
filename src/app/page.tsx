@@ -9,6 +9,8 @@ import { countModels, formatMonth, getAllProjects } from '@/lib/projects';
 import { libraryKinds } from '@/lib/design-library';
 import { QUOTE_HREF, whatsappText, whatsappUrl } from '@/lib/site';
 import SocialIcon from '@/components/SocialIcon';
+import JobsNear from '@/components/JobsNear';
+import { getNearJobs } from '@/lib/areas';
 import { businessJsonLd, jsonLd, pageMeta } from '@/lib/seo';
 import './home.css';
 
@@ -221,6 +223,10 @@ export default function HomePage() {
                 </li>
               ))}
             </ul>
+            {/* Jobs near you: a postcode shows the nearest jobs with rough miles */}
+            <div className="mt-16 border-t border-line pt-12 md:mt-20 md:pt-14">
+              <JobsNear jobs={getNearJobs()} />
+            </div>
           </div>
         </section>
       ) : null}

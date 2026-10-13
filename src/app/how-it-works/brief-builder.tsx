@@ -1,11 +1,14 @@
 'use client';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import SocialIcon from '@/components/SocialIcon';
 import { BOOKING_URL, EMAIL, whatsappUrl } from '@/lib/site';
 import AddressFinder, { type Address } from './address-finder';
 import { clearJobFromLink, jobUrl, useJobFromLink, type JobRef } from './job-from-link';
 import { kindsIn, kindWords, type KindCount } from '@/lib/design-kinds';
+import { removeSaved, savedUrl, useSaved } from '@/lib/saved';
+import { Heart } from '@/components/SaveButton';
+import WhatHappensNext from './what-happens-next';
 
 export type BriefOptions = {
   what: string[];
@@ -59,9 +62,14 @@ function Field({ n, title, hint, children }: { n: number; title: string; hint?: 
 const input =
   'h-12 w-full rounded-sm border border-line-strong bg-mount px-3 text-[16px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20';
 
-export default function BriefBuilder({ options, jobs, designKinds = [] }: { options: BriefOptions; jobs: JobRef[]; designKinds?: KindCount[] }) {
+type Sent = 'whatsapp' | 'email' | 'copy';
+
+export default function BriefBuilder({ options, jobs, designKinds = [], designTotal = 0 }: { options: BriefOptions; jobs: JobRef[]; designKinds?: KindCount[]; designTotal?: number }) {
   // Came from "Get a quote" on a job page: that job goes at the top of the message.
   const job = useJobFromLink(jobs);
+  // Jobs and 3D designs saved with the hearts (src/lib/saved.ts). The job from the link is already named, so it isn't listed twice.
+  const saved = useSaved();
+  const liked = useMemo(() => saved.filter((s) => !(job && s.href === `/portfolio/${job.slug}`)), [saved, job]);
   const [what, setWhat] = useState<string[]>([]);
   const [room, setRoom] = useState<string[]>([]);
   const [uses, setUses] = useState<string[]>([]);
@@ -79,6 +87,29 @@ export default function BriefBuilder({ options, jobs, designKinds = [] }: { opti
   const [budget, setBudget] = useState('');
   const [notes, setNotes] = useState('');
   const [copied, setCopied] = useState(false);
+  // After Send on WhatsApp, Email it or Copy text: the "What happens next" card takes the message's place.
+  const [sent, setSent] = useState<Sent | null>(null);
+  const [showMsg, setShowMsg] = useState(false);
+  const nextRef = useRef<HTMLDivElement>(null);
+  const markSent = (how: Sent) => {
+    setSent(how);
+    setShowMsg(false);
+    // On a phone the card sits above the buttons: bring it into view for when they come back from WhatsApp or email.
+    window.setTimeout(() => nextRef.current?.scrollIntoView({ behavior: how === 'copy' ? 'smooth' : 'auto', block: 'start' }), 60);
+  };
+
+  // A search result like "Start a brief: hiding a boiler, radiator or cylinder" opens /how-it-works?for=...#brief
+  // with that choice ticked (?what=, ?room= and ?for= work, only for choices that exist).
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const pick = (key: string, list: string[], set: React.Dispatch<React.SetStateAction<string[]>>) => {
+      const v = q.get(key);
+      if (v && list.includes(v)) set((cur) => (cur.includes(v) ? cur : [...cur, v]));
+    };
+    pick('what', options.what, setWhat);
+    pick('room', options.room, setRoom);
+    pick('for', options.uses, setUses);
+  }, [options]);
 
   const one = (set: (v: string) => void, cur: string) => (v: string) => set(cur === v ? '' : v);
   // Several answers can be ticked (two rooms, a bookcase and panelling...): tap again to untick.
@@ -96,6 +127,7 @@ export default function BriefBuilder({ options, jobs, designKinds = [] }: { opti
   const message = useMemo(() => {
     const lines = [name.trim() ? `Hi Raf, this is ${name.trim()}. Here is my brief from your website.` : 'Hi Raf, here is my brief from your website.', ''];
     if (job) lines.push(`Something like your job: ${job.title}, ${job.area}`, jobUrl(job.slug), '');
+    if (liked.length) lines.push('Things I liked:', ...liked.flatMap((s) => [s.area ? `${s.title}, ${s.area}` : s.title, savedUrl(s)]), '');
     if (what.length) lines.push(`What: ${join(what)}`);
     if (room.length) lines.push(`${room.length > 1 ? 'Rooms' : 'Room'}: ${join(room)}`);
     if (uses.length) lines.push(`For: ${join(uses)}`);
@@ -113,8 +145,8 @@ export default function BriefBuilder({ options, jobs, designKinds = [] }: { opti
     if (where.length) lines.push('', ...where);
     if (notes.trim()) lines.push('', notes.trim());
     lines.push('', 'I will send photos of the space next.');
-    return lines.join('\n');
-  }, [job, what, room, uses, material, finish, hasSize, size, name, mobile, addressText, parking, access, timing, budget, notes]);
+    return lines.join('\n').replace(/\n{3,}/g, '\n\n'); // never two empty lines in a row
+  }, [job, liked, what, room, uses, material, finish, hasSize, size, name, mobile, addressText, parking, access, timing, budget, notes]);
 
   const mailto = `mailto:${EMAIL}?subject=${encodeURIComponent(`My project brief${what.length ? `: ${what.join(' + ')}` : ''}`.slice(0, 120))}&body=${encodeURIComponent(message.replace('I will send photos of the space next.', 'Photos of the space attached.'))}`;
 
@@ -134,6 +166,7 @@ export default function BriefBuilder({ options, jobs, designKinds = [] }: { opti
       await navigator.clipboard.writeText(message);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
+      markSent('copy');
     } catch {
       /* clipboard blocked */
     }
@@ -142,7 +175,7 @@ export default function BriefBuilder({ options, jobs, designKinds = [] }: { opti
   const reset = () => {
     setWhat([]); setRoom([]); setUses([]); setMaterial([]); setFinish([]);
     setSize({ w: '', h: '', d: '' }); setName(''); setAddr({ line1: '', area: '', postcode: '' }); setParking([]); setAccess('');
-    setTiming(''); setBudget(''); setNotes(''); setNeedName(false);
+    setTiming(''); setBudget(''); setNotes(''); setNeedName(false); setSent(null);
   };
 
   return (
@@ -162,6 +195,36 @@ export default function BriefBuilder({ options, jobs, designKinds = [] }: { opti
             </button>
           </div>
         ) : null}
+        {liked.length ? (
+          <section aria-label="Things you saved" className="mb-6 rounded-sm border border-line-strong bg-mount p-3.5">
+            <p className="flex items-center gap-2 text-[16px] font-[620] text-ink">
+              <span className="text-accent"><Heart on /></span>
+              Things you saved ({liked.length})
+            </p>
+            <p className="mt-1 text-[14px] leading-snug text-muted">They go in your message with their links.</p>
+            <ul className="mt-3 grid gap-2">
+              {liked.map((s) => (
+                <li key={s.id} className="flex items-center gap-3">
+                  <span className="relative h-12 w-16 flex-none overflow-hidden rounded-[2px] border border-line bg-white">
+                    {s.image ? <Image src={s.image} alt="" fill sizes="64px" className="object-contain" /> : null}
+                  </span>
+                  <span className="min-w-0 flex-1 leading-snug">
+                    <a href={s.href} target="_blank" rel="noopener" className="line-clamp-2 block text-[14.5px] font-medium text-ink hover:text-accent">{s.title}</a>
+                    {s.area ? <span className="block font-mono text-[12px] text-faint">{s.area}</span> : null}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeSaved(s.id)}
+                    aria-label={`Remove ${s.title}`}
+                    className="inline-flex h-10 w-10 flex-none items-center justify-center rounded-sm text-muted transition-colors hover:text-ink"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" /></svg>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
         <Field n={1} title="What is it?" hint="pick any">
           <Chips label="What is it?" options={options.what} value={what} onPick={toggle(setWhat)} multi />
           {/* A nudge to the Designs in 3D page for what they picked; opens in a new tab so the brief stays filled in. */}
@@ -169,13 +232,16 @@ export default function BriefBuilder({ options, jobs, designKinds = [] }: { opti
             const slugs = new Set(what.flatMap((w) => kindsIn(w).map((k) => k.slug)));
             const show = designKinds.filter((k) => slugs.has(k.slug));
             return show.length ? (
-              <p className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[15px]">
-                {show.map((k) => (
-                  <a key={k.slug} href={`/designs/${k.slug}`} target="_blank" rel="noopener" className="link-more">
-                    See {k.count} {kindWords(k)} in 3D <span aria-hidden="true">→</span>
-                  </a>
-                ))}
-              </p>
+              <>
+                <p className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[15px]">
+                  {show.map((k) => (
+                    <a key={k.slug} href={`/designs/${k.slug}`} target="_blank" rel="noopener" className="link-more">
+                      See {k.count} {kindWords(k)} in 3D <span aria-hidden="true">→</span>
+                    </a>
+                  ))}
+                </p>
+                <p className="mt-1.5 text-[13.5px] leading-snug text-faint">Tap Save on any you like and they come into this brief.</p>
+              </>
             ) : null;
           })()}
         </Field>
@@ -292,7 +358,8 @@ export default function BriefBuilder({ options, jobs, designKinds = [] }: { opti
 
       {/* The message as it will arrive */}
       <aside className="md:col-span-5" aria-label="Your message">
-        <div className="md:sticky md:top-28">
+        {/* Stays in view while the form is filled in; once sent, the card makes it too tall to stick, so it scrolls normally. */}
+        <div className={sent ? '' : 'md:sticky md:top-28'}>
           <div className="flex items-baseline justify-between">
             <p className="font-mono text-[13px] text-faint">Your message</p>
             <p className="font-mono text-[13px] text-faint" aria-live="polite">{filled} of 9 filled</p>
@@ -300,21 +367,33 @@ export default function BriefBuilder({ options, jobs, designKinds = [] }: { opti
           <div className="mt-2 h-1 rounded-full bg-raised-2" aria-hidden="true">
             <div className="h-1 rounded-full bg-accent transition-[width] duration-300" style={{ width: `${(filled / 9) * 100}%` }} />
           </div>
-          <pre className="mt-4 min-h-[220px] whitespace-pre-wrap break-words rounded-sm border border-line-strong bg-mount p-5 font-mono text-[13.5px] leading-relaxed text-ink">{message}</pre>
+          {sent ? (
+            <div ref={nextRef} className="mt-4 scroll-mt-24">
+              <WhatHappensNext how={sent} photoTips={options.photoTips} designTotal={designTotal} />
+              <button type="button" onClick={() => setShowMsg((v) => !v)} aria-expanded={showMsg} className="mt-3 font-mono text-[12.5px] text-faint transition-colors hover:text-ink">
+                {showMsg ? 'Hide my message' : 'Show my message'}
+              </button>
+            </div>
+          ) : null}
+          {!sent || showMsg ? (
+            <pre className="mt-4 min-h-[220px] whitespace-pre-wrap break-words rounded-sm border border-line-strong bg-mount p-5 font-mono text-[13.5px] leading-relaxed text-ink">{message}</pre>
+          ) : null}
           <div className="mt-4 grid gap-2.5">
-            <a href={whatsappUrl(message)} target="_blank" rel="noopener" onClick={(e) => gate(e)} className="btn btn-whatsapp w-full gap-2.5">
+            <a href={whatsappUrl(message)} target="_blank" rel="noopener" onClick={(e) => gate(e) && markSent('whatsapp')} className="btn btn-whatsapp w-full gap-2.5">
               <SocialIcon network="whatsapp" size={18} />
               Send on WhatsApp
             </a>
             <div className="grid grid-cols-2 gap-2.5">
-              <a href={mailto} onClick={(e) => gate(e)} className="btn btn-ghost">Email it</a>
+              <a href={mailto} onClick={(e) => gate(e) && markSent('email')} className="btn btn-ghost">Email it</a>
               <button type="button" onClick={copy} className="btn btn-ghost">{copied ? 'Copied' : 'Copy text'}</button>
             </div>
           </div>
-          <p className="mt-4 text-sm leading-relaxed text-muted">
-            Add your photos in the WhatsApp chat or attach them to the email. Rather book a visit straight away?{' '}
-            <a href={BOOKING_URL} target="_blank" rel="noopener" className="font-medium text-accent hover:underline">Book online</a>.
-          </p>
+          {sent ? null : (
+            <p className="mt-4 text-sm leading-relaxed text-muted">
+              Add your photos in the WhatsApp chat or attach them to the email. Rather book a visit straight away?{' '}
+              <a href={BOOKING_URL} target="_blank" rel="noopener" className="font-medium text-accent hover:underline">Book online</a>.
+            </p>
+          )}
           {needName && !name.trim() ? (
             <p className="mt-3 text-sm font-medium text-accent" role="alert">Add your name in step 07 first.</p>
           ) : null}
