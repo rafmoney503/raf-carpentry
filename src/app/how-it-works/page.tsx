@@ -9,7 +9,7 @@ import BriefBuilder from './brief-builder';
 import Sketch from './sketches';
 import JobNote from './job-note';
 import { getAllProjects } from '@/lib/projects';
-import { getLibraryItems, libraryKinds } from '@/lib/design-library';
+import { getLibraryItems, libraryKinds, matchItems } from '@/lib/design-library';
 import { pageMeta } from '@/lib/seo';
 import Reviews, { GoogleRating } from '@/components/Reviews';
 import { getReviews } from '@/lib/reviews';
@@ -210,6 +210,7 @@ export default function HowItWorksPage() {
               jobs={jobs}
               designKinds={libraryKinds().map(({ slug, label, count }) => ({ slug, label, count }))}
               designTotal={getLibraryItems().length}
+              designs={matchItems()}
             />
           </div>
         </Container>

@@ -438,20 +438,27 @@ export async function touchJob(uuid: string) {
   }
 }
 
-/* An email to Raf through ServiceM8's own email (Messaging API), filed in the job's diary. Best effort: if the
-   account's key may not send email, the brief is still in ServiceM8 as a Quote job and on the Job Kit's Today. */
-export async function emailRaf(to: string, subject: string, text: string, jobUuid: string): Promise<boolean> {
+/* An email through ServiceM8's own email (Messaging API), filed in the job's diary: the note to Raf about a new
+   brief, and the thank-you to the customer. Best effort: if it fails, the brief is still in ServiceM8 as a Quote job
+   and on the Job Kit's Today. With replyTo, the customer's reply goes to Raf's inbox; if ServiceM8 turns that field
+   down (400), it is sent again without it. */
+export async function sendEmail(e: { to: string; subject: string; text: string; jobUuid: string; replyTo?: string }): Promise<boolean> {
   const root = base().replace(/\/api_1\.0$/, '');
-  try {
-    const res = await fetch(`${root}/platform_service_email`, {
+  const go = (withReply: boolean) =>
+    fetch(`${root}/platform_service_email`, {
       method: 'POST',
       headers: { 'X-API-Key': process.env.SERVICEM8_API_KEY ?? '', Accept: 'application/json', 'Content-Type': 'application/json' },
-      body: asciiJson({ to, subject: tidy(subject), textBody: tidy(text), regardingJobUUID: jobUuid }),
+      body: asciiJson({ to: e.to, subject: tidy(e.subject), textBody: tidy(e.text), regardingJobUUID: e.jobUuid, ...(withReply && e.replyTo ? { replyTo: e.replyTo } : {}) }),
       cache: 'no-store',
       signal: AbortSignal.timeout(15_000),
     });
+  try {
+    let res = await go(true);
+    if (res.status === 400 && e.replyTo) res = await go(false);
     return res.ok;
   } catch {
     return false;
   }
 }
+
+export const emailRaf = (to: string, subject: string, text: string, jobUuid: string) => sendEmail({ to, subject, text, jobUuid });

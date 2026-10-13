@@ -1,11 +1,16 @@
-import { createEnquiry, emailRaf, sm8SetUp, Sm8Error } from '@/lib/servicem8';
+import { createEnquiry, sendEmail, sm8SetUp, Sm8Error } from '@/lib/servicem8';
 import { parseBrief, stripInvisible } from '@/app/job-kit/brief-paste';
 import { makeToken } from '@/lib/brief-token';
 import { EMAIL } from '@/lib/site';
+import { matchItems } from '@/lib/design-library';
+import { closestDesigns } from '@/lib/design-match';
+import { customerEmail } from '@/lib/brief-email';
 
 /* "Send to Raf" on Plan your project: the customer's brief goes straight into ServiceM8 as a Quote job (client,
    billing contact, job with the address and the same description the Job Kit's paste tool makes, job contact),
-   and Raf gets an email about it through ServiceM8. The answer carries a token for adding the photos
+   and Raf gets an email about it through ServiceM8. A customer who gave an email address gets a thank-you with the
+   3 designs closest to their brief (src/lib/design-match.ts, the same three the Brief sent card shows), also
+   through ServiceM8 and filed in the job's diary. The answer carries a token for adding the photos
    (/api/brief/photo), one request each, then /api/brief/done.
    Public, so: a hidden field people never see (bots fill it in), a minimum time on the page, a few sends per
    address per 10 minutes, and short limits on every field. A bot gets an ordinary-looking answer and nothing is
@@ -17,6 +22,7 @@ const MIN_MS = 4000;
 const recent = new Map<string, number[]>(); // per server instance: a speed bump, not a wall
 
 const text = (v: unknown, max: number) => (typeof v === 'string' ? stripInvisible(v).trim().slice(0, max) : '');
+const list = (v: unknown) => (Array.isArray(v) ? v.slice(0, 12).map((x) => text(x, 120)).filter(Boolean) : []);
 
 function tooMany(ip: string) {
   const now = Date.now();
@@ -62,6 +68,9 @@ export async function POST(req: Request) {
   try {
     const job = await createEnquiry({ name, mobile: goodMobile ? mobile : '', email: goodEmail ? email : '', address, description });
     const what = description.split('\n')[0];
+    const ch = (body.choices ?? {}) as Record<string, unknown>;
+    const picks = closestDesigns(matchItems(), { what: list(ch.what), room: list(ch.room), uses: list(ch.uses), material: list(ch.material), liked: list(body.liked), address });
+    const pickLines = picks.picks.map((p) => `- ${p.title}, ${p.area}`);
     const lines = [
       `${name} sent a brief from rafcarpentry.com: ${what}`,
       '',
@@ -72,10 +81,20 @@ export async function POST(req: Request) {
       '',
       'It is a Quote job in ServiceM8 and on Today in the Job Kit.',
       '',
+      ...(pickLines.length
+        ? [goodEmail ? `They were emailed these designs, closest to their brief:` : 'No email given, so no automatic reply. The website showed them these designs:', ...pickLines, '']
+        : []),
       description,
     ].filter((l, i, a) => l !== '' || (a[i - 1] ?? '') !== '');
-    // Not awaited for long: the customer shouldn't wait on an email.
-    await Promise.race([emailRaf(EMAIL, `New brief from the website: ${name}`, lines.join('\n'), job.uuid), new Promise((r) => setTimeout(r, 4000))]);
+    // Both emails at once, waited on for at most 5 seconds: the customer shouldn't wait on email.
+    const thanks = customerEmail({ name, mobile: goodMobile ? mobile : '', picks });
+    await Promise.race([
+      Promise.all([
+        sendEmail({ to: EMAIL, subject: `New brief from the website: ${name}`, text: lines.join('\n'), jobUuid: job.uuid }),
+        goodEmail ? sendEmail({ to: email, subject: thanks.subject, text: thanks.text, jobUuid: job.uuid, replyTo: EMAIL }) : Promise.resolve(false),
+      ]),
+      new Promise((r) => setTimeout(r, 5000)),
+    ]);
     return Response.json({ ok: true, token: makeToken(job.uuid, photos), photos }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (e) {
     const code = e instanceof Sm8Error ? e.code : 'error';

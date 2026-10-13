@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
   /* The Job Kit asks which design requests have a page yet; that route reads content/designs at run time. */
   outputFileTracingIncludes: {
     "/api/job-kit/designs": ["./content/designs/*.json"],
+    /* Send to Raf matches the brief to the job models (src/lib/design-library.ts reads these at run time). */
+    "/api/brief": ["./content/projects/*.json", "./content/pages/*.json", "./content/designs/*.json"],
   },
 };
 

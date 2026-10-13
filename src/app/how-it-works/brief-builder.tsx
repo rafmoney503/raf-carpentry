@@ -10,6 +10,7 @@ import { removeSaved, savedUrl, useSaved } from '@/lib/saved';
 import { Heart } from '@/components/SaveButton';
 import WhatHappensNext, { type Direct } from './what-happens-next';
 import { shrinkPhoto } from '@/app/job-kit/media';
+import { closestDesigns, type MatchItem } from '@/lib/design-match';
 
 export type BriefOptions = {
   what: string[];
@@ -80,7 +81,19 @@ async function post(url: string, body: BodyInit, json = true): Promise<Response>
   return go();
 }
 
-export default function BriefBuilder({ options, jobs, designKinds = [], designTotal = 0 }: { options: BriefOptions; jobs: JobRef[]; designKinds?: KindCount[]; designTotal?: number }) {
+export default function BriefBuilder({
+  options,
+  jobs,
+  designKinds = [],
+  designTotal = 0,
+  designs = [],
+}: {
+  options: BriefOptions;
+  jobs: JobRef[];
+  designKinds?: KindCount[];
+  designTotal?: number;
+  designs?: MatchItem[];
+}) {
   // Came from "Get a quote" on a job page: that job goes at the top of the message.
   const job = useJobFromLink(jobs);
   // Jobs and 3D designs saved with the hearts (src/lib/saved.ts). The job from the link is already named, so it isn't listed twice.
@@ -156,6 +169,14 @@ export default function BriefBuilder({ options, jobs, designKinds = [], designTo
   const join = (list: string[]) => list.join(' + ');
 
   const addressText = [addr.line1, addr.area, addr.postcode].map((x) => x.trim()).filter(Boolean).join(', ');
+
+  // The designs closest to what they ticked (src/lib/design-match.ts): on the Brief sent card, and the server
+  // works out the same three for the thank-you email. Saved ones and the job they came from count, but aren't shown.
+  const likedHrefs = useMemo(() => [...liked.map((x) => x.href), ...(job ? [`/portfolio/${job.slug}`] : [])], [liked, job]);
+  const picks = useMemo(
+    () => (sent ? closestDesigns(designs, { what, room, uses, material, liked: likedHrefs, address: addressText }) : null),
+    [sent, designs, what, room, uses, material, likedHrefs, addressText],
+  );
 
   const message = useMemo(() => {
     const lines = [name.trim() ? `Hi Raf, this is ${name.trim()}. Here is my brief from your website.` : 'Hi Raf, here is my brief from your website.', ''];
@@ -244,7 +265,18 @@ export default function BriefBuilder({ options, jobs, designKinds = [], designTo
     try {
       const r = await post(
         '/api/brief',
-        JSON.stringify({ name, mobile, email, address: addressText, message, photos: photos.length, company: trap.current?.value ?? '', ms: Date.now() - openedAt.current }),
+        JSON.stringify({
+          name,
+          mobile,
+          email,
+          address: addressText,
+          message,
+          choices: { what, room, uses, material },
+          liked: likedHrefs,
+          photos: photos.length,
+          company: trap.current?.value ?? '',
+          ms: Date.now() - openedAt.current,
+        }),
       );
       const j = (await r.json().catch(() => ({}))) as { ok?: boolean; token?: string; error?: string };
       if (!r.ok || !j.ok) {
@@ -536,7 +568,7 @@ export default function BriefBuilder({ options, jobs, designKinds = [], designTo
           </div>
           {sent ? (
             <div ref={nextRef} className="mt-4 scroll-mt-24">
-              <WhatHappensNext how={sent} photoTips={options.photoTips} designTotal={designTotal} direct={direct} />
+              <WhatHappensNext how={sent} photoTips={options.photoTips} designTotal={designTotal} direct={direct} picks={picks} />
               <button type="button" onClick={() => setShowMsg((v) => !v)} aria-expanded={showMsg} className="mt-3 font-mono text-[12.5px] text-faint transition-colors hover:text-ink">
                 {showMsg ? 'Hide my message' : 'Show my message'}
               </button>

@@ -1,6 +1,7 @@
 import { getAllDesigns } from './designs';
 import { DESIGN_KINDS, kindsIn, kindWords, type DesignKind, type KindCount } from './design-kinds';
-import { getAllProjects, modelOf, type Model3DInfo, type Project } from './projects';
+import { getAllProjects, getProject, modelOf, type Model3DInfo, type Project } from './projects';
+import type { MatchItem } from './design-match';
 import { getService, jobMatches } from './services';
 
 /* Everything on the public Designs in 3D page (rafcarpentry.com/designs): every finished job with a 3D model,
@@ -70,4 +71,16 @@ export function in3DLink(p?: Project) {
   const k = p ? kindForJob(p) : undefined;
   if (k && k.count - 1 >= 2) return { href: `/designs/${k.slug}`, label: `See ${k.count - 1} more ${kindWords(k)} in 3D` };
   return { href: '/designs', label: `See all ${getLibraryItems().length} designs in 3D` };
+}
+
+/* What the brief's "Designs like yours" and the thank-you email match against (src/lib/design-match.ts): every
+   design on the Designs in 3D page with its kinds, its still, and the words a choice can match (title, type, tags,
+   summary), each word once, lower case. Small enough to send to the browser with the brief. */
+export function matchItems(): MatchItem[] {
+  return getLibraryItems().map((i) => {
+    const p = i.job ? getProject(i.job) : undefined;
+    const text = [i.title, p?.type, ...(p?.tags ?? []), p?.summary].filter(Boolean).join(' ').toLowerCase();
+    const words = [...new Set(text.match(/[a-z0-9]+/g) ?? [])].join(' ');
+    return { slug: i.job ?? i.id, title: i.title, area: i.area, poster: i.model.poster.src, kinds: i.kinds, words };
+  });
 }

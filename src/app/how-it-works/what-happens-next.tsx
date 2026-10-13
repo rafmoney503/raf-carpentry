@@ -1,11 +1,15 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import SocialIcon from '@/components/SocialIcon';
 import { whatsappUrl } from '@/lib/site';
+import type { Picks } from '@/lib/design-match';
 
 /* Shown in the brief once the customer presses Send to Raf, Send on WhatsApp, Email it or Copy text: the three
    steps that follow, in the site's own promises only (a reply within 24 hours, a free visit and quote, a 3D drawing
    to sign off before anything is cut), and what to do while they wait (photos of the space). After Send to Raf
-   it says the brief has arrived, with how many photos, and offers WhatsApp for any photos that didn't make it. */
+   it says the brief has arrived, with how many photos, and offers WhatsApp for any photos that didn't make it.
+   Under the steps: "Designs like yours, in 3D", the closest job models to what they ticked (src/lib/design-match.ts),
+   each opening in 3D in a new tab; the same three go in the thank-you email after Send to Raf. */
 
 type How = 'whatsapp' | 'email' | 'copy' | 'direct';
 export type Direct = { photosSent: number; photosTotal: number; mobile: string; email: string; name: string };
@@ -30,7 +34,19 @@ const PHOTOS: Record<Exclude<How, 'direct'>, string> = {
 
 const plural = (n: number, one: string) => `${n} ${one}${n === 1 ? '' : 's'}`;
 
-export default function WhatHappensNext({ how, photoTips, designTotal, direct }: { how: How; photoTips: string[]; designTotal: number; direct?: Direct | null }) {
+export default function WhatHappensNext({
+  how,
+  photoTips,
+  designTotal,
+  direct,
+  picks,
+}: {
+  how: How;
+  photoTips: string[];
+  designTotal: number;
+  direct?: Direct | null;
+  picks?: Picks | null;
+}) {
   const d = how === 'direct' ? direct : null;
   const missing = d ? d.photosTotal - d.photosSent : 0;
   const lead = d
@@ -104,7 +120,32 @@ export default function WhatHappensNext({ how, photoTips, designTotal, direct }:
           </ul>
         </div>
       ) : null}
-      {designTotal ? (
+      {picks?.picks.length ? (
+        <div className="mt-4 border-t border-line pt-4">
+          <p className="text-[16px] font-[620] text-ink">{picks.recent ? 'Recent designs in 3D' : 'Designs like yours, in 3D'}</p>
+          <p className="mt-0.5 text-[14px] leading-snug text-muted">Turn them round and open them up while you wait.</p>
+          <ul className="mt-3 grid gap-2.5">
+            {picks.picks.map((p) => (
+              <li key={p.slug}>
+                <a href={p.href} target="_blank" rel="noopener" className="group flex items-center gap-3">
+                  <span className="relative h-14 w-[74px] flex-none overflow-hidden rounded-[2px] border border-line bg-white">
+                    <Image src={p.poster} alt="" fill sizes="74px" className="object-contain" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="line-clamp-2 block text-[15px] font-[620] leading-snug text-ink group-hover:text-accent">{p.title}</span>
+                    <span className="block font-mono text-[12px] text-faint">{p.area}</span>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          {picks.more ? (
+            <a href={picks.more.href} target="_blank" rel="noopener" className="link-more mt-3 text-[15px]">
+              {picks.more.label} <span aria-hidden="true">→</span>
+            </a>
+          ) : null}
+        </div>
+      ) : designTotal ? (
         <p className="mt-4">
           <Link href="/designs" className="link-more text-[15px]">
             Look at {designTotal} designs in 3D meanwhile <span aria-hidden="true">→</span>
