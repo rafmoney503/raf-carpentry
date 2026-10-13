@@ -10,7 +10,9 @@ import { customerEmail } from '@/lib/brief-email';
    billing contact, job with the address and the same description the Job Kit's paste tool makes, job contact),
    and Raf gets an email about it through ServiceM8. A customer who gave an email address gets a thank-you with the
    3 designs closest to their brief (src/lib/design-match.ts, the same three the Brief sent card shows), also
-   through ServiceM8 and filed in the job's diary. The answer carries a token for adding the photos
+   through ServiceM8 and filed in the job's diary; their reply comes back to the job in ServiceM8 (two-way email),
+   where the Job Kit's Emails on the job shows it. Raf's copy has replyTo the customer, so replying to it from his
+   inbox reaches them (outside ServiceM8, so the email itself says to use the Job Kit). The answer carries a token for adding the photos
    (/api/brief/photo), one request each, then /api/brief/done.
    Public, so: a hidden field people never see (bots fill it in), a minimum time on the page, a few sends per
    address per 10 minutes, and short limits on every field. A bot gets an ordinary-looking answer and nothing is
@@ -80,6 +82,7 @@ export async function POST(req: Request) {
       photos ? `Photos: ${photos} on the way, on the job in ServiceM8.` : 'No photos yet.',
       '',
       'It is a Quote job in ServiceM8 and on Today in the Job Kit.',
+      goodEmail ? 'To email them, use Emails on the job in the Job Kit, so the conversation stays on the job.' : '',
       '',
       ...(pickLines.length
         ? [goodEmail ? `They were emailed these designs, closest to their brief:` : 'No email given, so no automatic reply. The website showed them these designs:', ...pickLines, '']
@@ -90,8 +93,9 @@ export async function POST(req: Request) {
     const thanks = customerEmail({ name, mobile: goodMobile ? mobile : '', picks });
     await Promise.race([
       Promise.all([
-        sendEmail({ to: EMAIL, subject: `New brief from the website: ${name}`, text: lines.join('\n'), jobUuid: job.uuid }),
-        goodEmail ? sendEmail({ to: email, subject: thanks.subject, text: thanks.text, jobUuid: job.uuid, replyTo: EMAIL }) : Promise.resolve(false),
+        // Replying to Raf's copy reaches the customer; the customer's reply to theirs comes back to the job in ServiceM8.
+        sendEmail({ to: EMAIL, subject: `New brief from the website: ${name}`, text: lines.join('\n'), jobUuid: job.uuid, replyTo: goodEmail ? email : undefined }),
+        goodEmail ? sendEmail({ to: email, subject: thanks.subject, text: thanks.text, jobUuid: job.uuid }) : Promise.resolve(false),
       ]),
       new Promise((r) => setTimeout(r, 5000)),
     ]);

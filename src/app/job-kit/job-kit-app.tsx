@@ -626,6 +626,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               onBook={(start, end, staff) => book(cur.uuid, start, end, staff)}
               onMove={moveBooking}
               onCancel={cancelBooking}
+              replyAt={sm8.replies?.[cur.uuid] ?? undefined}
             />
           ) : (
             <p className="pt-16 text-center font-mono text-[14px] text-faint">Getting the job from ServiceM8…</p>

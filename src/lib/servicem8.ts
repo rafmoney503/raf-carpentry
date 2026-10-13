@@ -440,8 +440,9 @@ export async function touchJob(uuid: string) {
 
 /* An email through ServiceM8's own email (Messaging API), filed in the job's diary: the note to Raf about a new
    brief, and the thank-you to the customer. Best effort: if it fails, the brief is still in ServiceM8 as a Quote job
-   and on the Job Kit's Today. With replyTo, the customer's reply goes to Raf's inbox; if ServiceM8 turns that field
-   down (400), it is sent again without it. */
+   and on the Job Kit's Today. Without replyTo, a reply goes back to the job in ServiceM8 (two-way email); with it,
+   to that address; if ServiceM8 turns that field down (400), it is sent again without it. Raf's own emails to a
+   customer go through sendJobEmail in src/lib/servicem8-mail.ts, which reports failures. */
 export async function sendEmail(e: { to: string; subject: string; text: string; jobUuid: string; replyTo?: string }): Promise<boolean> {
   const root = base().replace(/\/api_1\.0$/, '');
   const go = (withReply: boolean) =>
@@ -462,3 +463,7 @@ export async function sendEmail(e: { to: string; subject: string; text: string; 
 }
 
 export const emailRaf = (to: string, subject: string, text: string, jobUuid: string) => sendEmail({ to, subject, text, jobUuid });
+
+/* For the job emails (src/lib/servicem8-mail.ts). */
+export { base as sm8Base, call as sm8Call, rows as sm8Rows, list as sm8List, str as sm8Str, when as sm8When, asciiJson, statusError };
+export type { Row as Sm8Row };

@@ -8,6 +8,10 @@ import { field, label, Missing, TalkBox } from './parts';
 import type { DesignsReady } from './designs';
 import { designState } from './designs';
 import type { Job } from './store';
+import { clock, post, problemText } from './sm8-post';
+import { EmailBox } from './mail';
+
+export { problemText };
 
 /* Current jobs: Raf's customers and jobs from ServiceM8 (where he quotes and invoices), read and moved on from
    the Job Kit through /api/job-kit/sm8 behind the PIN. The last list is kept on the phone (this phone only) so
@@ -17,8 +21,11 @@ import type { Job } from './store';
 export type { Booking, CurrentJob, Staff };
 /* bookings: ServiceM8's schedule from yesterday on (null: ServiceM8 didn't send it this time; missing in a list
    kept from before the diary existed). */
-export type Sm8 = { jobs: CurrentJob[]; at: number; bookings?: Booking[] | null; staff?: Staff[]; error?: string; detail?: string };
-export type Marks = Record<string, { quoteSentAt?: number; hidden?: boolean }>;
+/* replies: job uuid -> the customer's newest email in the last 14 days (null: ServiceM8 won't let the account read
+   emails; missing in a list kept from before). */
+export type Sm8 = { jobs: CurrentJob[]; at: number; bookings?: Booking[] | null; staff?: Staff[]; replies?: Record<string, string> | null; error?: string; detail?: string };
+/* mailSeen: the newest of their emails Raf has seen in the job's Emails (London time). */
+export type Marks = Record<string, { quoteSentAt?: number; hidden?: boolean; mailSeen?: string }>;
 
 const LIST_KEY = 'raf_jobkit_sm8';
 const MARKS_KEY = 'raf_jobkit_sm8_marks';
@@ -46,27 +53,21 @@ export const savedSm8 = (): Sm8 => read<Sm8>(LIST_KEY, { jobs: [], at: 0 });
 export const readMarks = (): Marks => read<Marks>(MARKS_KEY, {});
 export const saveMarks = (m: Marks) => write(MARKS_KEY, m);
 
-async function post<T>(pin: string, body: Record<string, unknown>): Promise<{ ok: true; data: T } | { ok: false; error: string; detail?: string }> {
-  if (!pin) return { ok: false, error: 'no-pin' };
-  try {
-    const res = await fetch('/api/job-kit/sm8', { method: 'POST', headers: { 'x-job-kit-pin': pin, 'content-type': 'application/json' }, body: JSON.stringify(body), cache: 'no-store' });
-    const data = (await res.json().catch(() => ({}))) as T & { error?: string; detail?: string };
-    if (!res.ok) return { ok: false, error: data.error || 'sm8-error', detail: data.detail };
-    return { ok: true, data };
-  } catch {
-    return { ok: false, error: 'offline' };
-  }
-}
-
 /* The list, kept on the phone when it arrives. On failure the last list stays, with the reason. */
 export async function fetchSm8(pin: string, before: Sm8): Promise<Sm8> {
-  const r = await post<{ jobs: CurrentJob[]; at: number; bookings: Booking[] | null; staff: Staff[] }>(pin, { action: 'list' });
+  const r = await post<{ jobs: CurrentJob[]; at: number; bookings: Booking[] | null; staff: Staff[]; replies?: Record<string, string> | null }>(pin, { action: 'list' });
   if (!r.ok) return { ...before, error: r.error, detail: r.detail };
-  const next: Sm8 = { jobs: r.data.jobs, at: r.data.at, bookings: r.data.bookings ?? null, staff: r.data.staff ?? [] };
+  const next: Sm8 = { jobs: r.data.jobs, at: r.data.at, bookings: r.data.bookings ?? null, staff: r.data.staff ?? [], replies: r.data.replies ?? null };
   write(LIST_KEY, next);
   return next;
 }
-export const keepSm8 = (s: Sm8) => write(LIST_KEY, { jobs: s.jobs, at: s.at, bookings: s.bookings, staff: s.staff });
+export const keepSm8 = (s: Sm8) => write(LIST_KEY, { jobs: s.jobs, at: s.at, bookings: s.bookings, staff: s.staff, replies: s.replies });
+
+/* An email from the customer that Raf hasn't opened the job's Emails to see yet. */
+export const newMail = (uuid: string, replies: Sm8['replies'], m: Marks) => {
+  const at = replies?.[uuid];
+  return Boolean(at && at > (m[uuid]?.mailSeen ?? ''));
+};
 
 export type Enquiry = { name: string; mobile: string; email: string; address: string; description: string };
 export const sendEnquiry = (pin: string, e: Enquiry) => post<{ job: CurrentJob }>(pin, { action: 'enquiry', ...e });
@@ -75,40 +76,10 @@ export const sendBooking = (pin: string, b: { job: string; start: string; end: s
 export const sendMove = (pin: string, uuid: string, start: string, end: string) => post<{ ok: true }>(pin, { action: 'move', uuid, start, end });
 export const sendCancel = (pin: string, uuid: string) => post<{ ok: true }>(pin, { action: 'cancel', uuid });
 
-export function problemText(error?: string, detail?: string, at?: number) {
-  switch (error) {
-    case undefined:
-      return '';
-    case 'sm8-not-set-up':
-      return 'ServiceM8 isn’t connected yet: SERVICEM8_API_KEY is missing in Vercel.';
-    case 'sm8-key':
-      return 'ServiceM8 turned the key down. Make a new key in ServiceM8 (Settings, API Keys, Full access) and replace SERVICEM8_API_KEY in Vercel.';
-    case 'sm8-forbidden':
-      return 'ServiceM8 says this key isn’t allowed to do that. Check the key has Full access and the plan is Starter or above.';
-    case 'sm8-busy':
-      return 'ServiceM8 is busy. Try again in a minute.';
-    case 'no-pin':
-      return 'Add your PIN in Settings first.';
-    case 'wrong-pin':
-      return 'Wrong PIN: check it in Settings.';
-    case 'missing':
-      return 'Type the name and what they want.';
-    case 'bad-time':
-      return 'The end has to be after the start.';
-    case 'offline':
-    case 'sm8-down':
-      return `No signal, or ServiceM8 isn’t answering.${at ? ` Showing the list from ${clock(at)}.` : ''}`;
-    default:
-      if (/character set/i.test(detail ?? '')) return 'ServiceM8 wouldn’t take some of the characters in it (an emoji or an unusual symbol). Take them out and try again.';
-      return `ServiceM8 sent back an error${detail ? `: ${detail}` : '.'}`;
-  }
-}
-
 /* ---------- reading a job ---------- */
 
 const parse = (s: string | null) => (s ? Date.parse(s) : NaN);
 const DAY = 864e5;
-const clock = (t: number) => new Date(t).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 const day = (t: number) => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 const ago = (t: number) => {
   const d = Math.floor((Date.now() - t) / DAY);
@@ -549,9 +520,26 @@ function BookingsBox({
 
 /* ---------- the list ---------- */
 
-function Card({ j, marks, kit, designs, done, onOpen }: { j: CurrentJob; marks: Marks; kit: Job[]; designs: DesignsReady; done: Record<string, { slug: string }>; onOpen: (uuid: string) => void }) {
+function Card({
+  j,
+  marks,
+  kit,
+  designs,
+  done,
+  replies,
+  onOpen,
+}: {
+  j: CurrentJob;
+  marks: Marks;
+  kit: Job[];
+  designs: DesignsReady;
+  done: Record<string, { slug: string }>;
+  replies: Sm8['replies'];
+  onOpen: (uuid: string) => void;
+}) {
   const [text, mark] = stageText(j, marks);
   const { chips } = linked(j, kit, designs, done);
+  const fresh = newMail(j.uuid, replies, marks);
   const money = moneyLine(j);
   const owed = j.status === 'Completed' && (moneyOf(j).left ?? 0) > 0;
   return (
@@ -568,8 +556,9 @@ function Card({ j, marks, kit, designs, done, onOpen }: { j: CurrentJob; marks: 
           {text}
         </span>
         {money ? <span className={`mt-1 block font-mono text-[12.5px] ${owed ? 'font-semibold text-ink' : 'text-faint'}`}>{money}</span> : null}
-        {chips.length ? (
+        {chips.length || fresh ? (
           <span className="mt-1.5 flex flex-wrap gap-1.5">
+            {fresh ? <span className="rounded-sm border border-accent bg-accent px-1.5 py-0.5 font-mono text-[11.5px] text-on-accent">New email</span> : null}
             {chips.map((c) => (
               <span key={c} className="rounded-sm border border-line px-1.5 py-0.5 font-mono text-[11.5px] text-muted">
                 {c}
@@ -642,7 +631,7 @@ export function CurrentList({
             </h2>
             <ul className="mt-2.5 grid gap-3">
               {js.map((j) => (
-                <Card key={j.uuid} j={j} marks={marks} kit={kit} designs={designs} done={done} onOpen={onOpen} />
+                <Card key={j.uuid} j={j} marks={marks} kit={kit} designs={designs} done={done} replies={sm8.replies} onOpen={onOpen} />
               ))}
             </ul>
           </section>
@@ -663,7 +652,7 @@ export function CurrentList({
               <p className="text-[14px] leading-relaxed text-muted">Kept here in case they come back, then they drop off the Job Kit by themselves. ServiceM8 keeps them under Unsuccessful.</p>
               <ul className="mt-3 grid gap-3 opacity-80">
                 {lost.map((j) => (
-                  <Card key={j.uuid} j={j} marks={marks} kit={kit} designs={designs} done={done} onOpen={onOpen} />
+                  <Card key={j.uuid} j={j} marks={marks} kit={kit} designs={designs} done={done} replies={sm8.replies} onOpen={onOpen} />
                 ))}
               </ul>
             </>
@@ -700,6 +689,7 @@ export function CurrentView({
   onBook,
   onMove,
   onCancel,
+  replyAt,
 }: {
   job: CurrentJob;
   marks: Marks;
@@ -718,6 +708,7 @@ export function CurrentView({
   onBook: (start: string, end: string, staff?: string) => Promise<string>;
   onMove: (uuid: string, start: string, end: string) => Promise<string>;
   onCancel: (uuid: string) => Promise<string>;
+  replyAt?: string; // their newest email, from the list
 }) {
   const st = stage(job, marks);
   const [text] = stageText(job, marks);
@@ -762,11 +753,16 @@ export function CurrentView({
             Call
           </a>
         ) : null}
-        {job.email ? (
-          <a href={`mailto:${job.email}`} className="btn btn-ghost btn-sm">
-            Email
-          </a>
-        ) : null}
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm"
+          onClick={() => {
+            // Down to the job's emails (a button, not a #link: the app keeps its screens in the history).
+            document.getElementById('emails')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+        >
+          Email{newMail(job.uuid, replyAt ? { [job.uuid]: replyAt } : null, marks) ? ' (new)' : ''}
+        </button>
       </div>
       {!contact && !job.email ? <p className="mt-2 text-[14px] text-faint">No phone or email on this job in ServiceM8.</p> : null}
 
@@ -847,6 +843,15 @@ export function CurrentView({
       </section>
 
       <BookingsBox job={job} bookings={bookings} staff={staff} loaded={bookingsLoaded} onBook={onBook} onMove={onMove} onCancel={onCancel} />
+
+      <EmailBox
+        job={job}
+        what={job.description ? whatOf(job.description) : ''}
+        replyAt={replyAt}
+        onSeen={(at) => {
+          if (at > (marks[job.uuid]?.mailSeen ?? '')) onMark({ mailSeen: at });
+        }}
+      />
 
       <MoneyBox job={job} />
 
@@ -1117,6 +1122,10 @@ export function todayLines({
   const tomorrow = bookingsOn(all, addDays(today, 1));
   if (tomorrow.length === 1) lines.push({ text: `Tomorrow ${hm(tomorrow[0].start)}, ${who(tomorrow[0])}`, go: 'sm8', id: tomorrow[0].jobUuid });
   else if (tomorrow.length) lines.push({ text: `Tomorrow: ${tomorrow.length} bookings, first at ${hm(tomorrow[0].start)}`, go: 'diary' });
+  // Emails from customers not seen yet in the job's Emails.
+  const mailFrom = sm8.jobs.filter((j) => newMail(j.uuid, sm8.replies, marks) && !marks[j.uuid]?.hidden).sort((a, b) => (sm8.replies![b.uuid] ?? '').localeCompare(sm8.replies![a.uuid] ?? ''));
+  for (const j of mailFrom.slice(0, 3)) lines.push({ text: `Email from ${j.name}`, go: 'sm8', id: j.uuid, urgent: true, icon: 'mail' });
+  if (mailFrom.length > 3) lines.push({ text: `${n(mailFrom.length - 3, 'more email', 'more emails')} from customers`, go: 'current', urgent: true, icon: 'mail' });
   const list = shown(sm8, marks);
   const stages = list.map((j) => stage(j, marks));
   const fresh = stages.filter((s) => s === 'new').length;
