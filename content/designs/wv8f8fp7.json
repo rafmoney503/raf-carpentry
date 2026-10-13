@@ -1,35 +1,48 @@
 {
   "code": "wv8f8fp7",
   "request": "design-2026-10-door-tuen-dkn5",
-  "updatedFor": "2026-10-12T17:03:11.663Z",
+  "updatedFor": "2026-10-12T21:28:49.019Z",
   "title": "Four folding doors in the opening",
   "area": "Tuen",
-  "made": "2026-10-12",
+  "made": "2026-10-13",
   "options": [
     {
       "name": "The design",
-      "text": "Four pine folding doors in two pairs, hung from a track under the head of a new timber lining. Each pair folds back to its own side, so the whole opening clears. Architrave goes round both sides of the opening.",
+      "text": "Four pine folding doors in two pairs, hung from a track at the room side of a new timber lining. The end door of each pair is hung on parliament hinges, so the folded pair swings right out of the opening and lies almost flat on the wall, past the architrave and skirting. Architrave goes round both sides of the opening.",
       "model": {
-        "src": "/designs/wv8f8fp7/a-abi0cf.glb",
+        "src": "/designs/wv8f8fp7/a-ymc4mn.glb",
         "poster": {
-          "src": "/designs/wv8f8fp7/a-abi0cf.jpg",
+          "src": "/designs/wv8f8fp7/a-ymc4mn.jpg",
           "w": 1600,
           "h": 1200,
-          "alt": "3D model of four pine folding doors in two pairs filling a wide opening between two rooms"
+          "alt": "3D model of four pine folding doors in two pairs in a wide opening, folding back flat against the wall"
         },
         "shape": "tall"
       },
       "sizes": [
-        { "label": "Opening width", "value": "1610 mm" },
-        { "label": "Opening height", "value": "2270 mm" },
-        { "label": "Wall thickness", "value": "140 mm" },
-        { "label": "Each door", "value": "about 390 x 2210 mm" }
+        {
+          "label": "Opening width",
+          "value": "1610 mm"
+        },
+        {
+          "label": "Opening height",
+          "value": "2270 mm"
+        },
+        {
+          "label": "Wall thickness",
+          "value": "140 mm"
+        },
+        {
+          "label": "Each door",
+          "value": "about 390 x 2210 mm"
+        }
       ]
     }
   ],
   "notes": [
     "The opening width, height and wall thickness are measured.",
-    "The lining, the gaps round the doors, the door sizes and the architrave are standard sizes to start from.",
+    "The lining, the gaps round the doors, the door sizes, the architrave and the parliament hinges are standard sizes to start from.",
+    "The parliament hinges stand a little proud of the lining so the folded doors clear the architrave and skirting and sit almost flat on the wall.",
     "The skirting and picture rail are made good on both sides of the wall where they meet the new opening.",
     "Colours on screen are a guide."
   ]
