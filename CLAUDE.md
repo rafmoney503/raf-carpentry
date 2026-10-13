@@ -135,7 +135,7 @@ Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrob
 - [ ] Add SketchUp 3D model screenshots alongside real build photos
 - [x] SEO: meta tags, Open Graph images for social sharing (3 Oct 2026)
 - [x] Visitor stats: Vercel Web Analytics added (3 Oct 2026; Raf to enable it in Vercel)
-- [ ] Google Search Console: add the site and submit /sitemap.xml (Raf, steps given 13 Oct 2026; area pages ready for it)
+- [x] Google Search Console (13 Oct 2026): Raf added rafcarpentry.com as a Domain property (verified owner) and submitted https://www.rafcarpentry.com/sitemap.xml (a Domain property needs the full address; 'sitemap.xml' alone gives 'Invalid sitemap address'). Next: Request indexing for /areas and the four area pages; check Performance after about 3 weeks.
 - [ ] Add blog images for cut-list and outdoor-gym posts
 - [ ] About page: add real photo of Raf
 - [x] Cabinetos page: app screenshots on computer, tablet and phone (9 Oct 2026)
