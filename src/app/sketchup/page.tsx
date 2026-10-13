@@ -84,7 +84,7 @@ export default function SketchUpPage() {
       </Container>
 
       {models.length > 0 ? (
-        <section id="in-3d" className="scroll-mt-24 border-t border-line">
+        <section id="in-3d" className="border-t border-line">
           <Container className="py-20 md:py-28">
             <p className="kicker">In 3D</p>
             <SectionHeading className="mt-3">{d.models3dTitle ?? 'Real jobs, in 3D'}</SectionHeading>
@@ -101,7 +101,7 @@ export default function SketchUpPage() {
         </section>
       ) : null}
 
-      <section className="border-y border-line bg-raised py-20 md:py-28">
+      <section id="benefits" className="border-y border-line bg-raised py-20 md:py-28">
         <Container>
           <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:gap-6">
             <SectionHeading className="md:col-span-5">
@@ -120,6 +120,7 @@ export default function SketchUpPage() {
         </Container>
       </section>
 
+      <div id="compare" />
       <Container className="py-20 md:py-28">
         <SectionHeading>
           {d.comparisonTitle}
@@ -139,7 +140,7 @@ export default function SketchUpPage() {
       </Container>
 
       {plans.length > 0 ? (
-        <section id="plans" className="scroll-mt-24 border-t border-line">
+        <section id="plans" className="border-t border-line">
           <Container className="py-20 md:py-28">
             <div className="grid grid-cols-1 items-end gap-8 md:grid-cols-12 md:gap-6">
               <div className="md:col-span-7">
@@ -170,7 +171,7 @@ export default function SketchUpPage() {
         </section>
       ) : null}
 
-      <section id="learn" className="scroll-mt-24 border-t border-line bg-raised">
+      <section id="learn" className="border-t border-line bg-raised">
         <Container className="grid grid-cols-1 gap-12 py-20 md:grid-cols-12 md:gap-6 md:py-28">
           <div className="md:col-span-5">
             <p className="kicker">{d.learnKicker}</p>
@@ -193,7 +194,7 @@ export default function SketchUpPage() {
         </Container>
       </section>
 
-      <section className="border-t border-line">
+      <section id="get-a-design" className="border-t border-line">
         <Container className="grid grid-cols-1 items-end gap-8 py-20 md:grid-cols-12 md:gap-6 md:py-24">
           <div className="md:col-span-8">
             <SectionHeading>{d.ctaTitle}</SectionHeading>

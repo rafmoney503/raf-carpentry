@@ -1,7 +1,7 @@
 import { readPageJson } from '@/lib/pages';
 import { PageHeader } from '@/components/ui';
-import { formatMonth, getAllProjects, getKit } from '@/lib/projects';
-import { matches } from '@/lib/search';
+import { formatMonth, getAllProjects } from '@/lib/projects';
+import { jobSearchText, portfolioChips } from '@/lib/portfolio-chips';
 import PortfolioBrowser, { type ArchiveCard, type JobCard } from './portfolio-browser';
 import './project.css';
 import { pageMeta } from '@/lib/seo';
@@ -25,8 +25,6 @@ export default function PortfolioPage() {
 
   const jobs: JobCard[] = projects.map((p) => {
     const month = formatMonth(p.finished);
-    const kit = getKit(p.slug);
-    const kitWords = kit ? [...kit.materials, ...kit.tools].map((k) => [k.name, k.brand, k.model].filter(Boolean).join(' ')) : [];
     return {
       slug: p.slug,
       title: p.title,
@@ -37,15 +35,12 @@ export default function PortfolioPage() {
       tags: p.tags ?? [],
       meta: [p.steps.length ? `${p.steps.length} build steps` : '', `${p.gallery.length + 1} photos`, p.video ? 'video' : '', p.compare ? 'before and after' : ''].filter(Boolean).join(', '),
       // Everything a visitor might type: title, area, tags, facts, words from the write-up.
-      searchText: [p.title, p.area, month, p.type, ...(p.tags ?? []), p.summary, p.intro, ...p.facts.map((f) => f.value), ...p.steps.map((s) => s.title), ...kitWords].join(' '),
+      searchText: jobSearchText(p),
     };
   });
 
-  // Quick-filter buttons, in this order, shown only when at least one job matches them.
-  const archiveText = d.projects.map((a) => `${a.title} ${a.description} ${a.category}`);
-  const chips = ['Wardrobes', 'IKEA PAX', 'Window seats', 'Alcoves', 'Bookshelves', 'Desks', 'Storage', 'Wall panelling', 'Birch ply', 'MDF', 'Loft', 'Outdoor'].filter(
-    (c) => jobs.some((j) => matches(j.searchText, c)) || archiveText.some((t) => matches(t, c)),
-  );
+  // Quick-filter buttons (src/lib/portfolio-chips.ts, shared with the menu's My Work panel).
+  const chips = portfolioChips(projects);
 
   return (
     <>

@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { getAllPosts } from '@/lib/blog';
 import { Container, MountedImage, PageHeader } from '@/components/ui';
 import { pageMeta } from '@/lib/seo';
+import { isGuide } from '@/lib/menu-panels';
+import type { Post } from '@/lib/blog';
 
 function imageExists(src?: string) {
   if (!src || !src.startsWith('/')) return false;
@@ -23,6 +25,11 @@ export const metadata = pageMeta({
 
 export default function Blog() {
   const posts = getAllPosts();
+  // Two groups, each with an id the menu's Blog panel jumps to: the jobs, then how I use SketchUp and CabinetOS.
+  const groups: { id: string; title: string; posts: Post[] }[] = [
+    { id: 'jobs', title: 'Jobs, step by step', posts: posts.filter((p) => !isGuide(p.category)) },
+    { id: 'guides', title: 'SketchUp and CabinetOS', posts: posts.filter((p) => isGuide(p.category)) },
+  ];
 
   return (
     <>
@@ -31,8 +38,15 @@ export default function Blog() {
         {posts.length === 0 ? (
           <p className="border-t border-line pt-8 text-muted">The first posts are on their way.</p>
         ) : (
-          <div className="grid grid-cols-1 gap-x-6 gap-y-14 md:grid-cols-2 lg:grid-cols-3">
-            {posts.map((post) => (
+          groups
+            .filter((g) => g.posts.length)
+            .map((g, gi) => (
+          <section key={g.id} id={g.id} aria-labelledby={`${g.id}-title`} className={`${gi ? 'mt-20 border-t border-line pt-12' : ''}`}>
+            <h2 id={`${g.id}-title`} className="flex items-baseline gap-3 font-display text-[26px] font-[650] tracking-[-0.02em] md:text-[30px]">
+              {g.title} <span className="font-mono text-[14px] font-normal text-faint">{g.posts.length}</span>
+            </h2>
+          <div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-14 md:grid-cols-2 lg:grid-cols-3">
+            {g.posts.map((post) => (
               <Link key={post.slug} href={`/blog/${post.slug}`} className="group block">
                 {imageExists(post.image) ? (
                   <MountedImage src={post.image as string} alt="" aspect="aspect-[16/10]" sizes="(max-width: 768px) 100vw, 400px" className="group-hover:border-accent" />
@@ -53,6 +67,8 @@ export default function Blog() {
               </Link>
             ))}
           </div>
+          </section>
+            ))
         )}
       </Container>
     </>

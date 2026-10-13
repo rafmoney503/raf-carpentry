@@ -144,7 +144,7 @@ export default function Cabinetos() {
         </Container>
       </section>
 
-      <section aria-labelledby={d.compareTitle || d.compareTitleAccent ? 'compare-title' : undefined} className="py-20 md:py-28">
+      <section id="compare" aria-labelledby={d.compareTitle || d.compareTitleAccent ? 'compare-title' : undefined} className="py-20 md:py-28">
         <Container>
           {d.compareKicker ? <p className="kicker mb-4">{d.compareKicker}</p> : null}
           {d.compareTitle || d.compareTitleAccent ? (
@@ -210,7 +210,7 @@ export default function Cabinetos() {
         </Container>
       </section>
 
-      <section className="border-t border-line">
+      <section id="try" className="border-t border-line">
         <Container className="grid grid-cols-1 items-end gap-8 py-20 md:grid-cols-12 md:gap-6 md:py-24">
           <div className="md:col-span-8">
             <SectionHeading>

@@ -4,8 +4,9 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import WhatsAppFloat from './WhatsAppFloat';
 import HowItWorksFloat from './HowItWorksFloat';
+import type { MenuPanel } from '@/lib/menu-panels';
 
-export default function LayoutShell({ children }: { children: React.ReactNode }) {
+export default function LayoutShell({ children, menu }: { children: React.ReactNode; menu?: Record<string, MenuPanel> }) {
   const pathname = usePathname();
   // The Instagram mini-site and Raf's Job Kit app stand alone: no menu, footer or floating buttons.
   const isMiniSite = pathname === '/ms' || pathname?.startsWith('/job-kit');
@@ -16,7 +17,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
 
   return (
     <>
-      <Navbar />
+      <Navbar menu={menu} />
       <main className="min-h-screen">{children}</main>
       <Footer />
       {/* Floating buttons: Plan your project (/how-it-works) bottom-left, WhatsApp bottom-right. None on the calculator

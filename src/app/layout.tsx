@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
 import LayoutShell from '@/components/LayoutShell';
+import { getMenuPanels } from '@/lib/menu-panels';
 import { Analytics } from '@vercel/analytics/next';
 
 // Fonts are self-hosted from src/fonts (SIL Open Font Licence), so builds never depend on Google Fonts.
@@ -39,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-GB" className={`${bricolage.variable} ${geist.variable} ${geistMono.variable}`}>
       <body>
-        <LayoutShell>{children}</LayoutShell>
+        <LayoutShell menu={getMenuPanels()}>{children}</LayoutShell>
         {/* Vercel Web Analytics: page views only, no cookies. Turn it on in Vercel > project > Analytics. */}
         <Analytics />
       </body>

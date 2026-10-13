@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { readPageJson } from '@/lib/pages';
 import { Container, PageHeader, SectionHeading } from '@/components/ui';
+import { toolsSectionId } from '@/lib/menu-panels';
 import { isAmazonLink } from '@/lib/affiliates';
 import Sketch from '@/app/how-it-works/sketches';
 
@@ -102,7 +103,7 @@ export default function ToolsPage() {
           </Link>
         </div>
         {d.categories.map((cat, ci) => (
-          <section key={ci} className="grid grid-cols-1 gap-8 border-t border-line py-12 md:grid-cols-12 md:gap-6 md:py-16">
+          <section key={ci} id={toolsSectionId(cat.name)} className="grid grid-cols-1 gap-8 border-t border-line py-12 md:grid-cols-12 md:gap-6 md:py-16">
             <SectionHeading className="md:col-span-4">{cat.name}</SectionHeading>
             <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2 md:col-span-8">
               {cat.tools.map((tool, ti) => {

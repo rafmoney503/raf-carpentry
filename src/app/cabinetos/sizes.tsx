@@ -73,7 +73,7 @@ export default function Sizes({ data }: { data: SizesData }) {
   ];
 
   return (
-    <section id="sizes" aria-labelledby="sizes-title" className="scroll-mt-20 border-t border-line bg-raised py-20 md:py-28">
+    <section id="sizes" aria-labelledby="sizes-title" className="border-t border-line bg-raised py-20 md:py-28">
       <Container>
         {data.kicker ? <p className="kicker mb-4">{data.kicker}</p> : null}
         <SectionHeading>

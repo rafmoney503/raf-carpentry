@@ -36,6 +36,8 @@ export default function About() {
 
   return (
     <>
+      {/* Section ids (story, different, follow) are what the menu's About panel jumps to. */}
+      <div id="story">
       <Container className="pb-16 pt-12 md:pb-24 md:pt-20">
         <div className="grid grid-cols-1 items-start gap-12 md:grid-cols-12 md:gap-6">
           <div className="md:col-span-7">
@@ -63,6 +65,8 @@ export default function About() {
         </div>
       </Container>
 
+      </div>
+
       <Container className="pb-20 md:pb-28">
         <div className="grid grid-cols-2 gap-x-5 gap-y-8 border-t border-line pt-10 md:grid-cols-4 md:gap-x-6">
           {d.stats.map((s, i) => (
@@ -74,7 +78,7 @@ export default function About() {
         </div>
       </Container>
 
-      <section className="border-y border-line bg-raised py-20 md:py-28">
+      <section id="different" className="border-y border-line bg-raised py-20 md:py-28">
         <Container>
           <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:gap-6">
             <SectionHeading className="md:col-span-5">What makes me different</SectionHeading>
@@ -95,7 +99,7 @@ export default function About() {
 
       {/* Social links, with the 3D R beside them (under them on a phone): square, up to 480 px */}
       <Container className="py-20 md:py-28">
-        <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-12 md:gap-6">
+        <div id="follow" className="grid grid-cols-1 items-center gap-12 md:grid-cols-12 md:gap-6">
           <div className="md:col-span-5">
             <SectionHeading>Follow the work</SectionHeading>
             <div className="mt-8 flex flex-wrap gap-3">
