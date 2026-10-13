@@ -32,6 +32,7 @@ import { Area, Chips, field, label, Missing, SectionView, TalkBox } from './part
 import { PostsList, PostView, postedEverywhere, type Pack } from './posts';
 import { DesignsList, DesignView, designState, fetchDesigns, NewDesign, savedLibrary, savedReady, type DesignsReady } from './designs';
 import { Library, type LibraryJob } from './library';
+import type { KindCount } from '@/lib/design-kinds';
 import type { LibraryDesign } from '@/lib/designs';
 import {
   CurrentList,
@@ -139,7 +140,7 @@ const STATE_TEXT: Record<SendState, string> = {
 /* Jobs already made into pages on the site: Job Kit id -> the page. */
 export type Done = Record<string, { slug: string; title: string }>;
 
-export default function JobKitApp({ done = {}, posts = [], models = [] }: { done?: Done; posts?: Pack[]; models?: LibraryJob[] }) {
+export default function JobKitApp({ done = {}, posts = [], models = [], kinds = [] }: { done?: Done; posts?: Pack[]; models?: LibraryJob[]; kinds?: KindCount[] }) {
   const [ready, setReady] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [items, setItems] = useState<Item[]>([]);
@@ -534,7 +535,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [] }: { done
             }}
           />
         ) : screen.name === 'library' ? (
-          <Library designs={library} models={models} hasPin={Boolean(pin)} to={sendTo ? { name: sendTo.name, first: sendTo.first, mobile: sendTo.mobile || sendTo.phone } : undefined} />
+          <Library designs={library} models={models} kinds={kinds} hasPin={Boolean(pin)} to={sendTo ? { name: sendTo.name, first: sendTo.first, mobile: sendTo.mobile || sendTo.phone } : undefined} />
         ) : screen.name === 'new-design' ? (
           <NewDesign
             key={screen.from ?? 'new'}

@@ -8,6 +8,7 @@ import { PHONE_DISPLAY, PHONE_HREF, QUOTE_HREF } from '@/lib/site';
 const links = [
   { href: '/services', label: 'Services' },
   { href: '/portfolio', label: 'My Work' },
+  { href: '/designs', label: '3D designs' },
   { href: '/sketchup', label: 'SketchUp' },
   { href: '/cabinetos', label: 'CabinetOS' },
   { href: '/blog', label: 'Blog' },
@@ -40,7 +41,7 @@ export default function Navbar() {
               key={l.href}
               href={l.href}
               aria-current={pathname === l.href || pathname.startsWith(l.href + '/') ? 'page' : undefined}
-              className="whitespace-nowrap rounded-sm px-3 py-2 text-[15px] text-muted transition-colors hover:text-ink aria-[current=page]:text-accent"
+              className="whitespace-nowrap rounded-sm px-2 py-2 text-[15px] text-muted transition-colors hover:text-ink aria-[current=page]:text-accent xl:px-3"
             >
               {l.label}
             </Link>

@@ -92,6 +92,11 @@ export default function SketchUpPage() {
             <div className="mt-10">
               <ModelGallery items={models} />
             </div>
+            <p className="mt-8">
+              <Link href="/designs" className="link-more">
+                Find one by type: wardrobes, alcoves, desks and more <span aria-hidden="true">→</span>
+              </Link>
+            </p>
           </Container>
         </section>
       ) : null}

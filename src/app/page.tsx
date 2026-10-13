@@ -6,6 +6,7 @@ import QuoteCta from '@/components/QuoteCta';
 import Reviews, { GoogleRating } from '@/components/Reviews';
 import { getReviews } from '@/lib/reviews';
 import { countModels, formatMonth, getAllProjects } from '@/lib/projects';
+import { libraryKinds } from '@/lib/design-library';
 import { QUOTE_HREF, whatsappText, whatsappUrl } from '@/lib/site';
 import SocialIcon from '@/components/SocialIcon';
 import { businessJsonLd, jsonLd, pageMeta } from '@/lib/seo';
@@ -111,6 +112,22 @@ export default function HomePage() {
             <Link className="btn btn-ghost" href="/portfolio">{d.secondaryCtaLabel}</Link>
           </div>
           <GoogleRating variant="inline" className="hero-rating anim d3" />
+          {/* The nudge: what are you planning? Each opens that kind on the Designs in 3D page. */}
+          <nav aria-label="See designs in 3D" className="hero-plan anim d3">
+            <p className="hero-plan-q">Planning something? See it in 3D first</p>
+            <div className="hero-plan-row">
+              {libraryKinds()
+                .slice(0, 5)
+                .map((k) => (
+                  <Link key={k.slug} href={`/designs/${k.slug}`} className="hero-plan-chip">
+                    {k.short}
+                  </Link>
+                ))}
+              <Link href="/designs" className="hero-plan-chip hero-plan-all">
+                All {countModels()} <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+          </nav>
         </div>
         <figure className="hero-visual anim d2">
           {hero ? (
@@ -231,8 +248,8 @@ export default function HomePage() {
               <Link className="link-more" href="/sketchup">
                 {d.processLinkLabel} <span aria-hidden="true">→</span>
               </Link>
-              <Link className="link-more" href="/sketchup#in-3d">
-                See all {countModels()} jobs in 3D <span aria-hidden="true">→</span>
+              <Link className="link-more" href="/designs">
+                See all {countModels()} designs in 3D <span aria-hidden="true">→</span>
               </Link>
             </div>
           </div>

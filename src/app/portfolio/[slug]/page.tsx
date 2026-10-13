@@ -8,8 +8,9 @@ import ProjectVideo from '@/components/project/ProjectVideo';
 import ProjectGallery from '@/components/project/ProjectGallery';
 import BuildPhotos from '@/components/project/BuildPhotos';
 import ToolsUsed from '@/components/ToolsUsed';
-import { countModels, formatMonth, getAllProjects, getKit, getProject, isPlanReady } from '@/lib/projects';
+import { formatMonth, getAllProjects, getKit, getProject, isPlanReady } from '@/lib/projects';
 import AllIn3DLink from '@/components/project/AllIn3DLink';
+import { in3DLink } from '@/lib/design-library';
 import PlanCard from '@/components/project/PlanCard';
 import ProjectKit from '@/components/project/ProjectKit';
 import PlanDrawings from '@/components/project/PlanDrawings';
@@ -119,7 +120,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
           <Container className="py-16 md:py-24">
             <SectionHeading>{p.plan.title}</SectionHeading>
             <p className="mt-4 max-w-[56ch] text-muted">{p.plan.text}</p>
-            <PlanDrawings plan={p.plan} title={p.title} modelCount={countModels()} />
+            <PlanDrawings plan={p.plan} title={p.title} allLink={in3DLink(p)} />
           </Container>
         </section>
       ) : null}
@@ -132,7 +133,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             <div className="mt-10">
               <Model3D src={p.model3d.src} poster={p.model3d.poster} label={p.model3d.poster.alt} shape={p.model3d.shape} skp={p.model3d.skp} />
             </div>
-            <AllIn3DLink count={countModels()} />
+            <AllIn3DLink {...in3DLink(p)} />
           </Container>
         </section>
       ) : null}

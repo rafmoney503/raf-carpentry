@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { getAllProjects, modelOf } from '@/lib/projects';
 import type { LibraryJob } from './library';
+import { libraryKinds } from '@/lib/design-library';
 import type { Pack } from './posts';
 import JobKitApp, { type Done } from './job-kit-app';
 
@@ -48,5 +49,6 @@ export default function JobKitPage() {
     const { src, w, h } = m.poster;
     return [{ slug: p.slug, title: p.title, area: p.area, finished: p.finished, poster: { src, w, h }, standard: Boolean(m.standardSizes), words: [p.type, ...(p.tags ?? []), p.summary, m.title, m.text, m.poster.alt].filter(Boolean).join(' ') }];
   });
-  return <JobKitApp done={done} posts={posts} models={models} />;
+  const kinds = libraryKinds().map(({ slug, label, count }) => ({ slug, label, count }));
+  return <JobKitApp done={done} posts={posts} models={models} kinds={kinds} />;
 }

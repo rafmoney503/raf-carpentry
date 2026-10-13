@@ -17,6 +17,13 @@
 .home .hero-sub { margin-top: 28px; font-size: 19px; color: var(--color-muted); max-width: 33em; }
 .home .hero-ctas { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 40px; }
 .home .hero-rating { margin-top: 22px; }
+/* "Planning something? See it in 3D first": chips to the Designs in 3D page (one row that scrolls on phones). */
+.home .hero-plan { margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--color-line); }
+.home .hero-plan-q { font-family: var(--font-mono); font-size: 12.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-faint); }
+.home .hero-plan-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.home .hero-plan-chip { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border: 1px solid var(--color-line-strong); border-radius: 2px; background: var(--color-mount); font-size: 15px; white-space: nowrap; transition: border-color 0.2s; }
+.home .hero-plan-chip:hover { border-color: var(--color-ink); }
+.home .hero-plan-all { color: var(--color-accent); border-color: transparent; background: transparent; padding-inline: 6px; font-weight: 600; }
 .home .hero-visual { grid-column: 8 / span 5; margin: 0; }
 .home .hero-photo { aspect-ratio: 4 / 5; }
 .home .hero-photo img { object-position: 50% 45%; }
@@ -150,6 +157,9 @@
   .home .hero-sub { font-size: 17px; margin-top: 20px; }
   .home .hero-ctas { margin-top: 32px; }
   .home .hero-ctas .btn { flex: 1 1 0; padding-inline: 16px; }
+  .home .hero-plan { margin-top: 26px; padding-top: 18px; }
+  .home .hero-plan-row { flex-wrap: nowrap; overflow-x: auto; margin-inline: -20px; padding: 0 20px 4px; scrollbar-width: none; }
+  .home .hero-plan-row::-webkit-scrollbar { display: none; }
   .home .hero-photo { aspect-ratio: 4 / 4.4; }
 
   .home .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 20px; row-gap: 32px; padding-top: 36px; }

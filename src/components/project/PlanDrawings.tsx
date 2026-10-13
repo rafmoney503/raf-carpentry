@@ -8,7 +8,7 @@ import Model3D from './Model3D';
 
 /* The plan next to the real thing, then the job in 3D if it has a model, then any other drawings in a row underneath.
    Every drawing opens in the full-screen viewer; the photo stays put (it is in Photos anyway). */
-export default function PlanDrawings({ plan, title, modelCount }: { plan: Plan; title: string; modelCount?: number }) {
+export default function PlanDrawings({ plan, title, allLink }: { plan: Plan; title: string; allLink?: { href: string; label: string } }) {
   const [open, setOpen] = useState<number | null>(null);
   const views = plan.views ?? [];
   const drawings = [
@@ -49,7 +49,7 @@ export default function PlanDrawings({ plan, title, modelCount }: { plan: Plan; 
           <div className="mt-6">
             <Model3D src={plan.model3d.src} poster={plan.model3d.poster} label={plan.model3d.poster.alt} shape={plan.model3d.shape} skp={plan.model3d.skp} />
           </div>
-          {modelCount ? <AllIn3DLink count={modelCount} /> : null}
+          {allLink ? <AllIn3DLink href={allLink.href} label={allLink.label} /> : null}
         </div>
       ) : null}
 

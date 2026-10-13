@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import type { LibraryDesign } from '@/lib/designs';
 import { matches } from '@/lib/search';
+import { kindsIn, kindWords, type KindCount } from '@/lib/design-kinds';
 import { whatsappTo } from './designs';
 import { Icon } from './icons';
 
@@ -12,7 +13,9 @@ import { Icon } from './icons';
      something like this" instead of the approve button.
    - Finished jobs (every job page with a 3D model, built into the page) go as the job page at #in-3d, where the
      model sits with the photos of the real thing.
-   Opened from a current job, Send goes straight to that customer's WhatsApp with their name in the message. */
+   Opened from a current job, Send goes straight to that customer's WhatsApp with their name in the message.
+   A whole kind (or everything) can go as one link to the public Designs in 3D page, rafcarpentry.com/designs/<kind>,
+   shown above the list for the word typed or tapped. */
 
 export type LibraryJob = { slug: string; title: string; area: string; finished: string; poster: { src: string; w: number; h: number }; standard: boolean; words: string };
 type Entry = { key: string; kind: 'design' | 'job'; title: string; area: string; when: string; sort: string; poster: { src: string; w: number; h: number }; link: string; note: string; words: string };
@@ -34,11 +37,13 @@ export function Library({
   models,
   to,
   hasPin,
+  kinds = [],
 }: {
   designs: LibraryDesign[];
   models: LibraryJob[];
   to?: { name: string; first: string; mobile: string };
   hasPin: boolean;
+  kinds?: KindCount[];
 }) {
   const [query, setQuery] = useState('');
   const [show, setShow] = useState<'all' | 'design' | 'job'>('all');
@@ -73,6 +78,19 @@ export function Library({
   }, [designs, models]);
 
   const list = all.filter((e) => (show === 'all' || e.kind === show) && matches(`${e.title} ${e.area} ${e.words}`, query));
+  // The public page for what's being looked for: that kind, or everything when nothing is typed.
+  const group = (() => {
+    if (show === 'design') return null;
+    const q = query.trim();
+    const kind = q ? kinds.find((k) => kindsIn(q).some((x) => x.slug === k.slug)) : undefined;
+    if (q && !kind) return null;
+    const count = kind ? kind.count : models.length;
+    const what = kind ? kindWords(kind) : 'designs';
+    const link = `${SITE}/designs${kind ? `/${kind.slug}` : ''}`;
+    const hi = to?.first ? `Hi ${to.first}, here` : 'Here';
+    const text = `${hi} are ${count} ${what} I've built, all in 3D. You can turn them round and open them up on your phone. Tell me which is closest to what you'd like.\n${link}`;
+    return { key: `g-${kind?.slug ?? 'all'}`, title: kind ? `All ${count} ${what} as one link` : `All ${count} job designs as one link`, link, text };
+  })();
   const count = (k: 'design' | 'job') => all.filter((e) => e.kind === k).length;
 
   const copy = (e: Entry) => {
@@ -148,6 +166,34 @@ export function Library({
           </button>
         ))}
       </div>
+
+      {group ? (
+        <div className="mt-5 rounded-sm border border-accent bg-accent-soft p-3">
+          <p className="text-[16px] font-semibold leading-snug">{group.title}</p>
+          <p className="mt-0.5 break-all font-mono text-[12.5px] text-muted">{group.link.replace('https://www.', '')}</p>
+          <div className="mt-2.5 grid grid-cols-[1.3fr_1fr_0.8fr] gap-2">
+            <a href={whatsappTo(to?.mobile ?? '', group.text)} target="_blank" rel="noopener" className="btn btn-whatsapp btn-sm px-2">
+              WhatsApp
+            </a>
+            <button
+              type="button"
+              onClick={() => {
+                if (navigator.clipboard)
+                  void navigator.clipboard.writeText(group.link).then(() => {
+                    setCopied(group.key);
+                    setTimeout(() => setCopied((c) => (c === group.key ? '' : c)), 1500);
+                  }, () => {});
+              }}
+              className="btn btn-ghost btn-sm bg-mount px-2"
+            >
+              {copied === group.key ? 'Copied' : 'Copy link'}
+            </button>
+            <a href={group.link} target="_blank" rel="noopener" className="btn btn-ghost btn-sm bg-mount px-2">
+              Open
+            </a>
+          </div>
+        </div>
+      ) : null}
 
       {list.length ? (
         <ul className="mt-5 grid gap-3">

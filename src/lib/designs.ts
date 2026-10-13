@@ -24,6 +24,7 @@ export type Design = {
   options: DesignOption[];
   notes?: string[]; // what to check, e.g. "Sizes are from the measuring visit on 12 October."
   example?: boolean; // the demo page, labelled as an example
+  public?: boolean; // shown on the public Designs in 3D page (/designs); only once the customer has said yes
   request?: string; // the Job Kit design request it answers (its id), so the app can show "Design ready"
   updatedFor?: string; // the request's readyAt (ISO) this version answers; a later Send changes is still to do
 };

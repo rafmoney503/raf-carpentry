@@ -6,6 +6,7 @@ import { GOOGLE_REVIEWS_URL, whatsappText, whatsappUrl } from '@/lib/site';
 const explore = [
   { href: '/services', label: 'Services' },
   { href: '/portfolio', label: 'My Work' },
+  { href: '/designs', label: 'Designs in 3D' },
   { href: '/sketchup', label: 'SketchUp' },
   { href: '/cabinetos', label: 'CabinetOS' },
   { href: '/tools', label: 'Tools' },

@@ -5,6 +5,7 @@ import SocialIcon from '@/components/SocialIcon';
 import { BOOKING_URL, EMAIL, whatsappUrl } from '@/lib/site';
 import AddressFinder, { type Address } from './address-finder';
 import { clearJobFromLink, jobUrl, useJobFromLink, type JobRef } from './job-from-link';
+import { kindsIn, kindWords, type KindCount } from '@/lib/design-kinds';
 
 export type BriefOptions = {
   what: string[];
@@ -58,7 +59,7 @@ function Field({ n, title, hint, children }: { n: number; title: string; hint?: 
 const input =
   'h-12 w-full rounded-sm border border-line-strong bg-mount px-3 text-[16px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20';
 
-export default function BriefBuilder({ options, jobs }: { options: BriefOptions; jobs: JobRef[] }) {
+export default function BriefBuilder({ options, jobs, designKinds = [] }: { options: BriefOptions; jobs: JobRef[]; designKinds?: KindCount[] }) {
   // Came from "Get a quote" on a job page: that job goes at the top of the message.
   const job = useJobFromLink(jobs);
   const [what, setWhat] = useState<string[]>([]);
@@ -163,6 +164,20 @@ export default function BriefBuilder({ options, jobs }: { options: BriefOptions;
         ) : null}
         <Field n={1} title="What is it?" hint="pick any">
           <Chips label="What is it?" options={options.what} value={what} onPick={toggle(setWhat)} multi />
+          {/* A nudge to the Designs in 3D page for what they picked; opens in a new tab so the brief stays filled in. */}
+          {(() => {
+            const slugs = new Set(what.flatMap((w) => kindsIn(w).map((k) => k.slug)));
+            const show = designKinds.filter((k) => slugs.has(k.slug));
+            return show.length ? (
+              <p className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[15px]">
+                {show.map((k) => (
+                  <a key={k.slug} href={`/designs/${k.slug}`} target="_blank" rel="noopener" className="link-more">
+                    See {k.count} {kindWords(k)} in 3D <span aria-hidden="true">→</span>
+                  </a>
+                ))}
+              </p>
+            ) : null;
+          })()}
         </Field>
         <Field n={2} title="Which room?" hint="pick any">
           <Chips label="Which room?" options={options.room} value={room} onPick={toggle(setRoom)} multi />

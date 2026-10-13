@@ -9,6 +9,7 @@ import BriefBuilder from './brief-builder';
 import Sketch from './sketches';
 import JobNote from './job-note';
 import { getAllProjects } from '@/lib/projects';
+import { libraryKinds } from '@/lib/design-library';
 import { pageMeta } from '@/lib/seo';
 import Reviews, { GoogleRating } from '@/components/Reviews';
 import { getReviews } from '@/lib/reviews';
@@ -207,6 +208,7 @@ export default function HowItWorksPage() {
             <BriefBuilder
               options={{ what: d.briefWhat, room: d.briefRoom, uses: d.briefUses, material: d.briefMaterial, finish: d.briefFinish, timing: d.briefTiming, budget: d.briefBudget, parking: d.briefParking, photoTips: d.briefPhotoTips }}
               jobs={jobs}
+              designKinds={libraryKinds().map(({ slug, label, count }) => ({ slug, label, count }))}
             />
           </div>
         </Container>

@@ -146,7 +146,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
             <div className="mt-10">
               <ModelGallery items={models} />
             </div>
-            <AllIn3DLink count={countModels()} className="mt-8" />
+            <AllIn3DLink href="/designs" label={`Browse all ${countModels()} designs in 3D, by type`} className="mt-8" />
           </Container>
         </section>
       ) : null}
