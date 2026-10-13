@@ -1,0 +1,47 @@
+{
+  "code": "wrnuv5p6",
+  "request": "design-2026-10-2-wardrobes-ross-stoke-newington-qhkc",
+  "updatedFor": "2026-10-13T10:22:38.600Z",
+  "title": "Two wardrobes",
+  "area": "Stoke Newington",
+  "made": "2026-10-13",
+  "options": [
+    {
+      "name": "Two-door wardrobe",
+      "text": "A two-door wardrobe in MDF on a plinth, with flat push to open doors. Inside: a shelf at the top, long hanging under it and two low shelves at the bottom.",
+      "model": {
+        "src": "/designs/wrnuv5p6/a-7a05d3.glb",
+        "poster": { "src": "/designs/wrnuv5p6/a-7a05d3.jpg", "w": 1600, "h": 1200, "alt": "3D model of a two-door wardrobe with a top shelf, long hanging and two low shelves" },
+        "shape": "tall"
+      },
+      "sizes": [
+        { "label": "Width", "value": "1200 mm" },
+        { "label": "Height", "value": "2400 mm" },
+        { "label": "Depth", "value": "600 mm" },
+        { "label": "Each door", "value": "579 mm" }
+      ]
+    },
+    {
+      "name": "Three-door wardrobe",
+      "text": "A three-door wardrobe in MDF on a plinth, with flat push to open doors. On the left, behind one door, a tall run of shelves; on the right, behind two doors, a top shelf, long hanging and two low shelves.",
+      "model": {
+        "src": "/designs/wrnuv5p6/b-34c7e5.glb",
+        "poster": { "src": "/designs/wrnuv5p6/b-34c7e5.jpg", "w": 1600, "h": 1200, "alt": "3D model of a three-door wardrobe with shelves on the left and hanging on the right" },
+        "shape": "tall"
+      },
+      "sizes": [
+        { "label": "Width", "value": "1500 mm" },
+        { "label": "Height", "value": "2400 mm" },
+        { "label": "Depth", "value": "600 mm" },
+        { "label": "Each door", "value": "485 mm" }
+      ]
+    }
+  ],
+  "notes": [
+    "The layout follows the sketch: one two-door wardrobe and one three-door wardrobe.",
+    "No sizes have been measured yet: the widths, the 2400 mm height and the 600 mm depth are standard sizes for now and will change to fit your room.",
+    "The heights inside (shelves, hanging and plinth) are standard and can move.",
+    "Doors are shown as push to open: tell me if you would prefer knobs or bar handles.",
+    "Colours on screen are a guide."
+  ]
+}
