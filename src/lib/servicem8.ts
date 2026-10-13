@@ -392,3 +392,66 @@ export async function moveBooking(uuid: string, start: string, end: string) {
 export async function cancelBooking(uuid: string) {
   await call(`jobactivity/${uuid}.json`, { method: 'DELETE' });
 }
+
+/* ---------- briefs sent straight from the website (Plan your project, "Send to Raf") ---------- */
+
+const statusError = (status: number, short: string) =>
+  status === 401 ? new Sm8Error('sm8-key', 502, short) : status === 403 ? new Sm8Error('sm8-forbidden', 502, short) : status === 429 ? new Sm8Error('sm8-busy', 429, short) : new Sm8Error('sm8-error', 502, `${status} ${short}`);
+
+/* A customer's photo, attached to their job in one multipart request (ServiceM8's recommended way: the file in a
+   field called `file`, a name with an extension, related_object job). We send our own uuid, so a retry is safe:
+   ServiceM8 answers 409 when it already has that attachment. */
+export async function attachPhoto(jobUuid: string, photo: Blob, fileName: string, uuid: string): Promise<string> {
+  const fd = new FormData();
+  fd.set('file', photo, fileName);
+  fd.set('related_object', 'job');
+  fd.set('related_object_uuid', jobUuid);
+  fd.set('attachment_name', fileName);
+  fd.set('uuid', uuid);
+  let res: Response;
+  try {
+    res = await fetch(`${base()}/attachment.json`, {
+      method: 'POST',
+      headers: { 'X-API-Key': process.env.SERVICEM8_API_KEY ?? '', Accept: 'application/json' },
+      body: fd,
+      cache: 'no-store',
+      signal: AbortSignal.timeout(30_000),
+    });
+  } catch {
+    throw new Sm8Error('sm8-down', 502);
+  }
+  if (res.status === 409) return uuid; // already there from an earlier try
+  const text = await res.text().catch(() => '');
+  if (!res.ok) throw statusError(res.status, text.replace(/\s+/g, ' ').slice(0, 240));
+  return res.headers.get('x-record-uuid') || uuid;
+}
+
+/* ServiceM8 has been seen not to show attachments added through the API in the job's diary until the job itself
+   changes; its support suggested saving the job's status again. Best effort: nothing fails if this does. */
+export async function touchJob(uuid: string) {
+  try {
+    const job = rows((await call(`job/${uuid}.json`)).data)[0];
+    const status = str(job?.status);
+    if (status) await call(`job/${uuid}.json`, { method: 'POST', body: { status } });
+  } catch {
+    /* the photos are on the job either way */
+  }
+}
+
+/* An email to Raf through ServiceM8's own email (Messaging API), filed in the job's diary. Best effort: if the
+   account's key may not send email, the brief is still in ServiceM8 as a Quote job and on the Job Kit's Today. */
+export async function emailRaf(to: string, subject: string, text: string, jobUuid: string): Promise<boolean> {
+  const root = base().replace(/\/api_1\.0$/, '');
+  try {
+    const res = await fetch(`${root}/platform_service_email`, {
+      method: 'POST',
+      headers: { 'X-API-Key': process.env.SERVICEM8_API_KEY ?? '', Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: asciiJson({ to, subject: tidy(subject), textBody: tidy(text), regardingJobUUID: jobUuid }),
+      cache: 'no-store',
+      signal: AbortSignal.timeout(15_000),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}

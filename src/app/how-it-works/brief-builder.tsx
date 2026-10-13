@@ -8,7 +8,8 @@ import { clearJobFromLink, jobUrl, useJobFromLink, type JobRef } from './job-fro
 import { kindsIn, kindWords, type KindCount } from '@/lib/design-kinds';
 import { removeSaved, savedUrl, useSaved } from '@/lib/saved';
 import { Heart } from '@/components/SaveButton';
-import WhatHappensNext from './what-happens-next';
+import WhatHappensNext, { type Direct } from './what-happens-next';
+import { shrinkPhoto } from '@/app/job-kit/media';
 
 export type BriefOptions = {
   what: string[];
@@ -62,7 +63,22 @@ function Field({ n, title, hint, children }: { n: number; title: string; hint?: 
 const input =
   'h-12 w-full rounded-sm border border-line-strong bg-mount px-3 text-[16px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20';
 
-type Sent = 'whatsapp' | 'email' | 'copy';
+type Sent = 'whatsapp' | 'email' | 'copy' | 'direct';
+type Photo = { id: string; blob: Blob; thumb: string };
+const MAX_PHOTOS = 10;
+
+/* POST that retries once after a short wait when the line drops or the server is busy. */
+async function post(url: string, body: BodyInit, json = true): Promise<Response> {
+  const go = () => fetch(url, { method: 'POST', body, ...(json ? { headers: { 'Content-Type': 'application/json' } } : {}) });
+  try {
+    const r = await go();
+    if (r.status !== 429 && r.status < 500) return r;
+  } catch {
+    /* try again below */
+  }
+  await new Promise((res) => setTimeout(res, 1500));
+  return go();
+}
 
 export default function BriefBuilder({ options, jobs, designKinds = [], designTotal = 0 }: { options: BriefOptions; jobs: JobRef[]; designKinds?: KindCount[]; designTotal?: number }) {
   // Came from "Get a quote" on a job page: that job goes at the top of the message.
@@ -78,6 +94,23 @@ export default function BriefBuilder({ options, jobs, designKinds = [], designTo
   const [size, setSize] = useState({ w: '', h: '', d: '' });
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
+  const [email, setEmail] = useState('');
+  const [needContact, setNeedContact] = useState(false);
+  const mobileRef = useRef<HTMLInputElement>(null);
+  // Photos for "Send to Raf": made smaller on the phone (no GPS or other hidden data), kept only in this page.
+  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [adding, setAdding] = useState(0);
+  const [photoNote, setPhotoNote] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+  // Sending straight to ServiceM8
+  const [sending, setSending] = useState<null | { step: 'brief' } | { step: 'photos'; done: number; of: number }>(null);
+  const [sendError, setSendError] = useState('');
+  const [direct, setDirect] = useState<Direct | null>(null);
+  const openedAt = useRef(0);
+  const trap = useRef<HTMLInputElement>(null); // a box people never see; bots fill it in
+  useEffect(() => {
+    openedAt.current = Date.now();
+  }, []);
   const [addr, setAddr] = useState<Address>({ line1: '', area: '', postcode: '' });
   const [parking, setParking] = useState<string[]>([]);
   const [access, setAccess] = useState('');
@@ -95,7 +128,7 @@ export default function BriefBuilder({ options, jobs, designKinds = [], designTo
     setSent(how);
     setShowMsg(false);
     // On a phone the card sits above the buttons: bring it into view for when they come back from WhatsApp or email.
-    window.setTimeout(() => nextRef.current?.scrollIntoView({ behavior: how === 'copy' ? 'smooth' : 'auto', block: 'start' }), 60);
+    window.setTimeout(() => nextRef.current?.scrollIntoView({ behavior: how === 'copy' || how === 'direct' ? 'smooth' : 'auto', block: 'start' }), 60);
   };
 
   // A search result like "Start a brief: hiding a boiler, radiator or cylinder" opens /how-it-works?for=...#brief
@@ -138,6 +171,7 @@ export default function BriefBuilder({ options, jobs, designKinds = [], designTo
     if (budget) lines.push(`Budget: ${budget}`);
     const where = [
       mobile.trim() ? `Mobile: ${mobile.trim()}` : '',
+      email.trim() ? `Email: ${email.trim()}` : '',
       addressText ? `Address: ${addressText}` : '',
       parking.length ? `Parking: ${join(parking)}` : '',
       access.trim() ? `Parking and access: ${access.trim()}` : '',
@@ -146,7 +180,7 @@ export default function BriefBuilder({ options, jobs, designKinds = [], designTo
     if (notes.trim()) lines.push('', notes.trim());
     lines.push('', 'I will send photos of the space next.');
     return lines.join('\n').replace(/\n{3,}/g, '\n\n'); // never two empty lines in a row
-  }, [job, liked, what, room, uses, material, finish, hasSize, size, name, mobile, addressText, parking, access, timing, budget, notes]);
+  }, [job, liked, what, room, uses, material, finish, hasSize, size, name, mobile, email, addressText, parking, access, timing, budget, notes]);
 
   const mailto = `mailto:${EMAIL}?subject=${encodeURIComponent(`My project brief${what.length ? `: ${what.join(' + ')}` : ''}`.slice(0, 120))}&body=${encodeURIComponent(message.replace('I will send photos of the space next.', 'Photos of the space attached.'))}`;
 
@@ -172,10 +206,87 @@ export default function BriefBuilder({ options, jobs, designKinds = [], designTo
     }
   };
 
+  const addPhotos = async (files: FileList | null) => {
+    const list = Array.from(files ?? []).filter((f) => f.type.startsWith('image/') || /\.(heic|heif|jpe?g|png|webp)$/i.test(f.name));
+    if (fileRef.current) fileRef.current.value = '';
+    const room = MAX_PHOTOS - photos.length;
+    if (!list.length || room <= 0) {
+      if (room <= 0) setPhotoNote(`That's the most for one brief (${MAX_PHOTOS}). Send more on WhatsApp after.`);
+      return;
+    }
+    const take = list.slice(0, room);
+    setPhotoNote(list.length > room ? `Added ${room}: that's the most for one brief. Send the rest on WhatsApp after.` : '');
+    setAdding(take.length);
+    for (const f of take) {
+      try {
+        const p = await shrinkPhoto(f);
+        setPhotos((cur) => (cur.length >= MAX_PHOTOS ? cur : [...cur, { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, blob: p.blob, thumb: p.thumb }]));
+      } catch {
+        setPhotoNote('One photo could not be opened. Try another, or send it on WhatsApp.');
+      }
+      setAdding((n) => Math.max(0, n - 1));
+    }
+  };
+
+  // Send to Raf: the brief goes into ServiceM8 as a Quote job, then each photo onto that job.
+  const sendDirect = async () => {
+    if (sending || !gate()) return;
+    const goodMobile = mobile.replace(/\D/g, '').length >= 10;
+    const goodEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
+    if (!goodMobile && !goodEmail) {
+      setNeedContact(true);
+      mobileRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      mobileRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    setSendError('');
+    setSending({ step: 'brief' });
+    try {
+      const r = await post(
+        '/api/brief',
+        JSON.stringify({ name, mobile, email, address: addressText, message, photos: photos.length, company: trap.current?.value ?? '', ms: Date.now() - openedAt.current }),
+      );
+      const j = (await r.json().catch(() => ({}))) as { ok?: boolean; token?: string; error?: string };
+      if (!r.ok || !j.ok) {
+        setSendError(
+          j.error === 'contact'
+            ? 'Add your mobile or email so I can reply.'
+            : j.error === 'busy'
+              ? 'Lots of briefs from here just now. Wait a minute and try again, or send it on WhatsApp.'
+              : 'That didn’t go through. Try again, or send it on WhatsApp.',
+        );
+        setSending(null);
+        return;
+      }
+      let ok = 0;
+      for (let i = 0; i < photos.length && j.token; i++) {
+        setSending({ step: 'photos', done: i, of: photos.length });
+        const fd = new FormData();
+        fd.set('token', j.token);
+        fd.set('i', String(i));
+        fd.set('file', photos[i].blob, `photo-${i + 1}.jpg`);
+        try {
+          const pr = await post('/api/brief/photo', fd, false);
+          if (pr.ok) ok++;
+        } catch {
+          /* counted as not sent; the card says so */
+        }
+      }
+      if (j.token && photos.length) await post('/api/brief/done', JSON.stringify({ token: j.token })).catch(() => null);
+      setDirect({ photosSent: ok, photosTotal: photos.length, mobile: goodMobile ? mobile.trim() : '', email: goodEmail ? email.trim() : '', name: name.trim() });
+      setSending(null);
+      markSent('direct');
+    } catch {
+      setSendError('That didn’t go through. Check your signal and try again, or send it on WhatsApp.');
+      setSending(null);
+    }
+  };
+
   const reset = () => {
     setWhat([]); setRoom([]); setUses([]); setMaterial([]); setFinish([]);
     setSize({ w: '', h: '', d: '' }); setName(''); setAddr({ line1: '', area: '', postcode: '' }); setParking([]); setAccess('');
     setTiming(''); setBudget(''); setNotes(''); setNeedName(false); setSent(null);
+    setMobile(''); setEmail(''); setNeedContact(false); setPhotos([]); setPhotoNote(''); setSendError(''); setDirect(null);
   };
 
   return (
@@ -290,20 +401,39 @@ export default function BriefBuilder({ options, jobs, designKinds = [], designTo
               />
             </label>
             <label className="block">
-              <span className="font-mono text-[12px] text-faint">Mobile (optional)</span>
+              <span className="font-mono text-[12px] text-faint">Mobile</span>
               <input
-                className={`${input} mt-1`}
+                ref={mobileRef}
+                className={`${input} mt-1 ${needContact && !mobile.trim() && !email.trim() ? 'border-accent ring-2 ring-accent/20' : ''}`}
                 type="tel"
                 inputMode="tel"
                 placeholder="So I can call you back"
                 value={mobile}
-                onChange={(e) => setMobile(e.target.value.replace(/[^\d+ ()-]/g, '').slice(0, 20))}
+                onChange={(e) => { setMobile(e.target.value.replace(/[^\d+ ()-]/g, '').slice(0, 20)); setNeedContact(false); }}
                 autoComplete="tel"
               />
             </label>
+            <label className="block sm:col-span-2">
+              <span className="font-mono text-[12px] text-faint">Email (optional)</span>
+              <input
+                className={`${input} mt-1`}
+                type="email"
+                inputMode="email"
+                placeholder="If you'd rather I email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value.replace(/\s/g, '').slice(0, 120)); setNeedContact(false); }}
+                autoComplete="email"
+              />
+            </label>
           </div>
-          <p id="brief-name-note" className={`mt-2 text-[13px] leading-snug ${needName && !name.trim() ? 'font-medium text-accent' : 'text-faint'}`}>
-            {needName && !name.trim() ? 'Add your name, then send.' : 'Only sent to me in your message. Nothing is saved on this website.'}
+          {/* People never see this box; bots fill it in, and their brief goes nowhere. */}
+          <input ref={trap} type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute -left-[9999px] h-px w-px opacity-0" />
+          <p id="brief-name-note" className={`mt-2 text-[13px] leading-snug ${(needName && !name.trim()) || needContact ? 'font-medium text-accent' : 'text-faint'}`}>
+            {needName && !name.trim()
+              ? 'Add your name, then send.'
+              : needContact
+                ? 'Add your mobile or email so I can reply.'
+                : 'Only sent to me. Nothing is kept on this website.'}
           </p>
           <div className="mt-4">
             <AddressFinder value={addr} onChange={setAddr} inputClass={input} />
@@ -326,7 +456,7 @@ export default function BriefBuilder({ options, jobs, designKinds = [], designTo
         <Field n={9} title="Rough budget">
           <Chips label="Rough budget" options={options.budget} value={budget} onPick={one(setBudget, budget)} />
         </Field>
-        <Field n={10} title="Your photos" hint="sent in WhatsApp">
+        <Field n={10} title="Your photos" hint={photos.length ? `${photos.length} added` : 'up to 10'}>
           <ul className="mt-3 grid gap-2 sm:grid-cols-2">
             {options.photoTips.map((t, i) => (
               <li key={i} className="flex items-start gap-3 rounded-sm border border-line bg-mount px-3.5 py-3 text-[14.5px] leading-snug text-ink">
@@ -339,8 +469,45 @@ export default function BriefBuilder({ options, jobs, designKinds = [], designTo
               </li>
             ))}
           </ul>
+          <div className="mt-4">
+            <input ref={fileRef} type="file" accept="image/*" multiple className="sr-only" id="brief-photos" onChange={(e) => addPhotos(e.target.files)} />
+            {photos.length || adding ? (
+              <ul className="mb-3 grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label="Your photos">
+                {photos.map((p, i) => (
+                  <li key={p.id} className="relative aspect-square overflow-hidden rounded-[2px] border border-line bg-raised">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.thumb} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setPhotos((cur) => cur.filter((x) => x.id !== p.id))}
+                      aria-label={`Remove photo ${i + 1}`}
+                      className="absolute right-1 top-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-ink/75 text-on-accent"
+                    >
+                      <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" /></svg>
+                    </button>
+                  </li>
+                ))}
+                {Array.from({ length: adding }).map((_, i) => (
+                  <li key={`adding-${i}`} className="flex aspect-square items-center justify-center rounded-[2px] border border-dashed border-line-strong font-mono text-[11px] text-faint">
+                    Adding
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {photos.length < MAX_PHOTOS ? (
+              <label htmlFor="brief-photos" className="btn btn-ghost btn-sm cursor-pointer gap-2">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="1.5" y="4" width="15" height="11" rx="1.5" />
+                  <path d="M6 4l1.2-2h3.6L12 4" />
+                  <circle cx="9" cy="9.5" r="2.7" />
+                </svg>
+                {photos.length ? 'Add more photos' : 'Add photos'}
+              </label>
+            ) : null}
+            {photoNote ? <p className="mt-2 text-[13.5px] font-medium text-accent" role="status">{photoNote}</p> : null}
+          </div>
           <p className="mt-3 text-[14px] leading-relaxed text-muted">
-            Press <span className="font-medium text-ink">Send on WhatsApp</span>, then tap <span className="font-medium text-ink">+</span> in the chat and add them. By email, just attach them.
+            They go with your brief when you press <span className="font-medium text-ink">Send to Raf</span>. On WhatsApp, add them in the chat after you send; by email, attach them.
           </p>
         </Field>
         <Field n={11} title="Anything else?" hint="optional">
@@ -369,7 +536,7 @@ export default function BriefBuilder({ options, jobs, designKinds = [], designTo
           </div>
           {sent ? (
             <div ref={nextRef} className="mt-4 scroll-mt-24">
-              <WhatHappensNext how={sent} photoTips={options.photoTips} designTotal={designTotal} />
+              <WhatHappensNext how={sent} photoTips={options.photoTips} designTotal={designTotal} direct={direct} />
               <button type="button" onClick={() => setShowMsg((v) => !v)} aria-expanded={showMsg} className="mt-3 font-mono text-[12.5px] text-faint transition-colors hover:text-ink">
                 {showMsg ? 'Hide my message' : 'Show my message'}
               </button>
@@ -378,19 +545,35 @@ export default function BriefBuilder({ options, jobs, designKinds = [], designTo
           {!sent || showMsg ? (
             <pre className="mt-4 min-h-[220px] whitespace-pre-wrap break-words rounded-sm border border-line-strong bg-mount p-5 font-mono text-[13.5px] leading-relaxed text-ink">{message}</pre>
           ) : null}
-          <div className="mt-4 grid gap-2.5">
-            <a href={whatsappUrl(message)} target="_blank" rel="noopener" onClick={(e) => gate(e) && markSent('whatsapp')} className="btn btn-whatsapp w-full gap-2.5">
-              <SocialIcon network="whatsapp" size={18} />
-              Send on WhatsApp
-            </a>
-            <div className="grid grid-cols-2 gap-2.5">
-              <a href={mailto} onClick={(e) => gate(e) && markSent('email')} className="btn btn-ghost">Email it</a>
-              <button type="button" onClick={copy} className="btn btn-ghost">{copied ? 'Copied' : 'Copy text'}</button>
+          {/* Once it has gone straight to Raf, the other ways to send are hidden so it can't arrive twice. */}
+          {sent === 'direct' ? null : (
+            <div className="mt-4 grid gap-2.5">
+              <button type="button" onClick={sendDirect} disabled={Boolean(sending)} aria-describedby="send-direct-note" className="btn btn-primary w-full gap-2.5 disabled:opacity-80">
+                {sending
+                  ? sending.step === 'brief'
+                    ? 'Sending your brief...'
+                    : `Sending photo ${sending.done + 1} of ${sending.of}...`
+                  : photos.length
+                    ? `Send to Raf, with ${photos.length} ${photos.length === 1 ? 'photo' : 'photos'}`
+                    : 'Send to Raf'}
+              </button>
+              <p id="send-direct-note" className="-mt-1 text-center text-[13px] leading-snug text-faint">
+                Straight to me, photos and all. Needs your mobile or email.
+              </p>
+              {sendError ? <p className="text-[14px] font-medium text-accent" role="alert">{sendError}</p> : null}
+              <a href={whatsappUrl(message)} target="_blank" rel="noopener" onClick={(e) => gate(e) && markSent('whatsapp')} className="btn btn-whatsapp w-full gap-2.5">
+                <SocialIcon network="whatsapp" size={18} />
+                Send on WhatsApp
+              </a>
+              <div className="grid grid-cols-2 gap-2.5">
+                <a href={mailto} onClick={(e) => gate(e) && markSent('email')} className="btn btn-ghost">Email it</a>
+                <button type="button" onClick={copy} className="btn btn-ghost">{copied ? 'Copied' : 'Copy text'}</button>
+              </div>
             </div>
-          </div>
+          )}
           {sent ? null : (
             <p className="mt-4 text-sm leading-relaxed text-muted">
-              Add your photos in the WhatsApp chat or attach them to the email. Rather book a visit straight away?{' '}
+              Rather book a visit straight away?{' '}
               <a href={BOOKING_URL} target="_blank" rel="noopener" className="font-medium text-accent hover:underline">Book online</a>.
             </p>
           )}

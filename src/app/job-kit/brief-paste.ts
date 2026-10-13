@@ -15,7 +15,7 @@ export type PastedBrief = {
 };
 
 /* The brief's labels, in the order the website writes them. */
-const LABELS = ['Something like your job', 'What', 'Rooms', 'Room', 'For', 'Material', 'Finish', 'Rough size', 'When', 'Budget', 'Mobile', 'Address', 'Parking', 'Parking and access'];
+const LABELS = ['Something like your job', 'What', 'Rooms', 'Room', 'For', 'Material', 'Finish', 'Rough size', 'When', 'Budget', 'Mobile', 'Email', 'Address', 'Parking', 'Parking and access'];
 const SKIP = /^(i will send photos of the space next\.?|photos of the space attached\.?)$/i;
 const URL_LINE = /^https?:\/\/\S+$/i;
 
