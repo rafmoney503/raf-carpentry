@@ -241,10 +241,37 @@ export async function recentReplies(): Promise<Record<string, string> | null> {
   return out;
 }
 
+/* An address typed in the Job Kit for a job that had no email in ServiceM8: saved on the job's contact (the job
+   contact without an email, else the client's contact without one), so it's there next time. Never overwrites an
+   email already saved; best effort. */
+async function saveEmail(jobUuid: string, email: string): Promise<boolean> {
+  try {
+    const blank = (c: Row) => !str(c.email);
+    const jobContacts = await sm8List('jobcontact.json', `active eq 1 and job_uuid eq '${jobUuid}'`);
+    if (jobContacts.some((c) => str(c.email))) return false;
+    let contact = jobContacts.find(blank);
+    let path = 'jobcontact';
+    if (!contact) {
+      const job = listOf((await sm8Call(`job/${jobUuid}.json`)).data)[0];
+      const company = str(job?.company_uuid);
+      if (!company) return false;
+      const clientContacts = await sm8List('companycontact.json', `active eq 1 and company_uuid eq '${company}'`);
+      if (clientContacts.some((c) => str(c.email))) return false;
+      contact = clientContacts.find(blank);
+      path = 'companycontact';
+    }
+    if (!contact || !str(contact.uuid)) return false;
+    await sm8Call(`${path}/${str(contact.uuid)}.json`, { method: 'POST', body: { email } });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /* Raf's email to a customer, sent through ServiceM8 and filed on the job, signed off like his other emails.
    No replyTo, so the reply comes back to the job in ServiceM8 (two-way email). Then the conversation again; if
    ServiceM8 won't let the account read emails, a copy is saved as a note on the job so the Job Kit can show it. */
-export async function sendJobEmail(e: { job: string; to: string; subject: string; text: string }): Promise<{ thread: Thread; sent: Mail }> {
+export async function sendJobEmail(e: { job: string; to: string; subject: string; text: string; save?: boolean }): Promise<{ thread: Thread; sent: Mail; saved: boolean }> {
   const subject = tidy(e.subject).replace(/\s+/g, ' ').trim();
   const text = tidy(e.text).trim();
   const body = `${text}\n\n${signOff()}`;
@@ -265,7 +292,10 @@ export async function sendJobEmail(e: { job: string; to: string; subject: string
 
   const sent: Mail = { id: `sent-${randomUUID()}`, dir: 'out', at: london(new Date()), from: '', to: e.to, subject, text, full: '' };
   // It has gone: nothing after this may fail the send.
-  const thread: Thread = await jobMail(e.job, e.to).catch(() => ({ mails: [], readable: false, detail: 'read-failed' }));
+  const [thread, saved]: [Thread, boolean] = await Promise.all([
+    jobMail(e.job, e.to).catch((): Thread => ({ mails: [], readable: false, detail: 'read-failed' })),
+    e.save ? saveEmail(e.job, e.to) : Promise.resolve(false),
+  ]);
   if (!thread.readable) {
     const uuid = randomUUID();
     const saved = await sm8Call('note.json', {
@@ -280,5 +310,5 @@ export async function sendJobEmail(e: { job: string; to: string; subject: string
       if (!thread.mails.some((m) => m.id === sent.id)) thread.mails = [...thread.mails, sent].sort(byTime);
     }
   }
-  return { thread, sent };
+  return { thread, sent, saved };
 }

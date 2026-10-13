@@ -11,7 +11,8 @@ import { jobMail, recentReplies, sendJobEmail } from '@/lib/servicem8-mail';
    { action: 'move', uuid, start, end }                  moves a booking
    { action: 'cancel', uuid }                            cancels a booking (ServiceM8 archives it, restorable)
    { action: 'mail', job, email? }                       the job's emails (src/lib/servicem8-mail.ts)
-   { action: 'send-mail', job, to, subject, text }       an email to the customer through ServiceM8, filed on the job
+   { action: 'send-mail', job, to, subject, text, save? } an email to the customer through ServiceM8, filed on the job
+                                                         (save: the job has no email, so `to` is saved on its contact)
    'list' also brings `replies`: job uuid -> their newest email in the last 14 days (null if emails can't be read).
    Times are London time, "YYYY-MM-DDTHH:MM". */
 export const maxDuration = 30;
@@ -82,7 +83,7 @@ export async function POST(req: Request) {
       const message = text(body.text, 10000);
       if (!isUuid(job) || !isEmail(to)) return Response.json({ error: 'bad-email' }, { status: 400 });
       if (!subject || !message) return Response.json({ error: 'missing-mail' }, { status: 400 });
-      return Response.json(await sendJobEmail({ job, to, subject, text: message }), { headers: noStore });
+      return Response.json(await sendJobEmail({ job, to, subject, text: message, save: body.save === true }), { headers: noStore });
     }
     if (body.action === 'cancel') {
       const uuid = text(body.uuid, 40);

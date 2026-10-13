@@ -44,7 +44,9 @@ function keep<T>(key: string, uuid: string, v: T | undefined, max = 25) {
 }
 
 const fetchMail = (job: CurrentJob) => post<{ thread: Thread }>(readPin(), { action: 'mail', job: job.uuid, email: job.email });
-const sendMail = (job: string, to: string, subject: string, text: string) => post<{ thread: Thread; sent: Mail }>(readPin(), { action: 'send-mail', job, to, subject, text });
+// save: the job has no email in ServiceM8, so the address typed here is saved on it.
+const sendMail = (job: string, to: string, subject: string, text: string, save: boolean) =>
+  post<{ thread: Thread; sent: Mail; saved?: boolean }>(readPin(), { action: 'send-mail', job, to, subject, text, save });
 
 const plainSubject = (s: string) => s.replace(/^(\s*(re|fwd?|aw|odp)\s*:\s*)+/i, '').trim();
 const isEmail = (v: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.trim());
@@ -82,6 +84,9 @@ export function EmailBox({ job, what, replyAt, onSeen }: { job: CurrentJob; what
   const [all, setAll] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const textRef = useRef<HTMLTextAreaElement>(null);
+  const toRef = useRef<HTMLInputElement>(null);
+  const subjectRef = useRef<HTMLInputElement>(null);
+  const [saved, setSaved] = useState('');
 
   // What ServiceM8 lists, plus what was sent from here and isn't in its list yet (kept 30 days at most).
   const listed = thread?.mails ?? [];
@@ -133,9 +138,11 @@ export function EmailBox({ job, what, replyAt, onSeen }: { job: CurrentJob; what
   const lastSubject = [...mails].reverse().find((m) => m.subject)?.subject;
   const subjectDefault = lastSubject
     ? `Re: ${plainSubject(lastSubject)}`
-    : what
+    : what && !/^(something else|not sure|other|anything)\b/i.test(what)
       ? `${job.status === 'Quote' || job.status === 'Unsuccessful' ? 'Your enquiry' : 'Your job'}: ${what}`
-      : 'Raf Carpentry';
+      : job.status === 'Quote' || job.status === 'Unsuccessful'
+        ? 'Your enquiry with Raf Carpentry'
+        : 'Your job with Raf Carpentry';
   const textDefault = `Hi ${job.first || 'there'},\n\n`;
   const to = draft.to ?? toDefault;
   const subject = draft.subject ?? subjectDefault;
@@ -145,21 +152,33 @@ export function EmailBox({ job, what, replyAt, onSeen }: { job: CurrentJob; what
     setDraftState(next);
     keep<Draft>(DRAFTS_KEY, job.uuid, next);
     setJustSent(false);
+    setSendProblem('');
   };
   const written = text.trim() && text.trim() !== textDefault.trim();
 
   const send = () => {
     setTried(true);
     setSendProblem('');
-    if (!isEmail(to) || !subject.trim() || !written) {
-      if (!written) textRef.current?.focus();
+    // Something missing: say so by the button and take him to the box (focusing it in the tap opens the keyboard).
+    const missing = !isEmail(to)
+      ? { el: toRef.current, say: to.trim() ? 'The email address in To doesn’t look right. Check it, then send again.' : 'Type their email address in To first, then send again.' }
+      : !subject.trim()
+        ? { el: subjectRef.current, say: 'Add a subject, then send again.' }
+        : !written
+          ? { el: textRef.current, say: 'Write the message first.' }
+          : null;
+    if (missing) {
+      setSendProblem(missing.say);
+      missing.el?.focus({ preventScroll: true });
+      missing.el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
     setBusy(true);
-    void sendMail(job.uuid, to.trim(), subject.trim(), text.trim()).then((r) => {
+    const save = !job.email && !saved;
+    void sendMail(job.uuid, to.trim(), subject.trim(), text.trim(), save).then((r) => {
       setBusy(false);
       if (!r.ok) {
-        setSendProblem(problemText(r.error, r.detail));
+        setSendProblem(`${problemText(r.error, r.detail)} It wasn’t sent; what you wrote is kept here.`);
         return;
       }
       setSentHere((list) => {
@@ -168,6 +187,7 @@ export function EmailBox({ job, what, replyAt, onSeen }: { job: CurrentJob; what
         return next;
       });
       takeThread(r.data.thread);
+      if (r.data.saved) setSaved(to.trim());
       setDraftState({});
       keep<Draft>(DRAFTS_KEY, job.uuid, undefined);
       setTried(false);
@@ -250,11 +270,16 @@ export function EmailBox({ job, what, replyAt, onSeen }: { job: CurrentJob; what
         {justSent ? (
           <p role="status" className="rounded-sm border border-accent bg-accent-soft px-3 py-2.5 text-[14.5px] leading-relaxed">
             Sent through ServiceM8 and filed on the job. {readable ? `${name}’s reply will show here.` : `${name}’s reply goes to the job in ServiceM8.`}
+            {saved ? ` ${saved} is saved on the job in ServiceM8 now.` : ''}
           </p>
         ) : null}
         <label className="grid gap-1.5">
           <span className={label}>To</span>
+          {!job.email && !toDefault ? (
+            <span className="text-[14px] leading-snug text-muted">There’s no email on this job in ServiceM8. Type theirs here: it’s saved on the job when you send.</span>
+          ) : null}
           <input
+            ref={toRef}
             className={`${field} h-12 ${tried && !isEmail(to) ? 'border-ink' : ''}`}
             type="email"
             inputMode="email"
@@ -268,7 +293,7 @@ export function EmailBox({ job, what, replyAt, onSeen }: { job: CurrentJob; what
         </label>
         <label className="grid gap-1.5">
           <span className={label}>Subject</span>
-          <input className={`${field} h-12 ${tried && !subject.trim() ? 'border-ink' : ''}`} value={subject} onChange={(e) => setDraft({ subject: e.target.value })} />
+          <input ref={subjectRef} className={`${field} h-12 ${tried && !subject.trim() ? 'border-ink' : ''}`} value={subject} onChange={(e) => setDraft({ subject: e.target.value })} />
         </label>
         <label className="grid gap-1.5">
           <span className={label}>Message</span>
@@ -284,7 +309,7 @@ export function EmailBox({ job, what, replyAt, onSeen }: { job: CurrentJob; what
         <p className="font-mono text-[12px] leading-relaxed text-faint">Signed off with: {SIGN_OFF.join(' · ')}</p>
         {sendProblem ? (
           <p role="alert" className="rounded-sm border border-ink px-3 py-2.5 text-[14.5px] leading-relaxed">
-            {sendProblem} It wasn’t sent; what you wrote is kept here.
+            {sendProblem}
           </p>
         ) : null}
         <button type="button" className="btn btn-primary w-full" disabled={busy} onClick={send}>
