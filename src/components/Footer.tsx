@@ -7,6 +7,7 @@ const explore = [
   { href: '/services', label: 'Services' },
   { href: '/portfolio', label: 'My Work' },
   { href: '/designs', label: 'Designs in 3D' },
+  { href: '/areas', label: 'Where I work' },
   { href: '/sketchup', label: 'SketchUp' },
   { href: '/cabinetos', label: 'CabinetOS' },
   { href: '/tools', label: 'Tools' },

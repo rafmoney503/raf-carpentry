@@ -11,16 +11,19 @@ export function PageHeader({
   accent,
   lede,
   kicker,
+  top,
   children,
 }: {
   title: string;
   accent?: string;
   lede?: string;
   kicker?: string;
+  top?: React.ReactNode; // e.g. a breadcrumb, above the kicker
   children?: React.ReactNode;
 }) {
   return (
-    <Container className="pb-12 pt-12 md:pb-16 md:pt-20">
+    <Container className={`pb-12 md:pb-16 ${top ? 'pt-8 md:pt-12' : 'pt-12 md:pt-20'}`}>
+      {top ? <div className="mb-8 md:mb-10">{top}</div> : null}
       {kicker ? <p className="kicker mb-5">{kicker}</p> : null}
       <h1 className="max-w-[16em] font-display text-[40px] font-[680] leading-[1.04] tracking-[-0.03em] md:text-[58px]">
         {title}

@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -12,6 +13,7 @@ import { QUOTE_HREF, whatsappText } from '@/lib/site';
 import { jsonLd, pageMeta, SITE_URL } from '@/lib/seo';
 import { areasFor, getService, getServices, getServicesData, joinAreas, jobsFor } from '@/lib/services';
 import ProjectGallery from '@/components/project/ProjectGallery';
+import { areaPageLinks } from '@/lib/areas';
 import '@/app/portfolio/project.css';
 
 export function generateStaticParams() {
@@ -23,6 +25,28 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const s = getService(slug);
   if (!s) return {};
   return pageMeta({ title: s.metaTitle, description: s.metaDescription, path: `/services/${s.slug}`, ownImage: true });
+}
+
+/* "In East Finchley, Haringey, Palmers Green and Chiswick and more": areas with their own page are links. */
+function AreaList({ areas, max = 4 }: { areas: string[]; max?: number }) {
+  const links = areaPageLinks();
+  const shown = areas.slice(0, max);
+  const more = areas.length > max;
+  return (
+    <>
+      {shown.map((a, i) => (
+        <Fragment key={a}>
+          {i === 0 ? '' : i === shown.length - 1 && !more ? ' and ' : ', '}
+          {links[a] ? (
+            <Link href={`/areas/${links[a]}`} className="text-accent hover:underline">{a}</Link>
+          ) : (
+            joinAreas([a])
+          )}
+        </Fragment>
+      ))}
+      {more ? ' and more' : ''}
+    </>
+  );
 }
 
 export default async function ServicePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -82,7 +106,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
           <Container className="py-14 md:py-20">
             <div className="max-w-[62ch]">
               <SectionHeading>{jobs.length === 1 ? 'One job like this' : `${jobs.length} jobs like this`}</SectionHeading>
-              {areas.length ? <p className="mt-4 text-[16px] leading-relaxed text-muted">In {joinAreas(areas)}. Open one to see how it went together, step by step.</p> : null}
+              {areas.length ? <p className="mt-4 text-[16px] leading-relaxed text-muted">In <AreaList areas={areas} />. Open one to see how it went together, step by step.</p> : null}
             </div>
             <ul className="mt-10 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
               {jobs.map((p, i) => (

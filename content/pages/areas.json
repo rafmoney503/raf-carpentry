@@ -1,21 +1,92 @@
 {
-  "note": "The rough middle of each area named on a job page, for 'Jobs near you' on the home page. Miles are measured to these points, never to a house. When a job has an area that isn't here, add it (name exactly as on the job). Kings Park is left out until its place is known.",
+  "note": "The rough middle of each area named on a job page, for 'Jobs near you' and the area pages (/areas). Miles are measured to these points, never to a house. When a job has an area that isn't here, add it (name exactly as on the job). An area with 3 or more jobs gets its own page at /areas/<slug>; 'intro' is the line under its heading (facts from the jobs only, no counts, so it stays true as jobs are added) and 'postcode' the postcode district, both optional. Kings Park is left out until its place is known.",
   "areas": [
-    { "name": "Wood Green", "lat": 51.5975, "lng": -0.1097 },
-    { "name": "Bowes Park", "lat": 51.6075, "lng": -0.1197 },
-    { "name": "Bounds Green", "lat": 51.6071, "lng": -0.1243 },
-    { "name": "Haringey", "lat": 51.5785, "lng": -0.1045 },
-    { "name": "Palmers Green", "lat": 51.6182, "lng": -0.1104 },
-    { "name": "Crouch End", "lat": 51.5797, "lng": -0.1236 },
-    { "name": "East Finchley", "lat": 51.5873, "lng": -0.165 },
-    { "name": "Highbury", "lat": 51.552, "lng": -0.098 },
-    { "name": "Newington Green", "lat": 51.5527, "lng": -0.085 },
-    { "name": "Finchley", "lat": 51.601, "lng": -0.193 },
-    { "name": "Camden Town", "lat": 51.5392, "lng": -0.1426 },
-    { "name": "Chiswick", "lat": 51.492, "lng": -0.258 },
-    { "name": "Ealing", "lat": 51.513, "lng": -0.3047 },
-    { "name": "Kennington", "lat": 51.4884, "lng": -0.1053 },
-    { "name": "Brentwood", "lat": 51.6205, "lng": 0.305 },
-    { "name": "Llandeilo, Wales", "lat": 51.884, "lng": -3.993 }
+    {
+      "name": "Wood Green",
+      "lat": 51.5975,
+      "lng": -0.1097
+    },
+    {
+      "name": "Bowes Park",
+      "lat": 51.6075,
+      "lng": -0.1197
+    },
+    {
+      "name": "Bounds Green",
+      "lat": 51.6071,
+      "lng": -0.1243
+    },
+    {
+      "name": "Haringey",
+      "lat": 51.5785,
+      "lng": -0.1045,
+      "intro": "Jobs here include a full wall of IKEA PAX wardrobes, black-framed glass sliding doors, two panelled walls, and a TV unit and bookcase either side of a fireplace."
+    },
+    {
+      "name": "Palmers Green",
+      "lat": 51.6182,
+      "lng": -0.1104,
+      "postcode": "N13",
+      "intro": "Jobs here include wardrobes built round a chimney breast, two wardrobes in a loft room, alcove units either side of a chimney breast, and shoe storage with a bench in a porch."
+    },
+    {
+      "name": "Crouch End",
+      "lat": 51.5797,
+      "lng": -0.1236
+    },
+    {
+      "name": "East Finchley",
+      "lat": 51.5873,
+      "lng": -0.165,
+      "postcode": "N2",
+      "intro": "Jobs here include sliding-door storage in a loft, sliding doors over a hot water cylinder, alcove wardrobes with one built round the boiler, a wall-to-wall bookcase with a radiator cover, a window seat with an alcove cabinet, and a pantry cupboard."
+    },
+    {
+      "name": "Highbury",
+      "lat": 51.552,
+      "lng": -0.098
+    },
+    {
+      "name": "Newington Green",
+      "lat": 51.5527,
+      "lng": -0.085
+    },
+    {
+      "name": "Finchley",
+      "lat": 51.601,
+      "lng": -0.193
+    },
+    {
+      "name": "Camden Town",
+      "lat": 51.5392,
+      "lng": -0.1426
+    },
+    {
+      "name": "Chiswick",
+      "lat": 51.492,
+      "lng": -0.258,
+      "postcode": "W4",
+      "intro": "Jobs here include a four-door birch ply wardrobe with lights, a long birch ply desk, and a room fitted out in birch ply with a wardrobe, a desk and cupboards."
+    },
+    {
+      "name": "Ealing",
+      "lat": 51.513,
+      "lng": -0.3047
+    },
+    {
+      "name": "Kennington",
+      "lat": 51.4884,
+      "lng": -0.1053
+    },
+    {
+      "name": "Brentwood",
+      "lat": 51.6205,
+      "lng": 0.305
+    },
+    {
+      "name": "Llandeilo, Wales",
+      "lat": 51.884,
+      "lng": -3.993
+    }
   ]
 }

@@ -10,7 +10,7 @@ import { libraryKinds } from '@/lib/design-library';
 import { QUOTE_HREF, whatsappText, whatsappUrl } from '@/lib/site';
 import SocialIcon from '@/components/SocialIcon';
 import JobsNear from '@/components/JobsNear';
-import { getNearJobs } from '@/lib/areas';
+import { areaPageLinks, getNearJobs } from '@/lib/areas';
 import { businessJsonLd, jsonLd, pageMeta } from '@/lib/seo';
 import './home.css';
 
@@ -225,7 +225,12 @@ export default function HomePage() {
             </ul>
             {/* Jobs near you: a postcode shows the nearest jobs with rough miles */}
             <div className="mt-16 border-t border-line pt-12 md:mt-20 md:pt-14">
-              <JobsNear jobs={getNearJobs()} />
+              <JobsNear jobs={getNearJobs()} areaLinks={areaPageLinks()} />
+              <p className="mt-8">
+                <Link href="/areas" className="link-more text-[15px]">
+                  Everywhere I&apos;ve worked <span aria-hidden="true">→</span>
+                </Link>
+              </p>
             </div>
           </div>
         </section>

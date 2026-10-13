@@ -9,6 +9,7 @@ import { formatMonth, getAllProjects } from './projects';
 import { getServices, jobsFor } from './services';
 import { getTipsData } from './tips';
 import { toolsSectionId } from './menu-panels';
+import { areaPages } from './areas';
 
 /* Everything the search in the menu looks through (magnifier on a computer, the box at the top of the phone menu),
    built once at deploy time and served as /search-index.json (src/app/search-index.json/route.ts). The browser
@@ -53,6 +54,7 @@ const PAGES: { title: string; href: string; sub: string; words: string }[] = [
   { title: 'Workshop tips', href: '/tips', sub: 'For carpenters and DIYers', words: 'tips tricks diy how to advice' },
   { title: 'Tools I use', href: '/tools', sub: 'My kit, with links', words: 'tools kit amazon dewalt festool makita buy' },
   { title: 'Timber Stack', href: '/tools/timber-stack', sub: 'A free game: stack the timber', words: 'game timber stack play fun' },
+  { title: 'Where I work', href: '/areas', sub: 'Every area, and the jobs nearest you', words: 'areas where work near me local postcode london cover travel' },
   { title: 'Blog', href: '/blog', sub: 'Jobs step by step, SketchUp and CabinetOS', words: 'blog posts articles write ups' },
   { title: 'About', href: '/about', sub: 'Who I am and how I work', words: 'about raf rafal story who carpenter london' },
   { title: 'Contact', href: '/contact', sub: 'Phone, WhatsApp, email', words: 'contact phone call email whatsapp number message' },
@@ -117,6 +119,9 @@ export function buildSearchIndex(): SearchEntry[] {
   }
 
   for (const p of PAGES) out.push({ k: 'page', title: p.title, href: p.href, sub: p.sub, text: words(p.words) });
+  for (const a of areaPages()) {
+    out.push({ k: 'page', title: `Fitted furniture in ${a.name}`, href: `/areas/${a.slug}`, sub: `${a.jobs.length} jobs${a.postcode ? ` · ${a.postcode}` : ''}`, text: words(a.name, a.postcode, 'carpenter near area local') });
+  }
 
   const tips = getTipsData().tips;
   for (const t of tips) out.push({ k: 'tip', title: t.title, href: `/tips#${t.id}`, sub: `Workshop tip · ${t.section}`, text: words(t.section, t.body) });

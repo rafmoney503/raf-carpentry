@@ -67,7 +67,16 @@ async function lookup(typed: string): Promise<Origin> {
 
 type Row = { area: string; jobs: NearJob[]; d: number };
 
-export default function JobsNear({ jobs }: { jobs: NearJob[] }) {
+/* areaLinks: area name -> its page slug (/areas/<slug>), for the areas that have one; others go to My Work's search.
+   heading: h3 under Latest jobs on the home page, h2 on its own on /areas. */
+export default function JobsNear({ jobs, areaLinks = {}, heading = 'h3' }: { jobs: NearJob[]; areaLinks?: Record<string, string>; heading?: 'h2' | 'h3' }) {
+  // An area's own page; else its one job; else My Work's search for it.
+  const areaHref = (a: string) => {
+    if (areaLinks[a]) return `/areas/${areaLinks[a]}`;
+    const its = jobs.filter((j) => j.area === a);
+    return its.length === 1 ? `/portfolio/${its[0].slug}` : `/portfolio?q=${encodeURIComponent(a)}`;
+  };
+  const H = heading;
   const [typed, setTyped] = useState('');
   const [origin, setOrigin] = useState<Origin | null>(null);
   const [busy, setBusy] = useState(false);
@@ -143,7 +152,7 @@ export default function JobsNear({ jobs }: { jobs: NearJob[] }) {
   return (
     <div className="grid grid-cols-1 gap-8 md:grid-cols-12 md:gap-6" id="near">
       <div className="md:col-span-5">
-        <h3 className="font-display text-[30px] font-[680] leading-[1.05] tracking-[-0.02em] md:text-[34px]">Jobs near you</h3>
+        <H className="font-display text-[30px] font-[680] leading-[1.05] tracking-[-0.02em] md:text-[34px]">Jobs near you</H>
         <p className="mt-2.5 max-w-[40ch] text-[16px] leading-relaxed text-muted">Type your postcode to see what I’ve built round the corner.</p>
         <form onSubmit={find} className="mt-5 flex max-w-[420px] gap-2">
           <label className="min-w-0 flex-1">
@@ -216,7 +225,7 @@ export default function JobsNear({ jobs }: { jobs: NearJob[] }) {
                         {more ? (
                           <>
                             {' · '}
-                            <Link href={`/portfolio?q=${encodeURIComponent(r.area)}`} className="text-accent hover:underline">
+                            <Link href={areaHref(r.area)} className="text-accent hover:underline">
                               and {more} more there
                             </Link>
                           </>
@@ -243,7 +252,7 @@ export default function JobsNear({ jobs }: { jobs: NearJob[] }) {
             <ul className="mt-3 flex flex-wrap gap-2">
               {areas.map(([a, n]) => (
                 <li key={a}>
-                  <Link href={`/portfolio?q=${encodeURIComponent(a)}`} className="inline-flex h-10 items-center gap-2 rounded-sm border border-line-strong px-3.5 text-[14.5px] text-ink transition-colors hover:border-ink">
+                  <Link href={areaHref(a)} className={`inline-flex h-10 items-center gap-2 rounded-sm border px-3.5 text-[14.5px] text-ink transition-colors hover:border-ink ${areaLinks[a] ? 'border-accent/50 bg-mount' : 'border-line-strong'}`}>
                     {a}
                     <span className="font-mono text-[12px] text-faint">{n}</span>
                   </Link>

@@ -11,6 +11,7 @@ import ToolsUsed from '@/components/ToolsUsed';
 import { formatMonth, getAllProjects, getKit, getProject, isPlanReady } from '@/lib/projects';
 import AllIn3DLink from '@/components/project/AllIn3DLink';
 import { in3DLink } from '@/lib/design-library';
+import { areaPageLinks } from '@/lib/areas';
 import PlanCard from '@/components/project/PlanCard';
 import ProjectKit from '@/components/project/ProjectKit';
 import PlanDrawings from '@/components/project/PlanDrawings';
@@ -51,6 +52,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   const clips = p.clips ?? [];
   const build = p.buildPhotos ?? [];
   const kit = getKit(p.slug);
+  const areaLink = areaPageLinks()[p.area]; // the area's own page, when it has 3 or more jobs
 
   return (
     <>
@@ -59,7 +61,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         <nav aria-label="Breadcrumb" className="mb-8 font-mono text-[13px] text-faint">
           <Link href="/portfolio" className="transition-colors hover:text-accent">My work</Link>
           <span className="px-2 text-line-strong">/</span>
-          <span>{p.area}</span>
+          {areaLink ? (
+            <Link href={`/areas/${areaLink}`} className="transition-colors hover:text-accent">{p.area}</Link>
+          ) : (
+            <span>{p.area}</span>
+          )}
         </nav>
 
         <div className="grid grid-cols-1 items-start gap-10 md:grid-cols-12 md:gap-6">
