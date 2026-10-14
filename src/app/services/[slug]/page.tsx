@@ -82,6 +82,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
         <div className="mt-8 flex flex-wrap gap-3">
           <Link href={QUOTE_HREF} className="btn btn-primary">Get a quote</Link>
           <WhatsAppButton text={waText} />
+          {s.slug === 'fitted-wardrobes' ? <Link href="/wardrobe-planner" className="btn btn-ghost">Plan yours in 3D</Link> : null}
         </div>
         <GoogleRating variant="inline" className="mt-6" />
       </PageHeader>
