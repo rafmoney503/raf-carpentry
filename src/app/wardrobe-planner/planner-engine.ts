@@ -20,7 +20,8 @@ export function mountPlanner(host: HTMLElement, endpoint = '/api/brief'): () => 
 const CFG={
   standardWidths:[300,400,450,500,600,800,900,1000],   // carcass widths, mm
   customMin:150, customMax:1200,                        // custom unit width range, mm
-  scribe:{min:20,max:100},                              // filler at a wall, each end, mm
+  scribe:{min:20,max:100},                              // filler at a wall, each end, mm (Auto side infill)
+  sideInfill:{def:50,max:300},                          // side infill typed in Space: starting size and the most (CabinetOS takes up to 300)
   endPanel:18,                                          // finished end panel at an open end, mm
   depth:{hinged:600,sliding:650,shallow:450,min:350,max:800},
   topSplit:2100, topMin:250,                            // top cupboards start at 2100 if at least 250 mm is left above
@@ -42,7 +43,7 @@ const $=s=>host.querySelector(s);
 const MM=0.001, clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let uid=1;const mk=(w,layout)=>({id:'m'+(uid++),w,custom:!CFG.standardWidths.includes(w),layout});
-const S={wall:2800,ceiling:2400,fit:'wall',plinth:100,plinthCustom:false,infill:50,infillCustom:false,freeH:CFG.freeHeight,depthMode:'std',depthCustom:600,height:'full',doors:'hinged',style:'shaker',handle:'brass',colour:'sage',
+const S={unitMode:'standard',side:{mode:'auto',l:50,r:50},wall:2800,ceiling:2400,fit:'wall',plinth:100,plinthCustom:false,infill:50,infillCustom:false,freeH:CFG.freeHeight,depthMode:'std',depthCustom:600,height:'full',doors:'hinged',style:'shaker',handle:'brass',colour:'sage',
   modules:[mk(900,'double'),mk(900,'longdrw'),mk(900,'short')],sel:0,step:0,view:'3d',open:false,sent:false,
   contact:{name:'',email:'',phone:'',postcode:'',when:'',notes:'',company:''}};
 const colour=()=>CFG.colours.find(c=>c.k===S.colour)||CFG.colours[0];
@@ -52,21 +53,49 @@ const infill=()=>free()?0:S.infill;
 const topY=()=>free()?Math.min(S.freeH,S.ceiling-20):S.ceiling-infill();
 const topOk=()=>topY()-CFG.topSplit>=CFG.topMin;
 const mainH=()=>S.height==='top'&&topOk()?CFG.topSplit:topY();
+const hasL=()=>S.fit==='wall'||S.fit==='openR',hasR=()=>S.fit==='wall'||S.fit==='openL';
+const nPanels=()=>S.fit==='wall'?0:free()?2:1;
+/* Side infills that are fixed: typed in Space ('Set the size'), or the standard size when the units are an equal split
+   with the infill on Auto. null = Auto (whatever is left at the walls). */
+function fixedSides(){if(free())return null;const set=S.side.mode==='set';if(!set&&S.unitMode!=='equal')return null;
+  const v=k=>set?S.side[k]:CFG.sideInfill.def;return{l:hasL()?v('l'):0,r:hasR()?v('r'):0,set};}
+/* Width the units share between the side infills and end panels (Equal split). */
+function unitSpace(){const fx=fixedSides()||{l:0,r:0};return S.wall-fx.l-fx.r-nPanels()*CFG.endPanel;}
+function equalRange(){const A=unitSpace();return{A,min:Math.max(1,Math.ceil(A/CFG.customMax)),max:Math.max(1,Math.min(12,Math.floor(A/CFG.customMin)))};}
+function equalise(n){const R=equalRange();n=clamp(Math.round(n),R.min,R.max);const base=Math.floor(R.A/n),r=R.A-base*n;
+  while(S.modules.length<n)S.modules.push(mk(base,layoutFor(base,S.modules.length,n)));S.modules.length=n;
+  S.modules.forEach((m,i)=>{m.w=base+(i<r?1:0);m.custom=true;});S.sel=clamp(S.sel,0,n-1);}
+const nearestStd=w=>CFG.standardWidths.reduce((b,x)=>Math.abs(x-w)<Math.abs(b-w)||(Math.abs(x-w)===Math.abs(b-w)&&x>b)?x:b,CFG.standardWidths[0]);
+const widthsText=()=>{const ws=S.modules.map(m=>m.w),a=Math.min(...ws),b=Math.max(...ws);return a===b?`${a}`:`${a} to ${b}`;};
 function calc(){
-  const fr=free(),ends=S.fit==='wall'?2:fr?0:1,panels=S.fit==='wall'?0:fr?2:1,mods=S.modules.reduce((a,m)=>a+m.w,0),run=mods+panels*CFG.endPanel,left=S.wall-run,f=ends?left/ends:0;
-  let lv='ok',t,sub;
-  if(!S.modules.length){lv='warn';t='Add a unit to start';}
-  else if(fr){if(left<0){lv='bad';t=`Too wide by ${-left} mm`;}else t=`Fits · ${left} mm spare`;}
-  else if(f<CFG.scribe.min){lv='bad';t=`Too wide by ${Math.ceil(CFG.scribe.min*ends-left)} mm`;}
-  else if(f>CFG.scribe.max){lv='warn';t=`${Math.round(left)} mm gap to fill`;}
-  else t=ends===2?`Fits · ${Math.round(f)} mm filler each end`:`Fits · ${Math.round(f)} mm filler at the wall`;
-  sub=fr?`Units ${mods} + end panels 18 + 18 = ${run} of ${S.wall}`:`Units ${mods}${panels?' + end panel 18':''} + filler${ends===2?'s':''} ${ends===2?Math.round(f)+' / '+Math.round(f):Math.round(f)} = ${S.wall}`;
-  // x positions (mm from the left of the space)
-  let x0;if(S.fit==='wall'||S.fit==='openR')x0=Math.max(0,f);else x0=CFG.endPanel+Math.max(0,S.wall-run-f);
-  if(S.fit==='openL')x0=Math.max(CFG.endPanel,S.wall-Math.max(0,f)-mods);
-  if(fr)x0=CFG.endPanel+Math.max(0,left/2);
+  const fr=free(),ends=S.fit==='wall'?2:fr?0:1,panels=nPanels(),mods=S.modules.reduce((a,m)=>a+m.w,0),run=mods+panels*CFG.endPanel,fx=fixedSides();
+  let lv='ok',t,sub,x0,fillL=0,fillR=0,left,f;
+  if(fx){
+    // side infills fixed: the units have to fill what is between them
+    fillL=fx.l;fillR=fx.r;left=S.wall-fillL-fillR-run;f=null;
+    const inf=hasL()&&hasR()?`${fillL} / ${fillR}`:String(hasL()?fillL:fillR);
+    if(!S.modules.length){lv='warn';t='Add a unit to start';}
+    else if(left<-0.5){lv='bad';t=`Too wide by ${Math.round(-left)} mm`;}
+    else if(left>0.5){lv='warn';t=S.fit==='wall'?`${Math.round(left)} mm gap to fill`:`${Math.round(left)} mm short of the space`;}
+    else t=S.unitMode==='equal'?`Fits · ${S.modules.length} equal unit${S.modules.length===1?'':'s'}, ${widthsText()} mm`:'Fits exactly';
+    sub=`Units ${mods}${panels?' + end panel 18':''} + side infill ${inf} = ${mods+panels*CFG.endPanel+fillL+fillR} of ${S.wall}`;
+    x0=S.fit==='openL'?S.wall-fillR-mods:fillL;
+  }else{
+    left=S.wall-run;f=ends?left/ends:0;
+    if(!S.modules.length){lv='warn';t='Add a unit to start';}
+    else if(fr){if(left<0){lv='bad';t=`Too wide by ${-left} mm`;}else t=`Fits · ${left} mm spare`;}
+    else if(f<CFG.scribe.min){lv='bad';t=`Too wide by ${Math.ceil(CFG.scribe.min*ends-left)} mm`;}
+    else if(f>CFG.scribe.max){lv='warn';t=`${Math.round(left)} mm gap to fill`;}
+    else t=ends===2?`Fits · ${Math.round(f)} mm side infill each end`:`Fits · ${Math.round(f)} mm side infill at the wall`;
+    sub=fr?`Units ${mods} + end panels 18 + 18 = ${run} of ${S.wall}`:`Units ${mods}${panels?' + end panel 18':''} + side infill ${ends===2?Math.round(f)+' / '+Math.round(f):Math.round(f)} = ${S.wall}`;
+    // x positions (mm from the left of the space)
+    if(S.fit==='wall'||S.fit==='openR')x0=Math.max(0,f);else x0=CFG.endPanel+Math.max(0,S.wall-run-f);
+    if(S.fit==='openL')x0=Math.max(CFG.endPanel,S.wall-Math.max(0,f)-mods);
+    if(fr)x0=CFG.endPanel+Math.max(0,left/2);
+    if(!fr){fillL=hasL()?Math.max(0,x0):0;fillR=hasR()?Math.max(0,S.wall-x0-mods):0;}
+  }
   const pos=[];let x=x0;for(const m of S.modules){pos.push(x);x+=m.w;}
-  return{ends,panels,mods,run,left,f,lv,t,sub,x0,x1:x,pos};
+  return{ends,panels,mods,run,left,f,lv,t,sub,x0,x1:x,pos,fillL,fillR,fixed:!!fx};
 }
 function hingedCount(w){return w<=600?1:2;}
 function slidingCount(run){return Math.max(2,Math.round(run/900),Math.ceil(run/1200));}
@@ -74,17 +103,18 @@ function slidingCount(run){return Math.max(2,Math.round(run/900),Math.ceil(run/1
 /* ---------- smart fill ---------- */
 function layoutFor(w,i,n){if(w<450)return'shelves';if(w<=600)return i%2?'drawers':'short';const seq=['double','longdrw','long','double'];return seq[i%seq.length];}
 function autoFill(){
-  const fr=free(),ends=S.fit==='wall'?2:1,panels=S.fit==='wall'?0:fr?2:1,A=S.wall-panels*CFG.endPanel,W=CFG.standardWidths,minF=fr?0:CFG.scribe.min,maxF=fr?150:CFG.scribe.max;let best=null;
+  const fr=free(),fx=fixedSides(),ends=fx?1:S.fit==='wall'?2:1,panels=nPanels(),A=fx?unitSpace():S.wall-panels*CFG.endPanel,W=CFG.standardWidths,minF=fr||fx?0:CFG.scribe.min,maxF=fr||fx?150:CFG.scribe.max;let best=null;
   for(let n=1;n<=12;n++)for(const w1 of W)for(const w2 of W){if(w2>w1)continue;for(let k=1;k<=n;k++){if(w1===w2&&k!==n)continue;
     const tot=k*w1+(n-k)*w2,f=(A-tot)/ends;if(f<minF||f>maxF)continue;
-    const mixed=w1!==w2&&k<n,avg=tot/n;const sc=f*0.5+(mixed?45:0)+Math.abs(avg-850)*0.06+(w2<450?70:0)+n*6;
+    const mixed=w1!==w2&&k<n,avg=tot/n;const sc=f*(fx?1:0.5)+(mixed?45:0)+Math.abs(avg-850)*0.06+(w2<450?70:0)+n*6;
     if(!best||sc<best.sc)best={sc,n,w1,w2,k,f};}}
   let widths=[];
   if(best){const big=Array(best.k).fill(best.w1),small=Array(best.n-best.k).fill(best.w2);
     if(small.length){const h=Math.ceil(big.length/2);widths=[...big.slice(0,h),...small,...big.slice(h)];}else widths=big;}
   else{const n=Math.max(1,Math.round(A/900)),w=Math.floor(clamp((A-ends*40)/n,CFG.customMin,CFG.customMax));widths=Array(n).fill(w);}
   S.modules=widths.map((w,i)=>mk(w,layoutFor(w,i,widths.length)));S.sel=0;
-  return best?(fr?`${widths.length} × standard units, ${Math.round(best.f)} mm spare`:`${widths.length} × standard units, ${Math.round(best.f)} mm filler${ends===2?' each end':''}`):`${widths.length} custom ${widths[0]} mm units`;
+  if(!best)S.unitMode='custom';
+  return best?(fx?(Math.round(best.f)?`${widths.length} × standard units, ${Math.round(best.f)} mm gap left. Equal split fills it.`:`${widths.length} × standard units, exact fit`):fr?`${widths.length} × standard units, ${Math.round(best.f)} mm spare`:`${widths.length} × standard units, ${Math.round(best.f)} mm side infill${ends===2?' each end':''}`):`${widths.length} custom ${widths[0]} mm units`;
 }
 
 /* ---------- three.js ---------- */
@@ -197,9 +227,9 @@ function build(){
   // fillers + end panel
   const f=fin();
   if(S.modules.length){const fl=(a,b)=>{if(b-a>0.002)box(root,a,0,0,b,H,D,f);};
-    if(S.fit==='wall'){fl(-W/2,X(c.x0));fl(X(c.x1),W/2);}
-    if(S.fit==='openR'){fl(-W/2,X(c.x0));box(root,X(c.x1),0,0,X(c.x1)+0.018,H,D+0.002,f);}
-    if(S.fit==='openL'){fl(X(c.x1),W/2);box(root,X(c.x0)-0.018,0,0,X(c.x0),H,D+0.002,f);}
+    if(S.fit==='wall'){fl(-W/2,X(c.fillL));fl(X(S.wall-c.fillR),W/2);}
+    if(S.fit==='openR'){fl(-W/2,X(c.fillL));box(root,X(c.x1),0,0,X(c.x1)+0.018,H,D+0.002,f);}
+    if(S.fit==='openL'){fl(X(S.wall-c.fillR),W/2);box(root,X(c.x0)-0.018,0,0,X(c.x0),H,D+0.002,f);}
     if(fr){box(root,X(c.x0)-0.018,0,0,X(c.x0),TY-0.018,D+0.002,f);box(root,X(c.x1),0,0,X(c.x1)+0.018,TY-0.018,D+0.002,f);box(root,X(c.x0)-0.018,TY-0.018,0,X(c.x1)+0.018,TY,D+0.004,f);}
     else if(infill()>0){const L=S.fit==='openL'?X(c.x0)-0.018:-W/2,R=S.fit==='openR'?X(c.x1)+0.018:W/2;box(root,L,TY,0,R,H,D+0.003,f);}
     if(P>0.002)box(root,X(c.x0),0,0,X(c.x1),P,zi-0.05,std(shade(colour().c,-0.3),0.7));}
@@ -252,9 +282,9 @@ function drawPlan(){
   const P=S.plinth,mh=mainH(),ty=topY(),top=mh<ty-5,EP=CFG.endPanel,has=S.modules.length>0;
   if(has){
     // side fillers and end panels
-    if(S.fit==='wall'){rc(X(0),Y(S.ceiling),c.x0*s,S.ceiling*s,'url(#fill)');rc(X(c.x1),Y(S.ceiling),(S.wall-c.x1)*s,S.ceiling*s,'url(#fill)');}
-    if(S.fit==='openR'){rc(X(0),Y(S.ceiling),c.x0*s,S.ceiling*s,'url(#fill)');rc(X(c.x1),Y(S.ceiling),EP*s,S.ceiling*s,'#DDE3EA');}
-    if(S.fit==='openL'){rc(X(c.x1),Y(S.ceiling),(S.wall-c.x1)*s,S.ceiling*s,'url(#fill)');rc(X(c.x0-EP),Y(S.ceiling),EP*s,S.ceiling*s,'#DDE3EA');}
+    if(S.fit==='wall'){rc(X(0),Y(S.ceiling),c.fillL*s,S.ceiling*s,'url(#fill)');rc(X(S.wall-c.fillR),Y(S.ceiling),c.fillR*s,S.ceiling*s,'url(#fill)');}
+    if(S.fit==='openR'){rc(X(0),Y(S.ceiling),c.fillL*s,S.ceiling*s,'url(#fill)');rc(X(c.x1),Y(S.ceiling),EP*s,S.ceiling*s,'#DDE3EA');}
+    if(S.fit==='openL'){rc(X(S.wall-c.fillR),Y(S.ceiling),c.fillR*s,S.ceiling*s,'url(#fill)');rc(X(c.x0-EP),Y(S.ceiling),EP*s,S.ceiling*s,'#DDE3EA');}
     if(fr){rc(X(c.x0-EP),Y(ty),EP*s,ty*s,'#DDE3EA');rc(X(c.x1),Y(ty),EP*s,ty*s,'#DDE3EA');rc(X(c.x0-EP),Y(ty),(c.x1-c.x0+2*EP)*s,Math.max(2,EP*s),'#DDE3EA');}
     // top infill across the run
     if(!fr&&infill()>0){const a=S.fit==='openL'?c.x0-EP:0,b=S.fit==='openR'?c.x1+EP:S.wall;rc(X(a),Y(S.ceiling),(b-a)*s,infill()*s,'url(#fill)');}
@@ -276,10 +306,10 @@ function drawPlan(){
   // dimensions across the top
   dimH(0,S.wall,Y(S.ceiling)-52,fr?`${S.wall} space`:`${S.wall}`);
   if(has){const segs=[];
-    if(S.fit==='wall'||S.fit==='openR'){if(c.x0>0)segs.push([0,c.x0]);}else segs.push([c.x0-EP,c.x0]);
+    if(S.fit==='wall'||S.fit==='openR'){if(c.fillL>0)segs.push([0,c.fillL]);}else segs.push([c.x0-EP,c.x0]);
     S.modules.forEach((m,i)=>segs.push([c.pos[i],c.pos[i]+m.w]));
-    if(S.fit==='wall'||S.fit==='openL'){if(c.x1<S.wall)segs.push([c.x1,S.wall]);}else segs.push([c.x1,c.x1+EP]);
-    segs.forEach(([a,b])=>dimH(a,b,Y(S.ceiling)-24,String(Math.round(b-a))));}
+    if(S.fit==='wall'||S.fit==='openL'){const r0=S.wall-c.fillR;if(c.fixed&&c.x1<r0-0.5)segs.push([c.x1,r0,'gap']);if(c.fillR>0)segs.push([r0,S.wall]);}else segs.push([c.x1,c.x1+EP]);
+    segs.forEach(([a,b,g])=>dimH(a,b,Y(S.ceiling)-24,(g?'gap ':'')+String(Math.round(b-a))));}
   // heights on the right: plinth, doors, top cupboards, infill; overall on the left
   const xr=X(S.wall)+30;
   if(has){dimV(0,P,xr,`${P}`);dimV(P,mh,xr,`${mh-P}`);if(top)dimV(mh,ty,xr,`${ty-mh}`);if(!fr&&ty<S.ceiling)dimV(ty,S.ceiling,xr,`${S.ceiling-ty}`);}
@@ -300,6 +330,9 @@ function stepSpace(){const fr=free();
   <div class="grp">${numRow('wall',fr?'Space available':'Width of the space',S.wall,fr?'How much wall the unit can take.':'Measure at the top, middle and bottom. Use the smallest.')}${numRow('ceiling','Ceiling height',S.ceiling,'Floor to ceiling where the wardrobe goes.')}</div>
   <div class="grp"><h3>Walls either side</h3><div class="chips">${chip('fit','wall',ICON.wall+'<span>Wall both sides<small>Alcove or full wall</small></span>',S.fit==='wall')}${chip('fit','openL',ICON.openL+'<span>Open on the left<small>Finished end panel</small></span>',S.fit==='openL')}${chip('fit','openR',ICON.openR+'<span>Open on the right<small>Finished end panel</small></span>',S.fit==='openR')}${chip('fit','free',ICON.free+'<span>Freestanding<small>Finished both ends and top</small></span>',fr)}</div>
     ${fr?numRow('freeh','Unit height',S.freeH,`Up to ${S.ceiling-20} mm with this ceiling.`):''}</div>
+  ${fr?'':`<div class="grp"><h3>Side infill</h3><div class="chips">${chip('side','auto',`<span>Auto<small>What is left, ${CFG.scribe.min} to ${CFG.scribe.max} mm</small></span>`,S.side.mode==='auto')}${chip('side','set','<span>Set the size<small>Type it in</small></span>',S.side.mode==='set')}</div>
+    ${S.side.mode==='set'?(hasL()?numRow('sidel',hasR()?'Left infill':'Infill at the wall',S.side.l,`0 to ${CFG.sideInfill.max} mm`,1):'')+(hasR()?numRow('sider',hasL()?'Right infill':'Infill at the wall',S.side.r,`0 to ${CFG.sideInfill.max} mm`,1):'')+'<p class="note">The units fill what is left between them. Equal split in Units makes them fit exactly.</p>'
+      :`<p class="note">A strip at ${hasL()&&hasR()?'each wall':'the wall'}, cut to the wall's shape so the units sit square.${S.unitMode==='equal'?` Equal split uses ${CFG.sideInfill.def} mm until you set it.`:''}</p>`}</div>`}
   <div class="grp"><h3>Plinth</h3><div class="chips">${pick('plinth',CFG.plinths,S.plinth,S.plinthCustom)}</div>
     ${S.plinthCustom?numRow('plinthc','Plinth height',S.plinth,`0 to ${CFG.plinthMax} mm. Set back under the doors.`):'<p class="note">The kick board along the floor, set back under the doors.</p>'}</div>
   ${fr?'':`<div class="grp"><h3>Top infill</h3><div class="chips">${pick('infill',CFG.infills,S.infill,S.infillCustom)}</div>
@@ -307,21 +340,25 @@ function stepSpace(){const fr=free();
   <div class="grp"><h3>Depth</h3><div class="chips">${chip('depth','std',`<span>Standard<small>${S.doors==='sliding'?CFG.depth.sliding:CFG.depth.hinged} mm, hangers fit</small></span>`,S.depthMode==='std')}${chip('depth','shallow',`<span>Shallow<small>${CFG.depth.shallow} mm, pull-out rails</small></span>`,S.depthMode==='shallow',S.doors==='sliding')}${chip('depth','custom','<span>Custom<small>Your size</small></span>',S.depthMode==='custom')}</div>
     ${S.depthMode==='custom'?numRow('depthc','Depth including doors',S.depthCustom,`${CFG.depth.min}–${CFG.depth.max} mm`):''}
     ${S.depthMode==='custom'&&S.depthCustom<560&&S.modules.some(m=>m.layout!=='shelves'&&m.layout!=='drawers')?'<p class="hint">Under 560 mm, hangers turn to face you on pull-out rails.</p>':''}</div>`;}
-function stepUnits(){const c=calc();
-  return `<div><h2>Units</h2><p class="lede">Pick a standard width for each unit, or type your own. Units run left to right.</p></div>
+function stepUnits(){const c=calc(),mode=S.unitMode,R=equalRange(),n=S.modules.length;
+  const lede=mode==='standard'?'Pick a standard width for each unit.':mode==='custom'?'Type the width of each unit.':'Pick how many units. They share the width equally.';
+  return `<div><h2>Units</h2><p class="lede">${lede} Units run left to right.</p></div>
+  <div class="grp"><h3>Unit sizes</h3><div class="chips row3">${chip('umode','standard',`<span>Standard sizes<small>${CFG.standardWidths[0]} to ${CFG.standardWidths[CFG.standardWidths.length-1]} mm</small></span>`,mode==='standard')}${chip('umode','custom',`<span>Custom<small>Any width</small></span>`,mode==='custom')}${chip('umode','equal','<span>Equal split<small>Fills the wall</small></span>',mode==='equal')}</div></div>
   <div class="fitbar ${c.lv==='ok'?'':c.lv}" role="status"><b>${esc(c.t)}</b><span>${esc(c.sub)}</span></div>
-  <button type="button" class="wbtn primary wide" data-act="fill">Fill my wall with standard sizes</button>
+  ${mode==='standard'?'<button type="button" class="wbtn primary wide" data-act="fill">Fill my wall with standard sizes</button>':''}
+  ${mode==='equal'?`<div class="num"><label for="ucount">Number of units<small>${R.A} mm${free()?'':' between the side infills'}${c.panels?' and end panel'+(c.panels>1?'s':''):''}</small></label><div class="nctl"><button type="button" class="st" data-act="ucount" data-v="-1" aria-label="One unit fewer" ${n<=R.min?'disabled':''}>−</button><input id="ucount" type="number" value="${n}" readonly tabindex="-1" aria-live="polite"><span class="u">units</span><button type="button" class="st" data-act="ucount" data-v="1" aria-label="One unit more" ${n>=R.max?'disabled':''}>+</button></div></div>
+  <p class="note">${n} × ${widthsText()} mm${R.A%n?` (the ${R.A%n} mm left over goes 1 mm each to the first units)`:''}.</p>`:''}
   <div class="mods">${S.modules.map((m,i)=>{const narrow=m.w<400&&m.layout!=='shelves';return `<div class="mod" data-act="sel" data-v="${i}" aria-current="${i===S.sel}">
     <div class="modhead"><b>Unit ${i+1}</b><span class="w">${m.w}</span><span class="sp"></span>
       <button type="button" class="ib" data-act="left" data-v="${i}" aria-label="Move unit ${i+1} left" ${i===0?'disabled':''}><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
       <button type="button" class="ib" data-act="right" data-v="${i}" aria-label="Move unit ${i+1} right" ${i===S.modules.length-1?'disabled':''}><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
       <button type="button" class="ib" data-act="del" data-v="${i}" aria-label="Remove unit ${i+1}"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
-    <div class="wchips" role="group" aria-label="Unit ${i+1} width">${CFG.standardWidths.map(w=>chip('w',i+':'+w,String(w),!m.custom&&m.w===w)).join('')}${chip('custom',i,'Custom',m.custom)}</div>
-    ${m.custom?numRow('cw'+i,'Custom width',m.w,`${CFG.customMin}–${CFG.customMax} mm`,1):''}
+    ${mode==='standard'?`<div class="wchips" role="group" aria-label="Unit ${i+1} width">${CFG.standardWidths.map(w=>chip('w',i+':'+w,String(w),m.w===w)).join('')}</div>`:''}
+    ${mode==='custom'?numRow('cw'+i,'Width',m.w,`${CFG.customMin}–${CFG.customMax} mm`,1):''}
     <select aria-label="Unit ${i+1} inside" data-layout="${i}">${Object.keys(CFG.layouts).map(k=>`<option value="${k}" ${k===m.layout?'selected':''}>${CFG.layouts[k]}</option>`).join('')}</select>
     ${narrow?'<p class="hint">Too narrow for hanging. Shelves work best under 400 mm.</p>':''}
     ${S.doors==='hinged'?`<p class="note">${hingedCount(m.w)===1?'One door':'Pair of doors'}${S.height==='top'&&topOk()?' plus a top cupboard':''}.</p>`:''}</div>`;}).join('')}</div>
-  <button type="button" class="wbtn ghost wide" data-act="add" ${S.modules.length>=12?'disabled':''}>Add a unit</button>`;}
+  <button type="button" class="wbtn ghost wide" data-act="add" ${S.modules.length>=(mode==='equal'?R.max:12)?'disabled':''}>Add a unit</button>`;}
 function stepDoors(){const c=calc();
   return `<div><h2>Doors</h2><p class="lede">Tap any door in the 3D view to open it.</p></div>
   <div class="grp"><h3>Type</h3><div class="chips">${chip('doors','hinged','<span>Hinged<small>Up to 600 mm wide is one door, wider is a pair</small></span>',S.doors==='hinged')}${chip('doors','sliding',`<span>Sliding<small>${S.modules.length?slidingCount(c.mods)+' doors':'Saves space in front'}, needs ${CFG.depth.sliding} mm depth</small></span>`,S.doors==='sliding')}</div></div>
@@ -332,7 +369,8 @@ function stepColour(){return `<div><h2>Colour</h2><p class="lede">Built in MDF a
   <div class="colours" role="group" aria-label="Colour">${CFG.colours.map(k=>chip('colour',k.k,`<span class="sw" style="background:${k.c}"></span><span>${esc(k.n)}</span>`,S.colour===k.k)).join('')}</div>`;}
 function specRows(){const c=calc(),d=depth();return[
   ['Space',`${S.wall} wide × ${S.ceiling} high, ${S.fit==='wall'?'wall both sides':S.fit==='openL'?'open on the left':S.fit==='openR'?'open on the right':'freestanding'}`],
-  ['Units',S.modules.map(m=>m.w+(m.custom?' (custom)':'')).join(' | ')+` = ${c.mods}`],
+  ['Units',S.modules.map(m=>m.w+(m.custom&&S.unitMode!=='equal'?' (custom)':'')).join(' | ')+` = ${c.mods}`+(S.unitMode==='equal'?' (equal split)':'')],
+  ...(free()?[]:[['Side infill',(hasL()&&hasR()?`${Math.round(c.fillL)} left, ${Math.round(c.fillR)} right`:`${Math.round(hasL()?c.fillL:c.fillR)} at the wall`)+(c.fixed?'':' (auto)')]]),
   ['Fit',c.t],
   ['Inside',S.modules.map((m,i)=>`${i+1}. ${CFG.layouts[m.layout]}`).join(' · ')],
   ['Depth',`${d} mm overall`],
@@ -363,11 +401,12 @@ function stepSend(){
   <div class="contact"><span>Or call <span class="mono">${CFG.phone}</span></span><span>Email <span class="mono">${CFG.email}</span></span></div>`;}
 /* The design as data for CabinetOS (/api/brief forwards it; cabinetos-site src/lib/inbound/websiteDesign.ts reads it). */
 function designPayload(){const c=calc(),fr=free();
-  const left=S.fit==='wall'||S.fit==='openR'?Math.max(0,Math.round(c.x0)):0,right=S.fit==='wall'||S.fit==='openL'?Math.max(0,Math.round(S.wall-c.x1)):0;
+  const left=hasL()?Math.max(0,Math.round(c.fillL)):0,right=hasR()?Math.max(0,Math.round(c.fillR)):0;
   return{source:'rafcarpentry-wardrobe-planner',version:1,
     space:{widthMm:S.wall,ceilingMm:S.ceiling,fit:S.fit,depthMm:depth(),plinthMm:S.plinth,topInfillMm:infill(),freeHeightMm:topY()},
     doors:{type:S.doors,style:S.style,handle:S.handle,topCupboards:S.height==='top'&&topOk(),topSplitMm:CFG.topSplit},
-    colour:colour().n,units:S.modules.map(m=>({widthMm:m.w,layout:m.layout,custom:!!m.custom})),fillers:{leftMm:fr?0:left,rightMm:fr?0:right}};}
+    colour:colour().n,units:S.modules.map(m=>({widthMm:m.w,layout:m.layout,custom:!!m.custom})),fillers:{leftMm:fr?0:left,rightMm:fr?0:right},
+    unitMode:S.unitMode,sideInfill:fr?null:{mode:S.side.mode,leftMm:left,rightMm:right}};}
 function briefMessage(){const C=S.contact;return [
   `Hi Raf, this is ${C.name.trim()}. Here is my brief from your website.`,
   'What: Fitted wardrobe',
@@ -388,10 +427,11 @@ function render(){
   chips();
 }
 function chips(){const c=calc();$('#fitText').textContent=c.t;$('#fitChip').className='fit'+(c.lv==='ok'?'':' '+c.lv);$('#dimsChip').textContent=`${S.wall} × ${S.ceiling} · ${S.modules.length} unit${S.modules.length===1?'':'s'}`;}
-function changed(rebuildPanel=true,keepCam=true){S.example=false;S.sent=false;build();if(S.view==='draw')drawPlan();if(rebuildPanel)render();else chips();}
-function numVal(id){return id==='wall'?S.wall:id==='ceiling'?S.ceiling:id==='depthc'?S.depthCustom:id==='plinthc'?S.plinth:id==='infillc'?S.infill:id==='freeh'?S.freeH:(S.modules[Number(id.slice(2))]||{}).w;}
+function changed(rebuildPanel=true,keepCam=true){S.example=false;S.sent=false;if(S.unitMode==='equal'&&S.modules.length)equalise(S.modules.length);build();if(S.view==='draw')drawPlan();if(rebuildPanel)render();else chips();}
+function numVal(id){return id==='sidel'?S.side.l:id==='sider'?S.side.r:id==='wall'?S.wall:id==='ceiling'?S.ceiling:id==='depthc'?S.depthCustom:id==='plinthc'?S.plinth:id==='infillc'?S.infill:id==='freeh'?S.freeH:(S.modules[Number(id.slice(2))]||{}).w;}
 function setNum(id,v){v=Number(v);if(!isFinite(v))return;
   if(id==='wall'){S.wall=clamp(Math.round(v),500,8000);}
+  else if(id==='sidel'||id==='sider'){S.side[id==='sidel'?'l':'r']=clamp(Math.round(v),0,CFG.sideInfill.max);}
   else if(id==='ceiling'){S.ceiling=clamp(Math.round(v),1800,3600);S.freeH=Math.min(S.freeH,S.ceiling-20);}
   else if(id==='plinthc'){S.plinth=clamp(Math.round(v),0,CFG.plinthMax);}
   else if(id==='infillc'){S.infill=clamp(Math.round(v),0,CFG.infillMax);}
@@ -412,6 +452,17 @@ on(host,'click',e=>{
   if(a!=='sel')e.stopPropagation();
   switch(a){
     case'fit':S.fit=v;changed();break;
+    case'side':if(v==='set'&&S.side.mode!=='set'){const c=calc(),gap=Math.round(S.wall-c.run),ok=x=>x>=0&&x<=CFG.sideInfill.max,d=CFG.sideInfill.def;
+        // start from what the drawing shows now, so switching changes nothing until a number is typed
+        if(S.fit==='wall'){const l=Math.floor(c.fillL),r=gap-l;if(ok(l)&&ok(r)){S.side.l=l;S.side.r=r;}else{S.side.l=d;S.side.r=d;}}
+        else if(S.fit==='openR')S.side.l=ok(gap)?gap:d;else if(S.fit==='openL')S.side.r=ok(gap)?gap:d;}
+      S.side.mode=v;changed();break;
+    case'umode':if(v!==S.unitMode){S.unitMode=v;
+        if(v==='standard')S.modules.forEach(m=>{m.w=nearestStd(m.w);m.custom=false;});
+        else if(v==='custom')S.modules.forEach(m=>{m.custom=true;});
+        else equalise(S.modules.length||Math.round(equalRange().A/900));
+        changed();}break;
+    case'ucount':equalise(S.modules.length+Number(v));changed();break;
     case'plinth':S.plinth=Number(v);S.plinthCustom=false;changed();break;
     case'plinth-c':S.plinthCustom=true;changed();break;
     case'infill':S.infill=Number(v);S.infillCustom=false;changed();break;
@@ -423,7 +474,10 @@ on(host,'click',e=>{
     case'custom':{const m=S.modules[Number(v)];if(m){m.custom=true;S.sel=Number(v);changed();}break;}
     case'left':case'right':{const i=Number(v),j=a==='left'?i-1:i+1;if(j>=0&&j<S.modules.length){[S.modules[i],S.modules[j]]=[S.modules[j],S.modules[i]];S.sel=j;changed();}break;}
     case'del':{S.modules.splice(Number(v),1);S.sel=clamp(S.sel,0,Math.max(0,S.modules.length-1));changed();break;}
-    case'add':{const c=calc(),room=S.wall-c.run-(S.fit==='wall'?2:1)*CFG.scribe.min;const w=[...CFG.standardWidths].reverse().find(x=>x<=room)||600;S.modules.push(mk(w,layoutFor(w,S.modules.length)));S.sel=S.modules.length-1;changed();break;}
+    case'add':{if(S.unitMode==='equal'){equalise(S.modules.length+1);S.sel=S.modules.length-1;changed();break;}
+      const c=calc(),room=c.fixed?Math.round(c.left):S.wall-c.run-(S.fit==='wall'?2:1)*CFG.scribe.min;
+      const w=S.unitMode==='custom'?clamp(Math.min(900,room),CFG.customMin,CFG.customMax):[...CFG.standardWidths].reverse().find(x=>x<=room)||600;
+      const m=mk(w,layoutFor(w,S.modules.length));if(S.unitMode==='custom')m.custom=true;S.modules.push(m);S.sel=S.modules.length-1;changed();break;}
     case'doors':S.doors=v;if(v==='sliding'&&S.depthMode==='shallow')S.depthMode='std';doorState.clear();$('#openBtn').textContent='Open doors';changed();break;
     case'style':S.style=v;changed();break;
     case'handle':S.handle=v;changed();break;
