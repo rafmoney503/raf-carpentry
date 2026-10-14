@@ -140,6 +140,7 @@ export function getMenuPanels(): Record<string, MenuPanel> {
       tags: tools.categories.map((c) => ({ label: c.name.replace(/\s*&\s*/g, ' and '), href: `/tools#${slug(c.name)}`, count: c.tools.length })),
       listTitle: 'Free to use',
       list: [
+        { label: 'Wardrobe planner in 3D', href: '/wardrobe-planner' },
         { label: 'Workshop calculator in mm', href: '/calculator' },
         { label: 'Workshop tips', href: '/tips' },
         { label: 'Timber Stack, a game', href: '/tools/timber-stack' },
