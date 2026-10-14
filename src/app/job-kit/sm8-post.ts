@@ -26,7 +26,7 @@ export function problemText(error?: string, detail?: string, at?: number) {
     case 'sm8-forbidden':
       return 'ServiceM8 says this key isn’t allowed to do that. Check the key has Full access and the plan is Starter or above.';
     case 'sm8-busy':
-      return /quota/i.test(detail ?? '') ? 'ServiceM8 says today’s email allowance is used up. Try again tomorrow, or email from ServiceM8.' : 'ServiceM8 is busy. Try again in a minute.';
+      return /quota/i.test(detail ?? '') ? 'ServiceM8 says today’s allowance of messages is used up. Try again tomorrow, or send it from ServiceM8.' : 'ServiceM8 is busy. Try again in a minute.';
     case 'no-pin':
       return 'Add your PIN in Settings first.';
     case 'wrong-pin':
@@ -39,10 +39,15 @@ export function problemText(error?: string, detail?: string, at?: number) {
       return 'That email address doesn’t look right.';
     case 'missing-mail':
       return 'Write a subject and a message first.';
+    case 'bad-mobile':
+      return 'That mobile number doesn’t look right.';
+    case 'missing-text':
+      return 'Write the text first.';
     case 'offline':
     case 'sm8-down':
       return `No signal, or ServiceM8 isn’t answering.${at ? ` Showing the list from ${clock(at)}.` : ''}`;
     default:
+      if (/credit/i.test(detail ?? '')) return 'ServiceM8 says there aren’t enough text credits. Top them up in ServiceM8, or send an email instead.';
       if (/character set/i.test(detail ?? '')) return 'ServiceM8 wouldn’t take some of the characters in it (an emoji or an unusual symbol). Take them out and try again.';
       return `ServiceM8 sent back an error${detail ? `: ${detail}` : '.'}`;
   }

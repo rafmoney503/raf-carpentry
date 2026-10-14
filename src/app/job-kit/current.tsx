@@ -24,8 +24,9 @@ export type { Booking, CurrentJob, Staff };
 /* replies: job uuid -> the customer's newest email in the last 14 days (null: ServiceM8 won't let the account read
    emails; missing in a list kept from before). */
 export type Sm8 = { jobs: CurrentJob[]; at: number; bookings?: Booking[] | null; staff?: Staff[]; replies?: Record<string, string> | null; error?: string; detail?: string };
-/* mailSeen: the newest of their emails Raf has seen in the job's Emails (London time). */
-export type Marks = Record<string, { quoteSentAt?: number; hidden?: boolean; mailSeen?: string }>;
+/* mailSeen: the newest of their messages Raf has seen in the job's Emails and texts (London time);
+   reviewAskedAt: when the review request went from the Job Kit. */
+export type Marks = Record<string, { quoteSentAt?: number; hidden?: boolean; mailSeen?: string; reviewAskedAt?: number }>;
 
 const LIST_KEY = 'raf_jobkit_sm8';
 const MARKS_KEY = 'raf_jobkit_sm8_marks';
@@ -63,7 +64,7 @@ export async function fetchSm8(pin: string, before: Sm8): Promise<Sm8> {
 }
 export const keepSm8 = (s: Sm8) => write(LIST_KEY, { jobs: s.jobs, at: s.at, bookings: s.bookings, staff: s.staff, replies: s.replies });
 
-/* An email from the customer that Raf hasn't opened the job's Emails to see yet. */
+/* An email or text from the customer that Raf hasn't opened the job's Emails and texts to see yet. */
 export const newMail = (uuid: string, replies: Sm8['replies'], m: Marks) => {
   const at = replies?.[uuid];
   return Boolean(at && at > (m[uuid]?.mailSeen ?? ''));
@@ -558,7 +559,7 @@ function Card({
         {money ? <span className={`mt-1 block font-mono text-[12.5px] ${owed ? 'font-semibold text-ink' : 'text-faint'}`}>{money}</span> : null}
         {chips.length || fresh ? (
           <span className="mt-1.5 flex flex-wrap gap-1.5">
-            {fresh ? <span className="rounded-sm border border-accent bg-accent px-1.5 py-0.5 font-mono text-[11.5px] text-on-accent">New email</span> : null}
+            {fresh ? <span className="rounded-sm border border-accent bg-accent px-1.5 py-0.5 font-mono text-[11.5px] text-on-accent">New message</span> : null}
             {chips.map((c) => (
               <span key={c} className="rounded-sm border border-line px-1.5 py-0.5 font-mono text-[11.5px] text-muted">
                 {c}
@@ -761,7 +762,7 @@ export function CurrentView({
             document.getElementById('emails')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }}
         >
-          Email{newMail(job.uuid, replyAt ? { [job.uuid]: replyAt } : null, marks) ? ' (new)' : ''}
+          Email or text{newMail(job.uuid, replyAt ? { [job.uuid]: replyAt } : null, marks) ? ' (new)' : ''}
         </button>
       </div>
       {!contact && !job.email ? <p className="mt-2 text-[14px] text-faint">No phone or email on this job in ServiceM8.</p> : null}
@@ -826,9 +827,18 @@ export function CurrentView({
             </button>
           ) : null}
           {job.status === 'Completed' ? (
-            <button type="button" className="btn btn-ghost btn-sm w-full" onClick={() => onMark({ hidden: true })}>
-              Done with it: hide from the list
-            </button>
+            <>
+              <button
+                type="button"
+                className={`btn btn-sm w-full ${marks[job.uuid]?.reviewAskedAt ? 'btn-ghost' : 'btn-primary'}`}
+                onClick={() => document.getElementById('emails')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              >
+                {marks[job.uuid]?.reviewAskedAt ? 'Review asked: see it in Emails and texts' : 'Ask for a Google review'}
+              </button>
+              <button type="button" className="btn btn-ghost btn-sm w-full" onClick={() => onMark({ hidden: true })}>
+                Done with it: hide from the list
+              </button>
+            </>
           ) : null}
           {job.status === 'Unsuccessful' ? (
             <>
@@ -851,6 +861,7 @@ export function CurrentView({
         onSeen={(at) => {
           if (at > (marks[job.uuid]?.mailSeen ?? '')) onMark({ mailSeen: at });
         }}
+        review={job.status === 'Completed' ? { askedAt: marks[job.uuid]?.reviewAskedAt, onAsked: () => onMark({ reviewAskedAt: Date.now() }) } : undefined}
       />
 
       <MoneyBox job={job} />
@@ -1122,10 +1133,10 @@ export function todayLines({
   const tomorrow = bookingsOn(all, addDays(today, 1));
   if (tomorrow.length === 1) lines.push({ text: `Tomorrow ${hm(tomorrow[0].start)}, ${who(tomorrow[0])}`, go: 'sm8', id: tomorrow[0].jobUuid });
   else if (tomorrow.length) lines.push({ text: `Tomorrow: ${tomorrow.length} bookings, first at ${hm(tomorrow[0].start)}`, go: 'diary' });
-  // Emails from customers not seen yet in the job's Emails.
+  // Emails and texts from customers not seen yet in the job's Emails and texts.
   const mailFrom = sm8.jobs.filter((j) => newMail(j.uuid, sm8.replies, marks) && !marks[j.uuid]?.hidden).sort((a, b) => (sm8.replies![b.uuid] ?? '').localeCompare(sm8.replies![a.uuid] ?? ''));
-  for (const j of mailFrom.slice(0, 3)) lines.push({ text: `Email from ${j.name}`, go: 'sm8', id: j.uuid, urgent: true, icon: 'mail' });
-  if (mailFrom.length > 3) lines.push({ text: `${n(mailFrom.length - 3, 'more email', 'more emails')} from customers`, go: 'current', urgent: true, icon: 'mail' });
+  for (const j of mailFrom.slice(0, 3)) lines.push({ text: `Message from ${j.name}`, go: 'sm8', id: j.uuid, urgent: true, icon: 'mail' });
+  if (mailFrom.length > 3) lines.push({ text: `${n(mailFrom.length - 3, 'more message', 'more messages')} from customers`, go: 'current', urgent: true, icon: 'mail' });
   const list = shown(sm8, marks);
   const stages = list.map((j) => stage(j, marks));
   const fresh = stages.filter((s) => s === 'new').length;
@@ -1144,6 +1155,10 @@ export function todayLines({
     const sum = owing.reduce((s, j) => s + (moneyOf(j).left ?? 0), 0);
     lines.push({ text: `${gbp(sum)} left to collect on ${n(owing.length, 'completed job', 'completed jobs')}`, go: 'current', urgent: true, icon: 'money' });
   }
+  // Finished in the last 14 days and not asked for a review from the Job Kit yet.
+  const toAsk = list.filter((j) => j.status === 'Completed' && !marks[j.uuid]?.reviewAskedAt && Date.now() - (parse(j.completed) || 0) < DONE_DAYS * DAY);
+  if (toAsk.length === 1) lines.push({ text: `Ask ${toAsk[0].name} for a review`, go: 'sm8', id: toAsk[0].uuid, icon: 'review' });
+  else if (toAsk.length) lines.push({ text: `Ask ${toAsk.length} finished jobs for a review`, go: 'current', icon: 'review' });
   if (going) lines.push({ text: `${n(going, 'job', 'jobs')} on Work Order`, go: 'current' });
   const photoJobs = kit.filter((k) => k.kind !== 'design');
   const waitingPage = photoJobs.filter((k) => k.readyAt && !done[k.id]).length;

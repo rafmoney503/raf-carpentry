@@ -1,8 +1,8 @@
 import { randomUUID } from 'crypto';
 import { asciiJson, sm8Base, sm8Call, sm8List, sm8Str as str, sm8When as when, Sm8Error, statusError, tidy, type Sm8Row as Row } from './servicem8';
-import { freshPart, htmlToText, looksHtml, signOff, withoutSignOff } from './mail-text';
+import { e164, freshPart, htmlToText, looksHtml, signOff, SMS_SIGN_OFF, textOnly, withoutSignOff } from './mail-text';
 
-/* A job's emails in the Job Kit (Current jobs, the job, Emails): Raf writes there, it goes out through ServiceM8's
+/* A job's emails and texts in the Job Kit (Current jobs, the job, Emails and texts): Raf writes there, it goes out through ServiceM8's
    own email (the Messaging API, POST /platform_service_email, the same one the website's emails use, which works
    with the account's API key) and is filed in the job's diary. ServiceM8's two-way email puts the customer's reply
    in the same diary.
@@ -17,30 +17,37 @@ import { freshPart, htmlToText, looksHtml, signOff, withoutSignOff } from './mai
    If ServiceM8 won't let the account read emails at all ("email is not an authorised object type", 403, 404),
    each email sent from the Job Kit is also saved as a note on the job (ServiceM8's own suggestion), and the
    conversation shows those copies: Raf's side only; the replies are in ServiceM8.
+   Texts (SMS) work the same way: POST /platform_service_sms {to (E.164), message, regardingJobUUID}, which uses
+   the account's text credits (one per 153 characters) and, with ServiceM8's two-way texts (part of every plan),
+   ends with a "Reply here" link whose replies land in the job's diary; read back from GET /api_1.0/sms.json (same
+   preview as email.json, same fallbacks, copies as notes headed "Text sent from the Job Kit").
    Customer details only travel phone <-> this server <-> ServiceM8. */
 
 export type Mail = {
   id: string;
+  via?: 'email' | 'sms'; // missing on emails kept on the phone from before texts
   dir: 'in' | 'out';
   at: string | null; // London time, "YYYY-MM-DDTHH:MM"
-  from: string;
+  from: string; // an email address, or a number for a text
   to: string;
-  subject: string;
+  subject: string; // '' for a text
   text: string; // the new part (no quoted earlier emails, no sign-off)
   full: string; // the whole email when `text` leaves something out, else ''
   copy?: boolean; // a copy kept as a note on the job (emails can't be read on this account)
   keys?: string[]; // only when no text could be found: the email's field names
 };
-export type Thread = { mails: Mail[]; readable: boolean; detail?: string };
+/* readable: ServiceM8 lets the account read its emails; texts: the same for texts (missing before texts). */
+export type Thread = { mails: Mail[]; readable: boolean; texts?: boolean; detail?: string };
 
 export const NOTE_HEAD = 'Email sent from the Job Kit';
+export const TEXT_NOTE_HEAD = 'Text sent from the Job Kit';
 
 /* ---------- reading ServiceM8's email records ---------- */
 
 const listOf = (d: unknown): Row[] => {
   if (Array.isArray(d)) return d as Row[];
   if (d && typeof d === 'object') {
-    for (const k of ['data', 'items', 'emails', 'results', 'records']) if (Array.isArray((d as Row)[k])) return (d as Row)[k] as Row[];
+    for (const k of ['data', 'items', 'emails', 'sms', 'messages', 'results', 'records']) if (Array.isArray((d as Row)[k])) return (d as Row)[k] as Row[];
     if ('uuid' in d) return [d as Row];
   }
   return [];
@@ -52,8 +59,11 @@ const SUBJECT_KEYS = ['subject', 'email_subject', 'title'];
 const FROM_KEYS = ['from', 'from_email', 'from_address', 'email_from', 'from_email_address', 'sender', 'sender_email'];
 const TO_KEYS = ['to', 'to_email', 'to_address', 'email_to', 'to_email_address', 'recipient', 'recipient_email', 'recipients'];
 const DATE_KEYS = ['timestamp', 'sent_timestamp', 'sent_date', 'date_sent', 'received_timestamp', 'received_date', 'date', 'message_date', 'create_date', 'created', 'created_at', 'edit_date'];
-const DIR_KEYS = ['direction', 'message_direction', 'email_direction'];
-const KNOWN = new Set([...TEXT_KEYS, ...HTML_KEYS, ...SUBJECT_KEYS, ...FROM_KEYS, ...TO_KEYS, ...DATE_KEYS, ...DIR_KEYS, 'uuid', 'related_object', 'related_object_uuid', 'active']);
+const DIR_KEYS = ['direction', 'message_direction', 'email_direction', 'sms_direction'];
+// Texts: the numbers (the text itself is under one of TEXT_KEYS, most likely `message`)
+const FROM_NUMBER_KEYS = ['from', 'from_number', 'from_mobile', 'from_phone', 'sender', 'sender_number', 'originator'];
+const TO_NUMBER_KEYS = ['to', 'to_number', 'to_mobile', 'to_phone', 'mobile', 'phone', 'recipient', 'recipient_number', 'destination'];
+const KNOWN = new Set([...TEXT_KEYS, ...HTML_KEYS, ...SUBJECT_KEYS, ...FROM_KEYS, ...TO_KEYS, ...DATE_KEYS, ...DIR_KEYS, ...FROM_NUMBER_KEYS, ...TO_NUMBER_KEYS, 'uuid', 'related_object', 'related_object_uuid', 'active']);
 
 const first = (r: Row, keys: string[]) => {
   for (const k of keys) {
@@ -72,6 +82,18 @@ function addresses(v: unknown): string {
   }
   return '';
 }
+/* A phone number in a record, as +44..., or ''. */
+const numberOf = (r: Row, keys: string[]) => {
+  for (const k of keys) {
+    const v = r[k];
+    if ((typeof v === 'string' || typeof v === 'number') && /\d{6,}/.test(String(v).replace(/\s+/g, ''))) {
+      const n = e164(String(v));
+      if (n) return n;
+    }
+  }
+  return '';
+};
+const sameNumber = (a: string, b: string) => Boolean(a && b) && a.replace(/\D/g, '').slice(-9) === b.replace(/\D/g, '').slice(-9);
 const addrOf = (r: Row, keys: string[]) => {
   for (const k of keys) {
     const a = addresses(r[k]);
@@ -131,6 +153,7 @@ export function mailOf(r: Row, customer: string, dir?: 'in' | 'out'): Mail {
   const text = way === 'out' ? withoutSignOff(part.text) : part.text;
   const mail: Mail = {
     id: str(r.uuid),
+    via: 'email',
     dir: way,
     at: dateOf(r),
     from: addrOf(r, FROM_KEYS),
@@ -143,18 +166,32 @@ export function mailOf(r: Row, customer: string, dir?: 'in' | 'out'): Mail {
   return mail;
 }
 
+/* A text from ServiceM8's sms.json. `mobile` is the job's, to tell their texts from Raf's when ServiceM8 doesn't say. */
+export function textOf(r: Row, mobile: string, dir?: 'in' | 'out'): Mail {
+  const from = numberOf(r, FROM_NUMBER_KEYS);
+  const to = numberOf(r, TO_NUMBER_KEYS);
+  const d = first(r, DIR_KEYS).toLowerCase();
+  const way: 'in' | 'out' =
+    dir ?? (/^(in|inbound|incoming|received|reply)/.test(d) ? 'in' : /^(out|outbound|outgoing|sent)/.test(d) ? 'out' : sameNumber(from, mobile) ? 'in' : 'out');
+  const raw = tidy(rawText(r)).replace(/\r\n?/g, '\n').trim();
+  const text = way === 'out' ? textOnly(raw) : raw;
+  const mail: Mail = { id: str(r.uuid), via: 'sms', dir: way, at: dateOf(r), from, to, subject: '', text, full: '' };
+  if (!text) mail.keys = Object.keys(r).slice(0, 40);
+  return mail;
+}
+
 const byTime = (a: Mail, b: Mail) => (a.at ?? '').localeCompare(b.at ?? '');
 
-/* ServiceM8 turning email reading down for this account, as opposed to a filter it didn't like. */
+/* ServiceM8 turning email (or text) reading down for this account, as opposed to a filter it didn't like. */
 const refused = (e: Sm8Error) => e.code === 'sm8-forbidden' || (e.code === 'sm8-error' && (/^404\b/.test(e.detail) || /authori[sz]ed|object type|scope|permission|not (?:enabled|available)/i.test(e.detail)));
 
 type Got = { ok: true; rows: Row[] } | { ok: false; detail: string };
-async function emailRows(conds: [string, string][], orAll: boolean): Promise<Got> {
+async function historyRows(kind: 'email' | 'sms', conds: [string, string][], orAll: boolean): Promise<Got> {
   const filters = [conds.map(([k, v]) => `${k} eq '${v}'`).join(' and '), conds.map(([k, v]) => `${k} eq ${v}`).join(' and ')];
   let detail = '';
   const tryIt = async (query?: Record<string, string>): Promise<Got | null> => {
     try {
-      return { ok: true, rows: listOf((await sm8Call('email.json', { query })).data) };
+      return { ok: true, rows: listOf((await sm8Call(`${kind}.json`, { query })).data) };
     } catch (e) {
       if (!(e instanceof Sm8Error) || ['sm8-busy', 'sm8-down', 'sm8-key'].includes(e.code)) throw e;
       detail = e.detail || e.code;
@@ -177,17 +214,19 @@ async function emailRows(conds: [string, string][], orAll: boolean): Promise<Got
 
 function noteMail(n: Row): Mail | null {
   const note = str(n.note).replace(/\r\n?/g, '\n');
-  if (!note.startsWith(NOTE_HEAD)) return null;
+  const sms = note.startsWith(TEXT_NOTE_HEAD);
+  if (!sms && !note.startsWith(NOTE_HEAD)) return null;
   const [head, ...body] = note.split('\n\n');
   const line = (k: string) => head.match(new RegExp(`^${k}: (.*)$`, 'm'))?.[1]?.trim() ?? '';
   return {
     id: `note-${str(n.uuid)}`,
+    via: sms ? 'sms' : 'email',
     dir: 'out',
     at: stampOf(n.create_date) ?? stampOf(n.timestamp) ?? stampOf(n.edit_date),
     from: '',
     to: line('To'),
-    subject: line('Subject'),
-    text: withoutSignOff(body.join('\n\n')),
+    subject: sms ? '' : line('Subject'),
+    text: sms ? textOnly(body.join('\n\n')) : withoutSignOff(body.join('\n\n')),
     full: '',
     copy: true,
   };
@@ -206,33 +245,57 @@ async function noteCopies(jobUuid: string): Promise<Mail[]> {
 
 /* ---------- what the Job Kit asks for ---------- */
 
-/* A job's conversation, oldest first (the newest 40). `customer` is the job's email address, to tell their
-   emails from Raf's when ServiceM8 doesn't say which way one went. */
-export async function jobMail(jobUuid: string, customer = ''): Promise<Thread> {
-  const got = await emailRows([['related_object_uuid', jobUuid]], true);
-  if (!got.ok) return { mails: (await noteCopies(jobUuid)).sort(byTime), readable: false, detail: got.detail };
-  const rows = got.rows.map((r) => ({ r, m: mailOf(r, customer) })).sort((a, b) => byTime(a.m, b.m)).slice(-40);
-  // A list without the text in it: each email on its own (the newest 15).
+/* One kind (emails or texts) of a job's conversation, oldest first (the newest 40), or null if ServiceM8 won't let
+   the account read that kind. */
+async function jobHistory(kind: 'email' | 'sms', jobUuid: string, read: (r: Row) => Mail): Promise<{ mails: Mail[] | null; detail?: string }> {
+  const got = await historyRows(kind, [['related_object_uuid', jobUuid]], true);
+  if (!got.ok) return { mails: null, detail: got.detail };
+  const rows = got.rows.map((r) => ({ r, m: read(r) })).sort((a, b) => byTime(a.m, b.m)).slice(-40);
+  // A list without the text in it: each one on its own (the newest 15).
   const bare = rows.filter((x) => !x.m.text && x.m.id).slice(-15);
   await Promise.all(
     bare.map(async (x) => {
-      const one = await sm8Call(`email/${x.m.id}.json`)
+      const one = await sm8Call(`${kind}/${x.m.id}.json`)
         .then((res) => listOf(res.data)[0])
         .catch(() => undefined);
-      if (one) x.m = mailOf({ ...x.r, ...one }, customer);
+      if (one) x.m = read({ ...x.r, ...one });
     }),
   );
-  return { mails: rows.map((x) => x.m), readable: true };
+  return { mails: rows.map((x) => x.m) };
 }
 
-/* The customers who have emailed in the last 14 days: job uuid -> when their newest email came (London time).
-   null when ServiceM8 won't let the account read emails. For Today and the job cards ("Email from ..."). */
+/* A job's conversation, emails and texts together, oldest first (the newest 40). `customer` and `mobile` are the
+   job's, to tell their messages from Raf's when ServiceM8 doesn't say which way one went. What can't be read
+   comes from the copies kept as notes. */
+export async function jobMail(jobUuid: string, customer = '', mobile = ''): Promise<Thread> {
+  const [emails, texts] = await Promise.all([
+    jobHistory('email', jobUuid, (r) => mailOf(r, customer)),
+    jobHistory('sms', jobUuid, (r) => textOf(r, mobile)).catch((e) => {
+      // texts are extra: if reading them fails for any other reason, the emails still come
+      if (e instanceof Sm8Error && e.code === 'sm8-key') throw e;
+      return { mails: null, detail: e instanceof Sm8Error ? e.detail : '' };
+    }),
+  ]);
+  const copies = emails.mails && texts.mails ? [] : await noteCopies(jobUuid);
+  const mails = [
+    ...(emails.mails ?? copies.filter((m) => m.via !== 'sms')),
+    ...(texts.mails ?? copies.filter((m) => m.via === 'sms')),
+  ]
+    .sort(byTime)
+    .slice(-40);
+  return { mails, readable: emails.mails !== null, texts: texts.mails !== null, detail: emails.detail ?? texts.detail };
+}
+
+/* The customers who have emailed or texted in the last 14 days: job uuid -> when their newest message came (London
+   time). null when ServiceM8 won't let the account read either. For Today and the job cards ("Message from ..."). */
 export async function recentReplies(): Promise<Record<string, string> | null> {
-  const got = await emailRows([['direction', 'inbound']], false);
-  if (!got.ok) return null;
+  const [emails, texts] = await Promise.all(
+    (['email', 'sms'] as const).map((k) => historyRows(k, [['direction', 'inbound']], false).catch((): Got => ({ ok: false, detail: '' }))),
+  );
+  if (!emails.ok && !texts.ok) return null;
   const since = london(new Date(Date.now() - 14 * 864e5));
   const out: Record<string, string> = {};
-  for (const r of got.rows) {
+  for (const r of [...(emails.ok ? emails.rows : []), ...(texts.ok ? texts.rows : [])]) {
     const job = str(r.related_object_uuid);
     const at = dateOf(r);
     if (!job || !at || at < since) continue;
@@ -271,7 +334,7 @@ async function saveEmail(jobUuid: string, email: string): Promise<boolean> {
 /* Raf's email to a customer, sent through ServiceM8 and filed on the job, signed off like his other emails.
    No replyTo, so the reply comes back to the job in ServiceM8 (two-way email). Then the conversation again; if
    ServiceM8 won't let the account read emails, a copy is saved as a note on the job so the Job Kit can show it. */
-export async function sendJobEmail(e: { job: string; to: string; subject: string; text: string; save?: boolean }): Promise<{ thread: Thread; sent: Mail; saved: boolean }> {
+export async function sendJobEmail(e: { job: string; to: string; subject: string; text: string; save?: boolean; mobile?: string }): Promise<{ thread: Thread; sent: Mail; saved: boolean }> {
   const subject = tidy(e.subject).replace(/\s+/g, ' ').trim();
   const text = tidy(e.text).trim();
   const body = `${text}\n\n${signOff()}`;
@@ -290,10 +353,10 @@ export async function sendJobEmail(e: { job: string; to: string; subject: string
   }
   if (!res.ok) throw statusError(res.status, (await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 240));
 
-  const sent: Mail = { id: `sent-${randomUUID()}`, dir: 'out', at: london(new Date()), from: '', to: e.to, subject, text, full: '' };
+  const sent: Mail = { id: `sent-${randomUUID()}`, via: 'email', dir: 'out', at: london(new Date()), from: '', to: e.to, subject, text, full: '' };
   // It has gone: nothing after this may fail the send.
   const [thread, saved]: [Thread, boolean] = await Promise.all([
-    jobMail(e.job, e.to).catch((): Thread => ({ mails: [], readable: false, detail: 'read-failed' })),
+    jobMail(e.job, e.to, e.mobile).catch((): Thread => ({ mails: [], readable: false, texts: false, detail: 'read-failed' })),
     e.save ? saveEmail(e.job, e.to) : Promise.resolve(false),
   ]);
   if (!thread.readable) {
@@ -311,4 +374,55 @@ export async function sendJobEmail(e: { job: string; to: string; subject: string
     }
   }
   return { thread, sent, saved };
+}
+
+/* Raf's text to a customer, sent through ServiceM8 (it uses the account's text credits) and filed on the job,
+   signed "Raf, Raf Carpentry". ServiceM8's two-way texts add a "Reply here" link; the reply lands on the job.
+   ServiceM8 says special characters aren't supported in texts: the text is tidied (emoji and invisible marks out,
+   curly quotes plain), and if ServiceM8 still turns it down for its characters, it goes again in plain letters
+   only (accents off, the pound sign as GBP). Then the conversation again; if ServiceM8 won't let the account read
+   texts, a copy is saved as a note on the job. */
+export async function sendJobText(e: { job: string; to: string; text: string; email?: string }): Promise<{ thread: Thread; sent: Mail }> {
+  const to = e164(e.to);
+  if (!to) throw new Sm8Error('sm8-bad', 400, 'not a mobile number');
+  const root = sm8Base().replace(/\/api_1\.0$/, '');
+  const go = (plain: boolean) =>
+    fetch(`${root}/platform_service_sms`, {
+      method: 'POST',
+      headers: { 'X-API-Key': process.env.SERVICEM8_API_KEY ?? '', Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: asciiJson({ to, message: `${tidy(e.text, plain).trim()}\n${SMS_SIGN_OFF}`, regardingJobUUID: e.job }),
+      cache: 'no-store',
+      signal: AbortSignal.timeout(15_000),
+    });
+  let res: Response;
+  try {
+    res = await go(false);
+    if (res.status === 400) {
+      const why = await res.clone().text().catch(() => '');
+      if (/charact|special|encod|unicode/i.test(why)) res = await go(true);
+    }
+  } catch {
+    throw new Sm8Error('sm8-down', 502);
+  }
+  if (!res.ok) throw statusError(res.status, (await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 240));
+
+  const text = tidy(e.text).trim();
+  const sent: Mail = { id: `sent-${randomUUID()}`, via: 'sms', dir: 'out', at: london(new Date()), from: '', to, subject: '', text, full: '' };
+  // It has gone: nothing after this may fail the send.
+  const thread: Thread = await jobMail(e.job, e.email ?? '', to).catch((): Thread => ({ mails: [], readable: false, texts: false, detail: 'read-failed' }));
+  if (!thread.texts) {
+    const uuid = randomUUID();
+    const saved = await sm8Call('note.json', {
+      method: 'POST',
+      body: { uuid, related_object: 'job', related_object_uuid: e.job, note: `${TEXT_NOTE_HEAD}\nTo: ${to}\n\n${text}\n${SMS_SIGN_OFF}` },
+    })
+      .then(() => true)
+      .catch(() => false);
+    if (saved) {
+      sent.id = `note-${uuid}`;
+      sent.copy = true;
+      if (!thread.mails.some((m) => m.id === sent.id)) thread.mails = [...thread.mails, sent].sort(byTime);
+    }
+  }
+  return { thread, sent };
 }

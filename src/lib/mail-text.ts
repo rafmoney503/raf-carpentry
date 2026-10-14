@@ -73,3 +73,32 @@ export function withoutSignOff(text: string) {
   const sig = signOff();
   return t.endsWith(sig) ? tidyLines(t.slice(0, -sig.length)) : t;
 }
+
+/* ---------- texts (SMS) ---------- */
+
+/* Texts are signed off short: every 153 characters is another ServiceM8 text credit. */
+export const SMS_SIGN_OFF = 'Raf, Raf Carpentry';
+
+/* A text as the conversation shows it: without Raf's sign-off, or the "Reply here" link ServiceM8's two-way texts
+   end with. */
+export function textOnly(text: string) {
+  let t = tidyLines(text)
+    .replace(/\n?[ \t]*(?:Reply (?:here|to this message)|Tap to reply)\b[^\n]*$/i, '')
+    .replace(/\n?[ \t]*https?:\/\/\S*servicem8\S*\s*$/i, '');
+  t = tidyLines(t);
+  return t.endsWith(SMS_SIGN_OFF) ? tidyLines(t.slice(0, -SMS_SIGN_OFF.length)) : t;
+}
+
+/* How many ServiceM8 text credits a text uses: one per 153 characters (ServiceM8's rule), sign-off included. */
+export const textCredits = (message: string) => Math.max(1, Math.ceil(`${message.trim()}\n${SMS_SIGN_OFF}`.length / 153));
+
+/* A UK mobile as ServiceM8 wants it for texts (E.164: +447700900123), or '' if it isn't one. */
+export function e164(raw: string) {
+  let d = raw.replace(/[^\d+]/g, '');
+  if (d.startsWith('+')) d = d.slice(1);
+  else if (d.startsWith('00')) d = d.slice(2);
+  else if (d.startsWith('0')) d = `44${d.slice(1)}`;
+  else if (/^7\d{9}$/.test(d)) d = `44${d}`;
+  d = d.replace(/\D/g, '');
+  return /^[1-9]\d{7,14}$/.test(d) ? `+${d}` : '';
+}
