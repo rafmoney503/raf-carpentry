@@ -6,6 +6,7 @@ import { getLibraryItems, libraryKinds } from '@/lib/design-library';
 import { formatMonth } from '@/lib/projects';
 import { QUOTE_HREF } from '@/lib/site';
 import DesignBrowser, { type BrowserItem } from './design-browser';
+import PlannerTeaser from '@/components/PlannerTeaser';
 
 /* Designs in 3D: rafcarpentry.com/designs (everything) and /designs/<kind> (one kind, e.g. wardrobes).
    "What are you planning?" buttons at the top, one 3D viewer, the stills of that kind under it, and the way on:
@@ -61,12 +62,8 @@ export default function DesignsPage({ kind }: { kind?: string }) {
               Get a quote
             </Link>
             <WhatsAppButton />
-            {!k || k.slug === 'wardrobes' ? (
-              <Link href="/wardrobe-planner" className="btn btn-ghost">
-                Plan a wardrobe in 3D
-              </Link>
-            ) : null}
           </div>
+          {!k || k.slug === 'wardrobes' ? <PlannerTeaser className="mt-6 max-w-[560px]" /> : null}
         </div>
       </Container>
     </>

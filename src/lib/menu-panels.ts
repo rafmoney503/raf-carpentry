@@ -3,6 +3,7 @@ import { getLibraryItems, libraryKinds } from './design-library';
 import { readPageJson } from './pages';
 import { portfolioChips } from './portfolio-chips';
 import { getAllProjects } from './projects';
+import { PLANNER_HREF, PLANNER_IMAGE, PLANNER_IMAGE_SQUARE } from './planner-picture';
 import { getServices, jobsFor } from './services';
 
 /* What each main menu item shows when the mouse rests on it (computer) or its + is tapped (phone menu):
@@ -23,6 +24,8 @@ export type MenuPanel = {
   listTitle?: string;
   list?: { label: string; href: string }[];
   image?: { src: string; alt: string; caption: string; contain?: boolean };
+  /** A linked picture in place of `image` (Tools: the wardrobe planner), also shown in the phone menu under the + */
+  feature?: { href: string; src: string; square: string; kicker: string; title: string; line: string };
 };
 
 const slug = (s: string) =>
@@ -146,6 +149,7 @@ export function getMenuPanels(): Record<string, MenuPanel> {
         { label: 'Timber Stack, a game', href: '/tools/timber-stack' },
       ],
       image: toolImage?.image ? { src: toolImage.image, alt: '', caption: toolImage.name ?? 'From my kit' } : undefined,
+      feature: { href: PLANNER_HREF, src: PLANNER_IMAGE, square: PLANNER_IMAGE_SQUARE, kicker: 'Free planner', title: 'Plan your own wardrobe in 3D', line: 'Your sizes, units and doors. Then send it to me.' },
     },
     '/about': {
       href: '/about',

@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { PHONE_DISPLAY, PHONE_HREF, QUOTE_HREF } from '@/lib/site';
 import type { MenuPanel } from '@/lib/menu-panels';
-import MenuPanelView, { MenuTags } from './MenuPanel';
+import MenuPanelView, { MenuFeatureRow, MenuTags } from './MenuPanel';
+import { PLANNER_HREF, PLANNER_IMAGE_SQUARE } from '@/lib/planner-picture';
 import SiteSearch from './SiteSearch';
 
 const links = [
@@ -213,8 +214,13 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
             return (
               <div key={l.href} className="border-b border-line">
                 <div className="flex items-center">
-                  <Link href={l.href} onClick={() => setOpen(false)} className="block flex-1 py-3.5 text-[17px] text-ink">
+                  <Link href={l.href} onClick={() => setOpen(false)} className="flex flex-1 items-center justify-between gap-3 py-3.5 text-[17px] text-ink">
                     {l.label}
+                    {l.href === PLANNER_HREF ? (
+                      <span className="relative -my-2 block h-12 w-12 shrink-0 overflow-hidden rounded-sm border border-line-strong bg-paper">
+                        <Image src={PLANNER_IMAGE_SQUARE} alt="" fill sizes="48px" className="object-cover" />
+                      </span>
+                    ) : null}
                   </Link>
                   {p ? (
                     <button
@@ -232,6 +238,7 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
                 </div>
                 {p && isOpen ? (
                   <div className="pb-4">
+                    {p.feature ? <MenuFeatureRow feature={p.feature} onPick={() => setOpen(false)} /> : null}
                     <MenuTags tags={p.tags} small onPick={() => setOpen(false)} />
                     {p.list?.length ? (
                       <ul className="mt-3 grid gap-1">
