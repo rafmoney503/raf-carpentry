@@ -51,8 +51,24 @@ export default function ToolsPage() {
       </PageHeader>
 
       <Container className="pb-8">
-        {/* Teasers for the free calculator, the workshop tips and the Timber Stack game */}
+        {/* Teasers for the wardrobe planner, the free calculator, the workshop tips and the Timber Stack game */}
         <div className="mb-12 grid grid-cols-1 gap-4 md:mb-16 lg:grid-cols-2">
+          <Link
+            href="/wardrobe-planner"
+            className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6 lg:col-span-2"
+          >
+            <div>
+              <p className="font-mono text-[13px] text-accent">Free planner</p>
+              <h2 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Wardrobe planner in 3D</h2>
+              <p className="mt-1 text-[15px] text-muted">Your wall, your units, doors and colour. Turn it round in 3D, then send it to me for a quote.</p>
+            </div>
+            <div className="flex items-center gap-5">
+              <div className="w-[64px] sm:w-[76px]">
+                <Sketch name="drawing" fallback="" />
+              </div>
+              <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+            </div>
+          </Link>
           <Link
             href="/calculator"
             className="group grid grid-cols-1 items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent sm:grid-cols-[minmax(0,1fr)_auto] md:p-6"

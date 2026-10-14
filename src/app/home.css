@@ -24,6 +24,12 @@
 .home .hero-plan-chip { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 14px; border: 1px solid var(--color-line-strong); border-radius: 2px; background: var(--color-mount); font-size: 15px; white-space: nowrap; transition: border-color 0.2s; }
 .home .hero-plan-chip:hover { border-color: var(--color-ink); }
 .home .hero-plan-all { color: var(--color-accent); border-color: transparent; background: transparent; padding-inline: 6px; font-weight: 600; }
+/* The wardrobe planner: one full-width row under the chips */
+.home .hero-plan-tool { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; min-height: 52px; padding: 8px 16px; border: 1px solid var(--color-line-strong); border-radius: 2px; background: var(--color-mount); font-size: 16px; font-weight: 600; transition: border-color 0.2s; }
+.home .hero-plan-tool:hover { border-color: var(--color-accent); }
+.home .hero-plan-tool-k { display: block; font-family: var(--font-mono); font-size: 12px; font-weight: 400; letter-spacing: 0.04em; color: var(--color-accent); }
+.home .hero-plan-tool-go { color: var(--color-accent); transition: transform 0.2s; }
+.home .hero-plan-tool:hover .hero-plan-tool-go { transform: translateX(3px); }
 .home .hero-visual { grid-column: 8 / span 5; margin: 0; }
 .home .hero-photo { aspect-ratio: 4 / 5; }
 .home .hero-photo img { object-position: 50% 45%; }

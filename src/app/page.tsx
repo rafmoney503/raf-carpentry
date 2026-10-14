@@ -129,6 +129,13 @@ export default function HomePage() {
                 All {countModels()} <span aria-hidden="true">→</span>
               </Link>
             </div>
+            <Link href="/wardrobe-planner" className="hero-plan-tool">
+              <span>
+                <span className="hero-plan-tool-k">Free planner</span>
+                Plan your own wardrobe in 3D
+              </span>
+              <span className="hero-plan-tool-go" aria-hidden="true">→</span>
+            </Link>
           </nav>
         </div>
         <figure className="hero-visual anim d2">

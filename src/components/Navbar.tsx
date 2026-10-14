@@ -203,7 +203,11 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
           <div className="pb-2 pt-2">
             <SiteSearch layout="menu" onPick={() => setOpen(false)} onActive={setPhoneSearch} />
           </div>
-          {phoneSearch ? null : [...links, { href: '/how-it-works', label: 'Plan your project' }, { href: '/contact', label: 'Contact' }].map((l) => {
+          {phoneSearch ? null : [
+            ...links.flatMap((l) => (l.href === '/designs' ? [l, { href: '/wardrobe-planner', label: 'Wardrobe planner' }] : [l])),
+            { href: '/how-it-works', label: 'Plan your project' },
+            { href: '/contact', label: 'Contact' },
+          ].map((l) => {
             const p = menu[l.href];
             const isOpen = expanded === l.href;
             return (

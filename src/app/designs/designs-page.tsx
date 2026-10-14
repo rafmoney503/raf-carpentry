@@ -61,6 +61,11 @@ export default function DesignsPage({ kind }: { kind?: string }) {
               Get a quote
             </Link>
             <WhatsAppButton />
+            {!k || k.slug === 'wardrobes' ? (
+              <Link href="/wardrobe-planner" className="btn btn-ghost">
+                Plan a wardrobe in 3D
+              </Link>
+            ) : null}
           </div>
         </div>
       </Container>
