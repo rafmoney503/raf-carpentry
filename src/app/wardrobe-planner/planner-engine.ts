@@ -361,6 +361,13 @@ function stepSend(){
     <p class="note">Needs your mobile or email so I can reply.</p>
   </form>
   <div class="contact"><span>Or call <span class="mono">${CFG.phone}</span></span><span>Email <span class="mono">${CFG.email}</span></span></div>`;}
+/* The design as data for CabinetOS (/api/brief forwards it; cabinetos-site src/lib/inbound/websiteDesign.ts reads it). */
+function designPayload(){const c=calc(),fr=free();
+  const left=S.fit==='wall'||S.fit==='openR'?Math.max(0,Math.round(c.x0)):0,right=S.fit==='wall'||S.fit==='openL'?Math.max(0,Math.round(S.wall-c.x1)):0;
+  return{source:'rafcarpentry-wardrobe-planner',version:1,
+    space:{widthMm:S.wall,ceilingMm:S.ceiling,fit:S.fit,depthMm:depth(),plinthMm:S.plinth,topInfillMm:infill(),freeHeightMm:topY()},
+    doors:{type:S.doors,style:S.style,handle:S.handle,topCupboards:S.height==='top'&&topOk(),topSplitMm:CFG.topSplit},
+    colour:colour().n,units:S.modules.map(m=>({widthMm:m.w,layout:m.layout,custom:!!m.custom})),fillers:{leftMm:fr?0:left,rightMm:fr?0:right}};}
 function briefMessage(){const C=S.contact;return [
   `Hi Raf, this is ${C.name.trim()}. Here is my brief from your website.`,
   'What: Fitted wardrobe',
@@ -439,7 +446,7 @@ on(body,'submit',async e=>{e.preventDefault();if(sending)return;const C=S.contac
   const msg=C.name.trim().length<2?'Add your name.':!okMobile&&!okEmail?'Add your mobile or email so I can reply.':(C.email.trim()&&!okEmail)?'That email address looks incomplete.':'';
   if(msg){err.textContent=msg;err.hidden=false;return;}
   sending=true;const btn=$('#sendBtn');btn.disabled=true;btn.textContent='Sending...';err.hidden=true;
-  const payload={name:C.name.trim(),mobile:okMobile?C.phone.trim():'',email:okEmail?C.email.trim():'',address:C.postcode.trim(),message:briefMessage(),photos:0,company:C.company||'',ms:Math.round(performance.now()-t0),choices:{what:['Fitted wardrobe'],room:[],uses:[],material:[]}};
+  const payload={name:C.name.trim(),mobile:okMobile?C.phone.trim():'',email:okEmail?C.email.trim():'',address:C.postcode.trim(),message:briefMessage(),photos:0,company:C.company||'',ms:Math.round(performance.now()-t0),choices:{what:['Fitted wardrobe'],room:[],uses:[],material:[]},design:designPayload()};
   const post=()=>fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const wait=()=>new Promise(r=>setTimeout(r,1500));
   let res=null;try{res=await post();if(res.status>=500){await wait();res=await post();}}catch(_){try{await wait();res=await post();}catch(__){res=null;}}

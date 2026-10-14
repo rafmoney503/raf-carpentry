@@ -5,6 +5,7 @@ import { EMAIL } from '@/lib/site';
 import { matchItems } from '@/lib/design-library';
 import { closestDesigns } from '@/lib/design-match';
 import { customerEmail } from '@/lib/brief-email';
+import { plannerDesign, sendDesignToCabinetOS, type CabinetOSResult } from '@/lib/cabinetos-inbound';
 
 /* "Send to Raf" on Plan your project: the customer's brief goes straight into ServiceM8 as a Quote job (client,
    billing contact, job with the address and the same description the Job Kit's paste tool makes, job contact),
@@ -69,6 +70,14 @@ export async function POST(req: Request) {
 
   try {
     const job = await createEnquiry({ name, mobile: goodMobile ? mobile : '', email: goodEmail ? email : '', address, description });
+    // A design from the wardrobe planner also goes to CabinetOS as a project in Raf's account (best effort).
+    const design = plannerDesign(body.design);
+    const cabinetos: CabinetOSResult | null = design ? await sendDesignToCabinetOS(design, { name, postcode: address, jobNumber: job.number ?? '' }) : null;
+    const cabinetosLines = !cabinetos || (!cabinetos.ok && cabinetos.reason === 'not-set-up')
+      ? []
+      : cabinetos.ok
+        ? [`In CabinetOS as "${cabinetos.name}": open CabinetOS and it's in your projects, with the cut list, boards and price.`, ...cabinetos.notes.map((n) => `- ${n}`), '']
+        : [`Not in CabinetOS (${cabinetos.reason}). The design is below.`, ''];
     const what = description.split('\n')[0];
     const ch = (body.choices ?? {}) as Record<string, unknown>;
     const picks = closestDesigns(matchItems(), { what: list(ch.what), room: list(ch.room), uses: list(ch.uses), material: list(ch.material), liked: list(body.liked), address });
@@ -82,6 +91,7 @@ export async function POST(req: Request) {
       photos ? `Photos: ${photos} on the way, on the job in ServiceM8.` : 'No photos yet.',
       '',
       'It is a Quote job in ServiceM8 and on Today in the Job Kit.',
+      ...cabinetosLines,
       goodEmail ? 'To email them, use Emails on the job in the Job Kit, so the conversation stays on the job.' : '',
       '',
       ...(pickLines.length
