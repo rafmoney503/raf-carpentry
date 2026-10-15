@@ -365,7 +365,7 @@ export function EmailBox({
         )
       ) : null}
 
-      <div className="mt-4 grid gap-3 border-t border-line pt-4">
+      <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3 border-t border-line pt-4">
         {justSent ? (
           <p role="status" className="rounded-sm border border-accent bg-accent-soft px-3 py-2.5 text-[14.5px] leading-relaxed">
             {justSent === 'sms' ? 'Text sent' : 'Sent'} through ServiceM8 and filed on the job. {replyHere ? `${name}’s reply will show here.` : `${name}’s reply goes to the job in ServiceM8.`}

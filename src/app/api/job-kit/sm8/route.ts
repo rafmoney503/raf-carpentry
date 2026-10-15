@@ -2,6 +2,7 @@ import { guard } from '@/lib/job-kit-server';
 import { addBooking, allClients, cancelBooking, clientJobs, createEnquiry, currentJobs, moveBooking, setStatus, sm8SetUp, Sm8Error, STATUSES, type Status } from '@/lib/servicem8';
 import { jobMail, recentReplies, sendJobEmail, sendJobText } from '@/lib/servicem8-mail';
 import { e164 } from '@/lib/mail-text';
+import { lookupProperty } from '@/lib/property';
 
 /* The Job Kit's Current jobs (ServiceM8), behind the PIN:
    { action: 'list' }                                    open quotes, work orders, jobs finished in the last 30 days,
@@ -11,6 +12,8 @@ import { e164 } from '@/lib/mail-text';
                                                          with this uuid even if the name matches)
    { action: 'clients' }                                 every active client with its people, for the search
    { action: 'client', uuid }                            one client and all their jobs, any status or age
+   { action: 'property', address }                       the building from public records (src/lib/property.ts);
+                                                         doesn't need ServiceM8
    { action: 'status', uuid, status }                    moves a job on (never deletes anything)
    { action: 'book', job, start, end, staff? }           adds a booking to ServiceM8's schedule
    { action: 'move', uuid, start, end }                  moves a booking
@@ -32,13 +35,18 @@ const isTime = (v: string) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v) && Numbe
 export async function POST(req: Request) {
   const stop = await guard(req);
   if (stop) return stop;
-  if (!sm8SetUp()) return Response.json({ error: 'sm8-not-set-up' }, { status: 503 });
   let body: Record<string, unknown>;
   try {
     body = (await req.json()) as Record<string, unknown>;
   } catch {
     return Response.json({ error: 'bad' }, { status: 400 });
   }
+  if (body.action === 'property') {
+    const address = text(body.address, 400);
+    if (!address) return Response.json({ error: 'missing' }, { status: 400 });
+    return Response.json({ property: await lookupProperty(address) }, { headers: noStore });
+  }
+  if (!sm8SetUp()) return Response.json({ error: 'sm8-not-set-up' }, { status: 503 });
   try {
     if (body.action === 'list') {
       const [cur, replies] = await Promise.all([currentJobs(), recentReplies().catch(() => null)]);

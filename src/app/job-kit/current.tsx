@@ -10,6 +10,7 @@ import { designState } from './designs';
 import type { Job } from './store';
 import { clock, post, problemText } from './sm8-post';
 import { EmailBox } from './mail';
+import { PropertyBox } from './property-box';
 import { CustomerSearch, indexClients, personName, SameCustomer, type Client, type Clients } from './customers';
 
 export { problemText };
@@ -871,6 +872,8 @@ export function CurrentView({
         <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint">Moving a job here moves it in ServiceM8 too. Nothing is ever deleted there.</p>
       </section>
 
+      <PropertyBox job={job} />
+
       <BookingsBox job={job} bookings={bookings} staff={staff} loaded={bookingsLoaded} onBook={onBook} onMove={onMove} onCancel={onCancel} />
 
       <EmailBox
@@ -885,7 +888,8 @@ export function CurrentView({
 
       <MoneyBox job={job} />
 
-      <section className="mt-6 grid gap-3">
+      {/* Long labels wrap instead of pushing a 320 px screen sideways. */}
+      <section className="mt-6 grid gap-3 [&_.btn]:h-auto [&_.btn]:min-h-[52px] [&_.btn]:whitespace-normal [&_.btn]:py-3 [&_.btn]:text-center [&_.btn]:leading-snug">
         <h2 className="text-[19px] font-[650]">From here</h2>
         {onCustomer ? (
           <button type="button" className="btn btn-ghost w-full" onClick={onCustomer}>

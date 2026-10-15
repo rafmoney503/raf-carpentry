@@ -469,6 +469,7 @@ export default function BriefBuilder({
           </p>
           <div className="mt-4">
             <AddressFinder value={addr} onChange={setAddr} inputClass={input} />
+            <p className="mt-2 text-[13px] leading-snug text-faint">To prepare your quote I may check public records for the property, like its energy certificate and planning history.</p>
           </div>
           <p className="mt-3 font-mono text-[12px] text-faint">Parking</p>
           <Chips label="Parking" options={options.parking} value={parking} onPick={toggle(setParking)} multi />
