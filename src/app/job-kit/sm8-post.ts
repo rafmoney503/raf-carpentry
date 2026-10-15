@@ -27,6 +27,8 @@ export function problemText(error?: string, detail?: string, at?: number) {
       return 'ServiceM8 says this key isn’t allowed to do that. Check the key has Full access and the plan is Starter or above.';
     case 'sm8-busy':
       return /quota/i.test(detail ?? '') ? 'ServiceM8 says today’s allowance of messages is used up. Try again tomorrow, or send it from ServiceM8.' : 'ServiceM8 is busy. Try again in a minute.';
+    case 'sm8-gone':
+      return 'ServiceM8 doesn’t have that customer any more (archived or merged there). Search again.';
     case 'no-pin':
       return 'Add your PIN in Settings first.';
     case 'wrong-pin':

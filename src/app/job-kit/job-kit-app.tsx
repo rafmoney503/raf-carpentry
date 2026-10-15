@@ -62,6 +62,9 @@ import {
   type Sm8,
   type TodayLine,
 } from './current';
+import { CLIENTS_FRESH, CustomerSearch, fetchClients, savedClients, savedCustomers, withCurrent, type Clients, type CustomerDetail } from './customers';
+import { CustomerView } from './customer-view';
+import type { CurrentJob } from '@/lib/servicem8';
 import './job-kit.css';
 
 type Tab = SectionId | 'notes' | 'send';
@@ -76,8 +79,9 @@ type Screen =
   | { name: 'design'; id: string }
   | { name: 'new-design'; from?: string }
   | { name: 'current' }
-  | { name: 'sm8'; id: string; from?: 'diary' | 'home' }
-  | { name: 'enquiry' }
+  | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer'; client?: string }
+  | { name: 'enquiry'; client?: string; named?: string } // client: started from a customer's page; named: from a search that found nobody
+  | { name: 'customer'; id: string; from?: 'home' } // one customer from ServiceM8 (customer-view.tsx)
   | { name: 'diary' }
   | { name: 'library'; from?: 'designs'; for?: string }; // for: a current job (ServiceM8 uuid) to send to
 
@@ -89,14 +93,22 @@ const parentOf = (s: Screen): Screen =>
     ? { name: 'designs' }
     : s.name === 'post'
       ? { name: 'posts' }
-      : s.name === 'sm8' && s.from === 'diary'
+      : s.name === 'sm8' && s.from === 'customer' && s.client
+        ? { name: 'customer', id: s.client }
+        : s.name === 'enquiry' && s.client
+          ? { name: 'customer', id: s.client }
+          : s.name === 'customer'
+            ? s.from === 'home'
+              ? { name: 'home' }
+              : { name: 'current' }
+            : s.name === 'sm8' && s.from === 'diary'
         ? { name: 'diary' }
         : (s.name === 'sm8' && s.from !== 'home') || s.name === 'enquiry'
           ? { name: 'current' }
           : { name: 'home' };
 const backLabel = (s: Screen) => {
   const p = parentOf(s).name;
-  return p === 'designs' ? 'Designs' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'sm8' ? 'Job' : 'Today';
+  return p === 'designs' ? 'Designs' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : 'Today';
 };
 
 const thisMonth = () => {
@@ -110,7 +122,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'library'].includes(s.name)) return s;
+    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'library', 'customer'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -173,6 +185,29 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
       setSm8Loading(false);
     });
   }, []);
+  // Customers from ServiceM8 for the search: the list kept on the phone, fetched again when the box is used and
+  // it's over 10 minutes old. Jobs of customers opened (any age) are kept too, so an old job opens like a current one.
+  const [clients, setClients] = useState<Clients>({ clients: [], at: 0 });
+  const [clientsLoading, setClientsLoading] = useState(false);
+  const lastClients = useRef(0);
+  const checkClients = useCallback((force = false) => {
+    const pin = readPin();
+    if (!pin) return setClients((c) => ({ ...c, error: 'no-pin' }));
+    if (!force && Date.now() - lastClients.current < CLIENTS_FRESH) return;
+    lastClients.current = Date.now();
+    setClientsLoading(true);
+    void fetchClients(pin, savedClients()).then((r) => {
+      setClients(r);
+      setClientsLoading(false);
+      if (r.error) lastClients.current = 0; // try again next time the box is used
+    });
+  }, []);
+  const [customerJobs, setCustomerJobs] = useState<CurrentJob[]>([]);
+  const customerLoaded = useCallback((d: CustomerDetail) => {
+    setCustomerJobs((list) => [...d.jobs, ...list.filter((j) => !d.jobs.some((x) => x.uuid === j.uuid))]);
+  }, []);
+  const sm8Ref = useRef(sm8);
+  sm8Ref.current = sm8;
   const mark = useCallback((uuid: string, patch: Marks[string]) => {
     setMarks((m) => {
       const next = { ...m, [uuid]: { ...m[uuid], ...patch } };
@@ -216,6 +251,11 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     setSm8(savedSm8());
     setMarks(readMarks());
     checkSm8();
+    const kept = savedClients();
+    setClients(kept);
+    lastClients.current = kept.at; // a list fetched in the last 10 minutes isn't fetched again
+    setCustomerJobs(Object.values(savedCustomers()).flatMap((c) => c.jobs));
+    if (readPin()) checkClients(); // so the first search is instant
     const first = loadScreen();
     setScreenState(first);
     history.replaceState({ jk: first }, '');
@@ -229,6 +269,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         wake();
         checkDesigns();
         checkSm8();
+        if (readPin()) checkClients();
       }
     };
     const back = (e: PopStateEvent) => {
@@ -250,12 +291,16 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
       document.removeEventListener('visibilitychange', visible);
       window.removeEventListener('popstate', back);
     };
-  }, [reload, checkDesigns, checkSm8]);
+  }, [reload, checkDesigns, checkSm8, checkClients]);
 
   const job = screen.name === 'job' || screen.name === 'design' ? jobs.find((j) => j.id === screen.id) : undefined;
-  const cur = screen.name === 'sm8' ? sm8.jobs.find((j) => j.uuid === screen.id) : undefined;
-  const sendTo = screen.name === 'library' && screen.for ? sm8.jobs.find((j) => j.uuid === screen.for) : undefined;
-  const from = (screen.name === 'new' || screen.name === 'new-design') && screen.from ? sm8.jobs.find((j) => j.uuid === screen.from) : undefined;
+  // A ServiceM8 job: in the Current jobs, or from a customer opened from the search (an older one).
+  const findJob = (uuid: string) => sm8.jobs.find((j) => j.uuid === uuid) ?? customerJobs.find((j) => j.uuid === uuid);
+  const cur = screen.name === 'sm8' ? findJob(screen.id) : undefined;
+  const sendTo = screen.name === 'library' && screen.for ? findJob(screen.for) : undefined;
+  const from = (screen.name === 'new' || screen.name === 'new-design') && screen.from ? findJob(screen.from) : undefined;
+  const allClients = useMemo(() => withCurrent(clients.clients, sm8.jobs), [clients.clients, sm8.jobs]);
+  const customerOf = (uuid: string) => allClients.find((c) => c.uuid === uuid) ?? savedCustomers()[uuid]?.client;
   useEffect(() => {
     if (ready && (screen.name === 'job' || screen.name === 'design') && !job) go(parentOf(screen), false);
     if (ready && screen.name === 'sm8' && !cur && sm8.at) go(parentOf(screen), false);
@@ -265,12 +310,25 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   const changeStatus = useCallback(
     async (uuid: string, status: CurrentStatus) => {
       const now = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/London' }).replace(' ', 'T').slice(0, 16);
+      const moved = (j: CurrentJob): CurrentJob => ({ ...j, status, ...(status === 'Work Order' ? { workOrder: now } : status === 'Completed' ? { completed: now } : status === 'Unsuccessful' ? { lost: now } : {}) });
+      if (!sm8Ref.current.jobs.some((j) => j.uuid === uuid)) {
+        // An older job opened from a customer's page: moved there, then the Current jobs are fetched again,
+        // because a job brought back to Quote (or on to Work Order) belongs in them now.
+        let old: CurrentJob | undefined;
+        setCustomerJobs((list) => list.map((j) => (j.uuid === uuid ? ((old = j), moved(j)) : j)));
+        const r = await sendStatus(readPin(), uuid, status);
+        if (!r.ok) {
+          if (old) setCustomerJobs((list) => list.map((j) => (j.uuid === uuid ? old! : j)));
+          setProblem(problemText(r.error, r.detail));
+        } else checkSm8(true);
+        return;
+      }
       let before: Sm8 = { jobs: [], at: 0 };
       setSm8((s) => {
         before = s;
         const next = {
           ...s,
-          jobs: s.jobs.map((j) => (j.uuid === uuid ? { ...j, status, ...(status === 'Work Order' ? { workOrder: now } : status === 'Completed' ? { completed: now } : status === 'Unsuccessful' ? { lost: now } : {}) } : j)),
+          jobs: s.jobs.map((j) => (j.uuid === uuid ? moved(j) : j)),
         };
         keepSm8(next);
         return next;
@@ -282,7 +340,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         setProblem(problemText(r.error, r.detail));
       }
     },
-    [],
+    [checkSm8],
   );
   /* The diary: a booking added, moved or cancelled goes to ServiceM8 first, then shows here. */
   const setBookings = useCallback((change: (b: NonNullable<Sm8['bookings']>) => NonNullable<Sm8['bookings']>) => {
@@ -471,6 +529,18 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
             onClear={removeJobs}
             sm8={sm8}
             marks={marks}
+            find={
+              <CustomerSearch
+                place="today"
+                clients={clients}
+                jobs={sm8.jobs}
+                loading={clientsLoading}
+                onNeed={() => checkClients()}
+                onRefresh={() => checkClients(true)}
+                onOpen={(id) => go({ name: 'customer', id, from: 'home' })}
+                onNewNamed={(named) => go({ name: 'enquiry', named })}
+              />
+            }
             onCurrent={() => {
               checkSm8();
               go({ name: 'current' });
@@ -581,15 +651,27 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
             onRefresh={() => checkSm8(true)}
             onNew={() => go({ name: 'enquiry' })}
             onOpen={(id) => go({ name: 'sm8', id })}
+            clients={clients}
+            clientsLoading={clientsLoading}
+            onFindNeed={() => checkClients()}
+            onFindRefresh={() => checkClients(true)}
+            onCustomer={(id) => go({ name: 'customer', id })}
+            onNewNamed={(named) => go({ name: 'enquiry', named })}
           />
         ) : screen.name === 'diary' ? (
           <Diary sm8={sm8} loading={sm8Loading} onRefresh={() => checkSm8(true)} onOpen={(id) => go({ name: 'sm8', id, from: 'diary' })} />
         ) : screen.name === 'enquiry' ? (
           <NewEnquiry
+            key={screen.client ?? screen.named ?? 'enquiry'}
+            clients={allClients}
+            forClient={screen.client ? customerOf(screen.client) : undefined}
+            named={screen.named}
+            onCustomer={(id) => go({ name: 'customer', id })}
             onCancel={back}
             onCreate={async (e) => {
               const r = await sendEnquiry(readPin(), e);
               if (!r.ok) return problemText(r.error, r.detail);
+              lastClients.current = 0; // a new customer: the next search fetches the list again
               setSm8((s) => {
                 const next = { ...s, jobs: [r.data.job, ...s.jobs.filter((j) => j.uuid !== r.data.job.uuid)] };
                 keepSm8(next);
@@ -627,10 +709,27 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               onMove={moveBooking}
               onCancel={cancelBooking}
               replyAt={sm8.replies?.[cur.uuid] ?? undefined}
+              onCustomer={
+                cur.client && !(screen.from === 'customer' && screen.client === cur.client)
+                  ? () => {
+                      checkClients();
+                      go({ name: 'customer', id: cur.client! });
+                    }
+                  : undefined
+              }
             />
           ) : (
             <p className="pt-16 text-center font-mono text-[14px] text-faint">Getting the job from ServiceM8…</p>
           )
+        ) : screen.name === 'customer' ? (
+          <CustomerView
+            key={screen.id}
+            uuid={screen.id}
+            fallback={customerOf(screen.id)}
+            onLoaded={customerLoaded}
+            onOpenJob={(j) => go({ name: 'sm8', id: j.uuid, from: 'customer', client: screen.id })}
+            onNew={(c) => go({ name: 'enquiry', client: c.uuid })}
+          />
         ) : screen.name === 'posts' ? (
           <PostsList packs={posts} onOpen={(slug) => go({ name: 'post', slug })} />
         ) : screen.name === 'post' ? (
@@ -758,6 +857,7 @@ function Home({
   onClear,
   sm8,
   marks,
+  find,
   onCurrent,
   onDiary,
   onToday,
@@ -782,6 +882,7 @@ function Home({
   onClear: (ids: string[]) => Promise<void>;
   sm8: Sm8;
   marks: Marks;
+  find: React.ReactNode; // Find a customer (customers.tsx)
   onCurrent: () => void;
   onDiary: () => void;
   onToday: (l: TodayLine) => void;
@@ -887,6 +988,8 @@ function Home({
           </button>
         ) : null}
       </div>
+
+      {find}
 
       <button type="button" onClick={onDiary} className="mt-3 flex w-full items-center gap-3.5 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
         <IconTile name="diary" />

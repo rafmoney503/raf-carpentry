@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { Booking, CurrentJob, Staff, Status } from '@/lib/servicem8';
 import Mark from './mark';
 import { parseBrief, stripInvisible } from './brief-paste';
@@ -10,6 +10,7 @@ import { designState } from './designs';
 import type { Job } from './store';
 import { clock, post, problemText } from './sm8-post';
 import { EmailBox } from './mail';
+import { CustomerSearch, indexClients, personName, SameCustomer, type Client, type Clients } from './customers';
 
 export { problemText };
 
@@ -70,8 +71,11 @@ export const newMail = (uuid: string, replies: Sm8['replies'], m: Marks) => {
   return Boolean(at && at > (m[uuid]?.mailSeen ?? ''));
 };
 
-export type Enquiry = { name: string; mobile: string; email: string; address: string; description: string };
-export const sendEnquiry = (pin: string, e: Enquiry) => post<{ job: CurrentJob }>(pin, { action: 'enquiry', ...e });
+/* client: put it on a customer already in ServiceM8 ("Yes, it's them"; clientName is only for showing it);
+   newClient: "No, a different person", a uuid made here so a second try finds the same new client. */
+export type Enquiry = { name: string; mobile: string; email: string; address: string; description: string; client?: string; clientName?: string; newClient?: string };
+export const sendEnquiry = (pin: string, e: Enquiry) =>
+  post<{ job: CurrentJob }>(pin, { action: 'enquiry', name: e.name, mobile: e.mobile, email: e.email, address: e.address, description: e.description, client: e.client, newClient: e.newClient });
 export const sendStatus = (pin: string, uuid: string, status: Status) => post<{ ok: true }>(pin, { action: 'status', uuid, status });
 export const sendBooking = (pin: string, b: { job: string; start: string; end: string; staff?: string }) => post<{ booking: Booking }>(pin, { action: 'book', ...b });
 export const sendMove = (pin: string, uuid: string, start: string, end: string) => post<{ ok: true }>(pin, { action: 'move', uuid, start, end });
@@ -96,7 +100,7 @@ export function moneyOf(j: CurrentJob) {
   const left = total === null ? null : j.paid ? 0 : Math.max(0, Math.round((total - paid) * 100) / 100);
   return { total, paid, left, payments };
 }
-function moneyLine(j: CurrentJob) {
+export function moneyLine(j: CurrentJob) {
   const { total, paid, left, payments } = moneyOf(j);
   if (j.status === 'Quote' || j.status === 'Unsuccessful') return total ? `Quote ${gbp(total)}` : '';
   if (total === null) return paid ? `Paid ${gbp(paid)}` : '';
@@ -158,7 +162,7 @@ function intl(raw: string) {
   else if (d.startsWith('0')) d = '44' + d.slice(1);
   return d.replace(/\D/g, '');
 }
-const wa = (mobile: string, text: string) => `https://wa.me/${intl(mobile)}?text=${encodeURIComponent(text)}`;
+export const wa = (mobile: string, text: string) => `https://wa.me/${intl(mobile)}?text=${encodeURIComponent(text)}`;
 
 /* What the Job Kit holds for this job: a design request and a photo job, linked by the ServiceM8 job. */
 function linked(j: CurrentJob, kit: Job[], designs: DesignsReady, done: Record<string, { slug: string }>) {
@@ -582,6 +586,12 @@ export function CurrentList({
   onRefresh,
   onNew,
   onOpen,
+  clients,
+  clientsLoading,
+  onFindNeed,
+  onFindRefresh,
+  onCustomer,
+  onNewNamed,
 }: {
   sm8: Sm8;
   marks: Marks;
@@ -592,6 +602,12 @@ export function CurrentList({
   onRefresh: () => void;
   onNew: () => void;
   onOpen: (uuid: string) => void;
+  clients: Clients;
+  clientsLoading: boolean;
+  onFindNeed: () => void;
+  onFindRefresh: () => void;
+  onCustomer: (uuid: string) => void;
+  onNewNamed: (name: string) => void;
 }) {
   const list = shown(sm8, marks);
   const groups: [string, CurrentJob[]][] = [
@@ -619,7 +635,8 @@ export function CurrentList({
           {problem}
         </p>
       ) : null}
-      <button type="button" onClick={onNew} className="btn btn-primary mt-5 w-full">
+      <CustomerSearch place="current" clients={clients} jobs={sm8.jobs} loading={clientsLoading} onNeed={onFindNeed} onRefresh={onFindRefresh} onOpen={onCustomer} onNewNamed={onNewNamed} />
+      <button type="button" onClick={onNew} className="btn btn-primary mt-4 w-full">
         New enquiry
       </button>
 
@@ -691,6 +708,7 @@ export function CurrentView({
   onMove,
   onCancel,
   replyAt,
+  onCustomer,
 }: {
   job: CurrentJob;
   marks: Marks;
@@ -710,6 +728,7 @@ export function CurrentView({
   onMove: (uuid: string, start: string, end: string) => Promise<string>;
   onCancel: (uuid: string) => Promise<string>;
   replyAt?: string; // their newest email, from the list
+  onCustomer?: () => void; // everything for this customer in ServiceM8
 }) {
   const st = stage(job, marks);
   const [text] = stageText(job, marks);
@@ -868,6 +887,11 @@ export function CurrentView({
 
       <section className="mt-6 grid gap-3">
         <h2 className="text-[19px] font-[650]">From here</h2>
+        {onCustomer ? (
+          <button type="button" className="btn btn-ghost w-full" onClick={onCustomer}>
+            All jobs for {job.name}
+          </button>
+        ) : null}
         {design ? (
           <button type="button" className="btn btn-ghost w-full" onClick={() => onOpenKit(design)}>
             Open the design ({linked(job, kit, designs, done).chips.find((c) => c.startsWith('Design'))?.toLowerCase().replace('design ', '')})
@@ -949,18 +973,60 @@ function MoneyBox({ job }: { job: CurrentJob }) {
 
 /* ---------- a new enquiry ---------- */
 
-export function NewEnquiry({ onCancel, onCreate }: { onCancel: () => void; onCreate: (e: Enquiry) => Promise<string> }) {
+const BLANK: Enquiry = { name: '', mobile: '', email: '', address: '', description: '' };
+const newUuid = () =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => ((Math.random() * 16) | (c === 'x' ? 0 : 8)).toString(16).slice(-1));
+/* A new enquiry filled in from a customer already in ServiceM8 (New enquiry for ... on their page). */
+function fromClient(c: Client): Enquiry {
+  const p = c.people.find((x) => x.mobile) ?? c.people[0];
+  const email = p?.email || c.people.find((x) => x.email)?.email || '';
+  return { ...BLANK, name: (p && personName(p)) || c.name, mobile: p?.mobile || p?.phone || '', email, address: c.address, client: c.uuid, clientName: c.name };
+}
+
+export function NewEnquiry({
+  onCancel,
+  onCreate,
+  clients = [],
+  forClient,
+  named,
+  onCustomer,
+}: {
+  onCancel: () => void;
+  onCreate: (e: Enquiry) => Promise<string>;
+  clients?: Client[]; // ServiceM8's customers (with the current jobs'), for "Already a customer?"
+  forClient?: Client; // started from a customer's page
+  named?: string; // started from a search that found nobody
+  onCustomer?: (uuid: string) => void;
+}) {
   // What's typed is kept on the phone until it reaches ServiceM8, so no signal never loses an enquiry.
-  const [e, setE] = useState<Enquiry>(() => read<Enquiry>(DRAFT_KEY, { name: '', mobile: '', email: '', address: '', description: '' }));
+  const [e, setE] = useState<Enquiry>(() => {
+    const d = read<Enquiry>(DRAFT_KEY, BLANK);
+    const empty = !d.name.trim() && !d.description.trim() && !d.mobile.trim();
+    if (forClient && empty) return fromClient(forClient);
+    if (named && empty) return { ...BLANK, name: named };
+    return d;
+  });
+  // An unsent enquiry for someone else is never thrown away without asking.
+  const clash = forClient && e.client !== forClient.uuid && (e.name.trim() || e.description.trim()) ? forClient : undefined;
+  const index = useMemo(() => indexClients(clients), [clients]);
+  const picked: Client | undefined = e.client ? (clients.find((c) => c.uuid === e.client) ?? (forClient?.uuid === e.client ? forClient : { uuid: e.client, name: e.clientName || e.name, address: '', people: [], edited: null })) : undefined;
+  const pick = (c: Client | undefined) => {
+    if (!c) return update({ ...e, client: undefined, clientName: undefined });
+    // Their details fill whatever is still empty; nothing typed is changed.
+    const f = fromClient(c);
+    update({ ...e, client: c.uuid, clientName: c.name, newClient: undefined, mobile: e.mobile || f.mobile, email: e.email || f.email, address: e.address || f.address });
+  };
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState('');
   const nameRef = useRef<HTMLInputElement>(null);
-  const set = (k: keyof Enquiry, v: string) => {
-    const next = { ...e, [k]: stripInvisible(v) };
+  const update = (next: Enquiry) => {
     setE(next);
     write(DRAFT_KEY, next);
   };
+  const set = (k: 'name' | 'mobile' | 'email' | 'address' | 'description', v: string) => update({ ...e, [k]: stripInvisible(v) });
   // A brief from the website (or any WhatsApp message) pasted in fills the boxes; Raf checks them and sends.
   const [pasted, setPasted] = useState('');
   const [filled, setFilled] = useState<string[] | null>(null);
@@ -973,9 +1039,7 @@ export function NewEnquiry({ onCancel, onCreate }: { onCancel: () => void; onCre
     const mine = e.description.trim();
     const description = !mine || mine === lastBrief.current ? b.description : `${mine}\n\n${b.description}`;
     lastBrief.current = b.description;
-    const next = { name: b.name || e.name, mobile: b.mobile || e.mobile, email: b.email || e.email, address: b.address || e.address, description };
-    setE(next);
-    write(DRAFT_KEY, next);
+    update({ ...e, name: b.name || e.name, mobile: b.mobile || e.mobile, email: b.email || e.email, address: b.address || e.address, description });
     setFilled(b.found);
   };
   const pasteNow = async () => {
@@ -1018,7 +1082,17 @@ export function NewEnquiry({ onCancel, onCreate }: { onCancel: () => void; onCre
       }}
     >
       <h1 className="font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">New enquiry</h1>
-      <p className="mt-2 text-[15.5px] leading-relaxed text-muted">It goes straight into ServiceM8 as a new client and a Quote job, ready for the quote and the invoice later.</p>
+      <p className="mt-2 text-[15.5px] leading-relaxed text-muted">
+        {picked ? `It goes into ServiceM8 as a new Quote job for ${picked.name}, ready for the quote and the invoice later.` : 'It goes straight into ServiceM8 as a new client and a Quote job, ready for the quote and the invoice later.'}
+      </p>
+      {clash ? (
+        <div role="alert" className="mt-4 rounded-sm border border-ink bg-mount px-3.5 py-3">
+          <p className="text-[15px] leading-relaxed">You have an enquiry that hasn’t gone to ServiceM8 yet{e.name.trim() ? ` for ${e.name.trim()}` : ''}. Send it first, or clear it.</p>
+          <button type="button" className="btn btn-ghost btn-sm mt-2.5" onClick={() => update(fromClient(clash))}>
+            Clear it and start one for {clash.name}
+          </button>
+        </div>
+      ) : null}
 
       <div className="mt-5 rounded-sm border border-accent bg-accent-soft px-4 py-3.5">
         <p className="font-semibold">Got their brief or message on WhatsApp?</p>
@@ -1072,6 +1146,16 @@ export function NewEnquiry({ onCancel, onCreate }: { onCancel: () => void; onCre
           <span className={label}>Email (optional)</span>
           <input className={`${field} h-12`} type="email" inputMode="email" autoComplete="off" autoCapitalize="off" value={e.email} onChange={(x) => set('email', x.target.value)} placeholder="name@…" />
         </label>
+        <SameCustomer
+          index={index}
+          e={e}
+          picked={picked}
+          fresh={Boolean(e.newClient)}
+          onPick={(c) => pick(c)}
+          onUnpick={() => pick(undefined)}
+          onFresh={(v) => update({ ...e, newClient: v ? newUuid() : undefined })}
+          onOpen={onCustomer}
+        />
         <label className="grid gap-1.5">
           <span className={label}>Address</span>
           <textarea className={`${field} min-h-[76px] py-2.5 leading-snug`} rows={2} value={e.address} onChange={(x) => set('address', x.target.value)} placeholder="House, street, town, postcode" autoComplete="off" />

@@ -1,12 +1,16 @@
 import { guard } from '@/lib/job-kit-server';
-import { addBooking, cancelBooking, createEnquiry, currentJobs, moveBooking, setStatus, sm8SetUp, Sm8Error, STATUSES, type Status } from '@/lib/servicem8';
+import { addBooking, allClients, cancelBooking, clientJobs, createEnquiry, currentJobs, moveBooking, setStatus, sm8SetUp, Sm8Error, STATUSES, type Status } from '@/lib/servicem8';
 import { jobMail, recentReplies, sendJobEmail, sendJobText } from '@/lib/servicem8-mail';
 import { e164 } from '@/lib/mail-text';
 
 /* The Job Kit's Current jobs (ServiceM8), behind the PIN:
    { action: 'list' }                                    open quotes, work orders, jobs finished in the last 30 days,
                                                          the bookings from yesterday on, the staff
-   { action: 'enquiry', name, mobile, email, address, description }   adds the client and a Quote job
+   { action: 'enquiry', name, mobile, email, address, description, client?, newClient? }   adds the client and a
+                                                         Quote job (client: on that customer; newClient: a new one
+                                                         with this uuid even if the name matches)
+   { action: 'clients' }                                 every active client with its people, for the search
+   { action: 'client', uuid }                            one client and all their jobs, any status or age
    { action: 'status', uuid, status }                    moves a job on (never deletes anything)
    { action: 'book', job, start, end, staff? }           adds a booking to ServiceM8's schedule
    { action: 'move', uuid, start, end }                  moves a booking
@@ -47,9 +51,20 @@ export async function POST(req: Request) {
         email: text(body.email, 160),
         address: text(body.address, 400),
         description: text(body.description, 4000),
+        client: text(body.client, 40) || undefined,
+        newClient: text(body.newClient, 40) || undefined,
       };
       if (!e.name || !e.description) return Response.json({ error: 'missing' }, { status: 400 });
+      if ((e.client && !isUuid(e.client)) || (e.newClient && !isUuid(e.newClient))) return Response.json({ error: 'bad' }, { status: 400 });
       return Response.json({ job: await createEnquiry(e) }, { headers: noStore });
+    }
+    if (body.action === 'clients') {
+      return Response.json({ clients: await allClients(), at: Date.now() }, { headers: noStore });
+    }
+    if (body.action === 'client') {
+      const uuid = text(body.uuid, 40);
+      if (!isUuid(uuid)) return Response.json({ error: 'bad' }, { status: 400 });
+      return Response.json({ ...(await clientJobs(uuid)), at: Date.now() }, { headers: noStore });
     }
     if (body.action === 'status') {
       const uuid = text(body.uuid, 40);

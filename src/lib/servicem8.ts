@@ -22,6 +22,7 @@ export type CurrentJob = {
   uuid: string;
   number: string; // ServiceM8's job number
   status: Status;
+  client?: string; // the client's uuid (missing in lists kept on the phone from before 15 Oct 2026)
   name: string; // the client
   first: string; // first name, for messages
   mobile: string;
@@ -48,9 +49,13 @@ export type Booking = { uuid: string; jobUuid: string; start: string; end: strin
 export type Staff = { uuid: string; name: string };
 export type Current = { jobs: CurrentJob[]; bookings: Booking[] | null; staff: Staff[] };
 
+/* Raf's customers ("clients" in ServiceM8) for the Job Kit's search: each with the people on it. */
+export type Person = { first: string; last: string; mobile: string; phone: string; email: string };
+export type Client = { uuid: string; name: string; address: string; people: Person[]; edited: string | null };
+
 export class Sm8Error extends Error {
   constructor(
-    public code: 'sm8-down' | 'sm8-key' | 'sm8-forbidden' | 'sm8-busy' | 'sm8-error' | 'sm8-bad',
+    public code: 'sm8-down' | 'sm8-key' | 'sm8-forbidden' | 'sm8-busy' | 'sm8-error' | 'sm8-bad' | 'sm8-gone',
     public status: number,
     public detail = '',
   ) {
@@ -134,7 +139,7 @@ const tidyBody = (b: Row, plain: boolean) =>
   ) as Record<string, string>;
 const CONTENT_TYPE: Record<Send, string> = { json: 'application/json', form: 'application/x-www-form-urlencoded', 'json-utf8': 'application/json; charset=UTF-8' };
 
-async function call(path: string, opts: { method?: 'GET' | 'POST' | 'DELETE'; query?: Record<string, string>; body?: Row; send?: Send } = {}): Promise<{ data: unknown; uuid: string }> {
+async function call(path: string, opts: { method?: 'GET' | 'POST' | 'DELETE'; query?: Record<string, string>; body?: Row; send?: Send } = {}): Promise<{ data: unknown; uuid: string; next: string }> {
   const url = new URL(`${base()}/${path}`);
   for (const [k, v] of Object.entries(opts.query ?? {})) url.searchParams.set(k, v);
   const send = opts.send ?? 'json';
@@ -171,11 +176,36 @@ async function call(path: string, opts: { method?: 'GET' | 'POST' | 'DELETE'; qu
   } catch {
     data = null;
   }
-  return { data, uuid: res.headers.get('x-record-uuid') ?? '' };
+  return { data, uuid: res.headers.get('x-record-uuid') ?? '', next: res.headers.get('x-next-cursor') ?? '' };
 }
 
 const rows = (d: unknown): Row[] => (Array.isArray(d) ? (d as Row[]) : d && typeof d === 'object' && 'uuid' in d ? [d as Row] : []);
 const list = async (path: string, filter: string) => rows((await call(path, { query: { $filter: filter } })).data);
+
+/* Every record, page by page: ServiceM8 hands out up to 1,000 at a time when asked with cursor=-1 and says where
+   the next page starts in the x-next-cursor header (none on the last page). An account that doesn't page sends
+   everything in the first answer, with no header, so this works either way. */
+async function listAll(path: string, filter: string, maxPages = 25): Promise<Row[]> {
+  const out: Row[] = [];
+  let cursor = '-1';
+  for (let page = 0; page < maxPages && cursor; page++) {
+    const r = await call(path, { query: { $filter: filter, cursor } });
+    out.push(...rows(r.data));
+    cursor = r.next && r.next !== cursor ? r.next : '';
+  }
+  return out;
+}
+
+/* One record by its uuid, or undefined if ServiceM8 has no such record (404) or it's archived. */
+async function getOne(path: string): Promise<Row | undefined> {
+  try {
+    const r = rows((await call(path)).data)[0];
+    return r && str(r.active) !== '0' ? r : undefined;
+  } catch (e) {
+    if (e instanceof Sm8Error && e.code === 'sm8-error' && /^404\b/.test(e.detail)) return undefined;
+    throw e;
+  }
+}
 
 /* The area for a design page: the town from ServiceM8's map lookup, or the start of the postcode. */
 function areaOf(j: Row) {
@@ -198,6 +228,7 @@ function shape(j: Row, client?: Row, contact?: Row, pays?: Row[] | null): Curren
     uuid: str(j.uuid),
     number: str(j.generated_job_id),
     status,
+    client: str(j.company_uuid),
     name,
     first: str(contact?.first) || name.split(/\s+/)[0],
     mobile: str(contact?.mobile),
@@ -303,6 +334,72 @@ export async function currentJobs(): Promise<Current> {
   };
 }
 
+/* ---------- customers: the search and one customer's history ---------- */
+
+const personOf = (c: Row): Person => ({ first: str(c.first), last: str(c.last), mobile: str(c.mobile), phone: str(c.phone), email: str(c.email) });
+const hasPerson = (p: Person) => Boolean(p.first || p.last || p.mobile || p.phone || p.email);
+const addressOf = (c: Row) => str(c.address) || [str(c.address_street), str(c.address_city), str(c.address_postcode)].filter(Boolean).join(', ');
+
+function clientOf(c: Row, contacts: Row[]): Client {
+  const people = contacts.map(personOf).filter(hasPerson);
+  // The same person can be on a client twice (billing and job contact): keep one.
+  const seen = new Set<string>();
+  return {
+    uuid: str(c.uuid),
+    name: str(c.name) || [people[0]?.first, people[0]?.last].filter(Boolean).join(' ') || 'No name',
+    address: addressOf(c),
+    people: people.filter((p) => {
+      const k = [p.first, p.last, p.mobile.replace(/\D/g, ''), p.email.toLowerCase()].join('|').toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    }),
+    edited: when(c.edit_date),
+  };
+}
+
+/* Every active client with its people, most recently changed first: the phone keeps this list and searches it as
+   Raf types (ServiceM8's own filter only finds exact names, one filter at a time). */
+export async function allClients(): Promise<Client[]> {
+  const [companies, contacts] = await Promise.all([listAll('company.json', 'active eq 1'), listAll('companycontact.json', 'active eq 1').catch((): Row[] => [])]);
+  const byClient = new Map<string, Row[]>();
+  for (const c of contacts) if (str(c.active) !== '0') byClient.set(str(c.company_uuid), [...(byClient.get(str(c.company_uuid)) ?? []), c]);
+  return companies
+    .filter((c) => str(c.uuid) && str(c.active) !== '0')
+    .map((c) => clientOf(c, byClient.get(str(c.uuid)) ?? []))
+    .sort((a, b) => (b.edited ?? '').localeCompare(a.edited ?? ''));
+}
+
+/* One customer: their details and every job they have in ServiceM8 (any status, any age), newest first, each
+   with its best contact and the payments taken, shaped like the Current jobs so a job opens the same way. */
+export async function clientJobs(uuid: string): Promise<{ client: Client; jobs: CurrentJob[] }> {
+  const company = await getOne(`company/${uuid}.json`);
+  if (!company) throw new Sm8Error('sm8-gone', 404);
+  const [contacts, jobs] = await Promise.all([
+    listAll('companycontact.json', `active eq 1 and company_uuid eq '${uuid}'`).catch((): Row[] => []),
+    listAll('job.json', `active eq 1 and company_uuid eq '${uuid}'`),
+  ]);
+  const client = clientOf(company, contacts.filter((c) => str(c.active) !== '0'));
+  const live = jobs.filter((j) => str(j.uuid) && str(j.active) !== '0');
+  if (!live.length) return { client, jobs: [] };
+  const ids = new Set(live.map((j) => str(j.uuid)));
+  const [jobContacts, payments] = await Promise.all([list('jobcontact.json', 'active eq 1').catch((): Row[] => []), list('jobpayment.json', 'active eq 1').catch(() => null)]);
+  const useful = (c: Row) => str(c.mobile) || str(c.phone) || str(c.email) || str(c.first);
+  const rank = (c: Row) => (/^(job|job contact)$/i.test(str(c.type)) ? 0 : /billing/i.test(str(c.type)) ? 1 : 2) - (on(c.is_primary_contact) ? 0.5 : 0);
+  const best = (cs: Row[]) => cs.filter(useful).sort((a, b) => rank(a) - rank(b))[0];
+  const byJob = new Map<string, Row[]>();
+  for (const c of jobContacts) if (ids.has(str(c.job_uuid))) byJob.set(str(c.job_uuid), [...(byJob.get(str(c.job_uuid)) ?? []), c]);
+  const paysBy = new Map<string, Row[]>();
+  for (const p of payments ?? []) if (ids.has(str(p.job_uuid))) paysBy.set(str(p.job_uuid), [...(paysBy.get(str(p.job_uuid)) ?? []), p]);
+  const fallback = best(contacts);
+  return {
+    client,
+    jobs: live
+      .map((j) => shape(j, company, best(byJob.get(str(j.uuid)) ?? []) ?? fallback, payments === null ? null : (paysBy.get(str(j.uuid)) ?? [])))
+      .sort((a, b) => (b.created ?? '').localeCompare(a.created ?? '')),
+  };
+}
+
 /* A client already in ServiceM8 with this name, in any case and spacing; a name with an accent also finds the
    same name saved with plain letters by an earlier try. Asked by name first; if that finds nothing (or ServiceM8
    won't take the name in a filter), all active clients are read and matched here. */
@@ -319,8 +416,11 @@ async function clientNamed(name: string): Promise<Row | undefined> {
    its billing contact, a Quote job with the address and what they want, and the job's own contact.
    Safe to send again after a try that stopped half way (no signal, or ServiceM8 turning one part down): a client
    with no contact gets its billing contact, and a Quote job of that client with the same description is used
-   instead of making a second one (it gets its job contact if it has none). */
-export async function createEnquiry(e: { name: string; mobile: string; email: string; address: string; description: string }): Promise<CurrentJob> {
+   instead of making a second one (it gets its job contact if it has none).
+   From the Job Kit's search (15 Oct 2026): `client` puts it on a customer Raf picked ("Yes, it's them"), whatever
+   the name typed; `newClient` is a uuid made on the phone for "No, a different person", so a new client is made
+   even when the name matches one already there, and a second try finds that same client instead of a third. */
+export async function createEnquiry(e: { name: string; mobile: string; email: string; address: string; description: string; client?: string; newClient?: string }): Promise<CurrentJob> {
   const name = tidy(e.name).replace(/\s+/g, ' ').trim();
   const address = tidy(e.address).trim();
   const description = tidy(e.description).trim();
@@ -328,10 +428,21 @@ export async function createEnquiry(e: { name: string; mobile: string; email: st
   const person = { first, last: rest.join(' '), mobile: phoneOf(e.mobile) || undefined, email: tidy(e.email).replace(/\s+/g, '') || undefined };
   const none = (rs: Row[] | null) => rs !== null && rs.length === 0; // known to have none (not just "couldn't check")
 
-  let clientUuid = str((await clientNamed(name))?.uuid);
+  let clientUuid = '';
+  let clientName = name;
+  if (e.client) {
+    const picked = await getOne(`company/${e.client}.json`);
+    if (!picked) throw new Sm8Error('sm8-gone', 404);
+    clientUuid = str(picked.uuid) || e.client;
+    clientName = str(picked.name) || name;
+  } else if (e.newClient) {
+    clientUuid = str((await getOne(`company/${e.newClient}.json`))?.uuid); // there already from an earlier try
+  } else {
+    clientUuid = str((await clientNamed(name))?.uuid);
+  }
   const newClient = !clientUuid;
   if (newClient) {
-    const uuid = randomUUID();
+    const uuid = e.newClient || randomUUID();
     const made = await call('company.json', { method: 'POST', body: { uuid, name, address: address || undefined } });
     clientUuid = made.uuid || uuid;
   }
@@ -360,7 +471,7 @@ export async function createEnquiry(e: { name: string; mobile: string; email: st
   // Read it back for the job number ServiceM8 gives it; if that fails, what we sent is enough.
   const back = rows((await call(`job/${uuid}.json`).catch(() => ({ data: null }))).data)[0];
   const now = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/London' }).replace(' ', 'T').slice(0, 16);
-  return shape(back ?? { uuid, status: 'Quote', job_address: address, job_description: description, date: now }, { name }, { ...person, type: 'JOB' });
+  return shape(back ?? { uuid, company_uuid: clientUuid, status: 'Quote', job_address: address, job_description: description, date: now }, { name: clientName }, { ...person, type: 'JOB' });
 }
 
 export async function setStatus(uuid: string, status: Status) {
