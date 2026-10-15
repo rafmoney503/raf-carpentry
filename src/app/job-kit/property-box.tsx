@@ -14,7 +14,8 @@ import { post, problemText } from './sm8-post';
 
 const KEY = 'raf_jobkit_property';
 const KEEP = 40;
-const FRESH = 30 * 864e5;
+const DAY = 864e5;
+const FRESH = 30 * DAY;
 type Saved = Record<string, Property>;
 const keyOf = (address: string) => address.toLowerCase().replace(/\s+/g, ' ').trim();
 const readAll = (): Saved => {
@@ -77,7 +78,8 @@ export function PropertyBox({ job }: { job: CurrentJob }) {
     if (!address) return;
     const had = readAll()[keyOf(address)];
     if (had) setProp(had);
-    if (had && !force && Date.now() - had.at < FRESH) return;
+    // Kept 30 days; looked up again after a day while the EPC token wasn't set, so adding it shows soon.
+    if (had && !force && Date.now() - had.at < (had.epcReady ? FRESH : DAY)) return;
     setLoading(true);
     setProblem('');
     void post<{ property: Property }>(readPin(), { action: 'property', address }).then((r) => {
@@ -89,7 +91,7 @@ export function PropertyBox({ job }: { job: CurrentJob }) {
       setProp(r.data.property);
       // A source that didn't answer is asked again next time the job is opened (after 10 minutes), not in 30 days.
       const p = r.data.property;
-      keep(address, p.sale === null || p.planning === null ? { ...p, at: p.at - FRESH + 10 * 60_000 } : p);
+      keep(address, p.sale === null || p.planning === null || p.epc === null ? { ...p, at: p.at - FRESH + 10 * 60_000 } : p);
     });
   };
   useEffect(() => {
@@ -103,8 +105,10 @@ export function PropertyBox({ job }: { job: CurrentJob }) {
   const placeWord = prop?.borough || job.area || '';
   const sale = prop?.sale;
   const house = [prop?.flat, prop?.house && /^\d/.test(prop.house) ? `${prop.house} ${prop.street}` : prop?.house].filter(Boolean).join(', ');
+  const epc = prop?.epc;
   const links: [string, string][] = [];
-  if (pc) links.push(['Energy certificate', `https://find-energy-certificate.service.gov.uk/find-a-certificate/search-by-postcode?postcode=${encodeURIComponent(pc)}`]);
+  if (epc?.number) links.push(['The energy certificate', `https://find-energy-certificate.service.gov.uk/energy-certificate/${encodeURIComponent(epc.number)}`]);
+  else if (pc) links.push(['Energy certificate', `https://find-energy-certificate.service.gov.uk/find-a-certificate/search-by-postcode?postcode=${encodeURIComponent(pc)}`]);
   if (prop?.lat !== null && prop?.lat !== undefined && prop.lng !== null) links.push(['Street View', `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${prop.lat},${prop.lng}`]);
   else if (address) links.push(['Map', `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address.replace(/\s*\n\s*/g, ', '))}`]);
   if (pc) links.push(['Sold prices and old floor plans', `https://www.rightmove.co.uk/house-prices/${pc.toLowerCase().replace(/\s+/g, '-')}.html`]);
@@ -124,6 +128,32 @@ export function PropertyBox({ job }: { job: CurrentJob }) {
           <>
             <p className="mt-1 font-mono text-[12.5px] text-faint">{[pc, where].filter(Boolean).join(' · ')}</p>
             <dl className="mt-3 grid gap-3">
+              {prop.epcReady ? (
+                <div>
+                  <dt className="font-mono text-[12px] uppercase tracking-[0.06em] text-faint">Energy certificate</dt>
+                  {epc ? (
+                    <>
+                      {epc.area !== null || epc.rooms !== null ? (
+                        <dd className="mt-0.5 font-display text-[22px] font-[650] leading-tight">
+                          {[epc.area !== null ? `${epc.area} m²` : '', epc.rooms !== null ? `${epc.rooms} ${epc.rooms === 1 ? 'room' : 'rooms'}` : ''].filter(Boolean).join(' · ')}
+                        </dd>
+                      ) : null}
+                      <dd className="mt-0.5 text-[15.5px] leading-snug">
+                        {[epc.type, epc.built ? (/^built/.test(epc.built) ? epc.built : `built ${epc.built}`) : '', epc.band ? `rated ${epc.band}` : ''].filter(Boolean).join(' · ') || 'On the register'}
+                        {epc.date ? <span className="text-muted"> ({epc.date.slice(0, 4)})</span> : null}
+                      </dd>
+                      {epc.area !== null && epc.rooms ? <dd className="mt-1 text-[13.5px] leading-snug text-muted">Floor area is the whole home, inside the walls. Rooms are the living rooms and bedrooms, not kitchens, bathrooms or halls.</dd> : null}
+                      {epc.flatInBuilding ? <dd className="mt-1 text-[13.5px] leading-snug text-muted">Going by the certificate for {epc.address.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase())}: the address on the job has no flat number.</dd> : null}
+                    </>
+                  ) : prop.epcError === 'token' ? (
+                    <dd className="mt-0.5 text-[14.5px] leading-snug text-muted">The EPC register turned the token down. Copy a new one from your account page on get-energy-performance-data.communities.gov.uk and replace EPC_API_TOKEN in Vercel.</dd>
+                  ) : epc === null ? (
+                    <dd className="mt-0.5 text-[14.5px] text-muted">The EPC register didn’t answer this time.</dd>
+                  ) : (
+                    <dd className="mt-0.5 text-[14.5px] text-muted">No energy certificate on record{house ? ` for ${house}` : ''}.</dd>
+                  )}
+                </div>
+              ) : null}
               <div>
                 <dt className="font-mono text-[12px] uppercase tracking-[0.06em] text-faint">Land Registry</dt>
                 <dd className="mt-0.5 text-[15.5px] leading-snug">
@@ -185,7 +215,7 @@ export function PropertyBox({ job }: { job: CurrentJob }) {
         ) : null}
         {address ? (
           <p className="mt-3 flex flex-wrap items-center gap-x-3 font-mono text-[12px] leading-relaxed text-faint">
-            <span>Public records: Land Registry, council planning (PlanIt), ONS postcodes.</span>
+            <span>Public records: {prop?.epcReady ? 'EPC register, ' : ''}Land Registry, council planning (PlanIt), ONS postcodes.</span>
             <button type="button" className="h-8 text-accent underline" disabled={loading} onClick={() => look(true)}>
               {loading ? 'Looking…' : 'Look again'}
             </button>

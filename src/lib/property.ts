@@ -7,16 +7,38 @@
    - HM Land Registry price paid (free, Open Government Licence): what kind of property it is (detached, terraced,
      flat), freehold or leasehold, new build, and the year it last sold. The price itself is left out of the box on
      purpose; the phone links to sold prices for Raf to look at himself.
+   - the government's EPC register (get-energy-performance-data.communities.gov.uk, free with a GOV.UK One Login
+     account; Raf's bearer token in Vercel as EPC_API_TOKEN): the latest energy certificate for the address, for its
+     floor area, rooms, kind of home, age band and rating. Built from the service's own published code and JSON
+     samples (github.com/communitiesuk/epb-data-frontend lib/views/api_tech_docs, epb-data-warehouse
+     spec/fixtures/json_samples and look_up_data.csv): GET /api/domestic/search?postcode= (Bearer token,
+     Accept application/json; 404 = none) gives certificateNumber, addressLine1-4, registrationDate and
+     currentEnergyEfficiencyBand; GET /api/certificate?certificate_number= gives the certificate's own data
+     (total_floor_area, dwelling_type (a string, or {value} in older schemas), habitable_room_count,
+     sap_building_parts[].construction_age_band or .construction_year, current_energy_efficiency_band).
    Each source is asked separately and may fail on its own (null), so one being down never empties the box.
-   Nothing is stored here. POSTCODES_API, PLANIT_API and LANDREG_SPARQL override the addresses for local tests. */
+   Nothing is stored here. POSTCODES_API, PLANIT_API, LANDREG_SPARQL and EPC_API override the addresses for local
+   tests. */
 
 const POSTCODES = () => (process.env.POSTCODES_API || 'https://api.postcodes.io').replace(/\/+$/, '');
 const PLANIT = () => (process.env.PLANIT_API || 'https://www.planit.org.uk/api').replace(/\/+$/, '');
 const SPARQL = () => (process.env.LANDREG_SPARQL || 'https://landregistry.data.gov.uk/landregistry/query').replace(/\/+$/, '');
+const EPC = () => (process.env.EPC_API || 'https://api.get-energy-performance-data.communities.gov.uk').replace(/\/+$/, '');
 const UA = 'RafCarpentryJobKit/1.0 (+https://www.rafcarpentry.com)';
 
 export type Planning = { ref: string; address: string; description: string; type: string; state: string; started: string | null; decided: string | null; url: string; metres: number | null };
 export type Sale = { type: string; tenure: string; newBuild: boolean; year: string; address: string; flatInBuilding?: boolean };
+export type Epc = {
+  area: number | null; // total floor area, square metres
+  rooms: number | null; // habitable rooms
+  type: string; // 'Mid-terrace house', 'Top-floor flat'...
+  built: string; // '1930 to 1949', 'built 2021'
+  band: string; // 'D'
+  date: string; // when it was registered, 'YYYY-MM-DD'
+  number: string; // the certificate number, for its page on GOV.UK
+  address: string;
+  flatInBuilding?: boolean;
+};
 export type Property = {
   postcode: string;
   house: string; // the number or house name read from the address ('' if none)
@@ -28,6 +50,9 @@ export type Property = {
   borough: string;
   sale: Sale | null | undefined; // undefined: Land Registry has no sale for this address; null: couldn't ask
   planning: { here: Planning[]; nearby: Planning[] } | null; // null: couldn't ask
+  epc?: Epc | null; // undefined: no certificate for this address (or no token); null: couldn't ask
+  epcReady?: boolean; // EPC_API_TOKEN is set
+  epcError?: 'token'; // the register turned the token down
   at: number;
 };
 
@@ -205,11 +230,102 @@ SELECT ?paon ?saon ?street ?date ?ptype ?estate ?newbuild WHERE {
   };
 }
 
+/* ---------- the EPC register ---------- */
+
+// The register's construction age bands (epb-data-warehouse look_up_data.csv, England and Wales). L means 2012 to
+// 2021 in RdSAP 21 and later, where M (2022 on) was added; before that L was 2012 onwards.
+const AGE: Record<string, string> = { A: 'before 1900', B: '1900 to 1929', C: '1930 to 1949', D: '1950 to 1966', E: '1967 to 1975', F: '1976 to 1982', G: '1983 to 1990', H: '1991 to 1995', I: '1996 to 2002', J: '2003 to 2006', K: '2007 to 2011', L: '2012 or later', M: '2022 or later' };
+const num = (v: unknown) => {
+  const n = typeof v === 'number' ? v : Number.parseFloat(s(v));
+  return Number.isFinite(n) && n > 0 ? n : null;
+};
+
+function builtOf(d: Row, schema: string) {
+  const parts = Array.isArray(d.sap_building_parts) ? (d.sap_building_parts as Row[]) : [];
+  for (const p of parts) {
+    const band = s(p?.construction_age_band).toUpperCase();
+    if (band === 'L' && /RdSAP-Schema-2[1-9]/i.test(schema)) return '2012 to 2021';
+    if (AGE[band]) return AGE[band];
+  }
+  for (const p of parts) if (/^\d{4}$/.test(s(p?.construction_year))) return `built ${s(p.construction_year)}`;
+  return '';
+}
+
+async function epcOf(postcode: string, house: string, flat: string, street: string): Promise<Epc | null | undefined | 'token'> {
+  const token = process.env.EPC_API_TOKEN;
+  if (!token || !postcode || !house) return undefined;
+  const auth = { Authorization: `Bearer ${token}` };
+  let rows: Row[];
+  try {
+    const res = await fetch(`${EPC()}/api/domestic/search?${new URLSearchParams({ postcode, page_size: '500' })}`, {
+      headers: { ...auth, Accept: 'application/json', 'User-Agent': UA },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(9000),
+    });
+    if (res.status === 404) return undefined; // no certificates in this postcode
+    if (res.status === 401 || res.status === 403) return 'token'; // the token was turned down (wrong, or the account was closed)
+    if (!res.ok) return null;
+    const d = (await res.json()) as { data?: unknown };
+    rows = Array.isArray(d.data) ? (d.data as Row[]) : Array.isArray((d.data as Row | undefined)?.data) ? ((d.data as Row).data as Row[]) : [];
+  } catch {
+    return null;
+  }
+  const word = street ? norm(street).split(' ')[0] : '';
+  const wantFlat = flat ? flatNo(flat) : '';
+  const lines = (r: Row) => ` ${norm([r.addressLine1, r.addressLine2, r.addressLine3, r.addressLine4].map(s).filter(Boolean).join(' '))} `;
+  const isHouse = (r: Row) => {
+    const l = lines(r);
+    return /^\d/.test(house) ? l.includes(` ${norm(house)} ${word} `) : l.includes(` ${norm(house)} `);
+  };
+  const hasFlat = (r: Row) => /\b(FLAT|APARTMENT|MAISONETTE)\b/.test(lines(r));
+  const same = rows.filter(isHouse).sort((a, b) => s(b.registrationDate).localeCompare(s(a.registrationDate)));
+  const pick = wantFlat ? same.find((r) => lines(r).includes(` FLAT ${wantFlat} `) || lines(r).includes(` APARTMENT ${wantFlat} `)) : (same.find((r) => !hasFlat(r)) ?? same[0]);
+  if (!pick) return undefined;
+  const number = s(pick.certificateNumber);
+  const base: Epc = {
+    area: null,
+    rooms: null,
+    type: '',
+    built: '',
+    band: s(pick.currentEnergyEfficiencyBand).toUpperCase(),
+    date: s(pick.registrationDate),
+    number,
+    address: [pick.addressLine1, pick.addressLine2, pick.addressLine3].map(s).filter(Boolean).join(', '),
+    flatInBuilding: !wantFlat && hasFlat(pick),
+  };
+  if (!number) return base;
+  try {
+    const d = ((await getJson(`${EPC()}/api/certificate?${new URLSearchParams({ certificate_number: number })}`, { headers: auth }, 9000)) as { data?: Row }).data ?? {};
+    const type = d.dwelling_type;
+    return {
+      ...base,
+      area: num(d.total_floor_area) === null ? null : Math.round(num(d.total_floor_area)!),
+      rooms: num(d.habitable_room_count),
+      type: typeof type === 'object' && type ? s((type as Row).value) : s(type),
+      built: builtOf(d, s(pick.schemaType) || s(d.schema_type)),
+      band: s(d.current_energy_efficiency_band).toUpperCase() || base.band,
+      date: s(d.registration_date) || base.date,
+    };
+  } catch {
+    return base; // the search's rating and date are still worth showing
+  }
+}
+
 export async function lookupProperty(address: string): Promise<Property> {
   const a = readAddress(address);
-  const empty: Property = { ...a, lat: null, lng: null, ward: '', borough: '', sale: null, planning: null, at: Date.now() };
+  const empty: Property = { ...a, lat: null, lng: null, ward: '', borough: '', sale: null, planning: null, epcReady: Boolean(process.env.EPC_API_TOKEN), at: Date.now() };
   if (!a.postcode) return empty;
-  const [place, sale] = await Promise.all([placeOf(a.postcode), saleOf(a.postcode, a.house, a.flat)]);
+  const [place, sale, epc] = await Promise.all([placeOf(a.postcode), saleOf(a.postcode, a.house, a.flat), epcOf(a.postcode, a.house, a.flat, a.street)]);
   const planning = await planningNear({ lat: place?.lat ?? null, lng: place?.lng ?? null, postcode: a.postcode }, a.house, a.street);
-  return { ...empty, lat: place?.lat ?? null, lng: place?.lng ?? null, ward: place?.ward ?? '', borough: place?.borough ?? '', sale, planning };
+  return {
+    ...empty,
+    lat: place?.lat ?? null,
+    lng: place?.lng ?? null,
+    ward: place?.ward ?? '',
+    borough: place?.borough ?? '',
+    sale,
+    planning,
+    epc: epc === 'token' ? null : epc,
+    ...(epc === 'token' ? { epcError: 'token' as const } : {}),
+  };
 }
