@@ -46,3 +46,5 @@ What the client wanted most was doors that close nicely. With one flat surface b
 ![The finished wardrobe with the doors closed](/images/blog/wardrobe-loft-beams-hatfield/finished.jpg#narrow)
 
 Every photo, the before and after slider and three short clips of the doors are on the [job page for this wardrobe](/portfolio/wardrobe-loft-beams-hatfield).
+
+The page also has a [3D model of it](/portfolio/wardrobe-loft-beams-hatfield#in-3d), drawn to its real width, height and depth. Open the doors to see the beams, or take it apart to see the framework behind the face.

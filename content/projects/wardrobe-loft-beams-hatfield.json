@@ -187,5 +187,17 @@
     }
   ],
   "blogSlug": "wardrobe-loft-beams-hatfield",
-  "jobKit": "2026-10-wardrobe-alcove-hatfield-pdzs"
+  "jobKit": "2026-10-wardrobe-alcove-hatfield-pdzs",
+  "model3d": {
+    "src": "/models/wardrobe-loft-beams-hatfield.glb",
+    "poster": {
+      "src": "/images/projects/wardrobe-loft-beams-hatfield/model-3d.jpg",
+      "w": 1600,
+      "h": 1200,
+      "alt": "3D model of the loft wardrobe: an MDF face over the roof beams with a pair of doors and one door cut to the slope"
+    },
+    "title": "The wardrobe in 3D",
+    "text": "The wardrobe drawn in 3D to its real width, height and depth (2360 x 2200 x 600 mm). The slope of the roof and the beam sizes are taken from the photos. Open the doors to see the beams behind them, or take it apart to see the framework that makes one flat face for the hinges.",
+    "shape": "tall"
+  }
 }
