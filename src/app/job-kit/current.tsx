@@ -995,6 +995,7 @@ export function NewEnquiry({
   clients = [],
   forClient,
   named,
+  seed,
   onCustomer,
 }: {
   onCancel: () => void;
@@ -1002,6 +1003,7 @@ export function NewEnquiry({
   clients?: Client[]; // ServiceM8's customers (with the current jobs'), for "Already a customer?"
   forClient?: Client; // started from a customer's page
   named?: string; // started from a search that found nobody
+  seed?: Enquiry; // started from an email in the Inbox (inbox.tsx enquiryFromMail)
   onCustomer?: (uuid: string) => void;
 }) {
   // What's typed is kept on the phone until it reaches ServiceM8, so no signal never loses an enquiry.
@@ -1010,10 +1012,13 @@ export function NewEnquiry({
     const empty = !d.name.trim() && !d.description.trim() && !d.mobile.trim();
     if (forClient && empty) return fromClient(forClient);
     if (named && empty) return { ...BLANK, name: named };
+    if (seed && empty) return seed;
     return d;
   });
   // An unsent enquiry for someone else is never thrown away without asking.
   const clash = forClient && e.client !== forClient.uuid && (e.name.trim() || e.description.trim()) ? forClient : undefined;
+  const sameEmail = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+  const clashSeed = !clash && seed && (e.name.trim() || e.description.trim()) && !sameEmail(e.email, seed.email) && e.description !== seed.description ? seed : undefined;
   const index = useMemo(() => indexClients(clients), [clients]);
   const picked: Client | undefined = e.client ? (clients.find((c) => c.uuid === e.client) ?? (forClient?.uuid === e.client ? forClient : { uuid: e.client, name: e.clientName || e.name, address: '', people: [], edited: null })) : undefined;
   const pick = (c: Client | undefined) => {
@@ -1096,6 +1101,19 @@ export function NewEnquiry({
             Clear it and start one for {clash.name}
           </button>
         </div>
+      ) : null}
+      {clashSeed ? (
+        <div role="alert" className="mt-4 rounded-sm border border-ink bg-mount px-3.5 py-3">
+          <p className="text-[15px] leading-relaxed">You have an enquiry that hasn’t gone to ServiceM8 yet{e.name.trim() ? ` for ${e.name.trim()}` : ''}. Send it first, or clear it.</p>
+          <button type="button" className="btn btn-ghost btn-sm mt-2.5" onClick={() => update(clashSeed)}>
+            Clear it and fill in from the email
+          </button>
+        </div>
+      ) : null}
+      {seed && !clashSeed && sameEmail(e.email, seed.email) ? (
+        <p className="mt-4 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-[14.5px] leading-relaxed text-muted">
+          Filled in from the email: check the name, add their mobile if you have it, then Add to ServiceM8.
+        </p>
       ) : null}
 
       <div className="mt-5 rounded-sm border border-accent bg-accent-soft px-4 py-3.5">
@@ -1188,7 +1206,7 @@ export function NewEnquiry({
 
 /* ---------- the morning summary ---------- */
 
-export type TodayLine = { text: string; go: 'current' | 'designs' | 'posts' | 'jobs' | 'diary' | 'sm8'; urgent?: boolean; id?: string; time?: string; icon?: IconName };
+export type TodayLine = { text: string; go: 'current' | 'designs' | 'posts' | 'jobs' | 'diary' | 'sm8' | 'inbox'; urgent?: boolean; id?: string; time?: string; icon?: IconName };
 
 export function todayLines({
   sm8,

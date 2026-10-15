@@ -39,6 +39,26 @@ export function problemText(error?: string, detail?: string, at?: number) {
       return 'Claude is busy or didn’t answer. Try again in a minute, or write it yourself.';
     case 'ai-error':
       return `Claude couldn’t write a draft${detail ? `: ${detail}` : '.'} Write it yourself, or try again.`;
+    case 'outlook-not-set-up':
+      return `The Inbox isn’t connected yet${detail ? `: ${detail} ${detail.includes(',') ? 'are' : 'is'} missing in Vercel` : ''}.`;
+    case 'outlook-secret':
+      return detail === 'expired'
+        ? 'The Microsoft secret has run out (they last 24 months at most). In Entra make a new one (Raf Job Kit, Certificates & secrets) and replace MS_CLIENT_SECRET in Vercel.'
+        : 'Microsoft turned the secret down. MS_CLIENT_SECRET in Vercel needs the secret’s Value, not its Secret ID. If you can’t see the Value any more, make a new secret in Entra (Raf Job Kit, Certificates & secrets).';
+    case 'outlook-app':
+      return `Microsoft can’t find the Raf Job Kit app. MS_TENANT_ID and MS_CLIENT_ID in Vercel have to match the app’s Overview page in Entra.${detail ? ` (${detail})` : ''}`;
+    case 'outlook-consent':
+      return `Microsoft hasn’t let the Job Kit into the mailbox yet. In Entra: Raf Job Kit, API permissions, Mail.ReadWrite and Mail.Send as Application permissions, then Grant admin consent.${detail ? ` (${detail})` : ''}`;
+    case 'outlook-mailbox':
+      return `Microsoft can’t find the info@ mailbox from here.${detail ? ` (${detail})` : ''}`;
+    case 'outlook-gone':
+      return 'That email isn’t there any more: it was moved or deleted in Outlook. Go back and refresh the Inbox.';
+    case 'outlook-busy':
+      return `Microsoft is busy or didn’t answer. Try again in a minute.${/Drafts/.test(detail ?? '') ? ' It wasn’t sent: your reply is in Drafts in Outlook, so send it from there (or delete that draft and send again here).' : ''}`;
+    case 'outlook-too-big':
+      return 'This one is too big to show here: open it in Outlook.';
+    case 'outlook-error':
+      return `Microsoft sent back an error${detail ? `: ${detail}` : '.'}${/Drafts/.test(detail ?? '') ? ' Your reply is in Drafts in Outlook.' : ''}`;
     case 'no-pin':
       return 'Add your PIN in Settings first.';
     case 'wrong-pin':

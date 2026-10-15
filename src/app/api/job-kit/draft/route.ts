@@ -1,7 +1,7 @@
 import { guard } from '@/lib/job-kit-server';
 import { aiSetUp, draftReply, DraftError, type DraftInput } from '@/lib/draft-reply';
 
-/* The Job Kit's "Draft a reply" (a job's Emails and texts), behind the PIN: Claude writes the next email or text
+/* The Job Kit's "Draft a reply" (a job's Emails and texts, and the Inbox: source 'inbox'), behind the PIN: Claude writes the next email or text
    from the job and the conversation (src/lib/draft-reply.ts). Answers { text } for the box; nothing is sent or kept. */
 export const maxDuration = 30;
 
@@ -31,6 +31,7 @@ export async function POST(req: Request) {
     thread: thread.filter((m) => m.text),
     note: text(body.note, 600),
     name: text(body.name, 120),
+    source: body.source === 'inbox' ? 'inbox' : 'job',
   };
   try {
     return Response.json({ text: await draftReply(input) }, { headers: { 'Cache-Control': 'no-store' } });

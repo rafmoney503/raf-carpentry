@@ -21,6 +21,7 @@ export type DraftInput = {
   thread: { dir: 'in' | 'out'; via: 'email' | 'sms'; subject: string; text: string }[];
   note: string;
   name?: string; // their full name: only used to take the surname out, never sent
+  source?: 'job' | 'inbox'; // inbox: an email to info@ (the Job Kit's Inbox), maybe not from a customer
 };
 
 export class DraftError extends Error {
@@ -80,8 +81,23 @@ function prompt(d: DraftInput) {
   const redact = (s: string) => redactWith(s, d.name ?? '');
   const thread = d.thread
     .slice(-8)
-    .map((m) => `[${m.dir === 'in' ? 'Customer' : 'Raf'}, ${m.via === 'sms' ? 'text' : 'email'}]${m.subject ? ` Subject: ${redact(m.subject).slice(0, 160)}\n` : ' '}${redact(m.text).slice(0, 1500)}`)
+    .map((m) => `[${m.dir === 'in' ? (d.source === 'inbox' ? 'Them' : 'Customer') : 'Raf'}, ${m.via === 'sms' ? 'text' : 'email'}]${m.subject ? ` Subject: ${redact(m.subject).slice(0, 160)}\n` : ' '}${redact(m.text).slice(0, 1500)}`)
     .join('\n\n');
+  if (d.source === 'inbox') {
+    return [
+      "Write Raf's reply to the newest email below. It came to his business inbox, info@rafcarpentry.com.",
+      'It may be from a customer or someone asking about work, or from a supplier, a company or someone else: work out which from the emails.',
+      'If it is not about work for a customer, write a short, polite reply that only answers what it asks, and leave out visits, quotes and 3D drawings.',
+      'If it looks like spam, a newsletter or an automatic message, write only: This one looks automatic, so there is probably nothing to reply.',
+      '',
+      `Their first name: ${d.first || 'not known (start with "Hi,")'}`,
+      d.description.trim() ? `\nWhat Raf has on them in ServiceM8:\n${redact(d.description).slice(0, 1500)}` : '',
+      '',
+      thread ? `The emails, oldest first (the last one is the one to answer):\n${thread}` : '(no email text)',
+      '',
+      `Raf's note for this reply: ${d.note.trim() ? redact(d.note).slice(0, 600) : 'none'}`,
+    ].join('\n');
+  }
   return [
     `Write Raf's next ${d.mode === 'sms' ? 'text message' : 'email'} to this customer.`,
     '',
