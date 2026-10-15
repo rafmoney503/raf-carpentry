@@ -87,6 +87,11 @@
       "name": "Llandeilo, Wales",
       "lat": 51.884,
       "lng": -3.993
+    },
+    {
+      "name": "Hatfield",
+      "lat": 51.7636,
+      "lng": -0.2259
     }
   ]
 }
