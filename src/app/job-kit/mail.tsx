@@ -53,6 +53,24 @@ const fetchMail = (job: CurrentJob) => post<{ thread: Thread }>(readPin(), { act
 // save: the job has no email in ServiceM8, so the address typed here is saved on it.
 const sendMail = (job: CurrentJob, to: string, subject: string, text: string, save: boolean) =>
   post<{ thread: Thread; sent: Mail; saved?: boolean }>(readPin(), { action: 'send-mail', job: job.uuid, to, subject, text, save, mobile: job.mobile });
+/* Claude's draft of the next email or text (src/lib/draft-reply.ts): the job, the last few messages and Raf's
+   note go; the server takes out contact details and the surname before asking. */
+const askDraft = (job: CurrentJob, what: string, mode: Mode, thread: Mail[], note: string) =>
+  post<{ text: string }>(
+    readPin(),
+    {
+      mode,
+      first: job.first,
+      name: job.name,
+      what,
+      status: job.status,
+      area: job.area,
+      description: job.description,
+      note,
+      thread: thread.slice(-8).map((m) => ({ dir: m.dir, via: m.via ?? 'email', subject: m.subject, text: m.text })),
+    },
+    '/api/job-kit/draft',
+  );
 const sendText = (job: CurrentJob, to: string, text: string) => post<{ thread: Thread; sent: Mail }>(readPin(), { action: 'send-text', job: job.uuid, to, text, email: job.email });
 
 /* The review request, the same words as the website's Ask for a review (src/app/review/send), to the thank-you
@@ -113,6 +131,13 @@ export function EmailBox({
   const [all, setAll] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const textRef = useRef<HTMLTextAreaElement>(null);
+  // Draft a reply: Raf's note for Claude, what was in the box before (to put back), and how it went.
+  const [aiOpen, setAiOpen] = useState<boolean | null>(null);
+  const [aiNote, setAiNote] = useState('');
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiProblem, setAiProblem] = useState('');
+  const [aiDone, setAiDone] = useState(false);
+  const before = useRef<string | undefined>(undefined);
   const toRef = useRef<HTMLInputElement>(null);
   const subjectRef = useRef<HTMLInputElement>(null);
   const [saved, setSaved] = useState('');
@@ -164,6 +189,8 @@ export function EmailBox({
   // "Hi Sarah,". Email when there's an address to send to, else text when there's a mobile. Changes are kept on
   // the phone until it's sent.
   const first = job.first || 'there';
+  // What the job is, unless the description starts with a pasted email's greeting ("Hello Raf", "My name is ...").
+  const jobWhat = /^(hi|hello|hey|dear|good (morning|afternoon|evening)|my name is|i am|i'm|this is|thanks|thank you)\b/i.test(what) ? '' : what;
   const lastIn = [...mails].reverse().find((m) => m.dir === 'in' && (m.via ?? 'email') === 'email' && m.from);
   const lastOut = [...mails].reverse().find((m) => m.dir === 'out' && (m.via ?? 'email') === 'email' && m.to);
   const toDefault = job.email || lastIn?.from.split(', ')[0] || lastOut?.to.split(', ')[0] || '';
@@ -173,8 +200,8 @@ export function EmailBox({
   const lastSubject = [...mails].reverse().find((m) => m.subject)?.subject;
   const subjectDefault = lastSubject
     ? `Re: ${plainSubject(lastSubject)}`
-    : what && !/^(something else|not sure|other|anything)\b/i.test(what)
-      ? `${job.status === 'Quote' || job.status === 'Unsuccessful' ? 'Your enquiry' : 'Your job'}: ${what}`
+    : jobWhat && !/^(something else|not sure|other|anything)\b/i.test(jobWhat)
+      ? `${job.status === 'Quote' || job.status === 'Unsuccessful' ? 'Your enquiry' : 'Your job'}: ${jobWhat}`
       : job.status === 'Quote' || job.status === 'Unsuccessful'
         ? 'Your enquiry with Raf Carpentry'
         : 'Your job with Raf Carpentry';
@@ -211,6 +238,30 @@ export function EmailBox({
     textRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
+  // Draft a reply: open by itself when it's their turn (nothing sent to them yet, or they wrote last).
+  const theirTurn = !mails.some((m) => m.dir === 'out') || mails[mails.length - 1]?.dir === 'in';
+  const aiShown = aiOpen ?? theirTurn;
+  const writeDraft = () => {
+    setAiBusy(true);
+    setAiProblem('');
+    setAiDone(false);
+    const had = written ? text : undefined;
+    void askDraft(job, jobWhat, mode, mails, aiNote).then((r) => {
+      setAiBusy(false);
+      if (!r.ok) return setAiProblem(problemText(r.error, r.detail));
+      before.current = had;
+      setDraft({ text: r.data.text });
+      setAiDone(true);
+      setTried(false);
+      textRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  };
+  const putBack = () => {
+    setDraft({ text: before.current });
+    before.current = undefined;
+    setAiDone(false);
+  };
+
   const finish = (sent: Mail, t: Thread) => {
     setSentHere((list) => {
       const next = [...list, sent];
@@ -223,6 +274,9 @@ export function EmailBox({
     keep<Draft>(DRAFTS_KEY, job.uuid, { mode });
     setTried(false);
     setJustSent(mode);
+    setAiDone(false);
+    setAiNote('');
+    before.current = undefined;
   };
 
   const send = () => {
@@ -428,6 +482,39 @@ export function EmailBox({
             {tried && !e164(number) ? <span className="text-[14px] font-semibold">{number.trim() ? 'That mobile number doesn’t look right.' : 'Type their mobile number.'}</span> : null}
           </label>
         )}
+        <div className="rounded-sm border border-line-strong bg-paper px-3 py-1.5">
+          <button type="button" onClick={() => setAiOpen(!aiShown)} aria-expanded={aiShown} className="flex min-h-10 w-full items-center justify-between gap-3 text-left text-[15px] font-semibold">
+            <span>Draft a reply with Claude</span>
+            <span aria-hidden className="font-mono text-[12.5px] font-normal text-faint">
+              {aiShown ? 'Hide' : 'Show'}
+            </span>
+          </button>
+          {aiShown ? (
+            <div className="grid gap-2.5 pb-2 pt-1">
+              <label className="grid gap-1.5">
+                <span className="text-[14px] leading-snug text-muted">Anything it should say? (optional)</span>
+                <input
+                  className={`${field} h-11 text-[15px]`}
+                  value={aiNote}
+                  maxLength={600}
+                  placeholder="e.g. I can come round Tuesday at 10"
+                  onChange={(e) => setAiNote(e.target.value)}
+                />
+              </label>
+              <button type="button" className={`btn btn-sm w-full ${theirTurn && !written ? 'btn-primary' : 'btn-ghost'}`} disabled={aiBusy} onClick={writeDraft}>
+                {aiBusy ? 'Writing…' : written ? `Write a new ${mode === 'sms' ? 'text' : 'email'} draft` : `Write the ${mode === 'sms' ? 'text' : 'email'}`}
+              </button>
+              {aiProblem ? (
+                <p role="alert" className="rounded-sm border border-ink px-3 py-2 text-[14px] leading-relaxed">
+                  {aiProblem}
+                </p>
+              ) : null}
+              <p className="font-mono text-[11.5px] leading-relaxed text-faint">
+                What they asked for, the conversation and their first name go to Claude; their phone, email, address and surname are taken out first. Nothing goes to them until you press Send.
+              </p>
+            </div>
+          ) : null}
+        </div>
         <label className="grid gap-1.5">
           <span className={label}>{mode === 'sms' ? 'Text' : 'Message'}</span>
           <textarea
@@ -439,6 +526,16 @@ export function EmailBox({
           />
           {tried && !written ? <span className="text-[14px] font-semibold">{mode === 'sms' ? 'Write the text first.' : 'Write the message first.'}</span> : null}
         </label>
+        {aiDone ? (
+          <p role="status" className="-mt-1 flex flex-wrap items-center gap-x-3 text-[14px] leading-relaxed text-muted">
+            <span>Claude’s draft is in the box: check it, change anything, then send.</span>
+            {before.current !== undefined ? (
+              <button type="button" onClick={putBack} className="h-9 text-accent underline">
+                Put back what you had
+              </button>
+            ) : null}
+          </p>
+        ) : null}
         {mode === 'sms' ? (
           <p className="font-mono text-[12px] leading-relaxed text-faint">
             Signed: {SMS_SIGN_OFF} · {length} characters ·{' '}

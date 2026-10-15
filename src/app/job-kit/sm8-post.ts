@@ -3,10 +3,10 @@
 
 export const clock = (t: number) => new Date(t).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-export async function post<T>(pin: string, body: Record<string, unknown>): Promise<{ ok: true; data: T } | { ok: false; error: string; detail?: string }> {
+export async function post<T>(pin: string, body: Record<string, unknown>, path = '/api/job-kit/sm8'): Promise<{ ok: true; data: T } | { ok: false; error: string; detail?: string }> {
   if (!pin) return { ok: false, error: 'no-pin' };
   try {
-    const res = await fetch('/api/job-kit/sm8', { method: 'POST', headers: { 'x-job-kit-pin': pin, 'content-type': 'application/json' }, body: JSON.stringify(body), cache: 'no-store' });
+    const res = await fetch(path, { method: 'POST', headers: { 'x-job-kit-pin': pin, 'content-type': 'application/json' }, body: JSON.stringify(body), cache: 'no-store' });
     const data = (await res.json().catch(() => ({}))) as T & { error?: string; detail?: string };
     if (!res.ok) return { ok: false, error: data.error || 'sm8-error', detail: data.detail };
     return { ok: true, data };
@@ -29,6 +29,16 @@ export function problemText(error?: string, detail?: string, at?: number) {
       return /quota/i.test(detail ?? '') ? 'ServiceM8 says today’s allowance of messages is used up. Try again tomorrow, or send it from ServiceM8.' : 'ServiceM8 is busy. Try again in a minute.';
     case 'sm8-gone':
       return 'ServiceM8 doesn’t have that customer any more (archived or merged there). Search again.';
+    case 'ai-not-set-up':
+      return 'Draft a reply isn’t switched on yet: ANTHROPIC_API_KEY is missing in Vercel.';
+    case 'ai-key':
+      return 'Claude turned the key down. Make a new key in the Claude Console and replace ANTHROPIC_API_KEY in Vercel.';
+    case 'ai-limit':
+      return 'The Claude account has reached its spending limit or run out of credit. Top it up or raise the limit in the Claude Console (Billing).';
+    case 'ai-busy':
+      return 'Claude is busy or didn’t answer. Try again in a minute, or write it yourself.';
+    case 'ai-error':
+      return `Claude couldn’t write a draft${detail ? `: ${detail}` : '.'} Write it yourself, or try again.`;
     case 'no-pin':
       return 'Add your PIN in Settings first.';
     case 'wrong-pin':
