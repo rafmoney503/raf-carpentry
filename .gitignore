@@ -44,3 +44,6 @@ node_modules
 .env
 # Python cache from scripts/
 __pycache__/
+
+# CabinetOS check bundle (scripts/cabinetos-check/run.sh)
+scripts/cabinetos-check/.cache/
