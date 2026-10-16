@@ -56,6 +56,9 @@
   .mv-drill { animation: mv-drill 8s ease-in-out infinite both; }
   .mv-slide { animation: mv-slide 8s ease-out infinite both; }
   .mv-offcut { animation: mv-offcut 8s ease-in infinite both; }
+  .mv-lay { animation: mv-lay 8s ease-out infinite both; }
+  .mv-board { animation: mv-board 8s ease-out infinite both; }
+  .mv-screws { animation: mv-screws 8s linear infinite both; }
 }
 
 /* a line draws itself again from its start (needs pathLength={1}) */
@@ -116,3 +119,8 @@
 /* Timber Stack: the next board slides in, the offcut drops */
 @keyframes mv-slide { 0% { opacity: 1; transform: translateX(0); } 3% { opacity: 0; transform: translateX(0); } 4% { opacity: 0; transform: translateX(26px); } 6% { opacity: 1; transform: translateX(26px); } 20%, 100% { opacity: 1; transform: translateX(0); } }
 @keyframes mv-offcut { 0% { opacity: 1; transform: translate(0, 0); } 3% { opacity: 0; transform: translate(0, 0); } 19% { opacity: 0; transform: translate(-6px, -16px); } 21% { opacity: 1; transform: translate(-6px, -16px); } 32%, 100% { opacity: 1; transform: translate(0, 0); } }
+/* Services: the blue floorboard goes in from the back; the plasterboard comes off while the stud wall is framed,
+   then goes back on and is screwed */
+@keyframes mv-lay { 0% { opacity: 1; transform: translateY(0); } 3% { opacity: 0; transform: translateY(0); } 4% { opacity: 0; transform: translateY(-46px); } 18%, 100% { opacity: 1; transform: translateY(0); } }
+@keyframes mv-board { 0% { opacity: 1; transform: translateX(0); } 3% { opacity: 0; transform: translateX(0); } 30% { opacity: 0; transform: translateX(70px); } 40%, 100% { opacity: 1; transform: translateX(0); } }
+@keyframes mv-screws { 0%, 40% { opacity: 0; } 41%, 100% { opacity: 1; } }

@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Container, PageHeader } from '@/components/ui';
 import { GoogleRating } from '@/components/Reviews';
+import ServiceDrawing, { serviceDrawingFor } from '@/components/ServiceDrawing';
 import { pageMeta } from '@/lib/seo';
 import { coverFor, getServicesData, jobsFor } from '@/lib/services';
 
@@ -29,7 +30,9 @@ export default function ServicesPage() {
               <Link href={`/services/${s.slug}`} className="group block">
                 <div className="mount transition-colors group-hover:border-accent">
                   <div className="relative aspect-[4/3] overflow-hidden bg-raised">
-                    {image ? (
+                    {serviceDrawingFor(image) ? (
+                      <ServiceDrawing name={serviceDrawingFor(image)!} />
+                    ) : image ? (
                       <Image src={image} alt={alt} fill priority={i < 3} sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px" className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]" />
                     ) : null}
                   </div>

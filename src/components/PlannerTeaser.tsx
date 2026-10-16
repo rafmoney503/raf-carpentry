@@ -1,8 +1,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { PLANNER_ALT, PLANNER_HREF, PLANNER_IMAGE, PLANNER_IMAGE_SQUARE } from '@/lib/planner-picture';
+import PlannerClip from '@/components/PlannerClip';
+import { PLANNER_ALT, PLANNER_CLIP, PLANNER_CLIP_SQUARE, PLANNER_HREF, PLANNER_IMAGE, PLANNER_IMAGE_SQUARE } from '@/lib/planner-picture';
 
-/* The way into the wardrobe planner (/wardrobe-planner), with a picture of the planner itself (src/lib/planner-picture.ts).
+/* The way into the wardrobe planner (/wardrobe-planner), with a picture of the planner itself (src/lib/planner-picture.ts),
+   and over it a short loop of its doors opening and closing (PlannerClip; the still stays without it).
    Raf asked for 'a visual miniature, a little bit big' (14 Oct 2026). Two shapes:
    - 'row': picture on the left, words on the right (home page under the 3D chips, the 3D designs pages, the phone menu)
    - 'feature': the big card at the top of the Tools page (picture on top on a phone, on the left on a computer) */
@@ -23,6 +25,7 @@ export default function PlannerTeaser({ variant = 'row', onClick, className = ''
             sizes="(min-width: 1280px) 640px, (min-width: 768px) 52vw, 100vw"
             className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />
+          <PlannerClip {...PLANNER_CLIP} className="transition-transform duration-500 group-hover:scale-[1.03]" />
           <span className="absolute left-3 top-3 rounded-sm border border-line-strong bg-mount px-2 py-1 font-mono text-[12px] text-ink">
             2800 × 2400 · 3 units
           </span>
@@ -69,6 +72,7 @@ export default function PlannerTeaser({ variant = 'row', onClick, className = ''
             sizes="(min-width: 640px) 152px, 112px"
             className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
           />
+          <PlannerClip {...PLANNER_CLIP_SQUARE} className="transition-transform duration-500 group-hover:scale-[1.05]" />
           <span className="absolute left-1.5 top-1.5 rounded-[2px] bg-mount px-1.5 py-px font-mono text-[11px] font-semibold text-ink">3D</span>
         </span>
         <span className="min-w-0">

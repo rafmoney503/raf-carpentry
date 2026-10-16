@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Container, PageHeader, SectionHeading } from '@/components/ui';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import ServiceDrawing, { serviceDrawingFor } from '@/components/ServiceDrawing';
 import Reviews, { GoogleRating } from '@/components/Reviews';
 import { formatMonth, modelOf, countModels } from '@/lib/projects';
 import ModelGallery, { type GalleryItem } from '@/components/project/ModelGallery';
@@ -140,7 +141,11 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
             {s.image ? (
               <div className="mount md:col-span-5">
                 <div className="relative aspect-[4/3] overflow-hidden bg-raised">
-                  <Image src={s.image} alt="" fill sizes="(max-width: 768px) 100vw, 500px" className="object-cover" />
+                  {serviceDrawingFor(s.image) ? (
+                    <ServiceDrawing name={serviceDrawingFor(s.image)!} />
+                  ) : (
+                    <Image src={s.image} alt="" fill sizes="(max-width: 768px) 100vw, 500px" className="object-cover" />
+                  )}
                 </div>
               </div>
             ) : null}
