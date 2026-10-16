@@ -1,11 +1,20 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import PlannerGuide, { GuideIcon } from './planner-guide';
 import './planner.css';
 
 /* The planner's frame: view (3D or drawing) on top on phones, steps panel below; side by side from 900 px.
-   planner-engine.ts fills it in and runs it. three.js loads with the engine, only on this page. */
+   planner-engine.ts fills it in and runs it. three.js loads with the engine, only on this page.
+   The quick guide (planner-guide.tsx) covers the steps panel (under 900 px the 3D view too) on the first visit;
+   Guide in the header brings it back. */
+
+const GUIDE_SEEN = 'raf_wp_guide';
+
 export default function WardrobePlanner() {
   const rootRef = useRef<HTMLDivElement>(null);
+  // null until the browser has said whether the guide was seen, so neither the guide nor the steps flash.
+  const [guide, setGuide] = useState<null | 'first' | 'open' | 'closed'>(null);
+  const open = guide === 'first' || guide === 'open';
 
   useEffect(() => {
     const root = rootRef.current;
@@ -21,13 +30,53 @@ export default function WardrobePlanner() {
     };
   }, []);
 
+  useEffect(() => {
+    let seen = false;
+    try {
+      seen = localStorage.getItem(GUIDE_SEEN) === '1';
+    } catch {
+      // storage blocked: show the guide each visit
+    }
+    setGuide(seen ? 'closed' : 'first');
+  }, []);
+
+  // While the guide covers the steps, the steps can't be reached by Tab or a screen reader.
+  useEffect(() => {
+    rootRef.current?.querySelector('.panel')?.toggleAttribute('inert', open);
+  }, [open]);
+
+  const close = useCallback(() => {
+    setGuide('closed');
+    try {
+      localStorage.setItem(GUIDE_SEEN, '1');
+    } catch {
+      // nothing to keep
+    }
+    requestAnimationFrame(() => rootRef.current?.querySelector<HTMLElement>('.steps [aria-selected="true"]')?.focus({ preventScroll: true }));
+  }, []);
+
   return (
     <div className="wp" ref={rootRef}>
       <div className="wp-head">
         <h1>Wardrobe planner</h1>
         <p>Design your fitted wardrobe, then send it to me.</p>
+        <button type="button" className="guide-btn" aria-expanded={open} aria-controls="wp-guide" onClick={() => (open ? close() : setGuide('open'))}>
+          <GuideIcon />
+          <span className="g-long">Quick guide</span>
+          <span className="g-short">Guide</span>
+        </button>
       </div>
+      <PlannerFrame />
+      <PlannerGuide open={open} first={guide === 'first'} onClose={close} />
+    </div>
+  );
+}
 
+/* The view and the steps panel. planner-engine.ts changes these by hand, so React renders them once and
+   never again (memo with no props): opening or closing the guide doesn't touch them. */
+const PlannerFrame = memo(function PlannerFrame() {
+  return (
+    <>
       <section className="view" aria-label="Your wardrobe">
         <div id="stage" aria-label="3D view of your wardrobe. Drag to turn it, pinch to zoom." />
         <div id="drawing" hidden />
@@ -59,6 +108,6 @@ export default function WardrobePlanner() {
           <button type="button" className="wbtn primary" id="nextBtn">Next</button>
         </div>
       </section>
-    </div>
+    </>
   );
-}
+});

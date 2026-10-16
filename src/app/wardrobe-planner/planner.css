@@ -30,8 +30,15 @@
 .wp-head { display: flex; align-items: baseline; gap: 6px 14px; flex-wrap: wrap; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); background: var(--color-mount); border-bottom: 1px solid var(--color-line); }
 .wp-head h1 { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 680; letter-spacing: -0.02em; line-height: 1.1; }
 .wp-head p { margin: 0; font-size: 14px; color: var(--color-muted); }
+/* Guide button: right of the title; the line under it on phones */
+.wp-head .guide-btn { order: 1; margin-left: auto; align-self: center; display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid var(--color-line-strong); border-radius: var(--radius); background: var(--color-mount); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.wp-head .guide-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.wp-head .guide-btn[aria-expanded="true"] { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-on-accent); }
+.wp-head .guide-btn .g-long { display: none; }
+@media (min-width: 400px) { .wp-head .guide-btn .g-long { display: inline; } .wp-head .guide-btn .g-short { display: none; } }
+@media (max-width: 699px) { .wp-head p { order: 2; flex-basis: 100%; } }
 
-.wp .view { position: relative; min-height: 0; overflow: hidden; }
+.wp .view { grid-row: 2; grid-column: 1; position: relative; min-height: 0; overflow: hidden; }
 .wp #stage { position: absolute; inset: 0; touch-action: none; }
 .wp #stage canvas { display: block; width: 100%; height: 100%; outline: none; touch-action: none; }
 .wp #drawing { position: absolute; inset: 0; display: grid; place-items: center; background: var(--color-paper); }
@@ -51,7 +58,31 @@
 .wp .dims { font-family: var(--font-mono); font-size: 12px; color: var(--color-muted); background: var(--color-mount); border: 1px solid var(--color-line-strong); border-radius: var(--radius); padding: 5px 9px; white-space: nowrap; }
 .wp .nogl { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--color-muted); background: var(--color-paper); }
 
-.wp .panel { min-height: 0; display: flex; flex-direction: column; background: var(--color-mount); border-top: 1px solid var(--color-line); }
+.wp .panel { grid-row: 3; grid-column: 1; min-height: 0; display: flex; flex-direction: column; background: var(--color-mount); border-top: 1px solid var(--color-line); }
+
+/* Quick guide (planner-guide.tsx): from 900 px it sits over the steps panel, beside the 3D view; on phones and
+   tablets it covers the 3D view too, so there is room to read it */
+.wp .guide { grid-row: 2 / 4; grid-column: 1; z-index: 2; min-height: 0; display: flex; flex-direction: column; background: var(--color-mount); border-top: 1px solid var(--color-line); }
+.wp .guide[hidden] { display: none; }
+.wp .guide-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-block: 16px 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 18px; }
+.wp .guide-scroll > * { flex-shrink: 0; max-width: 620px; }
+.wp .guide h2:focus { outline: none; }
+.wp .guide-kicker { margin: 0 0 4px; font-family: var(--font-mono); font-size: 13px; color: var(--color-accent); }
+.wp .guide-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.wp .guide-step { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 14px; align-items: start; padding-block: 12px; }
+.wp .guide-step + .guide-step { border-top: 1px solid var(--color-line); }
+.wp .guide-step:first-child { padding-top: 0; }
+.wp .guide-pic { aspect-ratio: 3 / 2; border: 1px solid var(--color-line); border-radius: var(--radius); background-color: var(--color-paper); color: var(--color-ink); overflow: hidden; }
+.wp .guide-pic svg { display: block; width: 100%; height: 100%; font-family: var(--font-mono); }
+.wp .wpg-a { color: var(--color-accent); }
+.wp .guide-step h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 3px; font-family: var(--font-sans); font-size: 16px; font-weight: 650; text-transform: none; letter-spacing: 0; color: var(--color-ink); }
+.wp .guide-step h3 i { font-style: normal; font-family: var(--font-mono); font-size: 11px; font-weight: 500; line-height: 18px; width: 18px; height: 18px; flex: 0 0 18px; border-radius: 50%; background: var(--color-accent); color: var(--color-on-accent); text-align: center; }
+.wp .guide-step p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--color-muted); }
+.wp .guide-tips { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.wp .guide-tips li { display: flex; align-items: flex-start; gap: 8px; font-size: 13.5px; line-height: 1.4; color: var(--color-muted); }
+.wp .guide-tips svg { flex: 0 0 24px; width: 24px; height: 24px; color: var(--color-ink); }
+@media (min-width: 600px) and (max-width: 899px) { .wp .guide-step { grid-template-columns: 150px minmax(0, 1fr); gap: 18px; } }
+@media (max-width: 359px) { .wp .guide-step { grid-template-columns: 90px minmax(0, 1fr); gap: 12px; } .wp .guide-tips { grid-template-columns: minmax(0, 1fr); } }
 .wp .steps { flex: 0 0 auto; display: flex; gap: 2px; padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--color-line); overflow-x: auto; scrollbar-width: none; }
 .wp .steps::-webkit-scrollbar { display: none; }
 .wp .steps button { flex: 1 0 auto; display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; background: transparent; padding: 10px 6px 11px; margin-bottom: -1px; border-bottom: 2px solid transparent; font-weight: 600; font-size: 14px; color: var(--color-muted); white-space: nowrap; }
@@ -135,5 +166,5 @@
   .wp { grid-template-columns: minmax(0, 1fr) 430px; grid-template-rows: auto minmax(0, 1fr); }
   .wp-head { grid-column: 1 / -1; }
   .wp .view { grid-row: 2; grid-column: 1; }
-  .wp .panel { grid-row: 2; grid-column: 2; border-top: 0; border-left: 1px solid var(--color-line); }
+  .wp .panel, .wp .guide { grid-row: 2; grid-column: 2; border-top: 0; border-left: 1px solid var(--color-line); }
 }
