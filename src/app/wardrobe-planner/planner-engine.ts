@@ -30,6 +30,7 @@ const CFG={
   freeHeight:2100,                                      // default height of a freestanding unit, mm
   layouts:{double:'Double hanging',long:'Long hanging',longdrw:'Long hanging + drawers',short:'Short hanging over shoes',drawers:'Drawers + shelves',shelves:'Shelves'},
   styles:{shaker:'Shaker',slab:'Flat slab',mirror:'Mirror'},
+  shakerFrame:70,                                       // shaker door frame width, mm (classic shaker: one panel)
   handles:{brass:'Brass bar',black:'Black bar',knob:'Brass knob',push:'Push to open'},
   colours:[
     {k:'chalk',n:'Chalk',c:'#E6E0D3'},{k:'white',n:'Soft white',c:'#F1F0EA'},{k:'sage',n:'Sage',c:'#8C9C82'},
@@ -130,10 +131,11 @@ const floorTex=()=>ctex('floor',512,512,(g,W,H)=>{const sh=['#D3A56C','#CB9D63',
   g.globalAlpha=1;g.fillStyle='#7A5A36';g.fillRect(x0,0,2,H);g.fillRect(x0,(r()*H)|0,W/n,2);}},true);
 function faceMat(wm,hm){
   if(S.style==='mirror'){return matCache.get('mirror')||(matCache.set('mirror',new THREE.MeshStandardMaterial({roughness:0.12,metalness:0.15,map:ctex('mirrortex',128,512,(g,W,H)=>{const gr=g.createLinearGradient(0,0,W,H);gr.addColorStop(0,'#EEF3F6');gr.addColorStop(0.45,'#B9C6CF');gr.addColorStop(0.55,'#D9E2E8');gr.addColorStop(1,'#9FAFBA');g.fillStyle=gr;g.fillRect(0,0,W,H);g.fillStyle='rgba(255,255,255,.35)';g.beginPath();g.moveTo(W*0.2,0);g.lineTo(W*0.42,0);g.lineTo(W*0.02,H*0.6);g.lineTo(0,H*0.4);g.fill();})})),matCache.get('mirror'));}
-  const c=colour().c,st=S.style,mid=st==='shaker'&&hm>1.6,key=['face',st,c,wm.toFixed(2),hm.toFixed(2)].join('|');
+  const c=colour().c,st=S.style,key=['face',st,c,wm.toFixed(2),hm.toFixed(2)].join('|');
   if(matCache.has(key))return matCache.get(key);
   const t=ctex(key,clamp(Math.round(wm*170),32,512),clamp(Math.round(hm*170),32,1024),(g,W,H)=>{g.fillStyle=c;g.fillRect(0,0,W,H);
-    if(st==='shaker'){const f=Math.max(6,Math.min(W,H)*0.13,12);const rs=mid&&H>W*1.6?[[f,f,W-2*f,H*0.46-f*1.5],[f,H*0.46+f*0.5,W-2*f,H*0.54-f*1.5]]:[[f,f,W-2*f,H-2*f]];
+    // Classic shaker (Raf picked it, 16 Oct 2026): one panel inside a 70 mm frame, at real size on every door
+    if(st==='shaker'){const fx=CFG.shakerFrame*MM*W/wm,fy=CFG.shakerFrame*MM*H/hm;const rs=[[fx,fy,W-2*fx,H-2*fy]];
       for(const [x,y,w,h] of rs){if(w<4||h<4)continue;g.fillStyle=shade(c,-0.035);g.fillRect(x,y,w,h);g.strokeStyle=shade(c,-0.28);g.lineWidth=2.5;g.strokeRect(x,y,w,h);g.strokeStyle=shade(c,0.35);g.lineWidth=1.5;g.beginPath();g.moveTo(x+2,y+h+2);g.lineTo(x+w+2,y+h+2);g.lineTo(x+w+2,y+2);g.stroke();}}
     g.strokeStyle=shade(c,-0.22);g.lineWidth=2;g.strokeRect(1,1,W-2,H-2);});
   const m=new THREE.MeshStandardMaterial({map:t,roughness:0.55});matCache.set(key,m);return m;
