@@ -15,11 +15,18 @@ const label = {
   fontSize: 7,
   fontWeight: 600,
 } as const;
+// A label over a dimension line: a paper-coloured outline cuts the line behind it, as on a drawing.
+const knock = { stroke: 'var(--color-paper)', strokeWidth: 3, paintOrder: 'stroke' } as const;
+
+/* Each drawing moves (16 Oct 2026, Raf: 'instead of pictures put some movable gifs'): CSS animations in planner.css
+   (.ga-*), only for people who haven't asked their phone or computer for less motion. Without the animation each
+   drawing shows its finished state, so nothing is lost. */
 
 function Space() {
   return (
     <>
-      {/* a wall between two side walls: the wardrobe on its plinth, top infill to the ceiling, width and height marked */}
+      {/* a wall between two side walls: the wardrobe on its plinth, top infill to the ceiling; a tape measures the
+          width wall to wall, then the height floor to ceiling */}
       <path d="M4 10h98M4 68h98" strokeWidth="1" />
       <path d={hatch(6, 14, 10, 68, 5) + hatch(92, 100, 10, 68, 5)} strokeWidth="0.7" />
       <path d="M14 10v58M92 10v58" />
@@ -28,23 +35,39 @@ function Space() {
       <path d="M19 62v6M87 62v6" strokeWidth="1" />
       <path d="M37 39v8M45 39v8M61 39v8M69 39v8" strokeWidth="1.3" />
       <g className={A}>
-        <path d="M14 71v6M92 71v6M14 74h30M62 74h30" strokeWidth="1.2" />
-        <text x="53" y="76.5" textAnchor="middle" {...label}>
+        <path className="ga-wblade" d="M14 74H92" pathLength={1} strokeWidth="1.2" />
+        <path className="ga-wmark" d="M14 71v6M92 71v6" strokeWidth="1.2" />
+        <text className="ga-wmark" x="53" y="76.5" textAnchor="middle" {...label} {...knock}>
           W
         </text>
-        <path d="M105 10h7M105 68h7M108.5 10v21M108.5 47v21" strokeWidth="1.2" />
-        <text x="108.5" y="41.5" textAnchor="middle" {...label}>
+        <path className="ga-hblade" d="M108.5 68V10" pathLength={1} strokeWidth="1.2" />
+        <path className="ga-hmark" d="M105 10h7M105 68h7" strokeWidth="1.2" />
+        <text className="ga-hmark" x="108.5" y="41.5" textAnchor="middle" {...label} {...knock}>
           H
         </text>
+      </g>
+      <g className="ga-wcase">
+        <rect x="14" y="70" width="8" height="8" rx="1.6" fill="var(--color-mount)" strokeWidth="1.1" />
+        <circle cx="18" cy="74" r="1.6" strokeWidth="0.9" />
+      </g>
+      <g className="ga-hcase">
+        <rect x="104.5" y="60" width="8" height="8" rx="1.6" fill="var(--color-mount)" strokeWidth="1.1" />
+        <circle cx="108.5" cy="64" r="1.6" strokeWidth="0.9" />
       </g>
     </>
   );
 }
 
+const UNITS = [
+  { x: 7.5, w: 41, mid: 28, size: '900' },
+  { x: 43.5, w: 33, mid: 60, size: '600' },
+  { x: 71.5, w: 41, mid: 92, size: '900' },
+];
+
 function Units() {
   return (
     <>
-      {/* three units: long hanging, shelves, a rail over drawers; the middle one picked, as in the planner */}
+      {/* three units: long hanging, shelves, a rail over drawers; a tap picks each in turn, as in the planner */}
       <path d="M4 66h112" strokeWidth="1" />
       <rect x="10" y="10" width="100" height="52" />
       <path d="M46 10v52M74 10v52M12 62v4M108 62v4" strokeWidth="1.2" />
@@ -58,17 +81,16 @@ function Units() {
       <path d="M74 42h36M74 48.7h36M74 55.3h36" strokeWidth="1" />
       <path d="M89 45.3h6M89 52h6M89 58.7h6" strokeWidth="1.3" />
       <g className={A}>
-        <rect x="43.5" y="7" width="33" height="57.5" strokeWidth="1.1" strokeDasharray="3 2" />
         <path d="M10 70.5h100M10 68.5v4M46 68.5v4M74 68.5v4M110 68.5v4" strokeWidth="1" />
-        <text x="28" y="78.5" textAnchor="middle" {...label}>
-          900
-        </text>
-        <text x="60" y="78.5" textAnchor="middle" {...label}>
-          600
-        </text>
-        <text x="92" y="78.5" textAnchor="middle" {...label}>
-          900
-        </text>
+        {UNITS.map((u, i) => (
+          <g key={i}>
+            <rect className={`ga-usel ga-u${i + 1}`} x={u.x} y="7" width={u.w} height="57.5" strokeWidth="1.1" strokeDasharray="3 2" />
+            <circle className={`ga-utap ga-u${i + 1}`} cx={u.mid} cy="36" r="5" fill="currentColor" fillOpacity="0.18" strokeWidth="1" />
+            <text className={`ga-ulab ga-u${i + 1}`} x={u.mid} y="78.5" textAnchor="middle" {...label}>
+              {u.size}
+            </text>
+          </g>
+        ))}
       </g>
     </>
   );
@@ -77,17 +99,28 @@ function Units() {
 function Doors() {
   return (
     <>
-      {/* a pair of shaker doors under top cupboards; the dashed lines point to the hinges, as on a drawing */}
+      {/* a pair of shaker doors under top cupboards; they swing open on their hinges to show the rail and shelves,
+          then close; the dashed lines point to the hinges, as on a drawing */}
       <g transform="translate(0 5)">
         <path d="M14 66h92" strokeWidth="1" />
+        <path d="M28 30h30M37 30v2.5M33.5 36l3.5-3.5 3.5 3.5M47 30v2.5M43.5 36l3.5-3.5 3.5 3.5" strokeWidth="1" />
+        <path d="M33.5 36v20h7V36M43.5 36v16h7V36" strokeWidth="1" />
+        <path d="M62 36h30M62 47h30M65 36v-4.5h9V36M78 47v-5h10v5M66 47v-3.5h8V47" strokeWidth="1" />
         <rect x="26" y="8" width="68" height="54" />
-        <path d="M26 24h68M60 8v54M28 62v4M92 62v4" strokeWidth="1.2" />
+        <path d="M26 24h68M60 8v16M28 62v4M92 62v4" strokeWidth="1.2" />
         <rect x="29.5" y="11.5" width="27" height="9" strokeWidth="0.9" />
         <rect x="63.5" y="11.5" width="27" height="9" strokeWidth="0.9" />
-        <rect x="30" y="28" width="26" height="30" strokeWidth="0.9" />
-        <rect x="64" y="28" width="26" height="30" strokeWidth="0.9" />
-        <path d="M57 38v9M63 38v9" strokeWidth="1.8" />
-        <g className={A}>
+        <g className="ga-door ga-door-l">
+          <rect className="ga-face" x="26" y="24" width="34" height="38" fill="var(--color-mount)" vectorEffect="non-scaling-stroke" />
+          <rect x="30" y="28" width="26" height="30" strokeWidth="0.9" vectorEffect="non-scaling-stroke" />
+          <path d="M57 38v9" strokeWidth="1.8" vectorEffect="non-scaling-stroke" />
+        </g>
+        <g className="ga-door ga-door-r">
+          <rect className="ga-face" x="60" y="24" width="34" height="38" fill="var(--color-mount)" vectorEffect="non-scaling-stroke" />
+          <rect x="64" y="28" width="26" height="30" strokeWidth="0.9" vectorEffect="non-scaling-stroke" />
+          <path d="M63 38v9" strokeWidth="1.8" vectorEffect="non-scaling-stroke" />
+        </g>
+        <g className={`${A} ga-swing`}>
           <path d="M60 24L26 43L60 62M60 24L94 43L60 62" strokeWidth="1" strokeDasharray="3 2" />
         </g>
       </g>
@@ -99,10 +132,10 @@ const SWATCHES = ['#E6E0D3', '#8C9C82', '#A5A59D', '#34465E', '#3F5546'];
 
 function Colour() {
   return (
-    <>
-      {/* the wardrobe in the picked colour, with the colour chips under it */}
+    <g style={Object.fromEntries(SWATCHES.map((c, i) => [`--ga-c${i}`, c])) as React.CSSProperties}>
+      {/* the wardrobe takes each colour as the chip under it is picked */}
       <path d="M18 58h84" strokeWidth="1" />
-      <rect x="30" y="6" width="60" height="48" fill={SWATCHES[1]} />
+      <rect className="ga-body" x="30" y="6" width="60" height="48" fill={SWATCHES[1]} />
       <path d="M60 6v48M32 54v4M88 54v4" strokeWidth="1.2" />
       <rect x="34" y="10" width="22" height="40" strokeWidth="0.9" />
       <rect x="64" y="10" width="22" height="40" strokeWidth="0.9" />
@@ -111,31 +144,36 @@ function Colour() {
         <rect key={c} x={31 + i * 12} y="63" width="10" height="10" fill={c} strokeWidth="1" />
       ))}
       <g className={A}>
-        <rect x="41" y="61" width="14" height="14" strokeWidth="1.2" />
+        <rect className="ga-pick" x="41" y="61" width="14" height="14" strokeWidth="1.2" />
       </g>
-    </>
+    </g>
   );
 }
 
 function Send() {
   return (
     <>
-      {/* a phone with the design and the send button, an arrow, and a reply bubble with a 24 hour clock */}
+      {/* a phone: the details are typed, Send is pressed, the design flies off and a reply bubble comes back with a
+          clock going round its 24 hours */}
       <rect x="14" y="6" width="34" height="68" rx="5" />
       <rect x="17.5" y="12" width="27" height="54" rx="1" strokeWidth="1" />
       <circle cx="31" cy="70" r="1.6" strokeWidth="1" />
       <rect x="21" y="16" width="19" height="21" strokeWidth="1" />
       <path d="M30.5 16v21M28 24v4M33 24v4" strokeWidth="0.9" />
-      <path d="M21 43h19M21 48.5h19" strokeWidth="1" />
-      <path d="M72 30h34a3 3 0 0 1 3 3v22a3 3 0 0 1-3 3H82l-6 5v-5h-4a3 3 0 0 1-3-3V33a3 3 0 0 1 3-3z" />
-      <circle cx="83" cy="44" r="7.5" strokeWidth="1.1" />
-      <path d="M83 39.5V44l3 2" strokeWidth="1.1" />
-      <text x="99" y="46.5" textAnchor="middle" {...label} fontSize="7.5">
-        24h
-      </text>
+      <path className="ga-type1" d="M21 43h19" pathLength={1} strokeWidth="1" />
+      <path className="ga-type2" d="M21 48.5h19" pathLength={1} strokeWidth="1" />
+      <g className="ga-bubble">
+        <path d="M72 30h34a3 3 0 0 1 3 3v22a3 3 0 0 1-3 3H82l-6 5v-5h-4a3 3 0 0 1-3-3V33a3 3 0 0 1 3-3z" fill="var(--color-mount)" />
+        <circle cx="83" cy="44" r="7.5" strokeWidth="1.1" />
+        <path className="ga-hand" d="M83 39.5V44l3 2" strokeWidth="1.1" />
+        <text x="99" y="46.5" textAnchor="middle" {...label} fontSize="7.5">
+          24h
+        </text>
+      </g>
       <g className={A}>
-        <rect x="21" y="55" width="19" height="6" fill="currentColor" stroke="none" />
-        <path d="M52 40c5-9 10-12 15-12M63.5 25l3.8 3-3.4 3.5" strokeWidth="1.2" />
+        <rect className="ga-press" x="21" y="55" width="19" height="6" fill="currentColor" stroke="none" />
+        <path className="ga-arrow" d="M52 40c5-9 10-12 15-12" pathLength={1} strokeWidth="1.2" />
+        <path className="ga-head" d="M63.5 25l3.8 3-3.4 3.5" strokeWidth="1.2" />
       </g>
     </>
   );

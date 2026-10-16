@@ -83,6 +83,68 @@
 .wp .guide-tips svg { flex: 0 0 24px; width: 24px; height: 24px; color: var(--color-ink); }
 @media (min-width: 600px) and (max-width: 899px) { .wp .guide-step { grid-template-columns: 150px minmax(0, 1fr); gap: 18px; } }
 @media (max-width: 359px) { .wp .guide-step { grid-template-columns: 90px minmax(0, 1fr); gap: 12px; } .wp .guide-tips { grid-template-columns: minmax(0, 1fr); } }
+
+/* The guide's drawings move (planner-guide.tsx, .ga-*). Without the animation (reduced motion) each shows its
+   finished state: these base styles are that state. A line drawn with a dash is hidden until it starts, or its round
+   end shows as a dot. */
+.wp .ga-wblade, .wp .ga-hblade, .wp .ga-type1, .wp .ga-type2, .wp .ga-arrow { stroke-dasharray: 1 1; stroke-dashoffset: 0; }
+.wp .ga-wcase, .wp .ga-hcase, .wp .ga-usel, .wp .ga-utap { opacity: 0; }
+.wp .ga-usel.ga-u2 { opacity: 1; }
+.wp .ga-ulab { opacity: 0.45; }
+.wp .ga-ulab.ga-u2 { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  /* Space, 6 s: a tape runs out from the left wall to the right, the width is marked; then floor to ceiling */
+  .wp .ga-wblade { animation: ga-wblade 6s ease-in-out infinite; }
+  .wp .ga-wcase { animation: ga-wcase 6s ease-in-out infinite; }
+  .wp .ga-wmark { animation: ga-wmark 6s infinite; }
+  .wp .ga-hblade { animation: ga-hblade 6s ease-in-out infinite; }
+  .wp .ga-hcase { animation: ga-hcase 6s ease-in-out infinite; }
+  .wp .ga-hmark { animation: ga-hmark 6s infinite; }
+  /* Units, 6 s: a tap on each unit in turn picks it (the dashed box) and its width lights up */
+  .wp .ga-usel { animation: ga-usel 6s infinite; }
+  .wp .ga-ulab { animation: ga-ulab 6s infinite; }
+  .wp .ga-utap { transform-box: fill-box; transform-origin: center; animation: ga-utap 6s ease-out infinite; }
+  .wp .ga-u2 { animation-delay: -4s; }
+  .wp .ga-u3 { animation-delay: -2s; }
+  /* Doors, 5 s: the pair swings open on its hinges (seen from the front, each door gets narrower), then closes */
+  .wp .ga-door { transform-box: fill-box; animation: ga-door 5s ease-in-out infinite; }
+  .wp .ga-door-l { transform-origin: 0 50%; }
+  .wp .ga-door-r { transform-origin: 100% 50%; }
+  .wp .ga-face { animation: ga-face 5s ease-in-out infinite; }
+  .wp .ga-swing { animation: ga-swing 5s infinite; }
+  /* Colour, 6 s: each chip is picked in turn and the wardrobe takes its colour */
+  .wp .ga-body { animation: ga-body 6s infinite; }
+  .wp .ga-pick { animation: ga-pick 6s ease-in-out infinite; }
+  /* Send, 6 s: details typed, Send pressed, the arrow flies, the reply bubble comes back, its clock goes round */
+  .wp .ga-type1 { animation: ga-type1 6s linear infinite; }
+  .wp .ga-type2 { animation: ga-type2 6s linear infinite; }
+  .wp .ga-press { transform-box: fill-box; transform-origin: center; animation: ga-press 6s infinite; }
+  .wp .ga-arrow { animation: ga-arrow 6s ease-out infinite; }
+  .wp .ga-head { animation: ga-head 6s infinite; }
+  .wp .ga-bubble { transform-box: fill-box; transform-origin: 10% 100%; animation: ga-bubble 6s ease-out infinite; }
+  .wp .ga-hand { transform-box: view-box; transform-origin: 83px 44px; animation: ga-hand 6s ease-in-out infinite; }
+}
+@keyframes ga-wblade { 0%, 3.9% { stroke-dashoffset: 1; opacity: 0; } 4% { stroke-dashoffset: 1; opacity: 1; } 26%, 88% { stroke-dashoffset: 0; opacity: 1; } 95%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes ga-wcase { 0% { opacity: 0; transform: translateX(0); } 4% { opacity: 1; transform: translateX(0); } 26% { opacity: 1; transform: translateX(78px); } 30%, 100% { opacity: 0; transform: translateX(78px); } }
+@keyframes ga-wmark { 0%, 26% { opacity: 0; } 30%, 88% { opacity: 1; } 95%, 100% { opacity: 0; } }
+@keyframes ga-hblade { 0%, 31.9% { stroke-dashoffset: 1; opacity: 0; } 32% { stroke-dashoffset: 1; opacity: 1; } 54%, 88% { stroke-dashoffset: 0; opacity: 1; } 95%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes ga-hcase { 0%, 30% { opacity: 0; transform: translateY(0); } 32% { opacity: 1; transform: translateY(0); } 54% { opacity: 1; transform: translateY(-58px); } 58%, 100% { opacity: 0; transform: translateY(-58px); } }
+@keyframes ga-hmark { 0%, 54% { opacity: 0; } 58%, 88% { opacity: 1; } 95%, 100% { opacity: 0; } }
+@keyframes ga-usel { 0%, 5% { opacity: 0; } 7%, 31% { opacity: 1; } 33%, 100% { opacity: 0; } }
+@keyframes ga-ulab { 0%, 5% { opacity: 0.45; } 7%, 31% { opacity: 1; } 33%, 100% { opacity: 0.45; } }
+@keyframes ga-utap { 0% { opacity: 0; transform: scale(0.3); } 1% { opacity: 1; transform: scale(0.3); } 10%, 100% { opacity: 0; transform: scale(1.9); } }
+@keyframes ga-door { 0%, 16% { transform: scaleX(1); } 38%, 64% { transform: scaleX(0.12); } 86%, 100% { transform: scaleX(1); } }
+@keyframes ga-face { 0%, 16% { fill: var(--color-mount); } 38%, 64% { fill: var(--color-raised); } 86%, 100% { fill: var(--color-mount); } }
+@keyframes ga-swing { 0%, 14% { opacity: 1; } 20%, 84% { opacity: 0; } 90%, 100% { opacity: 1; } }
+@keyframes ga-body { 0%, 15% { fill: var(--ga-c0); } 20%, 35% { fill: var(--ga-c1); } 40%, 55% { fill: var(--ga-c2); } 60%, 75% { fill: var(--ga-c3); } 80%, 95% { fill: var(--ga-c4); } 100% { fill: var(--ga-c0); } }
+@keyframes ga-pick { 0%, 15% { transform: translateX(-12px); } 20%, 35% { transform: translateX(0); } 40%, 55% { transform: translateX(12px); } 60%, 75% { transform: translateX(24px); } 80%, 95% { transform: translateX(36px); } 100% { transform: translateX(-12px); } }
+@keyframes ga-type1 { 0%, 2.9% { stroke-dashoffset: 1; opacity: 0; } 3% { stroke-dashoffset: 1; opacity: 1; } 11%, 90% { stroke-dashoffset: 0; opacity: 1; } 96%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes ga-type2 { 0%, 10.9% { stroke-dashoffset: 1; opacity: 0; } 11% { stroke-dashoffset: 1; opacity: 1; } 19%, 90% { stroke-dashoffset: 0; opacity: 1; } 96%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes ga-press { 0%, 22% { transform: scale(1); } 25% { transform: scale(0.82); } 29%, 100% { transform: scale(1); } }
+@keyframes ga-arrow { 0%, 27.9% { stroke-dashoffset: 1; opacity: 0; } 28% { stroke-dashoffset: 1; opacity: 1; } 40%, 90% { stroke-dashoffset: 0; opacity: 1; } 96%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes ga-head { 0%, 39% { opacity: 0; } 41%, 90% { opacity: 1; } 96%, 100% { opacity: 0; } }
+@keyframes ga-bubble { 0%, 41% { opacity: 0; transform: scale(0.5); } 50%, 90% { opacity: 1; transform: scale(1); } 96%, 100% { opacity: 0; transform: scale(1); } }
+@keyframes ga-hand { 0%, 50% { transform: rotate(0deg); } 86%, 100% { transform: rotate(360deg); } }
 .wp .steps { flex: 0 0 auto; display: flex; gap: 2px; padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--color-line); overflow-x: auto; scrollbar-width: none; }
 .wp .steps::-webkit-scrollbar { display: none; }
 .wp .steps button { flex: 1 0 auto; display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; background: transparent; padding: 10px 6px 11px; margin-bottom: -1px; border-bottom: 2px solid transparent; font-weight: 600; font-size: 14px; color: var(--color-muted); white-space: nowrap; }
