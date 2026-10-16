@@ -17,6 +17,11 @@ const SETTINGS = ['MS_TENANT_ID', 'MS_CLIENT_ID', 'MS_CLIENT_SECRET'] as const;
 export const outlookMissing = () => SETTINGS.filter((k) => !process.env[k]?.trim());
 export const outlookSetUp = () => outlookMissing().length === 0;
 export const mailboxAddress = MAILBOX;
+/* Raf himself: the mailbox, any address in MS_ALSO_ME (comma separated), or his own name, as on emails he sends
+   from his iPhone with info@ copied in. Those show as 'You' and never count as new. */
+const OWN_NAMES = /^(raf(a[lł])?\s+janczy|raf\s+carpentry|rafal\s+solutions(\s+ltd)?)$/i;
+const alsoMe = () => (process.env.MS_ALSO_ME || '').toLowerCase().split(/[\s,;]+/).filter(Boolean);
+export const isMine = (w: { name: string; email: string }) => w.email === MAILBOX() || alsoMe().includes(w.email) || OWN_NAMES.test(w.name.trim());
 
 export type OutlookCode = 'outlook-not-set-up' | 'outlook-secret' | 'outlook-app' | 'outlook-consent' | 'outlook-mailbox' | 'outlook-gone' | 'outlook-busy' | 'outlook-too-big' | 'outlook-error';
 export class OutlookError extends Error {
@@ -35,6 +40,8 @@ export type InboxMail = {
   id: string;
   from: Who;
   replyTo: Who | null; // when replies go somewhere else (ServiceM8's 'New brief' emails reply to the customer)
+  to: Who[];
+  mine: boolean; // Raf sent it (from his iPhone, with info@ copied in)
   subject: string;
   preview: string;
   at: string; // ISO time it arrived
@@ -211,6 +218,8 @@ function listItem(m: GMessage): InboxMail {
     id: m.id,
     from,
     replyTo: reply && reply.email !== from.email ? reply : null,
+    to: (m.toRecipients ?? []).map(who),
+    mine: isMine(from),
     subject: (m.subject ?? '').trim(),
     preview: (m.bodyPreview ?? '').replace(/\s+/g, ' ').trim().slice(0, 220),
     at: m.receivedDateTime ?? m.sentDateTime ?? '',
@@ -221,7 +230,7 @@ function listItem(m: GMessage): InboxMail {
   };
 }
 
-const LIST_FIELDS = 'id,subject,from,sender,replyTo,receivedDateTime,isRead,bodyPreview,hasAttachments,inferenceClassification,flag';
+const LIST_FIELDS = 'id,subject,from,sender,replyTo,toRecipients,receivedDateTime,isRead,bodyPreview,hasAttachments,inferenceClassification,flag';
 export const PAGE = 30;
 
 /* The newest emails in the Inbox (30 at a time), and how many are unread. */
@@ -238,7 +247,7 @@ export async function inbox(skip = 0): Promise<{ mails: InboxMail[]; more: boole
 /* One email: the new part and the whole text, its attachments, and the rest of its conversation in this mailbox
    (what Raf sent from Outlook or the Job Kit included). Opening it marks it read, as Outlook does. */
 export async function message(id: string, markRead = true): Promise<FullMail> {
-  const fields = `${LIST_FIELDS},toRecipients,ccRecipients,sentDateTime,body,uniqueBody,webLink,conversationId`;
+  const fields = `${LIST_FIELDS},ccRecipients,sentDateTime,body,uniqueBody,webLink,conversationId`;
   const m = await graph<GMessage>(`/messages/${encodeURIComponent(id)}?$select=${fields}`, { text: true });
   const [files, convo] = await Promise.all([
     m.hasAttachments
@@ -258,7 +267,7 @@ export async function message(id: string, markRead = true): Promise<FullMail> {
       const from = who(c.from ?? c.sender);
       return {
         id: c.id,
-        dir: from.email === me ? ('out' as const) : ('in' as const),
+        dir: from.email === me || isMine(from) ? ('out' as const) : ('in' as const),
         from,
         to: (c.toRecipients ?? []).map(who),
         subject: (c.subject ?? '').trim(),

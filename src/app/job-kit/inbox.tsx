@@ -73,6 +73,17 @@ export function markReadHere(inbox: Inbox, id: string, isRead: boolean): Inbox {
 /* Who wrote it, for replies and matching: the Reply-To when there is one (ServiceM8's 'New brief' emails). */
 const replyWho = (m: Pick<InboxMail, 'from' | 'replyTo'>) => m.replyTo ?? m.from;
 const shownName = (w: Who) => w.name || w.email;
+/* Raf himself: info@ (or another rafcarpentry.com address) or his own name, as on emails he sends from his iPhone
+   with info@ copied in. The server marks those `mine` (src/lib/outlook.ts isMine). */
+const OWN = /^(raf(a[lł])?\s+janczy|raf\s+carpentry|rafal\s+solutions(\s+ltd)?)$/i;
+const meWho = (w: Who) => /@rafcarpentry\.com$/i.test(w.email) || OWN.test(w.name.trim());
+/* Who an email is with: whoever it's from (the Reply-To first), or for one Raf sent, the person he sent it to. */
+const withWho = (m: Pick<InboxMail, 'from' | 'replyTo' | 'to' | 'mine'>): Who | null => (m.mine ? ((m.to ?? []).find((w) => !meWho(w)) ?? null) : replyWho(m));
+const rowName = (m: InboxMail) => {
+  if (!m.mine) return shownName(replyWho(m));
+  const o = withWho(m);
+  return o ? `You to ${shownName(o)}` : 'You';
+};
 const NO_REPLY = /^(no-?reply|do-?not-?reply|donotreply|mailer-daemon|postmaster|notifications?|alerts?|bounce)[@+.]/i;
 export const noReply = (m: Pick<InboxMail, 'from' | 'replyTo'>) => NO_REPLY.test(replyWho(m).email);
 /* A first name for "Hi Kasia,": the first word of a name with a surname ("Kasia Nowak"), or a one-word name the
@@ -121,13 +132,13 @@ export function whenText(iso: string, withTime = false) {
 }
 
 /* New, in the main (Focused) inbox, from the last 14 days: what the Today list and the card count. */
-const freshUnread = (inbox: Inbox) => inbox.mails.filter((m) => !m.read && !m.other && Date.now() - Date.parse(m.at) < 14 * 864e5);
+const freshUnread = (inbox: Inbox) => inbox.mails.filter((m) => !m.read && !m.other && !m.mine && Date.now() - Date.parse(m.at) < 14 * 864e5);
 
 export function inboxLine(inbox: Inbox) {
   if (inbox.error === 'outlook-not-set-up') return 'Connect info@rafcarpentry.com: a few steps left';
   if (!inbox.at) return inbox.error ? 'Couldn’t open the mailbox: tap to see why' : 'Your info@rafcarpentry.com emails';
   const n = freshUnread(inbox).length;
-  const newest = inbox.mails.find((m) => !m.other);
+  const newest = inbox.mails.find((m) => !m.other && !m.mine);
   return [n ? `${n} unread` : 'All read', newest ? `newest ${shownName(replyWho(newest))}, ${whenText(newest.at)}` : ''].filter(Boolean).join(' · ');
 }
 
@@ -175,9 +186,11 @@ export function InboxList({
       /* no storage */
     }
   };
-  const unread = inbox.mails.filter((m) => !m.read).length;
-  const fromCustomers = inbox.mails.filter((m) => customers.has(replyWho(m).email));
-  const list = filter === 'unread' ? inbox.mails.filter((m) => !m.read) : filter === 'customers' ? fromCustomers : inbox.mails;
+  const unreadList = inbox.mails.filter((m) => !m.read && !m.mine);
+  const unread = unreadList.length;
+  const fresh = freshUnread(inbox).length;
+  const fromCustomers = inbox.mails.filter((m) => customers.has(withWho(m)?.email ?? ''));
+  const list = filter === 'unread' ? unreadList : filter === 'customers' ? fromCustomers : inbox.mails;
   return (
     <div className="pt-7">
       <div className="flex items-start justify-between gap-3">
@@ -188,7 +201,7 @@ export function InboxList({
           </h1>
           <p className="mt-1.5 truncate font-mono text-[12.5px] text-faint">
             {inbox.mailbox || 'info@rafcarpentry.com'}
-            {inbox.unread ? ` · ${inbox.unread} unread` : ''}
+            {fresh ? ` · ${fresh} new` : ''}
           </p>
         </div>
         <button type="button" onClick={onRefresh} disabled={loading} className="h-10 shrink-0 font-mono text-[13px] text-accent underline">
@@ -224,16 +237,16 @@ export function InboxList({
           {list.length ? (
             <ul className="mt-3 divide-y divide-line rounded-sm border border-line-strong bg-mount">
               {list.map((m) => {
-                const w = replyWho(m);
+                const w = withWho(m) ?? { name: '', email: '' };
                 return (
                   <li key={m.id}>
                     <button type="button" onClick={() => onOpen(m.id)} className="relative block w-full px-3.5 py-3 pl-6 text-left">
-                      {!m.read ? <span aria-label="Unread" className="absolute left-2 top-[19px] h-2 w-2 rounded-full bg-accent" /> : null}
+                      {!m.read && !m.mine ? <span aria-label="Unread" className="absolute left-2 top-[19px] h-2 w-2 rounded-full bg-accent" /> : null}
                       <span className="flex items-baseline justify-between gap-3">
-                        <span className={`min-w-0 truncate text-[16px] ${m.read ? '' : 'font-semibold'}`}>{shownName(w)}</span>
-                        <span className={`shrink-0 font-mono text-[12px] ${m.read ? 'text-faint' : 'font-semibold text-accent'}`}>{whenText(m.at)}</span>
+                        <span className={`min-w-0 truncate text-[16px] ${m.read || m.mine ? '' : 'font-semibold'} ${m.mine ? 'text-muted' : ''}`}>{rowName(m)}</span>
+                        <span className={`shrink-0 font-mono text-[12px] ${m.read || m.mine ? 'text-faint' : 'font-semibold text-accent'}`}>{whenText(m.at)}</span>
                       </span>
-                      <span className={`mt-0.5 block truncate text-[14.5px] ${m.read ? 'text-muted' : 'text-ink'}`}>{m.subject || '(no subject)'}</span>
+                      <span className={`mt-0.5 block truncate text-[14.5px] ${m.read || m.mine ? 'text-muted' : 'text-ink'}`}>{m.subject || '(no subject)'}</span>
                       {m.preview ? <span className="mt-0.5 line-clamp-2 block text-[14px] leading-snug text-faint [overflow-wrap:anywhere]">{m.preview}</span> : null}
                       {customers.has(w.email) || m.attachments || m.other || m.flagged ? (
                         <span className="mt-1.5 flex flex-wrap gap-1.5 font-mono text-[11.5px]">
@@ -369,7 +382,8 @@ export function EmailView({
   useEffect(() => () => (photo ? URL.revokeObjectURL(photo.url) : undefined), [photo]);
 
   const head: InboxMail | undefined = mail ?? fallback;
-  const w = head ? replyWho(head) : { name: '', email: '' };
+  const mine = Boolean(head?.mine);
+  const w = (head ? withWho(head) : null) ?? { name: '', email: '' };
   const first = firstOf(w);
   const start = first ? `Hi ${first},\n\n` : 'Hi,\n\n';
   const text = draft.text ?? start;
@@ -386,7 +400,7 @@ export function EmailView({
   const earlier = allThread ? thread : thread.slice(-4);
   const youReplied = thread.some((t) => t.dir === 'out' && mail && t.at > mail.at);
   const automatic = head ? noReply(head) : false;
-  const showReply = !automatic || replyAnyway;
+  const showReply = !mine && (!automatic || replyAnyway);
   const aiShown = aiOpen ?? !youReplied;
 
   const writeDraft = () => {
@@ -491,9 +505,15 @@ export function EmailView({
       <h1 className="font-display text-[26px] font-[680] leading-[1.12] tracking-[-0.02em] [overflow-wrap:anywhere]">{head.subject || '(no subject)'}</h1>
       <div className="mt-3 grid gap-0.5 text-[14.5px]">
         <p className="[overflow-wrap:anywhere]">
-          <span className="font-semibold">{head.from.name || head.from.email}</span>
-          {head.from.name ? <span className="font-mono text-[12.5px] text-faint"> {head.from.email}</span> : null}
+          <span className="font-semibold">{mine ? 'You' : head.from.name || head.from.email}</span>
+          {mine || head.from.name ? <span className="font-mono text-[12.5px] text-faint"> {head.from.email}</span> : null}
         </p>
+        {mine && w.email ? (
+          <p className="text-muted [overflow-wrap:anywhere]">
+            To {w.name ? `${w.name} ` : ''}
+            <span className="font-mono text-[12.5px]">{w.email}</span>
+          </p>
+        ) : null}
         {head.replyTo ? (
           <p className="text-muted [overflow-wrap:anywhere]">
             Replies go to {head.replyTo.name ? `${head.replyTo.name} ` : ''}
@@ -532,6 +552,8 @@ export function EmailView({
               ))}
             </div>
           </>
+        ) : mine ? (
+          <p className="text-[14.5px] leading-relaxed text-muted">{w.email ? `You sent this to ${shownName(w)}, who isn’t in ServiceM8 by this email address.` : 'You sent this one.'}</p>
         ) : mail && !automatic ? (
           <>
             <p className="text-[14.5px] leading-relaxed text-muted">{shownName(w)} isn’t in ServiceM8 by this email address.</p>
@@ -633,7 +655,11 @@ export function EmailView({
             {done === 'sent' ? `Sent to ${doneTo} from info@rafcarpentry.com. It’s in Sent Items in Outlook.` : `Saved in Drafts in Outlook, addressed to ${doneTo}. Finish it and send it there.`}
           </p>
         ) : null}
-        {!showReply ? (
+        {mine ? (
+          <p className="text-[14.5px] leading-relaxed text-muted">
+            You sent this one{head.from.email ? ` from ${head.from.email}` : ''}, so there’s nobody to reply to here. To write to {w.email ? shownName(w) : 'them'} again, reply to their latest email.
+          </p>
+        ) : !showReply ? (
           <div>
             <p className="text-[14.5px] leading-relaxed text-muted">This came from an address that doesn’t take replies ({w.email}).</p>
             <button type="button" onClick={() => setReplyAnyway(true)} className="mt-1 h-10 text-[14.5px] text-accent underline">
