@@ -27,7 +27,7 @@ import { CHUNK, checkSetup, onChange, onStatus, readPin, savePin, sendDetails, w
 import { R_MARK } from '@/lib/r-logo';
 import type { Status as CurrentStatus } from '@/lib/servicem8';
 import Mark from './mark';
-import { Icon, IconTile, type IconName } from './icons';
+import { Icon, type IconName } from './icons';
 import { Area, Chips, field, label, Missing, SectionView, TalkBox } from './parts';
 import { PostsList, PostView, postedEverywhere, type Pack } from './posts';
 import { DesignsList, DesignView, designState, fetchDesigns, NewDesign, savedLibrary, savedReady, type DesignsReady } from './designs';
@@ -1040,172 +1040,144 @@ function Home({
         </button>
       ) : null}
 
-      <div className="mt-5 rounded-sm border border-line-strong bg-mount px-4 py-3">
-        {lines.length ? (
-          <ul className="divide-y divide-line">
-            {lines.map((l) => (
-              <li key={l.text}>
-                <button type="button" onClick={() => onToday(l)} className="flex min-h-11 w-full items-center gap-2.5 py-2 text-left text-[16px]">
-                  {l.time ? (
-                    <span className="w-[46px] shrink-0 font-mono text-[14px] font-semibold text-accent">{l.time}</span>
-                  ) : (
-                    <Icon name={l.icon ?? LINE_ICON[l.go]} className={`h-[22px] w-[22px] shrink-0 ${l.urgent ? 'text-accent' : 'text-faint'}`} />
-                  )}
-                  <span className={`flex-1 ${l.urgent ? 'font-semibold' : ''}`}>{l.text}</span>
-                  <span aria-hidden className="text-accent">
-                    →
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="flex min-h-11 items-center gap-2 text-[16px]">
-            <Mark state="sent" /> All clear: nothing waiting.
-          </p>
-        )}
-        {sm8.error && sm8.error !== 'offline' && sm8.error !== 'sm8-down' ? (
-          <button type="button" onClick={onCurrent} className="mt-1 block py-1.5 text-left font-mono text-[12.5px] text-faint underline">
-            ServiceM8 needs a look
-          </button>
-        ) : null}
-      </div>
-
-      {find}
-
-      <button type="button" onClick={onDiary} className="mt-3 flex w-full items-center gap-3.5 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
-        <IconTile name="diary" />
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold">Diary</span>
-          <span className="mt-0.5 block text-[14.5px] text-muted">{diaryLine(sm8)}</span>
-        </span>
-        <span aria-hidden className="text-[20px] text-accent">
-          →
-        </span>
-      </button>
-
-      <button type="button" onClick={onCurrent} className="mt-3 flex w-full items-center gap-3.5 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
-        <IconTile name="jobs" />
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold">Current jobs</span>
-          <span className="mt-0.5 block text-[14.5px] text-muted">{currentLine(sm8, marks)}</span>
-        </span>
-        <span aria-hidden className="text-[20px] text-accent">
-          →
-        </span>
-      </button>
-
-      <button type="button" onClick={onInbox} className="mt-3 flex w-full items-center gap-3.5 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
-        <IconTile name="mail" />
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold">Inbox</span>
-          <span className="mt-0.5 block truncate text-[14.5px] text-muted">{inboxLine(inbox)}</span>
-        </span>
-        <span aria-hidden className="text-[20px] text-accent">
-          →
-        </span>
-      </button>
-
-      <button type="button" onClick={onDesigns} className="mt-3 flex w-full items-center gap-3.5 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
-        <IconTile name="designs" />
-        <span className="min-w-0 flex-1">
-          <span className="block font-semibold">Designs for customers</span>
-          <span className="mt-0.5 block text-[14.5px] text-muted">{designLine(designJobs, designs)}</span>
-        </span>
-        <span aria-hidden className="text-[20px] text-accent">
-          →
-        </span>
-      </button>
-
-      {libraryCount ? (
-        <button type="button" onClick={onLibrary} className="mt-3 flex w-full items-center gap-3.5 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
-          <IconTile name="library" />
-          <span className="min-w-0 flex-1">
-            <span className="block font-semibold">Design library</span>
-            <span className="mt-0.5 block text-[14.5px] text-muted">{libraryLine}</span>
-          </span>
-          <span aria-hidden className="text-[20px] text-accent">
-            →
-          </span>
-        </button>
-      ) : null}
-
-      {posts.length ? (
-        <button type="button" onClick={onPosts} className="mt-3 flex w-full items-center gap-3.5 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
-          <IconTile name="posts" />
-          <span className="min-w-0 flex-1">
-            <span className="block font-semibold">Posts for Instagram, TikTok and YouTube</span>
-            <span className="mt-0.5 block text-[14.5px] text-muted">{postsLine(posts)}</span>
-          </span>
-          <span aria-hidden className="text-[20px] text-accent">
-            →
-          </span>
-        </button>
-      ) : null}
-
-      <section id="kit-jobs" className="mt-9 scroll-mt-20">
-        <h2 className="flex items-center gap-2.5 font-display text-[24px] font-[680] leading-tight tracking-[-0.02em]">
-          <Icon name="kit" className="h-[26px] w-[26px] text-accent" />
-          Job Kit jobs
-        </h2>
-        <p className="mt-1.5 text-[15px] leading-relaxed text-muted">Photos, clips and sizes for each job, sent to your inbox as you go. Everything saves by itself.</p>
-        <button type="button" onClick={onNew} className="btn btn-primary mt-4 w-full">
-          New job
-        </button>
-        {jobs.length ? (
-          <ul className="mt-5 grid gap-3">
-            {jobs.map((j) => {
-              const mine = items.filter((i) => i.jobId === j.id && !i.lost);
-              const photos = mine.filter((i) => i.kind === 'photo').length;
-              const clips = mine.filter((i) => i.kind === 'video').length;
-              const left = mine.filter((i) => !i.sent).length;
-              const sizes = j.notes.sizes.filter((s) => s.w || s.h || s.d).length;
-              const cover = mine.find((i) => i.slot === 'main-upright') ?? [...mine].reverse().find((i) => i.thumb);
-              return (
-                <li key={j.id}>
-                  <button type="button" onClick={() => onOpen(j.id)} className="flex w-full items-stretch gap-3 rounded-sm border border-line-strong bg-mount p-2.5 text-left transition-colors hover:border-ink">
-                    <span className="relative block h-[76px] w-[76px] shrink-0 overflow-hidden rounded-sm bg-raised">
-                      {cover?.thumb ? <img src={cover.thumb} alt="" className="h-full w-full object-cover" /> : null}
-                    </span>
-                    <span className="min-w-0 flex-1 py-0.5">
-                      <span className="block truncate text-[16.5px] font-semibold leading-snug">{j.what}</span>
-                      <span className="block truncate text-[14.5px] text-muted">
-                        {j.area} · {monthName(j.month)}
-                      </span>
-                      <span className="mt-1 block font-mono text-[12.5px] text-faint">
-                        {photos} photo{photos === 1 ? '' : 's'} · {clips} clip{clips === 1 ? '' : 's'} · {sizes} size{sizes === 1 ? '' : 's'}
-                      </span>
-                      <span className="mt-0.5 flex items-center gap-1.5 font-mono text-[12.5px] text-faint">
-                        <Mark state={left ? 'waiting' : 'sent'} />
-                        {left ? `${left} waiting to send` : done[j.id] ? 'Done: on your website' : j.readyAt ? 'Sent to Claude, waiting for the page' : 'All sent, still open'}
-                      </span>
+      <HomeBand tone="accent" label="To do" right={lines.length ? `${lines.length} thing${lines.length === 1 ? '' : 's'}` : 'All clear'}>
+        <div className="px-4 py-1">
+          {lines.length ? (
+            <ul className="divide-y divide-line">
+              {lines.map((l) => (
+                <li key={l.text}>
+                  <button type="button" onClick={() => onToday(l)} className="flex min-h-11 w-full items-center gap-2.5 py-2 text-left text-[16px]">
+                    {l.time ? (
+                      <span className="w-[46px] shrink-0 font-mono text-[14px] font-semibold text-accent">{l.time}</span>
+                    ) : (
+                      <Icon name={l.icon ?? LINE_ICON[l.go]} className={`h-[22px] w-[22px] shrink-0 ${l.urgent ? 'text-accent' : 'text-faint'}`} />
+                    )}
+                    <span className={`flex-1 ${l.urgent ? 'font-semibold' : ''}`}>{l.text}</span>
+                    <span aria-hidden className="text-accent">
+                      →
                     </span>
                   </button>
                 </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="mt-5 font-mono text-[13.5px] text-faint">No jobs yet. Start one on the first visit, before anything moves.</p>
-        )}
-
-        {finished.length ? (
-          <div className="mt-4 rounded-sm border border-line-strong bg-mount px-4 py-3.5">
-            <p className="text-[14.5px] leading-relaxed text-muted">
-              {finished.length === 1 ? '1 job is' : `${finished.length} jobs are`} finished and on your website. Clearing takes {finished.length === 1 ? 'it' : 'them'} off this phone only: the inbox and the website keep everything.
+              ))}
+            </ul>
+          ) : (
+            <p className="flex min-h-11 items-center gap-2 text-[16px]">
+              <Mark state="sent" /> All clear: nothing waiting.
             </p>
-            <button type="button" onClick={clear} className={`btn btn-sm mt-3 ${sure ? 'btn-primary' : 'btn-ghost'}`}>
-              {sure ? `Tap again to clear ${finished.length === 1 ? 'it' : `all ${finished.length}`}` : `Clear finished (${finished.length})`}
+          )}
+          {sm8.error && sm8.error !== 'offline' && sm8.error !== 'sm8-down' ? (
+            <button type="button" onClick={onCurrent} className="mt-1 block py-1.5 text-left font-mono text-[12.5px] text-faint underline">
+              ServiceM8 needs a look
             </button>
-          </div>
-        ) : null}
-      </section>
+          ) : null}
+        </div>
+      </HomeBand>
+
+      <HomeBand icon="person" label="Customers" right="ServiceM8">
+        <div className="px-4 pb-1">
+          {find}
+          <HomeRow onClick={onDiary} title="Diary" line={diaryLine(sm8)} />
+          <HomeRow onClick={onCurrent} title="Current jobs" line={currentLine(sm8, marks)} />
+          <HomeRow onClick={onInbox} title="Inbox" line={inboxLine(inbox)} truncate last />
+        </div>
+      </HomeBand>
+
+      <HomeBand icon="designs" label="Designs in 3D" right={libraryCount ? `${libraryCount} in the library` : undefined}>
+        <div className="px-4">
+          <HomeRow onClick={onDesigns} title="Designs for customers" line={designLine(designJobs, designs)} last={!libraryCount} />
+          {libraryCount ? <HomeRow onClick={onLibrary} title="Design library" line={libraryLine} last /> : null}
+        </div>
+      </HomeBand>
+
+      <HomeBand id="kit-jobs" icon="kit" label="Photos and posts">
+        <div className="px-4 pb-4">
+          {posts.length ? <HomeRow onClick={onPosts} title="Posts for Instagram, TikTok and YouTube" line={postsLine(posts)} /> : null}
+          <p className="mt-4 font-semibold">Job Kit jobs</p>
+          <p className="mt-1.5 text-[15px] leading-relaxed text-muted">Photos, clips and sizes for each job, sent to your inbox as you go. Everything saves by itself.</p>
+          <button type="button" onClick={onNew} className="btn btn-primary mt-4 w-full">
+            New job
+          </button>
+          {jobs.length ? (
+            <ul className="mt-5 grid gap-3">
+              {jobs.map((j) => {
+                const mine = items.filter((i) => i.jobId === j.id && !i.lost);
+                const photos = mine.filter((i) => i.kind === 'photo').length;
+                const clips = mine.filter((i) => i.kind === 'video').length;
+                const left = mine.filter((i) => !i.sent).length;
+                const sizes = j.notes.sizes.filter((s) => s.w || s.h || s.d).length;
+                const cover = mine.find((i) => i.slot === 'main-upright') ?? [...mine].reverse().find((i) => i.thumb);
+                return (
+                  <li key={j.id}>
+                    <button type="button" onClick={() => onOpen(j.id)} className="flex w-full items-stretch gap-3 rounded-sm border border-line-strong bg-mount p-2.5 text-left transition-colors hover:border-ink">
+                      <span className="relative block h-[76px] w-[76px] shrink-0 overflow-hidden rounded-sm bg-raised">
+                        {cover?.thumb ? <img src={cover.thumb} alt="" className="h-full w-full object-cover" /> : null}
+                      </span>
+                      <span className="min-w-0 flex-1 py-0.5">
+                        <span className="block truncate text-[16.5px] font-semibold leading-snug">{j.what}</span>
+                        <span className="block truncate text-[14.5px] text-muted">
+                          {j.area} · {monthName(j.month)}
+                        </span>
+                        <span className="mt-1 block font-mono text-[12.5px] text-faint">
+                          {photos} photo{photos === 1 ? '' : 's'} · {clips} clip{clips === 1 ? '' : 's'} · {sizes} size{sizes === 1 ? '' : 's'}
+                        </span>
+                        <span className="mt-0.5 flex items-center gap-1.5 font-mono text-[12.5px] text-faint">
+                          <Mark state={left ? 'waiting' : 'sent'} />
+                          {left ? `${left} waiting to send` : done[j.id] ? 'Done: on your website' : j.readyAt ? 'Sent to Claude, waiting for the page' : 'All sent, still open'}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="mt-5 font-mono text-[13.5px] text-faint">No jobs yet. Start one on the first visit, before anything moves.</p>
+          )}
+
+          {finished.length ? (
+            <div className="mt-4 rounded-sm border border-line-strong bg-mount px-4 py-3.5">
+              <p className="text-[14.5px] leading-relaxed text-muted">
+                {finished.length === 1 ? '1 job is' : `${finished.length} jobs are`} finished and on your website. Clearing takes {finished.length === 1 ? 'it' : 'them'} off this phone only: the inbox and the website keep everything.
+              </p>
+              <button type="button" onClick={clear} className={`btn btn-sm mt-3 ${sure ? 'btn-primary' : 'btn-ghost'}`}>
+                {sure ? `Tap again to clear ${finished.length === 1 ? 'it' : `all ${finished.length}`}` : `Clear finished (${finished.length})`}
+              </button>
+            </div>
+          ) : null}
+        </div>
+      </HomeBand>
 
       <p className="mt-8 border-t border-line pt-4 font-mono text-[12.5px] leading-relaxed text-faint">
         On this phone: {waitingBytes ? `${mb(waitingBytes)} waiting to send` : 'nothing waiting, all sent'}.
         {status.state === 'offline' ? ' It sends when the signal is back and the app is open.' : ''}
       </p>
     </div>
+  );
+}
+
+function HomeBand({ label, right, icon, tone, id, children }: { label: string; right?: string; icon?: IconName; tone?: 'accent'; id?: string; children: React.ReactNode }) {
+  const accent = tone === 'accent';
+  return (
+    <section id={id} className={`mt-5 scroll-mt-20 rounded-sm border bg-mount ${accent ? 'border-accent' : 'border-line-strong'}`}>
+      <div className={`flex h-11 items-center gap-2.5 px-4 ${accent ? 'bg-accent text-on-accent' : 'border-b border-line-strong bg-raised'}`}>
+        {icon ? <Icon name={icon} className="h-5 w-5 shrink-0 text-accent" /> : null}
+        <h2 className="flex-1 font-mono text-[13px] font-semibold uppercase tracking-[0.08em]">{label}</h2>
+        {right ? <span className={`truncate font-mono text-[12.5px] ${accent ? '' : 'text-muted'}`}>{right}</span> : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function HomeRow({ onClick, title, line, truncate, last }: { onClick: () => void; title: string; line: string; truncate?: boolean; last?: boolean }) {
+  return (
+    <button type="button" onClick={onClick} className={`flex min-h-[60px] w-full items-center gap-3 py-2.5 text-left ${last ? '' : 'border-b border-line'}`}>
+      <span className="min-w-0 flex-1">
+        <span className="block font-semibold">{title}</span>
+        <span className={`mt-0.5 block text-[14.5px] text-muted ${truncate ? 'truncate' : ''}`}>{line}</span>
+      </span>
+      <span aria-hidden className="text-[20px] text-accent">→</span>
+    </button>
   );
 }
 
