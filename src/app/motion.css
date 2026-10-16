@@ -1,0 +1,118 @@
+/* Moving line drawings across the site (16 Oct 2026, Raf: 'i think we need to use this approach and all static
+   designs on website to make it more interactive'), after the wardrobe planner's quick guide.
+
+   How it works:
+   - A drawing's wrapper has `data-motion`; MotionObserver (src/components/MotionObserver.tsx) adds `data-play`
+     while it is on screen, so nothing moves off screen and each one starts as it scrolls into view.
+   - Parts that move have an `mv-*` class. Every loop is 8 s: the action plays in the first second or two, then
+     the drawing rests. 0% and 100% of every keyframe are the finished drawing, so a paused drawing, one before
+     the page script runs, and anyone who asked for less motion (prefers-reduced-motion) all see it complete.
+   - `--mv-d` on the wrapper staggers drawings in a list; `--mv-o` on a part sequences parts within a drawing.
+   - Do not use these for the 'woodwork motion' Raf removed on 9 Oct 2026 (section joints, pencil strokes under
+     headings, ruler lines, page fades): only inside the line drawings. */
+
+/* The finished state, with or without motion */
+.mv-draw { stroke-dasharray: 1 1; stroke-dashoffset: 0; }
+.mv-hidden { opacity: 0; }
+
+[data-motion] [class*='mv-'] { transform-box: fill-box; transform-origin: center; animation-delay: calc(var(--mv-d, 0s) + var(--mv-o, 0s)); }
+[data-motion] .mv-ol { transform-origin: 0 50%; }
+[data-motion] .mv-or { transform-origin: 100% 50%; }
+[data-motion] .mv-ot { transform-origin: 50% 0; }
+[data-motion] .mv-ob { transform-origin: 50% 100%; }
+[data-motion] .mv-vb { transform-box: view-box; }
+[data-motion]:not([data-play]) [class*='mv-'] { animation-play-state: paused; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* general moves */
+  .mv-draw { animation: mv-draw 8s ease-in-out infinite both; }
+  .mv-pop { animation: mv-pop 8s ease-out infinite both; }
+  .mv-show { animation: mv-show 8s linear infinite both; }
+  .mv-beat { animation: mv-beat 8s ease-in-out infinite both; }
+  .mv-drop { animation: mv-drop 8s ease-out infinite both; }
+  .mv-in-right { animation: mv-in-right 8s ease-out infinite both; }
+  .mv-grow-x { animation: mv-grow-x 8s ease-in-out infinite both; }
+  .mv-grow-y { animation: mv-grow-y 8s ease-in-out infinite both; }
+  .mv-swing { animation: mv-swing 8s ease-in-out infinite both; }
+  .mv-tilt { animation: mv-tilt 8s ease-in-out infinite both; }
+  .mv-wiggle { animation: mv-wiggle 8s ease-in-out infinite both; }
+  .mv-nudge { animation: mv-nudge 8s ease-in-out infinite both; }
+  .mv-spin { animation: mv-spin 8s ease-in-out infinite both; }
+  .mv-flip { animation: mv-flip 8s ease-in-out infinite both; }
+  .mv-flash { animation: mv-flash 8s ease-out infinite both; }
+  .mv-twinkle { animation: mv-twinkle 8s ease-in-out infinite both; }
+  .mv-close { animation: mv-close 8s ease-in-out infinite both; }
+  .mv-settle { animation: mv-settle 8s ease-in-out infinite both; }
+  .mv-swing-door { animation: mv-swing-door 8s ease-in-out infinite both; }
+  .mv-away { animation: mv-away 8s ease-in-out infinite both; }
+  /* moves for one drawing */
+  .mv-car { animation: mv-car 8s ease-in-out infinite both; }
+  .mv-ring { animation: mv-ring 8s ease-in-out infinite both; }
+  .mv-push { animation: mv-push 8s ease-in-out infinite both; }
+  .mv-old { animation: mv-old 8s ease-in-out infinite both; }
+  .mv-compass { animation: mv-compass 8s linear infinite both; }
+  .mv-scribe { animation: mv-scribe 8s linear infinite both; }
+  .mv-screw { animation: mv-screw 8s ease-out infinite both; }
+  .mv-drill { animation: mv-drill 8s ease-in-out infinite both; }
+  .mv-slide { animation: mv-slide 8s ease-out infinite both; }
+  .mv-offcut { animation: mv-offcut 8s ease-in infinite both; }
+}
+
+/* a line draws itself again from its start (needs pathLength={1}) */
+@keyframes mv-draw { 0% { stroke-dashoffset: 0; opacity: 1; } 3% { stroke-dashoffset: 0; opacity: 0; } 3.5% { stroke-dashoffset: 1; opacity: 0; } 4% { stroke-dashoffset: 1; opacity: 1; } 16%, 100% { stroke-dashoffset: 0; opacity: 1; } }
+/* goes, then pops back a little bigger and settles */
+@keyframes mv-pop { 0% { opacity: 1; transform: scale(1); } 3% { opacity: 0; transform: scale(0.6); } 15% { opacity: 0; transform: scale(0.6); } 19% { opacity: 1; transform: scale(1.12); } 23%, 100% { opacity: 1; transform: scale(1); } }
+/* goes, then comes back */
+@keyframes mv-show { 0% { opacity: 1; } 3%, 18% { opacity: 0; } 22%, 100% { opacity: 1; } }
+/* a heartbeat */
+@keyframes mv-beat { 0%, 3% { transform: scale(1); } 7% { transform: scale(1.22); } 11% { transform: scale(0.96); } 15% { transform: scale(1.1); } 19%, 100% { transform: scale(1); } }
+/* falls into place from above */
+@keyframes mv-drop { 0% { opacity: 1; transform: translateY(0); } 3% { opacity: 0; transform: translateY(0); } 4% { opacity: 0; transform: translateY(-8px); } 14%, 100% { opacity: 1; transform: translateY(0); } }
+/* slides into place from the right */
+@keyframes mv-in-right { 0% { opacity: 1; transform: translateX(0); } 3% { opacity: 0; transform: translateX(0); } 4% { opacity: 0; transform: translateX(10px); } 14%, 100% { opacity: 1; transform: translateX(0); } }
+/* runs out along its length from its origin (mv-ol / mv-or / mv-ot / mv-ob) */
+@keyframes mv-grow-x { 0% { transform: scaleX(1); } 3%, 6% { transform: scaleX(0.02); } 18%, 100% { transform: scaleX(1); } }
+@keyframes mv-grow-y { 0% { transform: scaleY(1); } 3%, 6% { transform: scaleY(0.02); } 18%, 100% { transform: scaleY(1); } }
+/* hangs from its origin and swings to rest */
+@keyframes mv-swing { 0%, 3% { transform: rotate(0deg); } 8% { transform: rotate(10deg); } 14% { transform: rotate(-7deg); } 19% { transform: rotate(4deg); } 24% { transform: rotate(-1.5deg); } 28%, 100% { transform: rotate(0deg); } }
+/* a pinned picture rocks */
+@keyframes mv-tilt { 0%, 3% { transform: rotate(0deg); } 9% { transform: rotate(5deg); } 15% { transform: rotate(-2.5deg); } 20%, 100% { transform: rotate(0deg); } }
+/* a pencil writing */
+@keyframes mv-wiggle { 0%, 3% { transform: translate(0, 0); } 6% { transform: translate(-2px, -1.5px); } 9% { transform: translate(1.5px, 1px); } 12% { transform: translate(-1.5px, 0.5px); } 15% { transform: translate(1px, -1px); } 18%, 100% { transform: translate(0, 0); } }
+/* an arrow pushes */
+@keyframes mv-nudge { 0%, 16% { transform: translateX(0); } 22% { transform: translateX(3px); } 28%, 100% { transform: translateX(0); } }
+/* one turn */
+@keyframes mv-spin { 0%, 3% { transform: rotate(0deg); } 22%, 100% { transform: rotate(360deg); } }
+/* a coin flipping twice */
+@keyframes mv-flip { 0%, 20% { transform: scaleX(1); } 25% { transform: scaleX(0.08); } 30% { transform: scaleX(1); } 35% { transform: scaleX(0.08); } 40%, 100% { transform: scaleX(1); } }
+/* a camera flash (the element is hidden at rest: add .mv-hidden) */
+@keyframes mv-flash { 0%, 18% { opacity: 0; } 19.5% { opacity: 0.95; } 30%, 100% { opacity: 0; } }
+/* a sparkle */
+@keyframes mv-twinkle { 0%, 3% { transform: scale(1) rotate(0deg); } 10% { transform: scale(1.4) rotate(45deg); } 18%, 100% { transform: scale(1) rotate(90deg); } }
+/* moves by --mv-dx / --mv-dy, holds, comes back (a box closing, a part dropping on) */
+@keyframes mv-close { 0%, 4% { transform: translate(0, 0); } 12%, 30% { transform: translate(var(--mv-dx, 0px), var(--mv-dy, 0px)); } 38%, 100% { transform: translate(0, 0); } }
+/* lifts away (2.4 times the distance the other way), comes down onto its place at --mv-dx / --mv-dy, holds, back to rest */
+@keyframes mv-settle { 0%, 3% { transform: translate(0, 0); } 9% { transform: translate(calc(var(--mv-dx, 0px) * -2.4), calc(var(--mv-dy, 0px) * -2.4)); } 16%, 32% { transform: translate(var(--mv-dx, 0px), var(--mv-dy, 0px)); } 40%, 100% { transform: translate(0, 0); } }
+/* a door seen from the front swings open on its hinge (origin on the hinge side) and closes */
+@keyframes mv-swing-door { 0%, 4% { transform: scaleX(1); } 18%, 38% { transform: scaleX(0.14); } 52%, 100% { transform: scaleX(1); } }
+
+/* hidden while the doors are open (mv-swing-door), back when they close */
+@keyframes mv-away { 0%, 3% { opacity: 1; } 6%, 52% { opacity: 0; } 58%, 100% { opacity: 1; } }
+
+/* Plan your project: a car reverses into the parking space */
+@keyframes mv-car { 0%, 4% { transform: translateX(0); } 14%, 20% { transform: translateX(34px); } 34%, 100% { transform: translateX(0); } }
+/* the calendar ring moves from day to day and settles */
+@keyframes mv-ring { 0% { opacity: 1; transform: translate(0, 0); } 3% { opacity: 0; transform: translate(0, 0); } 4% { opacity: 0; transform: translate(-14px, -7px); } 6% { opacity: 1; transform: translate(-14px, -7px); } 12% { transform: translate(7px, -7px); } 19%, 100% { opacity: 1; transform: translate(0, 0); } }
+/* Workshop tips: the unit stands off the skirting, the skirting goes, the unit goes back to the wall */
+@keyframes mv-push { 0% { transform: translateX(0); } 4%, 18% { transform: translateX(-7px); } 30%, 100% { transform: translateX(0); } }
+@keyframes mv-old { 0%, 3% { opacity: 0; } 5%, 13% { opacity: 1; } 18%, 100% { opacity: 0; } }
+/* a compass runs down the wall while its pencil copies it onto the panel */
+@keyframes mv-compass { 0% { opacity: 1; transform: translateY(0); } 2% { opacity: 0; transform: translateY(0); } 3% { opacity: 0; transform: translateY(-22px); } 5% { opacity: 1; transform: translateY(-22px); } 30% { opacity: 1; transform: translateY(22px); } 32% { opacity: 0; transform: translateY(22px); } 34% { opacity: 0; transform: translateY(0); } 36%, 100% { opacity: 1; transform: translateY(0); } }
+@keyframes mv-scribe { 0%, 2.9% { stroke-dashoffset: 0; } 3%, 5% { stroke-dashoffset: 0.71; } 30% { stroke-dashoffset: 0.05; } 33%, 100% { stroke-dashoffset: 0; } }
+/* a screw drives in from the left */
+@keyframes mv-screw { 0% { opacity: 1; transform: translateX(0); } 3% { opacity: 0; transform: translateX(0); } 4% { opacity: 0; transform: translateX(-18px); } 6% { opacity: 1; transform: translateX(-18px); } 24%, 100% { opacity: 1; transform: translateX(0); } }
+/* the drill lifts, then comes down until its depth stop sits on the jig */
+@keyframes mv-drill { 0% { transform: translateY(0); } 4%, 9% { transform: translateY(-8px); } 21%, 100% { transform: translateY(0); } }
+/* Timber Stack: the next board slides in, the offcut drops */
+@keyframes mv-slide { 0% { opacity: 1; transform: translateX(0); } 3% { opacity: 0; transform: translateX(0); } 4% { opacity: 0; transform: translateX(26px); } 6% { opacity: 1; transform: translateX(26px); } 20%, 100% { opacity: 1; transform: translateX(0); } }
+@keyframes mv-offcut { 0% { opacity: 1; transform: translate(0, 0); } 3% { opacity: 0; transform: translate(0, 0); } 19% { opacity: 0; transform: translate(-6px, -16px); } 21% { opacity: 1; transform: translate(-6px, -16px); } 32%, 100% { opacity: 1; transform: translate(0, 0); } }

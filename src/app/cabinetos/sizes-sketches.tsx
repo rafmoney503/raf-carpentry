@@ -13,6 +13,11 @@ export const isSizeSketch = (v: unknown): v is SizeSketchName => typeof v === 's
 
 const svgClass = 'block h-full w-full font-mono [&_*]:[vector-effect:non-scaling-stroke]';
 const soft = { fill: 'currentColor', fillOpacity: 0.14 } as const;
+/* The rule drawings move (16 Oct 2026, src/app/motion.css): the box closes, the box sits down on its plinth,
+   the back goes in, the shelf slides in, the doors open, the tape runs round the edges. Transforms only (the
+   strokes here don't scale, so dash drawing is not used). `o(s)` starts a part s seconds later. */
+const o = (s: number) => ({ '--mv-o': `${s}s` }) as React.CSSProperties;
+const mv = (dx: number, dy: number, s = 0) => ({ '--mv-dx': `${dx}px`, '--mv-dy': `${dy}px`, '--mv-o': `${s}s` }) as React.CSSProperties;
 
 /* Text with a paper-coloured halo, so it reads over the grid and the hatching. */
 function Label({
@@ -116,8 +121,12 @@ function Box({ s }: { s: Sums }) {
   return (
     <>
       {/* the top and bottom lifted off a little: they run the full width, the sides (blue) fit between them */}
-      <Board x={28} y={13} w={60} h={5} />
-      <Board x={28} y={63} w={60} h={5} />
+      <g className="mv-settle" style={mv(0, 2.5)}>
+        <Board x={28} y={13} w={60} h={5} />
+      </g>
+      <g className="mv-settle" style={mv(0, -2.5)}>
+        <Board x={28} y={63} w={60} h={5} />
+      </g>
       <g className="text-accent">
         <rect x={28} y={20.5} width={5} height={40} {...soft} />
         <rect x={83} y={20.5} width={5} height={40} {...soft} />
@@ -135,9 +144,11 @@ function Plinth({ s }: { s: Sums }) {
   return (
     <>
       {/* the box on its plinth (blue), standing on the floor */}
-      <rect x={34} y={8} width={56} height={50} className="fill-paper" />
-      <path d="M62 8v50M59.5 30v8M64.5 30v8" strokeWidth={1} />
-      <g className="text-accent">
+      <g className="mv-close" style={mv(0, -7)}>
+        <rect x={34} y={8} width={56} height={50} className="fill-paper" />
+        <path d="M62 8v50M59.5 30v8M64.5 30v8" strokeWidth={1} />
+      </g>
+      <g className="text-accent mv-beat" style={o(2.6)}>
         <rect x={34} y={58} width={56} height={9} {...soft} />
         <Label x={62} y={64.4} size={4.8}>
           plinth
@@ -164,7 +175,7 @@ function Back({ s }: { s: Sums }) {
       <Board x={30} y={61} w={60} h={5} />
       <Board x={30} y={15} w={5} h={46} step={2.6} />
       <Board x={85} y={15} w={5} h={46} step={2.6} />
-      <g className="text-accent">
+      <g className="text-accent mv-pop">
         <rect x={35} y={15} width={50} height={46} {...soft} />
         <Label x={60} y={40}>
           back
@@ -187,7 +198,7 @@ function Shelf({ s }: { s: Sums }) {
       <Board x={89} y={12} w={5} h={60} step={2.6} />
       <Board x={31} y={12} w={58} h={5} />
       <path d="M26 72H94" strokeWidth={1} strokeDasharray="2 2" className="text-faint" />
-      <g className="text-accent">
+      <g className="text-accent mv-close" style={mv(0, 14)}>
         <rect x={34} y={17} width={52} height={50} {...soft} />
         <Label x={60} y={40.5}>
           {s.shelfW}
@@ -205,9 +216,15 @@ function Shelf({ s }: { s: Sums }) {
       <Tiny x={60} y={78.5}>
         front
       </Tiny>
-      <Callout x={32.5} y={30} tx={18} ty={30} label="2" anchor="end" />
-      <Callout x={87.5} y={30} tx={102} ty={30} label="2" anchor="start" />
-      <Callout x={78} y={69.5} tx={102} ty={62} label="2" anchor="start" />
+      <g className="mv-pop" style={o(2.6)}>
+        <Callout x={32.5} y={30} tx={18} ty={30} label="2" anchor="end" />
+      </g>
+      <g className="mv-pop" style={o(2.8)}>
+        <Callout x={87.5} y={30} tx={102} ty={30} label="2" anchor="start" />
+      </g>
+      <g className="mv-pop" style={o(3)}>
+        <Callout x={78} y={69.5} tx={102} ty={62} label="2" anchor="start" />
+      </g>
     </>
   );
 }
@@ -217,14 +234,19 @@ function Doors({ s }: { s: Sums }) {
     <>
       {/* the box (dashed, behind) and a pair of doors (blue) covering its front, with the gaps */}
       <rect x={30} y={10} width={60} height={56} strokeWidth={1} strokeDasharray="2 2" className="text-faint" />
-      <g className="text-accent">
-        <rect x={31.6} y={13.5} width={27.4} height={52.5} {...soft} strokeWidth={1.4} />
-        <rect x={61} y={13.5} width={27.4} height={52.5} {...soft} strokeWidth={1.4} />
+      <g className="mv-swing-door mv-ol">
+        <rect className="text-accent" x={31.6} y={13.5} width={27.4} height={52.5} {...soft} strokeWidth={1.4} />
+        <path d="M56 34v9" strokeWidth={1.4} />
       </g>
-      <path d="M56 34v9M64 34v9" strokeWidth={1.4} />
-      <Callout x={40} y={11.8} tx={22} ty={6.5} label="3" anchor="end" />
-      <Callout x={60} y={22} tx={60} ty={5.5} label="4" />
-      <Callout x={89.2} y={46} tx={101} ty={46} label="2" anchor="start" />
+      <g className="mv-swing-door mv-or">
+        <rect className="text-accent" x={61} y={13.5} width={27.4} height={52.5} {...soft} strokeWidth={1.4} />
+        <path d="M64 34v9" strokeWidth={1.4} />
+      </g>
+      <g className="mv-away">
+        <Callout x={40} y={11.8} tx={22} ty={6.5} label="3" anchor="end" />
+        <Callout x={60} y={22} tx={60} ty={5.5} label="4" />
+        <Callout x={89.2} y={46} tx={101} ty={46} label="2" anchor="start" />
+      </g>
       <DimV x={22} y1={13.5} y2={66} label={s.doorH} />
       <DimH x1={31.6} x2={59} y={74} label={s.doorW} />
     </>
@@ -240,7 +262,7 @@ function Edging() {
         shelf
       </Tiny>
       <g className="text-accent">
-        <path d="M10 54H62" strokeWidth={3.5} />
+        <path className="mv-grow-x mv-ol" d="M10 54H62" strokeWidth={3.5} />
         <Label x={36} y={63.5} size={5}>
           front edge
         </Label>
@@ -250,7 +272,10 @@ function Edging() {
         door
       </Tiny>
       <g className="text-accent">
-        <rect x={76} y={9} width={30} height={56} strokeWidth={3.5} fill="none" />
+        <path className="mv-grow-x mv-ol" style={o(0.7)} d="M76 9H106" strokeWidth={3.5} />
+        <path className="mv-grow-y mv-ot" style={o(1)} d="M106 9V65" strokeWidth={3.5} />
+        <path className="mv-grow-x mv-or" style={o(1.3)} d="M106 65H76" strokeWidth={3.5} />
+        <path className="mv-grow-y mv-ob" style={o(1.6)} d="M76 65V9" strokeWidth={3.5} />
         <Label x={91} y={74.5} size={5}>
           all four
         </Label>
@@ -259,7 +284,7 @@ function Edging() {
   );
 }
 
-export function RuleSketch({ name, sums }: { name: SizeSketchName; sums: Sums }) {
+export function RuleSketch({ name, sums, delay = 0 }: { name: SizeSketchName; sums: Sums; delay?: number }) {
   const body =
     name === 'box' ? (
       <Box s={sums} />
@@ -275,7 +300,12 @@ export function RuleSketch({ name, sums }: { name: SizeSketchName; sums: Sums })
       <Edging />
     );
   return (
-    <div className="relative aspect-[3/2] w-full overflow-hidden border-b border-line bg-paper text-ink" style={graphPaper} aria-hidden="true">
+    <div
+      className="relative aspect-[3/2] w-full overflow-hidden border-b border-line bg-paper text-ink"
+      style={{ ...graphPaper, '--mv-d': `${delay}s` } as React.CSSProperties}
+      data-motion=""
+      aria-hidden="true"
+    >
       <svg viewBox="0 0 120 80" className={svgClass} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
         {body}
       </svg>

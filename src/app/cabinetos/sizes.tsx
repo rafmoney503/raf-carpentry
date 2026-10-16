@@ -117,7 +117,7 @@ export default function Sizes({ data }: { data: SizesData }) {
           <ol className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {rules.map((r, i) => (
               <li key={i} className="mount flex flex-col p-0">
-                <RuleSketch name={r.drawing} sums={sums} />
+                <RuleSketch name={r.drawing} sums={sums} delay={(i % 3) * 0.5} />
                 <div className="flex flex-1 flex-col px-5 pb-5 pt-4">
                   <h3 className="text-[19px] font-[620] leading-tight text-ink">
                     <span className="mr-2 font-mono text-[13px] font-normal text-accent">{String(i + 1).padStart(2, '0')}</span>

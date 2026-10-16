@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
+import './motion.css';
 import LayoutShell from '@/components/LayoutShell';
 import { getMenuPanels } from '@/lib/menu-panels';
 import { Analytics } from '@vercel/analytics/next';
+import MotionObserver from '@/components/MotionObserver';
 
 // Fonts are self-hosted from src/fonts (SIL Open Font Licence), so builds never depend on Google Fonts.
 const bricolage = localFont({
@@ -41,6 +43,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en-GB" className={`${bricolage.variable} ${geist.variable} ${geistMono.variable}`}>
       <body>
         <LayoutShell menu={getMenuPanels()}>{children}</LayoutShell>
+        {/* Plays the moving line drawings (motion.css) only while they are on screen. */}
+        <MotionObserver />
         {/* Vercel Web Analytics: page views only, no cookies. Turn it on in Vercel > project > Analytics. */}
         <Analytics />
       </body>

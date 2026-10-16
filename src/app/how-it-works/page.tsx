@@ -114,7 +114,7 @@ export default function HowItWorksPage() {
                 const num = String(i + 1).padStart(2, '0');
                 return (
                   <li key={i} className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-4 border-b border-line py-4 sm:grid-cols-[76px_minmax(0,1fr)] sm:gap-5">
-                    <Sketch name={n.sketch} fallback={num} />
+                    <Sketch name={n.sketch} fallback={num} delay={i * 0.6} />
                     <div className="pt-0.5">
                       <h3 className="text-[17px] font-[620] text-ink">
                         <span className="mr-2 font-mono text-[13px] font-normal text-accent">{num}</span>
@@ -132,7 +132,7 @@ export default function HowItWorksPage() {
             <ul className="mt-7 border-t border-line-strong">
               {d.get.map((g, i) => (
                 <li key={i} className="grid grid-cols-[64px_minmax(0,1fr)] items-start gap-4 border-b border-line-strong py-4 sm:grid-cols-[76px_minmax(0,1fr)] sm:gap-5">
-                  <Sketch name={g.sketch} fallback={<Check />} />
+                  <Sketch name={g.sketch} fallback={<Check />} delay={i * 0.6 + 0.3} />
                   <div className="pt-0.5">
                     <h3 className="flex gap-2 text-[17px] font-[620] text-ink">
                       <Check />
