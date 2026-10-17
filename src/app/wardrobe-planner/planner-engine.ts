@@ -33,7 +33,7 @@ const CFG={
   infills:[50,100,150], infillMax:400,                  // top infill (scribed to the ceiling) choices, mm
   freeHeight:2100,                                      // default height of a freestanding unit, mm
   // Inside each unit: hanging lengths, shelf spacing and drawer heights are PLAN in src/lib/cabinetos-wardrobe.ts
-  styles:{shaker:'Shaker',slab:'Flat slab',mirror:'Mirror'},
+  styles:{slab:'Flat slab',shaker:'Shaker',mirror:'Mirror'},   // flat is the default (Raf, 17 Oct 2026)
   shakerFrame:70,                                       // shaker door frame width, mm (classic shaker: one panel)
   handles:{brass:'Brass bar',black:'Black bar',knob:'Brass knob',push:'Push to open'},
   colours:[
@@ -52,7 +52,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 let uid=1;
 function setPreset(m,key){if(key==='pair'&&canSplit(m.w)){m.split=[{...PAIR[0]},{...PAIR[1]}];m.edit=m.edit||0;}else{m.split=null;m.inside={...presetInside(key==='pair'?'drawers':key)};}}
 const mk=(w,preset)=>{const m={id:'m'+(uid++),w,custom:!CFG.standardWidths.includes(w),inside:presetInside('shelves'),split:null,edit:0};setPreset(m,preset);return m;};
-const S={unitMode:'standard',side:{mode:'auto',l:50,r:50},wall:2800,ceiling:2400,fit:'wall',plinth:100,plinthCustom:false,infill:50,infillCustom:false,freeH:CFG.freeHeight,depthMode:'std',depthCustom:600,height:'full',doors:'hinged',style:'shaker',handle:'brass',colour:'sage',
+const S={unitMode:'standard',side:{mode:'auto',l:50,r:50},wall:2800,ceiling:2400,fit:'wall',plinth:100,plinthCustom:false,infill:50,infillCustom:false,freeH:CFG.freeHeight,depthMode:'std',depthCustom:600,height:'full',doors:'hinged',style:'slab',handle:'brass',colour:'sage',
   modules:[mk(900,'double'),mk(900,'pair'),mk(900,'short')],sel:0,step:0,view:'3d',open:false,sent:false,drawInside:false,
   contact:{name:'',email:'',phone:'',postcode:'',when:'',notes:'',company:''}};
 const colour=()=>CFG.colours.find(c=>c.k===S.colour)||CFG.colours[0];
