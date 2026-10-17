@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { CONTACT_ITEM, MENU, tagHref, type MenuItem } from '@/lib/menu';
 import TapeSearch from './TapeSearch';
 import BounceCta from './BounceCta';
+import StepsMark from './StepsMark';
 
 /* The menu, the same way rafcarpentry.com works.
    Computer (mouse): resting on a menu item for a moment drops a panel under the header with what the page is and its
@@ -16,13 +17,9 @@ import BounceCta from './BounceCta';
 const OPEN_DELAY = 160;
 const CLOSE_DELAY = 260;
 
-/* The logo is three planks stacked as rising steps with the yellow ball on top. Its move: the ball sinks out of sight,
-   comes up on the bottom step and hops back up one step at a time. It plays shortly after the page opens, when a
-   mouse rests on it, and every 30 seconds while the tab is open. People who ask their phone for less motion never
-   see it move. */
-const LOGO_MOVE_MS = 2800;
-const LOGO_FIRST_MS = 1400;
-const LOGO_EVERY_MS = 30000;
+/* The logo is three planks stacked as rising steps with the yellow ball on top, and the ball keeps climbing: it hops
+   up a step without stopping while the stairs move down under it (StepsMark 'climb'). People who ask their phone for
+   less motion see it still. */
 
 export default function Header() {
   const pathname = usePathname();
@@ -31,33 +28,6 @@ export default function Header() {
   const [expanded, setExpanded] = useState<string | null>(null); // phone: which item's tags are open
   const openTimer = useRef<number | undefined>(undefined);
   const closeTimer = useRef<number | undefined>(undefined);
-  const [logoMove, setLogoMove] = useState(false);
-  const logoTimer = useRef<number | undefined>(undefined);
-  const logoPlaying = useRef(false);
-
-  const playLogo = useCallback(() => {
-    if (logoPlaying.current) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    logoPlaying.current = true;
-    setLogoMove(true);
-    logoTimer.current = window.setTimeout(() => {
-      logoPlaying.current = false;
-      setLogoMove(false);
-    }, LOGO_MOVE_MS + 80);
-  }, []);
-
-  useEffect(() => {
-    const first = window.setTimeout(playLogo, LOGO_FIRST_MS);
-    const every = window.setInterval(() => {
-      if (document.visibilityState === 'visible') playLogo();
-    }, LOGO_EVERY_MS);
-    return () => {
-      window.clearTimeout(first);
-      window.clearInterval(every);
-      window.clearTimeout(logoTimer.current);
-    };
-  }, [playLogo]);
-
   const clearTimers = () => {
     window.clearTimeout(openTimer.current);
     window.clearTimeout(closeTimer.current);
@@ -100,19 +70,8 @@ export default function Header() {
     <header className="site-head">
       <div className="wrap">
         <div className="head-row">
-          <Link
-            href="/"
-            className="logo"
-            aria-label="Rafal Solutions home"
-            onPointerEnter={(e) => e.pointerType === 'mouse' && playLogo()}
-            onFocus={(e) => e.currentTarget.matches(':focus-visible') && playLogo()}
-          >
-            <svg className={`logo-mark${logoMove ? ' move' : ''}`} viewBox="0 0 100 100" aria-hidden="true">
-              <rect x="10" y="72" width="80" height="14" rx="2" />
-              <rect x="34" y="54" width="56" height="14" rx="2" />
-              <rect x="58" y="36" width="32" height="14" rx="2" />
-              <circle className="logo-ball" cx="74" cy="25" r="9.5" />
-            </svg>
+          <Link href="/" className="logo" aria-label="Rafal Solutions home">
+            <StepsMark play="climb" className="logo-mark" />
             <span className="logo-name">rafal solutions</span>
           </Link>
 

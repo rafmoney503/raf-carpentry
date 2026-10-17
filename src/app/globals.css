@@ -456,7 +456,7 @@ body::before {
   flex: 0 0 auto;
 }
 /* The mark: three planks stacked as rising steps with the yellow ball on the top one (systems and improvements, one
-   step at a time). Drawn in a 100-unit box, so the move below is in those units at any size. */
+   step at a time). It moves in StepsMark.tsx: the ball keeps climbing. */
 .logo-mark {
   display: block;
   width: 36px;
@@ -472,137 +472,6 @@ body::before {
     margin-left: -4px;
   }
 }
-.logo-mark rect {
-  fill: var(--ink);
-}
-.logo-ball {
-  fill: var(--hl);
-  stroke: var(--paper);
-  stroke-width: 3;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .logo-mark.move .logo-ball {
-    animation: logo-hop 2.8s linear both;
-  }
-}
-/* the ball sinks out of sight on the top step, comes up on the bottom one and hops back up, one step at a time;
-   worked out so it never cuts into a plank */
-@keyframes logo-hop {
-  0.00% {
-    transform: translate(0.00px, 0.00px) scale(1);
-  }
-  7.86% {
-    transform: translate(0.00px, 0.00px) scale(0);
-  }
-  10.71% {
-    transform: translate(-52.00px, 36.00px) scale(0);
-  }
-  17.14% {
-    transform: translate(-52.00px, 36.00px) scale(1);
-  }
-  22.14% {
-    transform: translate(-52.00px, 36.00px) scale(1);
-  }
-  23.81% {
-    transform: translate(-51.53px, 27.78px) scale(1);
-  }
-  25.48% {
-    transform: translate(-50.22px, 20.78px) scale(1);
-  }
-  27.14% {
-    transform: translate(-48.25px, 15.00px) scale(1);
-  }
-  28.81% {
-    transform: translate(-45.78px, 10.44px) scale(1);
-  }
-  30.48% {
-    transform: translate(-42.97px, 7.11px) scale(1);
-  }
-  32.14% {
-    transform: translate(-40.00px, 5.00px) scale(1);
-  }
-  33.81% {
-    transform: translate(-37.03px, 4.11px) scale(1);
-  }
-  35.48% {
-    transform: translate(-34.22px, 4.44px) scale(1);
-  }
-  37.14% {
-    transform: translate(-31.75px, 6.00px) scale(1);
-  }
-  38.81% {
-    transform: translate(-29.78px, 8.78px) scale(1);
-  }
-  40.48% {
-    transform: translate(-28.47px, 12.78px) scale(1);
-  }
-  42.14% {
-    transform: translate(-28.00px, 18.00px) scale(1);
-  }
-  47.14% {
-    transform: translate(-28.00px, 18.00px) scale(1);
-  }
-  48.81% {
-    transform: translate(-27.45px, 9.78px) scale(1);
-  }
-  50.48% {
-    transform: translate(-25.93px, 2.78px) scale(1);
-  }
-  52.14% {
-    transform: translate(-23.62px, -3.00px) scale(1);
-  }
-  53.81% {
-    transform: translate(-20.74px, -7.56px) scale(1);
-  }
-  55.48% {
-    transform: translate(-17.47px, -10.89px) scale(1);
-  }
-  57.14% {
-    transform: translate(-14.00px, -13.00px) scale(1);
-  }
-  58.81% {
-    transform: translate(-10.53px, -13.89px) scale(1);
-  }
-  60.48% {
-    transform: translate(-7.26px, -13.56px) scale(1);
-  }
-  62.14% {
-    transform: translate(-4.38px, -12.00px) scale(1);
-  }
-  63.81% {
-    transform: translate(-2.07px, -9.22px) scale(1);
-  }
-  65.48% {
-    transform: translate(-0.55px, -5.22px) scale(1);
-  }
-  67.14% {
-    transform: translate(0.00px, 0.00px) scale(1);
-  }
-  68.57% {
-    transform: translate(0.00px, -1.67px) scale(1);
-  }
-  70.00% {
-    transform: translate(0.00px, -2.67px) scale(1);
-  }
-  71.43% {
-    transform: translate(0.00px, -3.00px) scale(1);
-  }
-  72.86% {
-    transform: translate(0.00px, -2.67px) scale(1);
-  }
-  74.29% {
-    transform: translate(0.00px, -1.67px) scale(1);
-  }
-  75.71% {
-    transform: translate(0.00px, 0.00px) scale(1);
-  }
-  100.00% {
-    transform: translate(0.00px, 0.00px) scale(1);
-  }
-}
-
 .logo-name {
   font-family: var(--f-display);
   font-weight: 700;
@@ -2535,6 +2404,61 @@ h2.sys-swap > span {
     align-items: center;
     gap: 40px;
   }
+}
+
+/* the steps logo in the bottom band (mixing and settling) and on the 'Sketch my system' card (built step by step) */
+.cta-mark {
+  flex: 0 0 auto;
+  align-self: center;
+  width: 96px;
+  height: 96px;
+}
+.cta-mark svg,
+.sketch-mark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+@media (min-width: 900px) {
+  .cta-mark {
+    width: 132px;
+    height: 132px;
+  }
+}
+.sketch-band {
+  padding-block: 48px;
+  border-bottom: 1px solid var(--line);
+}
+.sketch-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px 32px;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+.sketch-mark {
+  flex: 0 0 auto;
+  width: 120px;
+  height: 120px;
+  padding: 10px;
+  background-color: var(--paper);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 14px 14px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+.sketch-text {
+  flex: 1 1 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.sketch-text .btn {
+  align-self: flex-start;
 }
 
 /* carry: one enquiry carried from your form to ServiceM8 to my phone */

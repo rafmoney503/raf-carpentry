@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import PageHeader from '@/components/PageHeader';
 import CtaBand from '@/components/CtaBand';
+import SketchCard from '@/components/SketchCard';
 import OpenSketch from '@/components/OpenSketch';
 import { MENU } from '@/lib/menu';
 import { TRADES, statusClass } from '@/lib/content';
@@ -61,6 +62,7 @@ export default function Trades() {
         </section>
       ))}
 
+      <SketchCard />
       <CtaBand />
     </>
   );

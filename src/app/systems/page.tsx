@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import PageHeader from '@/components/PageHeader';
 import CtaBand from '@/components/CtaBand';
+import SketchCard from '@/components/SketchCard';
 import { CabinetosFeature, JobKitCard, PlannerCard, SectionHead } from '@/components/blocks';
 import { MENU } from '@/lib/menu';
 
@@ -106,6 +107,7 @@ export default function Systems() {
         </div>
       </section>
 
+      <SketchCard />
       <CtaBand />
     </>
   );

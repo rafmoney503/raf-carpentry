@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import PageHeader from '@/components/PageHeader';
 import CtaBand from '@/components/CtaBand';
+import SketchCard from '@/components/SketchCard';
 import { FaqList, FlowSection, SectionHead, StepsList } from '@/components/blocks';
 import { CarryDiagram } from '@/components/motion-pieces';
 import { MENU } from '@/lib/menu';
@@ -40,6 +41,7 @@ export default function HowItWorks() {
         </div>
       </section>
 
+      <SketchCard />
       <CtaBand />
     </>
   );
