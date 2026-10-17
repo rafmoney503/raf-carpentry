@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-/* The picture shown when the site is shared on WhatsApp, LinkedIn or Facebook: drafting paper, the rs mark and the
+/* The picture shown when the site is shared on WhatsApp, LinkedIn or Facebook: drafting paper, the steps logo and the
    headline with its highlighter. Made once at build time. The fonts come from Google Fonts while building; if that
    fails, the picture still builds in the default font. */
 
@@ -44,11 +44,13 @@ export default async function OgImage() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
-          <div style={{ position: 'relative', width: 52, height: 52, background: '#15171a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: 'Display', fontSize: 28 }}>
-            rs
-            <div style={{ position: 'absolute', right: -8, bottom: -8, width: 20, height: 20, background: '#ffe45c', border: '3px solid #f5f6f3' }} />
-          </div>
-          <div style={{ fontFamily: 'Display', fontSize: 34 }}>Rafal Solutions</div>
+          <svg width="60" height="60" viewBox="0 0 100 100">
+            <rect x="10" y="72" width="80" height="14" rx="2" fill="#15171a" />
+            <rect x="34" y="54" width="56" height="14" rx="2" fill="#15171a" />
+            <rect x="58" y="36" width="32" height="14" rx="2" fill="#15171a" />
+            <circle cx="74" cy="25" r="9.5" fill="#ffe45c" stroke="#f5f6f3" strokeWidth="3" />
+          </svg>
+          <div style={{ fontFamily: 'Display', fontSize: 36, letterSpacing: -1 }}>rafal solutions</div>
         </div>
         <div style={{ marginTop: 56, fontFamily: 'Mono', fontSize: 22, letterSpacing: 2, color: '#545b62' }}>RAFAL SOLUTIONS LTD · LONDON</div>
         <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', fontFamily: 'Display', fontSize: 84, lineHeight: 1.04, letterSpacing: -3 }}>

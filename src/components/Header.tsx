@@ -16,11 +16,11 @@ import BounceCta from './BounceCta';
 const OPEN_DELAY = 160;
 const CLOSE_DELAY = 260;
 
-/* The logo plays one move made of all three ideas: the mark tips and the yellow corner rolls off as a ball (level),
-   the ball rolls once round the square (rail), then the whole mark turns into the ball, bounces and comes back as rs
-   (drift). It plays shortly after the page opens, when a mouse rests on it, and every 30 seconds while the tab is
-   open. People who ask their phone for less motion never see it move. */
-const LOGO_MOVE_MS = 4800;
+/* The logo is three planks stacked as rising steps with the yellow ball on top. Its move: the ball sinks out of sight,
+   comes up on the bottom step and hops back up one step at a time. It plays shortly after the page opens, when a
+   mouse rests on it, and every 30 seconds while the tab is open. People who ask their phone for less motion never
+   see it move. */
+const LOGO_MOVE_MS = 2800;
 const LOGO_FIRST_MS = 1400;
 const LOGO_EVERY_MS = 30000;
 
@@ -107,11 +107,13 @@ export default function Header() {
             onPointerEnter={(e) => e.pointerType === 'mouse' && playLogo()}
             onFocus={(e) => e.currentTarget.matches(':focus-visible') && playLogo()}
           >
-            <span className={`logo-mark${logoMove ? ' move' : ''}`} aria-hidden="true">
-              <span className="logo-letters">rs</span>
-              <span className="logo-ball" />
-            </span>
-            <span className="logo-name">Rafal Solutions</span>
+            <svg className={`logo-mark${logoMove ? ' move' : ''}`} viewBox="0 0 100 100" aria-hidden="true">
+              <rect x="10" y="72" width="80" height="14" rx="2" />
+              <rect x="34" y="54" width="56" height="14" rx="2" />
+              <rect x="58" y="36" width="32" height="14" rx="2" />
+              <circle className="logo-ball" cx="74" cy="25" r="9.5" />
+            </svg>
+            <span className="logo-name">rafal solutions</span>
           </Link>
 
           <nav className="nav" aria-label="Main" onPointerLeave={hoverOut} onPointerEnter={keep}>

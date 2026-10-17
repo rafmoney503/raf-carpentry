@@ -455,166 +455,159 @@ body::before {
   text-decoration: none;
   flex: 0 0 auto;
 }
-/* Sized in em so the same move works at any size: 2em square, the yellow corner 0.667em, sitting 0.267em outside. */
+/* The mark: three planks stacked as rising steps with the yellow ball on the top one (systems and improvements, one
+   step at a time). Drawn in a 100-unit box, so the move below is in those units at any size. */
 .logo-mark {
-  position: relative;
-  width: 2em;
-  height: 2em;
+  display: block;
+  width: 36px;
+  height: 36px;
+  margin-left: -3px;
   flex: 0 0 auto;
-  background: var(--ink);
-  border-radius: 2px;
-  color: #fff;
-  font-family: var(--f-display);
-  font-weight: 700;
-  font-size: 15px;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  display: grid;
-  place-items: center;
+  overflow: visible;
 }
-.logo-mark::before {
-  content: '';
-  position: absolute;
-  inset: 0.2em;
-  border-radius: 50%;
-  background: var(--hl);
-  transform: scale(0);
+@media (min-width: 1080px) {
+  .logo-mark {
+    width: 40px;
+    height: 40px;
+    margin-left: -4px;
+  }
+}
+.logo-mark rect {
+  fill: var(--ink);
 }
 .logo-ball {
-  position: absolute;
-  left: 1.6em;
-  top: 1.6em;
-  width: 0.667em;
-  height: 0.667em;
-  background: var(--hl);
-  border: 0.134em solid var(--paper);
+  fill: var(--hl);
+  stroke: var(--paper);
+  stroke-width: 3;
+  transform-box: fill-box;
+  transform-origin: center;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .logo-mark.move {
-    animation: logo-mix 4.8s cubic-bezier(0.65, 0, 0.35, 1) both;
-  }
-  .logo-mark.move::before {
-    animation: logo-mix-fill 4.8s cubic-bezier(0.65, 0, 0.35, 1) both;
-  }
-  .logo-mark.move .logo-letters {
-    animation: logo-mix-letters 4.8s ease both;
-  }
   .logo-mark.move .logo-ball {
-    animation: logo-mix-ball 4.8s cubic-bezier(0.65, 0, 0.35, 1) both;
+    animation: logo-hop 2.8s linear both;
   }
 }
-/* tip (0 to 30%), roll round (30 to 56%), turn into the ball and bounce (58 to 86%) */
-@keyframes logo-mix {
-  0% {
-    transform: rotate(0deg) scale(1) translateY(0);
-    border-radius: 2px;
+/* the ball sinks out of sight on the top step, comes up on the bottom one and hops back up, one step at a time;
+   worked out so it never cuts into a plank */
+@keyframes logo-hop {
+  0.00% {
+    transform: translate(0.00px, 0.00px) scale(1);
   }
-  8%,
-  20% {
-    transform: rotate(-9deg) scale(1) translateY(0);
+  7.86% {
+    transform: translate(0.00px, 0.00px) scale(0);
   }
-  30%,
-  58% {
-    transform: rotate(0deg) scale(1) translateY(0);
-    border-radius: 2px;
+  10.71% {
+    transform: translate(-52.00px, 36.00px) scale(0);
   }
-  65% {
-    transform: rotate(0deg) scale(0.62) translateY(0);
-    border-radius: 50%;
+  17.14% {
+    transform: translate(-52.00px, 36.00px) scale(1);
   }
-  70% {
-    transform: rotate(0deg) scale(0.62) translateY(-0.4em);
+  22.14% {
+    transform: translate(-52.00px, 36.00px) scale(1);
   }
-  75% {
-    transform: rotate(0deg) scale(0.62) translateY(0);
-    border-radius: 50%;
+  23.81% {
+    transform: translate(-51.53px, 27.78px) scale(1);
   }
-  86%,
-  100% {
-    transform: rotate(0deg) scale(1) translateY(0);
-    border-radius: 2px;
+  25.48% {
+    transform: translate(-50.22px, 20.78px) scale(1);
+  }
+  27.14% {
+    transform: translate(-48.25px, 15.00px) scale(1);
+  }
+  28.81% {
+    transform: translate(-45.78px, 10.44px) scale(1);
+  }
+  30.48% {
+    transform: translate(-42.97px, 7.11px) scale(1);
+  }
+  32.14% {
+    transform: translate(-40.00px, 5.00px) scale(1);
+  }
+  33.81% {
+    transform: translate(-37.03px, 4.11px) scale(1);
+  }
+  35.48% {
+    transform: translate(-34.22px, 4.44px) scale(1);
+  }
+  37.14% {
+    transform: translate(-31.75px, 6.00px) scale(1);
+  }
+  38.81% {
+    transform: translate(-29.78px, 8.78px) scale(1);
+  }
+  40.48% {
+    transform: translate(-28.47px, 12.78px) scale(1);
+  }
+  42.14% {
+    transform: translate(-28.00px, 18.00px) scale(1);
+  }
+  47.14% {
+    transform: translate(-28.00px, 18.00px) scale(1);
+  }
+  48.81% {
+    transform: translate(-27.45px, 9.78px) scale(1);
+  }
+  50.48% {
+    transform: translate(-25.93px, 2.78px) scale(1);
+  }
+  52.14% {
+    transform: translate(-23.62px, -3.00px) scale(1);
+  }
+  53.81% {
+    transform: translate(-20.74px, -7.56px) scale(1);
+  }
+  55.48% {
+    transform: translate(-17.47px, -10.89px) scale(1);
+  }
+  57.14% {
+    transform: translate(-14.00px, -13.00px) scale(1);
+  }
+  58.81% {
+    transform: translate(-10.53px, -13.89px) scale(1);
+  }
+  60.48% {
+    transform: translate(-7.26px, -13.56px) scale(1);
+  }
+  62.14% {
+    transform: translate(-4.38px, -12.00px) scale(1);
+  }
+  63.81% {
+    transform: translate(-2.07px, -9.22px) scale(1);
+  }
+  65.48% {
+    transform: translate(-0.55px, -5.22px) scale(1);
+  }
+  67.14% {
+    transform: translate(0.00px, 0.00px) scale(1);
+  }
+  68.57% {
+    transform: translate(0.00px, -1.67px) scale(1);
+  }
+  70.00% {
+    transform: translate(0.00px, -2.67px) scale(1);
+  }
+  71.43% {
+    transform: translate(0.00px, -3.00px) scale(1);
+  }
+  72.86% {
+    transform: translate(0.00px, -2.67px) scale(1);
+  }
+  74.29% {
+    transform: translate(0.00px, -1.67px) scale(1);
+  }
+  75.71% {
+    transform: translate(0.00px, 0.00px) scale(1);
+  }
+  100.00% {
+    transform: translate(0.00px, 0.00px) scale(1);
   }
 }
-/* the yellow grows from the middle over the ink, so the two colours never mix into a muddy in-between */
-@keyframes logo-mix-fill {
-  0%,
-  58% {
-    transform: scale(0);
-  }
-  64%,
-  77% {
-    transform: scale(1);
-  }
-  83%,
-  100% {
-    transform: scale(0);
-  }
-}
-@keyframes logo-mix-letters {
-  0%,
-  58% {
-    opacity: 1;
-  }
-  63%,
-  80% {
-    opacity: 0;
-  }
-  88%,
-  100% {
-    opacity: 1;
-  }
-}
-@keyframes logo-mix-ball {
-  0% {
-    transform: translate(0, 0) scale(1);
-    border-radius: 0;
-    opacity: 1;
-  }
-  5% {
-    border-radius: 50%;
-  }
-  8% {
-    transform: translate(0, 0) scale(1);
-  }
-  20%,
-  30% {
-    transform: translate(-1.867em, 0) scale(1);
-  }
-  38% {
-    transform: translate(-1.867em, -1.867em) scale(1);
-  }
-  46% {
-    transform: translate(0, -1.867em) scale(1);
-  }
-  54%,
-  58% {
-    transform: translate(0, 0) scale(1);
-    opacity: 1;
-  }
-  64% {
-    transform: translate(-0.933em, -0.933em) scale(0);
-    opacity: 0;
-  }
-  82% {
-    transform: translate(0, 0) scale(0);
-    opacity: 0;
-  }
-  90% {
-    transform: translate(0, 0) scale(1);
-    opacity: 1;
-    border-radius: 50%;
-  }
-  95%,
-  100% {
-    transform: translate(0, 0) scale(1);
-    border-radius: 0;
-  }
-}
+
 .logo-name {
   font-family: var(--f-display);
   font-weight: 700;
   font-size: 19px;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 .nav {
   display: none;
