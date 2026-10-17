@@ -7,7 +7,7 @@ export const FLOW = [
   { title: 'They get a thank-you straight away', text: 'An email with three designs like theirs, sent through ServiceM8 and filed on the job.', tags: ['ServiceM8', 'Email'], mine: false },
   { title: 'The design becomes a cut list', text: 'A wardrobe planned on the website arrives as a CabinetOS project with the parts already worked out.', tags: ['CabinetOS'], mine: false },
   { title: 'My phone puts it at the top of Today', text: '“New enquiry” sits above the visits, follow-ups and money owed, in the order things need doing.', tags: ['Job Kit'], mine: true },
-  { title: 'Claude drafts the reply; I press send', text: 'A first draft in my words, using what they wrote. Nothing goes until I have read it.', tags: ['Claude', 'Outlook'], mine: true },
+  { title: 'The reply is ready; I press send', text: 'A first draft in my words, using what they wrote. Nothing goes until I have read it.', tags: ['Outlook'], mine: true },
   { title: 'The visit goes in the diary', text: 'Booked in ServiceM8’s schedule, confirmed on WhatsApp with the message already typed.', tags: ['ServiceM8', 'WhatsApp'], mine: true },
   { title: 'Quote, work, paid, reviewed', text: 'Quote to Work Order to Completed, with every payment and what is left. Then a Google review request, ready to send.', tags: ['ServiceM8', 'Google'], mine: true },
 ];
@@ -22,7 +22,7 @@ export const STEPS = [
 export const INTEGRATIONS = [
   { name: 'Microsoft 365', what: 'Read your inbox and reply from your own address, with drafts you approve.', where: 'Job Kit inbox' },
   { name: 'WhatsApp', what: 'Confirmations, follow-ups and review requests with the message already typed.', where: 'Job Kit, websites' },
-  { name: 'Claude', what: 'First drafts of replies and quotes. It never sends anything by itself.', where: 'Job Kit' },
+  { name: 'Google reviews', what: 'When a job is finished, the review request is written with your Google link, ready to send.', where: 'Job Kit, websites' },
   { name: 'Stripe', what: 'Card payments and monthly plans, with failed-payment emails handled.', where: 'CabinetOS' },
   { name: 'Supabase', what: 'Accounts and saved projects, so your work is there on every device.', where: 'CabinetOS' },
   { name: 'SketchUp', what: 'Every finished job drawn in 3D, so customers can turn it round and open the doors.', where: 'rafcarpentry.com' },
