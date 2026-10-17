@@ -2,8 +2,9 @@
    (StepsMark.tsx). Gravity is the same for every jump; the ball crouches before a jump, stretches in the air,
    squashes when it lands and bounces smaller each time, and the plank it lands on gives a little.
    Three plays:
-   - climb: it hops up a step without stopping while the stairs move down under it and a new top step grows in
-     (the top bar)
+   - climb: three climbs (it hops up a step while the stairs move down under it and a new top step grows in), then it
+     rolls off the right end of the top step, drops down beside the steps, rolls back along the ground in front of the
+     bottom step and hops up the steps one, two, three; then three climbs again (the top bar)
    - mix: it jumps high, the planks jumble into a random pile under it; next jump they snap back into steps
      (the 'Start here' band)
    - build: the planks are pulled out from under it one at a time, then slide back in as it jumps up each one
@@ -166,6 +167,54 @@ export class StepsEngine {
     });
   }
 
+  /* Rolling over the corner at (cx, cy) with speed v: it turns round the corner under gravity, then drops straight down
+     beside the face below it to the ground, and bounces smaller each time. */
+  tipAndDrop(cx: number, cy: number, v: number, ground: number): Promise<void> {
+    const b = this.ball;
+    const r = R + RING;
+    let phi = 0;
+    let w = v / r;
+    return this.addTask((dt) => {
+      w += (G / r) * Math.sin(phi) * dt;
+      phi = Math.min(Math.PI / 2, phi + w * dt);
+      b.air = true;
+      b.on = null;
+      b.x = cx + r * Math.sin(phi);
+      b.y = cy - r * Math.cos(phi) + R;
+      b.vy = w * r * Math.sin(phi);
+      return phi >= Math.PI / 2;
+    })
+      .then(() => {
+        const v0 = w * r;
+        const y0 = b.y;
+        const T = (-v0 + Math.sqrt(v0 * v0 + 2 * G * (ground - y0))) / G;
+        let t = 0;
+        return this.addTask((dt) => {
+          t += dt;
+          const tt = Math.min(t, T);
+          b.y = y0 + v0 * tt + 0.5 * G * tt * tt;
+          b.vy = v0 + G * tt;
+          return t >= T;
+        }).then(() => {
+          const hit = v0 + G * T;
+          b.y = ground;
+          b.air = false;
+          b.vy = 0;
+          b.on = null;
+          b.sqV += hit * 0.03;
+          return (hit * hit) / (2 * G);
+        });
+      })
+      .then((fall) => {
+        const bounce = (h: number): Promise<void> | void => {
+          const next = h * E2;
+          if (next < 1.3) return;
+          return this.jump(b.x, ground, next, { crouch: 0 }).then(bounce);
+        };
+        return bounce(fall);
+      });
+  }
+
   /* A jump followed by its own smaller and smaller bounces. */
   settle(x1: number, y1: number, H: number, opts: { crouch?: number; onTakeoff?: (T: number) => void } = {}): Promise<void> {
     const bounce = (fall: number): Promise<void> | void => {
@@ -179,35 +228,62 @@ export class StepsEngine {
 
 export type StepsPlay = 'climb' | 'mix' | 'build';
 
-function climb(e: StepsEngine) {
-  return e
-    .jump(REST_X, REST_Y, rand(19, 24), {
-      crouch: 0.2,
-      onTakeoff: (T) => {
-        const old = e.planks.slice();
-        const fresh: Plank = { x: 90, y: ROW_Y[2], w: 0, rot: 0, dip: 0, dipV: 0, op: 1 };
-        e.planks.push(fresh);
-        const from = old.map((p) => ({ x: p.x, y: p.y, w: p.w }));
-        e.wait(0.04).then(() =>
-          e
-            .tween(T * 0.7, (u) => {
-              const k = easeInOut(u);
-              old.forEach((p, i) => {
-                p.y = from[i].y + 18 * k;
-                p.x = from[i].x - 24 * k;
-                p.w = from[i].w + 24 * k;
-                if (i === 0) p.op = 1 - k;
-              });
-              fresh.w = 32 * easeOut(Math.max(0, (u - 0.35) / 0.65));
-              fresh.x = 90 - fresh.w;
-            })
-            .then(() => {
-              e.planks.shift();
-            }),
-        );
-      },
-    })
-    .then(() => e.wait(rand(0.02, 0.1)));
+function climbOnce(e: StepsEngine) {
+  return e.jump(REST_X, REST_Y, rand(19, 24), {
+    crouch: 0.2,
+    onTakeoff: (T) => {
+      const old = e.planks.slice();
+      const fresh: Plank = { x: 90, y: ROW_Y[2], w: 0, rot: 0, dip: 0, dipV: 0, op: 1 };
+      e.planks.push(fresh);
+      const from = old.map((p) => ({ x: p.x, y: p.y, w: p.w }));
+      e.wait(0.04).then(() =>
+        e
+          .tween(T * 0.7, (u) => {
+            const k = easeInOut(u);
+            old.forEach((p, i) => {
+              p.y = from[i].y + 18 * k;
+              p.x = from[i].x - 24 * k;
+              p.w = from[i].w + 24 * k;
+              if (i === 0) p.op = 1 - k;
+            });
+            fresh.w = 32 * easeOut(Math.max(0, (u - 0.35) / 0.65));
+            fresh.x = 90 - fresh.w;
+          })
+          .then(() => {
+            e.planks.shift();
+          }),
+      );
+    },
+  });
+}
+
+async function climb(e: StepsEngine) {
+  const b = e.ball;
+  for (let i = 0; i < 3; i++) {
+    await climbOnce(e);
+    await e.wait(rand(0.02, 0.1));
+  }
+  await e.wait(0.2);
+  // it rolls right along the top step, picking up speed, tips over the corner and drops straight down beside the steps
+  const x0 = b.x;
+  await e.tween(0.38, (u) => {
+    b.x = x0 + (90 - x0) * u * u;
+  });
+  await e.tipAndDrop(90, ROW_Y[2], 80, FLOOR_Y);
+  await e.wait(0.05);
+  // then rolls left along the ground, in front of the bottom step, and slows to a stop just past its end
+  const x1 = b.x;
+  await e.tween(1.25, (u) => {
+    b.x = x1 + (-12 - x1) * (1 - Math.pow(1 - u, 2.2));
+  });
+  await e.wait(0.2);
+  // and hops up the steps, one, two, three, landing near the front of each (every hop clears the step above by 5)
+  await e.settle(15, ROW_Y[0] - RING, 10);
+  await e.wait(0.1);
+  await e.settle(39, ROW_Y[1] - RING, 10);
+  await e.wait(0.1);
+  await e.settle(63, ROW_Y[2] - RING, 10);
+  await e.wait(0.3);
 }
 
 function mix(e: StepsEngine) {

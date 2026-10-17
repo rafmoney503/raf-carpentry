@@ -17,9 +17,9 @@ import StepsMark from './StepsMark';
 const OPEN_DELAY = 160;
 const CLOSE_DELAY = 260;
 
-/* The logo is three planks stacked as rising steps with the yellow ball on top, and the ball keeps climbing: it hops
-   up a step without stopping while the stairs move down under it (StepsMark 'climb'). People who ask their phone for
-   less motion see it still. */
+/* The logo is three planks stacked as rising steps with the yellow ball on top. The ball climbs three times while the
+   stairs move down under it, rolls off the right end, drops beside the steps, rolls back along the bottom and hops up
+   one, two, three, then climbs again (StepsMark 'climb'). People who ask their phone for less motion see it still. */
 
 export default function Header() {
   const pathname = usePathname();
