@@ -53,7 +53,7 @@ export function reasonText(reason: string) {
 /* The same enquiry as a WhatsApp message. */
 export function whatsappText(p: Omit<EnquiryPayload, 'ms' | 'source'>) {
   return [
-    `Hi Rafal, this is ${p.name || '[your name]'}${p.trade ? `, ${p.trade.toLowerCase()}` : ''}.`,
+    `Hi Rafal, this is ${p.name || '[your name]'}${p.trade && p.trade !== 'Not said' ? `, ${p.trade.toLowerCase()}` : ''}.`,
     p.sketch?.pains.length ? `What eats my time: ${p.sketch.pains.join(', ')}.` : '',
     p.sketch?.hours ? `About ${p.sketch.hours} hours a week.` : '',
     p.message ? p.message : '',

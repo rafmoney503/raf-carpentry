@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function Trades() {
   return (
     <>
-      <PageHeader item={item} title="Trades that measure, quote and chase." lead="Where the time goes in each trade, and what a system does about it. Running means I use it every day; Ask me means I'd build it with you." />
+      <PageHeader item={item} title="Trades that measure, quote and chase." lead="Where the time goes in each trade, and what a system does about it. Running means I use it every day, Being built means it's on the bench now, and Ask me means I'd build it with you." />
 
       {TRADES.map((t, i) => (
         <section key={t.id} id={t.id} className={`section${i % 2 ? ' white' : ''}`}>

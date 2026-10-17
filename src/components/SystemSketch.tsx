@@ -230,7 +230,7 @@ export default function SystemSketch() {
                     ))}
                   </div>
                   <p className="cost" aria-live="polite">
-                    That&apos;s <strong>{yearHours} hours</strong> a year, about <strong>{money(yearHours * rate)}</strong> of your time.
+                    That&apos;s <strong>{yearHours} hours</strong> a year (46 working weeks), about <strong>{money(yearHours * rate)}</strong> of your time.
                   </p>
                 </div>
 
