@@ -11,7 +11,7 @@
    drawing and the sizes all come from the same layout, and Send passes those settings to CabinetOS as they are. */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { COS, PLAN, PRESETS, presetInside, presetOf, PAIR, canSplit, insideText, planPieces, payloadUnits, runFor } from '@/lib/cabinetos-wardrobe';
+import { COS, PLAN, SLIDE, slidingDoorsFor, PRESETS, presetInside, presetOf, PAIR, canSplit, insideText, planPieces, payloadUnits, runFor } from '@/lib/cabinetos-wardrobe';
 
 export function mountPlanner(host: HTMLElement, endpoint = '/api/brief'): () => void {
   let raf = 0, sending = false;
@@ -106,7 +106,11 @@ function calc(){
   const pos=[];let x=x0;for(const m of S.modules){pos.push(x);x+=m.w;}
   return{ends,panels,mods,run,left,f,lv,t,sub,x0,x1:x,pos,fillL,fillR,fixed:!!fx};
 }
-function slidingCount(run){return Math.max(2,Math.round(run/900),Math.ceil(run/1200));}
+/* Sliding doors across the run with CabinetOS's sums (cabinetos-wardrobe.ts slidingDoorsFor): the span is the units
+   and their end panels, the doors close under the top infill (or at the top of the lower box with top cupboards). */
+const slideDoors=()=>{const c=calc();return slidingDoorsFor(c.run,runBox().zone);};
+/* Where the span starts, mm from the left wall: the units' left edge, less a left end panel. */
+const spanLeft=c=>c.x0-(S.fit==='openL'||free()?CFG.endPanel:0);
 
 /* ---------- the units as CabinetOS units (cabinetos-wardrobe.ts) ---------- */
 const sections=()=>S.modules.map(m=>({w:m.w,custom:m.custom,inside:m.inside,split:m.split&&canSplit(m.w)?m.split:null}));
@@ -190,9 +194,11 @@ function hinged(par,key,list,a,P,z){
     const h=handle(pv,left?ww-0.045:-ww+0.045,hy,0.018,tall);
     const o={pivot:pv,kind:'h',sign:left?-1:1,st:rec(key+':'+i)};applyDoor(o);doors.push(o);m.userData.door=o;if(h)h.userData.door=o;picks.push(m);});
 }
-function sliding(par,x0,x1,y0,y1,zb,n){
-  const ov=0.03,dw=((x1-x0)+ov*(n-1))/n,dh=y1-y0,f=fin(),face=faceMat(dw,dh);
-  for(let i=0;i<n;i++){const tr=i%2,z=zb+(tr?0.038:0.006),x=x0+i*(dw-ov),dir=i<n-1?1:-1;
+/* Sliding doors as CabinetOS sizes them (slidingDoorsFor): from the span's left end `sx`, `y0` above the floor;
+   every other door runs on the back track. */
+function sliding(par,SD,sx,y0,zb){
+  const ov=SLIDE.overlap*MM,dw=SD.w*MM,dh=SD.h*MM,n=SD.n,f=fin(),face=faceMat(dw,dh);
+  for(let i=0;i<n;i++){const d=SD.doors[i],z=zb+(d.back?0.006:0.038),x=sx+d.x0*MM,dir=i<n-1?1:-1;
     const pv=new THREE.Group();pv.position.set(x,y0,z);par.add(pv);
     const m=new THREE.Mesh(new THREE.BoxGeometry(dw,dh,0.022),[alu(),alu(),alu(),alu(),face,f]);m.position.set(dw/2,dh/2,0.011);m.castShadow=m.receiveShadow=true;pv.add(m);
     if(S.handle!=='push'){const hm=S.handle==='black'?black():brass();box(pv,dir>0?0.03:dw-0.042,clamp(1.05-y0,0.4,dh-0.4)-0.25,0.022,dir>0?0.042:dw-0.03,clamp(1.05-y0,0.4,dh-0.4)+0.25,0.032,hm);}
@@ -280,7 +286,8 @@ function build(){
       pg.traverse(o=>{if(o.isMesh){o.userData.mod=i;o.userData.half=two?h:null;if(!o.userData.door)picks.push(o);}});
     });
   });
-  if(!hinge&&S.modules.length){const a=X(c.x0),b=X(c.x1),n=slidingCount(c.mods),mt=P+RB.boxH*MM;box(root,a,mt-0.045,zi,b,mt,D,alu());box(root,a,P,zi,b,P+0.012,D,alu());sliding(root,a,b,P+0.012,mt-0.045,zi,n);}
+  // sliding doors: a bottom track on the floor, a guide track where they close at the top (CabinetOS's sums)
+  if(!hinge&&S.modules.length){const SD=slideDoors(),sx=X(spanLeft(c)),sw=SD.span*MM,zt=SD.zone*MM;box(root,sx,zt-0.045,zi,sx+sw,zt,D,alu());box(root,sx,0,zi,sx+sw,0.012,D,alu());sliding(root,SD,sx,0.02,zi);}
   frameCam(false);highlight();needs=true;
 }
 function tap(e){if(!renderer)return;const r=renderer.domElement.getBoundingClientRect(),v=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1),ray=new THREE.Raycaster();ray.setFromCamera(v,cam);
@@ -402,9 +409,12 @@ function drawPlan(){
       if(yB-yT>12)knob(d.hingeLeft?dx1-6:dx0+6,tall?Math.min(yB-14,Math.max(yT+14,Y(1050))):(P+d.y0>1500?yB-8:yT+8),tall);});
     tx((x0+x1)/2,Y(0)+12,p.label.replace('Unit ',''),'middle',sel?B:M,10);
   });
-  if(S.doors==='sliding'&&has&&!S.drawInside){const n=slidingCount(c.mods),x0=X(c.x0),x1=X(c.x1),dw=(x1-x0)/n,yT=Y(P+RB.boxH)+4,yB=Y(P)-4;
-    for(let k=0;k<n;k++){const a=x0+k*dw;rc(a+1,yT,dw-2,yB-yT,'none','',1);const yc=(yT+yB)/2;ln(a+dw*0.3,yc,a+dw*0.7,yc,'',1,M);[[0.3,1],[0.7,-1]].forEach(([p,d])=>{ln(a+dw*p,yc,a+dw*p+6*d,yc-4,'',1,M);ln(a+dw*p,yc,a+dw*p+6*d,yc+4,'',1,M);});}
-    tx((x0+x1)/2,yT+14,`${n} sliding doors, ${Math.round(c.mods/n)} mm each`,'middle',M,10);}
+  // sliding doors as CabinetOS sizes them: back-track doors first, the front ones over them, overlaps shaded
+  if(S.doors==='sliding'&&has&&!S.drawInside){const SD=slideDoors(),sl=spanLeft(c),yT=Y(20+SD.h),yB=Y(20),yc=(yT+yB)/2;
+    [...SD.doors.filter(d=>d.back),...SD.doors.filter(d=>!d.back)].forEach(d=>{const a=X(sl+d.x0),w=(d.x1-d.x0)*s;rc(a,yT,w,yB-yT,'#FFFFFF','',1.1);
+      ln(a+w*0.3,yc,a+w*0.7,yc,'',1,M);[[0.3,1],[0.7,-1]].forEach(([p,k])=>{ln(a+w*p,yc,a+w*p+6*k,yc-4,'',1,M);ln(a+w*p,yc,a+w*p+6*k,yc+4,'',1,M);});});
+    for(let i=1;i<SD.n;i++)rc(X(sl+SD.doors[i].x0),yT,SLIDE.overlap*s,yB-yT,'rgba(37,71,208,0.18)','',0,'none');
+    tx(X(sl+SD.span/2),yT+14,`${SD.n} sliding doors ${SD.w} × ${SD.h}`,'middle',M,10);}
   // dimensions across the top
   dimH(0,S.wall,Y(S.ceiling)-52,fr?`${S.wall} space`:`${S.wall}`);
   if(has){const segs=[];
@@ -452,7 +462,7 @@ function floorUnder(L,y){const r=L.rails.filter(v=>v<y-1),sh=L.shelves.filter(v=
 /* Sizes as CabinetOS cuts them: width × height (shelves width × depth, box width × height × depth). */
 function sizeRows(p){const L=p.layout,z=L.sizes,rows=[],RB=runBox();
   const top=z.topDoor?`top ${doorsWord(z.topDoor.n)} ${z.topDoor.w} × ${z.topDoor.h}`:'';
-  if(S.doors==='sliding')rows.push(['Doors',`Sliding, across the run${top?`; ${top}`:''}`]);
+  if(S.doors==='sliding'){const SD=slideDoors();rows.push(['Doors',`Sliding, ${SD.n} doors ${SD.w} × ${SD.h} across the run${top?`; ${top}`:''}`]);}
   else rows.push(['Doors',`${doorsWord(z.door.n,'1 door')} ${z.door.w} × ${z.door.h}${z.door.n===1&&L.doors[0]?`, hinged on the ${L.doors[0].hingeLeft?'left':'right'}`:''}${top?`; ${top}`:''}`]);
   if(L.rails.length){const room=L.rails.map(y=>Math.max(0,Math.round(y-floorUnder(L,y))));
     rows.push(['Hanging',L.rails.length===2?`2 rails, ${room[1]} and ${room[0]} clear under them`:`${p.inside.rail==='long'?'Long':'Short'} rail, ${room[0]} clear under it`]);}
@@ -501,9 +511,9 @@ function stepUnits(){const c=calc(),mode=S.unitMode,R=equalRange(),n=S.modules.l
   <p class="note">${n} × ${widthsText()} mm${R.A%n?` (the ${R.A%n} mm left over goes 1 mm each to the first units)`:''}.</p>`:''}
   <div class="mods">${(()=>{const PCS=pieces();return S.modules.map((m,i)=>modCard(m,i,PCS.filter(p=>p.section===i),mode)).join('');})()}</div>
   <button type="button" class="wbtn ghost wide" data-act="add" ${S.modules.length>=(mode==='equal'?R.max:12)?'disabled':''}>Add a unit</button>`;}
-function stepDoors(){const c=calc();
+function stepDoors(){
   return `<div><h2>Doors</h2><p class="lede">Tap any door in the 3D view to open it.</p></div>
-  <div class="grp"><h3>Type</h3><div class="chips">${chip('doors','hinged','<span>Hinged<small>Up to 600 mm wide is one door, wider is a pair</small></span>',S.doors==='hinged')}${chip('doors','sliding',`<span>Sliding<small>${S.modules.length?slidingCount(c.mods)+' doors':'Saves space in front'}, needs ${CFG.depth.sliding} mm depth</small></span>`,S.doors==='sliding')}</div></div>
+  <div class="grp"><h3>Type</h3><div class="chips">${chip('doors','hinged','<span>Hinged<small>Up to 600 mm wide is one door, wider is a pair</small></span>',S.doors==='hinged')}${chip('doors','sliding',`<span>Sliding<small>${S.modules.length?(()=>{const SD=slideDoors();return `${SD.n} doors ${SD.w} wide`;})():'Saves space in front'}, needs ${CFG.depth.sliding} mm depth</small></span>`,S.doors==='sliding')}</div></div>
   <div class="grp"><h3>Style</h3><div class="chips">${Object.keys(CFG.styles).map(k=>chip('style',k,CFG.styles[k],S.style===k)).join('')}</div></div>
   <div class="grp"><h3>${S.doors==='sliding'?'Pulls':'Handles'}</h3><div class="chips">${Object.keys(CFG.handles).map(k=>chip('handle',k,CFG.handles[k],S.handle===k)).join('')}</div></div>
   <div class="grp"><h3>Height</h3><div class="chips">${chip('height','full',`<span>${free()?'Full-height doors':'One tall door'}<small>${free()?`To ${topY()} mm`:infill()?`Up to the ${infill()} mm infill`:'To the ceiling'}</small></span>`,S.height==='full'||!topOk())}${chip('height','top',`<span>With top cupboards<small>${topOk()?`Main doors ${CFG.topSplit}, top ${topY()-CFG.topSplit}`:`Needs ${CFG.topSplit+CFG.topMin} mm to the top`}</small></span>`,S.height==='top'&&topOk(),!topOk())}</div></div>`;}
@@ -517,7 +527,7 @@ function specRows(){const c=calc(),d=depth();return[
   ...pieces().map(p=>{const L=p.layout,z=L.sizes;return[p.label,`${p.w} wide, ${insideText(p.inside,L).toLowerCase()}${S.doors==='hinged'?`; ${z.door.n===1?`door ${z.door.w} × ${z.door.h} hinged on the ${L.doors[0]&&L.doors[0].hingeLeft?'left':'right'}`:`2 doors ${z.door.w} × ${z.door.h}`}`:''}${L.drawersBelow?`; drawer fronts ${p.w} × ${z.drawer.h}`:''}${z.topDoor?`; top ${z.topDoor.n===1?'door':'2 doors'} ${z.topDoor.w} × ${z.topDoor.h}`:''}`];}),
   ...(()=>{const bad=pieces().filter(p=>p.layout.problems.length);return bad.length?[['Check',bad.map(p=>`${p.label}: ${p.layout.problems[0]}`).join(' ')]]:[];})(),
   ['Depth',`${d} mm overall`],
-  ['Doors',`${S.doors==='sliding'?slidingCount(c.mods)+' sliding':'Hinged'} · ${CFG.styles[S.style].toLowerCase()} · ${CFG.handles[S.handle].toLowerCase()}`],
+  ['Doors',`${S.doors==='sliding'?(()=>{const SD=slideDoors();return `Sliding, ${SD.n} doors ${SD.w} x ${SD.h}`;})():'Hinged'} · ${CFG.styles[S.style].toLowerCase()} · ${CFG.handles[S.handle].toLowerCase()}`],
   ['Height',(S.height==='top'&&topOk()?`Main doors to ${CFG.topSplit} + top cupboards ${topY()-CFG.topSplit}`:`Doors to ${topY()}`)+(free()?`, unit ${topY()} high`:'')],
   ['Plinth',`${S.plinth} mm`],
   ['Top',free()?'Finished top panel':infill()?`${infill()} mm infill scribed to the ceiling`:'No infill, doors to the ceiling'],
@@ -548,7 +558,9 @@ function designPayload(){const c=calc(),fr=free();
   const left=hasL()?Math.max(0,Math.round(c.fillL)):0,right=hasR()?Math.max(0,Math.round(c.fillR)):0;
   return{source:'rafcarpentry-wardrobe-planner',version:2,
     space:{widthMm:S.wall,ceilingMm:S.ceiling,fit:S.fit,depthMm:depth(),plinthMm:S.plinth,topInfillMm:infill(),freeHeightMm:topY()},
-    doors:{type:S.doors,style:S.style,handle:S.handle,topCupboards:S.height==='top'&&topOk(),topSplitMm:CFG.topSplit},
+    doors:{type:S.doors,style:S.style,handle:S.handle,topCupboards:S.height==='top'&&topOk(),topSplitMm:CFG.topSplit,
+      // sliding doors go to CabinetOS as its sliding doors (cabinetos-site src/lib/slidingDoors.ts), same sums
+      ...(S.doors==='sliding'?{sliding:{doorCount:slideDoors().n,overlapMm:SLIDE.overlap,trackDepthMm:SLIDE.trackDepth,heightOffMm:SLIDE.heightOff,track:'bottom',panel:S.style==='mirror'?'mirror':'mdf'}}:{})},
     // each unit with its CabinetOS units and their settings (cabinetos-wardrobe.ts payloadUnits; version 1 had only a layout word)
     colour:colour().n,units:payloadUnits(sections(),runBox()),fillers:{leftMm:fr?0:left,rightMm:fr?0:right},
     unitMode:S.unitMode,sideInfill:fr?null:{mode:S.side.mode,leftMm:left,rightMm:right}};}

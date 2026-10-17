@@ -427,17 +427,34 @@ export type RunSpace = {
   sliding: boolean;
 };
 
-/** CabinetOS's carcass depth: the planner's depth less 18 mm hinged doors, or about 85 mm for sliding doors and
-    their track (the CabinetOS mapper's own sum). */
-export const carcassDepth = (depth: number, sliding: boolean) => Math.max(300, depth - (sliding ? 85 : 18));
+/** Sliding doors across the run, with CabinetOS's sums (cabinetos-site src/lib/slidingDoors.ts, SLIDING_DOOR_RULES):
+    the overlap, track depth and what comes off the height are a bottom-running track's usual numbers, which CabinetOS
+    lets Raf change per project. */
+export const SLIDE = { overlap: 30, trackDepth: 85, heightOff: 40, target: 900, maxDoor: 1200, minDoors: 2, maxDoors: 8 } as const;
+
+export type SlidingDoors = { n: number; w: number; h: number; span: number; zone: number; doors: { x0: number; x1: number; back: boolean }[] };
+/** `span`: the units and end panels left to right; `zone`: floor to where the doors close at the top. */
+export function slidingDoorsFor(span: number, zone: number, count?: number): SlidingDoors {
+  const n = count ?? Math.min(SLIDE.maxDoors, Math.max(SLIDE.minDoors, Math.round(span / SLIDE.target), Math.ceil(span / SLIDE.maxDoor)));
+  const w = r2((span + (n - 1) * SLIDE.overlap) / n);
+  const doors = Array.from({ length: n }, (_, i) => {
+    const x0 = r2(i * (w - SLIDE.overlap));
+    return { x0, x1: r2(x0 + w), back: i % 2 === 1 };
+  });
+  return { n, w, h: r2(Math.max(0, zone - SLIDE.heightOff)), span: r2(span), zone: r2(zone), doors };
+}
+
+/** CabinetOS's carcass depth: the planner's depth less 18 mm hinged doors, or the sliding track's depth. */
+export const carcassDepth = (depth: number, sliding: boolean) => Math.max(300, depth - (sliding ? SLIDE.trackDepth : 18));
 
 /** The units' height: floor to ceiling less the plinth and top infill (fitted), or the unit's own height
     (freestanding); with top cupboards the base box runs to topSplit and the top box above it. */
-export function runFor(s: RunSpace): RunBox & { top: number } {
+export function runFor(s: RunSpace): RunBox & { top: number; zone: number } {
   const top = s.free ? s.freeH : s.ceiling - s.infill;
   const withTop = s.topCupboards && top - s.topSplit >= 250;
   const boxH = (withTop ? s.topSplit : top) - s.plinth;
-  return { boxH, topH: withTop ? top - s.topSplit : 0, d: carcassDepth(s.depth, s.sliding), sliding: s.sliding, hat: PLAN.hatShelf - s.plinth, top };
+  // sliding doors close under the top infill, or at the top of the lower box when there are top cupboards
+  return { boxH, topH: withTop ? top - s.topSplit : 0, d: carcassDepth(s.depth, s.sliding), sliding: s.sliding, hat: PLAN.hatShelf - s.plinth, top, zone: withTop ? s.topSplit : top };
 }
 
 /** A unit as the customer sets it up: one width, and either one inside or two halves. */
