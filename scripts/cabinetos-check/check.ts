@@ -5,9 +5,9 @@
      - shelves: CabinetOS's shelf centres (computeShelfYFromBottomMmList, as its drawings show them: none under a
        full-length rail) with the planner's
      - rails: computeHangingRailYFromBottomMm
-     - drawers: the drawer zone and each front's height (getDrawerBankMetrics)
+     - drawers: the drawer zone, each front's height (getDrawerBankMetrics) and the dust shelf on top of them
      - doors: every door's place and hinge side in the front view (elevationDoorsMm)
-     - the cut list (generateParts): door fronts, shelves, hanging rails, drawer boxes, side panels, against the sizes
+     - the cut list (generateParts): door fronts, shelves, dust shelves, hanging rails, drawer boxes, side panels, against the sizes
        the planner shows
    Prints the first differences and exits 1 if there are any. Run: bash scripts/cabinetos-check/run.sh */
 import { COS, PLAN, PRESETS, presetInside, PAIR, canSplit, payloadUnits, planPieces, runFor } from '../../src/lib/cabinetos-wardrobe';
@@ -30,12 +30,12 @@ const int = (a, b) => a + Math.floor(rnd() * (b - a + 1));
 
 const N = Number(process.env.N || 1500);
 const fails = [];
-let units = 0, shelvesSeen = 0, railsSeen = 0, drawersSeen = 0, doorsSeen = 0, okLayouts = 0;
+let units = 0, shelvesSeen = 0, railsSeen = 0, drawersSeen = 0, doorsSeen = 0, okLayouts = 0, hatsSeen = 0, dustSeen = 0;
 const close = (a, b, tol = 0.011) => Math.abs(a - b) <= tol;
 const fail = (where, what) => { if (fails.length < 40) fails.push(`${where}: ${what}`); else fails.length++; };
 
 function randomInside(): any {
-  if (rnd() < 0.5) return { ...presetInside(pick(['long', 'double', 'short', 'drawers', 'shelves'])), below: rnd() < 0.3 };
+  if (rnd() < 0.5) return { ...presetInside(pick(['long', 'double', 'short', 'drawhang', 'drawers', 'shelves'])), below: rnd() < 0.3 };
   return { rail: pick(['none', 'long', 'short', 'double']), shelves: int(0, 7), drawers: int(0, 5), below: rnd() < 0.4 };
 }
 
@@ -48,7 +48,8 @@ for (let k = 0; k < N; k++) {
   const freeH = Math.min(int(1200, 2600), ceiling - 20);
   const sliding = rnd() < 0.15;
   const depth = sliding ? pick([650, int(560, 800)]) : pick([600, 450, int(350, 800)]);
-  const space = { ceiling, plinth, infill, free, freeH, topCupboards: rnd() < 0.3, topSplit: 2100, depth, sliding };
+  const topSplit = rnd() < 0.8 ? PLAN.hatShelf : int(1800, 2300);
+  const space = { ceiling, plinth, infill, free, freeH, topCupboards: rnd() < 0.3, topSplit, depth, sliding };
   const run = runFor(space);
   if (run.boxH < 300) continue;
   const n = int(1, 4);
@@ -65,7 +66,7 @@ for (let k = 0; k < N; k++) {
   const design = {
     source: 'rafcarpentry-wardrobe-planner', version: 2,
     space: { widthMm: width, ceilingMm: ceiling, fit, depthMm: depth, plinthMm: plinth, topInfillMm: infill, freeHeightMm: free ? freeH : run.top },
-    doors: { type: sliding ? 'sliding' : 'hinged', style: 'shaker', handle: 'brass', topCupboards: space.topCupboards, topSplitMm: 2100 },
+    doors: { type: sliding ? 'sliding' : 'hinged', style: 'shaker', handle: 'brass', topCupboards: space.topCupboards, topSplitMm: topSplit },
     colour: 'Sage',
     units: payloadUnits(sections, run),
     fillers: { leftMm: fillL, rightMm: fillR },
@@ -103,6 +104,7 @@ for (let k = 0; k < N; k++) {
     if (close(m.effectiveHeightMm, run.boxH) === false) fail(where, `CabinetOS box height ${m.effectiveHeightMm}`);
     if (ys.length !== L.shelves.length || ys.some((y, j) => !close(y, L.shelves[j]))) fail(where, `shelves CabinetOS [${ys.map((y) => y.toFixed(2))}] planner [${L.shelves.map((y) => y.toFixed(2))}]`);
     shelvesSeen += ys.length;
+    if (L.hat != null) hatsSeen++;
     if (railYs.length !== L.rails.length || railYs.some((y, j) => !close(y, L.rails[j]))) fail(where, `rails CabinetOS [${railYs}] planner [${L.rails}]`);
     railsSeen += railYs.length;
     if (!close(m.drawerZoneHeightFromBottomMm, L.drawerZone)) fail(where, `drawer zone CabinetOS ${m.drawerZoneHeightFromBottomMm} planner ${L.drawerZone}`);
@@ -148,10 +150,16 @@ for (let k = 0; k < N; k++) {
     const shelfQty = shelfRows.reduce((a, r) => a + (r.qty ?? 1), 0);
     if (shelfQty !== L.sizes.shelf.n) fail(where, `${shelfQty} shelves cut, ${L.sizes.shelf.n} drawn (${shelfRows.map((r) => r.description).join(', ')})`);
     if (shelfRows.some((r) => r.length !== L.sizes.shelf.w || r.width !== L.sizes.shelf.d)) fail(where, `shelf cut ${shelfRows.map((r) => `${r.length} x ${r.width}`)}; planner ${L.sizes.shelf.w} x ${L.sizes.shelf.d}`);
+    const dustRows = rows.filter((r) => /Dust shelf/.test(r.description));
+    const dustQty = dustRows.reduce((a, r) => a + (r.qty ?? 1), 0);
+    if (dustQty !== (L.dust != null ? 1 : 0)) fail(where, `${dustQty} dust shelves cut, ${L.dust != null ? 1 : 0} drawn`);
+    if (dustRows.some((r) => r.length !== L.sizes.shelf.w || r.width !== L.sizes.shelf.d)) fail(where, `dust shelf cut ${dustRows.map((r) => `${r.length} x ${r.width}`)}; planner ${L.sizes.shelf.w} x ${L.sizes.shelf.d}`);
+    dustSeen += dustQty;
     const railQty = sum(/Hanging rail/);
     if (railQty !== L.rails.length) fail(where, `${railQty} rails cut, ${L.rails.length} drawn`);
     const boxSides = sum(/Drawer box side$/);
-    if (boxSides !== 2 * L.drawers.length) fail(where, `${boxSides} drawer box sides cut for ${L.drawers.length} drawers`);
+    // Under PLAN.minDrawerWidth the planner says take the drawers out (CabinetOS can't make them under about 160).
+    if (p.w >= PLAN.minDrawerWidth && boxSides !== 2 * L.drawers.length) fail(where, `${boxSides} drawer box sides cut for ${L.drawers.length} drawers`);
     const side = rows.find((r) => /Side panel \(Left\)$/.test(r.description) && !/Top \//.test(r.description));
     if (!side || side.length !== run.boxH - 36) fail(where, `side panel ${side?.length} (box ${run.boxH})`);
     if (L.drawersBelow) {
@@ -164,7 +172,7 @@ for (let k = 0; k < N; k++) {
   });
 }
 
-console.log(`${units} units in ${N} designs (${okLayouts} build as drawn): ${shelvesSeen} shelves, ${railsSeen} rails, ${drawersSeen} drawers, ${doorsSeen} doors compared.`);
+console.log(`${units} units in ${N} designs (${okLayouts} build as drawn): ${shelvesSeen} shelves (${hatsSeen} over the hanging), ${railsSeen} rails, ${drawersSeen} drawers, ${dustSeen} dust shelves, ${doorsSeen} doors compared.`);
 if (fails.length) {
   console.log(`\n${fails.length} differences:`);
   for (const f of fails.slice(0, 40)) console.log(` - ${f}`);

@@ -11,7 +11,7 @@
    drawing and the sizes all come from the same layout, and Send passes those settings to CabinetOS as they are. */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { COS, PRESETS, presetInside, presetOf, PAIR, canSplit, insideText, planPieces, payloadUnits, runFor } from '@/lib/cabinetos-wardrobe';
+import { COS, PLAN, PRESETS, presetInside, presetOf, PAIR, canSplit, insideText, planPieces, payloadUnits, runFor } from '@/lib/cabinetos-wardrobe';
 
 export function mountPlanner(host: HTMLElement, endpoint = '/api/brief'): () => void {
   let raf = 0, sending = false;
@@ -28,7 +28,7 @@ const CFG={
   sideInfill:{def:50,max:300},                          // side infill typed in Space: starting size and the most (CabinetOS takes up to 300)
   endPanel:18,                                          // finished end panel at an open end, mm
   depth:{hinged:600,sliding:650,shallow:450,min:350,max:800},
-  topSplit:2100, topMin:250,                            // top cupboards start at 2100 if at least 250 mm is left above
+  topSplit:PLAN.hatShelf, topMin:250,                   // top cupboards start at 2000 (where the shelf over the hanging goes) if at least 250 mm is left above
   plinths:[70,100,150], plinthMax:250,                  // plinth height choices, mm
   infills:[50,100,150], infillMax:400,                  // top infill (scribed to the ceiling) choices, mm
   freeHeight:2100,                                      // default height of a freestanding unit, mm
@@ -201,8 +201,8 @@ function hangAt(par,y,a,b,len,z0,z1){
    behind the doors (set back, inside the hinges) or on the front below them. */
 function interior(par,L,a,P,zi){
   const T=0.018,im=inner(),x0=a+T,x1=a+L.w*MM-T,z0=T,Y=v=>P+v*MM;
-  L.shelves.forEach(y=>box(par,x0+0.002,Y(y)-T/2,z0,x1-0.002,Y(y)+T/2,zi-0.002,im));
-  const floorOf=y=>{const r=L.rails.filter(v=>v<y-1),sh=L.shelves.filter(v=>v<y-1);return Math.max(r.length?Math.max(...r):0,sh.length?Math.max(...sh)+9:0,L.drawerZone||T/MM);};
+  [...L.shelves,...(L.dust!=null?[L.dust]:[])].forEach(y=>box(par,x0+0.002,Y(y)-T/2,z0,x1-0.002,Y(y)+T/2,zi-0.002,im));
+  const floorOf=y=>{const r=L.rails.filter(v=>v<y-1),sh=L.shelves.filter(v=>v<y-1);return Math.max(r.length?Math.max(...r):0,sh.length?Math.max(...sh)+9:0,L.floor);};
   L.rails.forEach(y=>{const h=L.hangs.find(v=>Math.abs(v.y-y)<1),room=y-floorOf(y)-40;if(room>120)hangAt(par,Y(y),x0,x1,Math.min(h?h.length:900,room)*MM,z0,zi-0.01);});
   const front=std('#DEDAD2',0.6);
   L.drawers.forEach(d=>{const a0=a+d.x0*MM,a1=a+d.x1*MM,y0=Y(d.y0)+0.002,y1=Y(d.y1)-0.002;
@@ -339,8 +339,8 @@ function drawPlan(){
       // doors off: the clear space, shelves, rails with clothes, drawers
       rc(U(T),V(L.boxH-T),(p.w-2*T)*s,(L.boxH-2*T)*s,'none','',0.6,M);
       if(RB.topH)rc(U(T),V(L.boxH+RB.topH-T),(p.w-2*T)*s,(RB.topH-2*T)*s,'none','',0.6,M);
-      L.shelves.forEach(y=>rc(U(T+2),V(y+T/2),(p.w-2*T-4)*s,Math.max(1.2,T*s),'#E6E7E2','',0.6));
-      const floorOf=y=>{const r=L.rails.filter(v=>v<y-1),sh=L.shelves.filter(v=>v<y-1);return Math.max(r.length?Math.max(...r):0,sh.length?Math.max(...sh)+T/2:0,L.drawerZone||T);};
+      [...L.shelves,...(L.dust!=null?[L.dust]:[])].forEach(y=>rc(U(T+2),V(y+T/2),(p.w-2*T-4)*s,Math.max(1.2,T*s),'#E6E7E2','',0.6));
+      const floorOf=y=>{const r=L.rails.filter(v=>v<y-1),sh=L.shelves.filter(v=>v<y-1);return Math.max(r.length?Math.max(...r):0,sh.length?Math.max(...sh)+T/2:0,L.floor);};
       L.rails.forEach(y=>{const h=L.hangs.find(v=>Math.abs(v.y-y)<1),len=Math.min(h?h.length:900,y-floorOf(y)-40);
         if(len>120){const n=Math.max(1,Math.floor((p.w-2*T-60)/75));for(let k=0;k<n;k++){const gx=U(T+30+(k+0.5)*((p.w-2*T-60)/n)),gl=len*(0.86+((k*37)%10)/70);rc(gx-Math.max(1.5,10*s),V(y-18),Math.max(3,20*s),(gl-18)*s,'#EEEFEA','',0.5,M);}}
         ln(U(T+6),V(y),U(p.w-T-6),V(y),'',2.2);[U(T+6),U(p.w-T-6)].forEach(cx=>o.push(`<circle cx="${f1(cx)}" cy="${f1(V(y))}" r="2.2" fill="${I}"/>`));});
@@ -367,6 +367,8 @@ function drawPlan(){
   if(has){dimV(0,P,xr,`${P}`);dimV(P,mh,xr,`${mh-P}`);if(top)dimV(mh,ty,xr,`${ty-mh}`);if(!fr&&ty<S.ceiling)dimV(ty,S.ceiling,xr,`${S.ceiling-ty}`);}
   dimV(0,S.ceiling,X(0)-(leftWall?32:18),`${S.ceiling}`,true);
   if(fr&&has)dimV(0,ty,X(S.wall)+56,`${ty}`);
+  // inside: where the shelf over the hanging sits (the rail hangs just under it)
+  else if(has&&S.drawInside&&pieces().some(p=>p.layout.hat!=null))dimV(0,PLAN.hatShelf,X(S.wall)+56,`${PLAN.hatShelf}`);
   tx(X(S.wall/2),Y(0)+28,`${S.drawInside?'INSIDE, DOORS OFF':'FRONT VIEW'} · DEPTH ${depth()} · PLINTH ${P} · ALL SIZES MM`,'middle',M,10);
   el.innerHTML=`<svg viewBox="0 0 ${BW} ${BH}" role="img" aria-label="Front elevation drawing with dimensions">${o.join('')}</svg>`;
 }
@@ -396,7 +398,7 @@ function stepSpace(){const fr=free();
 const TICK='<svg class="tk" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
 const RAILS=[['none','None'],['long','Long'],['short','Short'],['double','Double']];
 const doorsWord=(n,one)=>n===1?(one||'door'):`${n} doors`;
-function floorUnder(L,y){const r=L.rails.filter(v=>v<y-1),sh=L.shelves.filter(v=>v<y-1);return Math.max(r.length?Math.max(...r):0,sh.length?Math.max(...sh)+COS.board/2:0,L.drawerZone||COS.board);}
+function floorUnder(L,y){const r=L.rails.filter(v=>v<y-1),sh=L.shelves.filter(v=>v<y-1);return Math.max(r.length?Math.max(...r):0,sh.length?Math.max(...sh)+COS.board/2:0,L.floor);}
 /* Sizes as CabinetOS cuts them: width × height (shelves width × depth, box width × height × depth). */
 function sizeRows(p){const L=p.layout,z=L.sizes,rows=[],RB=runBox();
   const top=z.topDoor?`top ${doorsWord(z.topDoor.n)} ${z.topDoor.w} × ${z.topDoor.h}`:'';
@@ -404,8 +406,10 @@ function sizeRows(p){const L=p.layout,z=L.sizes,rows=[],RB=runBox();
   else rows.push(['Doors',`${doorsWord(z.door.n,'1 door')} ${z.door.w} × ${z.door.h}${z.door.n===1&&L.doors[0]?`, hinged on the ${L.doors[0].hingeLeft?'left':'right'}`:''}${top?`; ${top}`:''}`]);
   if(L.rails.length){const room=L.rails.map(y=>Math.max(0,Math.round(y-floorUnder(L,y))));
     rows.push(['Hanging',L.rails.length===2?`2 rails, ${room[1]} and ${room[0]} clear under them`:`${p.inside.rail==='long'?'Long':'Short'} rail, ${room[0]} clear under it`]);}
-  if(z.shelf.n)rows.push(['Shelves',`${z.shelf.n} at ${z.shelf.w} × ${z.shelf.d}, ${Math.round(L.shelfGap)} apart`]);
+  if(L.hat!=null)rows.push(['Top shelf',`${z.shelf.w} × ${z.shelf.d} at ${PLAN.hatShelf} from the floor, the rail just under it${L.above?`; ${L.above} more above it`:''}`]);
+  if(L.ownShelves)rows.push(['Shelves',`${L.ownShelves} at ${z.shelf.w} × ${z.shelf.d}, ${Math.round(L.shelfGap)} apart`]);
   if(z.drawer)rows.push(['Drawers',L.drawersBelow?`${z.drawer.n} below the door${z.door.n===1?'':'s'}, fronts ${p.w} × ${z.drawer.h}`:`${z.drawer.n} behind the door${z.door.n===1?'':'s'}, fronts ${z.drawer.h} high`]);
+  if(z.dust)rows.push(['Dust shelf',`${z.shelf.w} × ${z.shelf.d}, on top of the drawers`]);
   rows.push(['Box',`${z.box.w} × ${z.box.h} × ${z.box.d}${RB.topH?`, top box ${RB.topH} high`:''}`]);
   return rows;}
 function sumText(m,i,ps){const two=ps.length===2;const t=ps.map(p=>`${two?`${i+1}${p.part} `:''}${insideText(p.inside,p.layout)}`).join(' · ');
@@ -415,7 +419,7 @@ const counter=(act,i,n,less,more,label)=>`<div class="nctl cnt"><button type="bu
 function cardLive(m,i,ps){const two=ps.length===2,pi=two&&m.edit?1:0,p=ps[pi],ins=p.inside,L=p.layout,noShelves=ins.rail==='long'||ins.rail==='double',hinged=S.doors==='hinged';
   return `<div class="ins">
       <div class="irow"><span>Hanging rail</span><div class="seg4" role="group" aria-label="Hanging rail">${RAILS.map(([k,t])=>`<button type="button" data-act="rail" data-v="${i}:${k}" aria-pressed="${ins.rail===k}">${t}</button>`).join('')}</div></div>
-      <div class="irow"><span>Shelves<small>${noShelves?(ins.rail==='long'?'Long hanging takes the height':'The two rails take the height'):L.shelves.length?`Equal gaps, ${Math.round(L.shelfGap)} mm${L.canAddShelf?'':'. As many as fit'}`:''}</small></span>${counter('shelf',i,L.shelves.length,L.shelves.length>0,L.canAddShelf,'One shelf')}</div>
+      <div class="irow"><span>Shelves<small>${noShelves?(ins.rail==='long'?'Long hanging takes the height':'The two rails take the height'):L.ownShelves?`Equal gaps, ${Math.round(L.shelfGap)} mm${L.canAddShelf?'':'. As many as fit'}`:''}</small></span>${counter('shelf',i,L.ownShelves,L.ownShelves>0,L.canAddShelf,'One shelf')}</div>
       <div class="irow"><span>Drawers<small>${ins.drawers?`${Math.round(L.drawerFront)} mm fronts`:''}</small></span>${counter('drawer',i,ins.drawers,ins.drawers>0,L.canAddDrawer,'One drawer')}</div>
       ${ins.drawers&&hinged?`<div class="irow"><span>Drawers go</span><div class="seg4 two" role="group" aria-label="Where the drawers go">${[['inside',`Behind the door${L.doorCount===1?'':'s'}`],['below',`Below the door${L.doorCount===1?'':'s'}`]].map(([k,t])=>`<button type="button" data-act="dwhere" data-v="${i}:${k}" aria-pressed="${(k==='below')===L.drawersBelow}">${t}</button>`).join('')}</div></div>`:''}
     </div>
@@ -569,7 +573,7 @@ on(host,'click',e=>{
     case'rail':{const [i,r]=v.split(':');const m=S.modules[Number(i)];if(m){const ins=editInside(m);ins.rail=r;if(r==='long'||r==='double')ins.shelves=0;fitInside(Number(i));changed();}break;}
     case'shelf':case'drawer':{const [i,d]=v.split(':').map(Number);const m=S.modules[i];if(!m)break;const ins=editInside(m),two=m.split&&canSplit(m.w);
       const p=pieces().filter(x=>x.section===i)[two&&m.edit?1:0];if(!p)break;
-      if(a==='shelf'){if(d>0&&!p.layout.canAddShelf)break;ins.shelves=Math.max(0,p.layout.shelves.length+d);}
+      if(a==='shelf'){if(d>0&&!p.layout.canAddShelf)break;ins.shelves=Math.max(0,p.layout.ownShelves+d);}
       else{if(d>0&&!p.layout.canAddDrawer)break;ins.drawers=Math.max(0,ins.drawers+d);if(d>0)fitInside(i);}
       changed();break;}
     case'dwhere':{const [i,w]=v.split(':');const m=S.modules[Number(i)];if(m){editInside(m).below=w==='below';fitInside(Number(i));changed();}break;}

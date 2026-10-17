@@ -28,7 +28,9 @@ export const COS = {
   drawerTopGap: 3, // DRAWER_TOP_GAP_MM
   drawerBetweenGap: 3, // DRAWER_BETWEEN_GAP_MM
   drawerBottomGap: 0, // drawerBottomGapMm on a new wardrobe (unitDefaults.json)
-  railFromTop: 100, // RAIL_DEFAULT_POSITION_FROM_TOP_MM
+  railFromTop: 100, // RAIL_DEFAULT_POSITION_FROM_TOP_MM (a rail with nothing set; the planner hangs it under a board)
+  railBelowShelf: 20, // ANGLED_RAIL_GAP_BELOW_SHELF_MM: a rail hung under a shelf, its centre this far below the underside
+  dustShelf: 18, // SHELF_DUST_THICKNESS_MM: the dust shelf on top of the drawers (dustShelfGapMm 0: straight on top)
   railDiameter: 25, // RAIL_DEFAULT_DIAMETER_MM
   hingeClearance: 30, // HINGE_CLEARANCE_DEFAULT_MM, each side of drawers behind the doors
   maxShelves: 12, // the app's shelf count limit
@@ -38,13 +40,20 @@ export const COS = {
 /** The planner's own choices. CabinetOS takes whatever the customer sets; these keep it sensible. */
 export const PLAN = {
   hangLong: 1400, // clear space under a long rail: coats and dresses
-  hangShort: 900, // under a short rail, and under each rail of double hanging: shirts and jackets
+  hangShort: 900, // under a short rail: shirts and jackets
+  hangDouble: 850, // under each rail of double hanging (so it fits under the shelf at 2000 on a plinth up to about 240)
   minShelfGap: 200, // shelves no closer than this, board face to board face
   drawerPitch: 200, // drawer zone per drawer (3 drawers = 600, CabinetOS's own starting zone)
   maxShelves: 8,
   maxDrawers: 6,
   splitMin: 400, // each half of "hanging beside drawers": wide enough to hang clothes (so the unit is 800 or more)
   minHangWidth: 400, // narrower than this, hangers don't fit across
+  minDrawerWidth: 300, // narrower than this, a drawer behind the doors is too small to be worth it (CabinetOS makes none under about 160)
+  // Raf, 17 Oct 2026: 'usually on a height 2000 is a shelf or dividing unit where under you fit hanging pole'. The top
+  // face of that shelf, from the floor; top cupboards start at the same height (the dividing line).
+  hatShelf: 2000,
+  hatMinAbove: 200, // the shelf goes in only with at least this much clear above it; else the rail hangs under the top
+  aboveGap: 500, // more shelves over it when the space above is taller than this (high ceilings)
 } as const;
 
 export type Rail = 'none' | 'long' | 'short' | 'double';
@@ -59,6 +68,7 @@ export type UnitBox = {
   boxH: number;
   d: number; // carcass depth (the planner's depth less the doors)
   topH?: number;
+  hat?: number; // where the shelf over the hanging goes (its top face, from the carcass bottom): PLAN.hatShelf less the plinth
   hingeLeft: boolean; // a single door's hinge side
   sliding?: boolean; // sliding doors across the run instead of hinged ones
 };
@@ -73,11 +83,20 @@ export type Layout = {
   inner: { bottom: number; top: number };
   /** Height of the drawer zone from the carcass bottom (0 = no drawers). */
   drawerZone: number;
+  /** Where the space above starts: the top of the bottom panel, or of the dust shelf on the drawers. */
+  floor: number;
+  /** The dust shelf on top of the drawers (its centre), or null. */
+  dust: number | null;
+  /** The shelf over the hanging at PLAN.hatShelf (its centre), or null; `above` = shelves over it (tall rooms). */
+  hat: number | null;
+  above: number;
+  /** The customer's own shelves (the Shelves counter); `shelves` also holds the shelf over the hanging and any above. */
+  ownShelves: number;
   drawerFront: number; // each drawer front's height
   drawers: Front[]; // fronts, from the carcass bottom; behind the doors or below them
   drawersBelow: boolean;
-  shelves: number[]; // shelf centres from the carcass bottom
-  shelfGap: number | null; // clear gap between shelves
+  shelves: number[]; // every shelf's centre from the carcass bottom, as CabinetOS counts them (not the dust shelf)
+  shelfGap: number | null; // clear gap between the customer's own shelves
   rails: number[]; // rail centres from the carcass bottom, bottom to top
   hangs: Hang[];
   doors: Front[]; // base box doors (and the top box's, above boxH)
@@ -87,6 +106,7 @@ export type Layout = {
     topDoor: { n: number; w: number; h: number } | null;
     shelf: { n: number; w: number; d: number };
     drawer: { n: number; h: number } | null;
+    dust: boolean;
     box: { w: number; h: number; d: number };
   };
   problems: string[];
@@ -105,6 +125,7 @@ export type CosSettings = {
   frontConfig: 'doors' | 'doors_drawers_internal' | 'doors_drawers_external';
   drawerCount: number;
   drawerZoneHeightMm: number;
+  drawerBank: { dustShelfEnabled: boolean; dustShelfThicknessMm: number; dustShelfGapMm: number };
   doorCount: 1 | 2;
   doorHinge?: 'left' | 'right';
 };
@@ -124,23 +145,26 @@ function evenCentres(lo: number, hi: number, n: number): number[] {
   return Array.from({ length: n }, (_, i) => lo + gap * (i + 1) + t * i + t / 2);
 }
 
-/** Rails, the space each hangs over, and where the shelf space ends, for a rail type. */
-function railsFor(rail: Rail, boxH: number, floor: number) {
+/** Rails, the space each hangs over, and where the shelf space ends, for a rail type. `under` is the underside of
+    the board the top rail hangs under (the shelf over the hanging, or the top of the box), from the carcass bottom. */
+function railsFor(rail: Rail, boxH: number, floor: number, under: number) {
   const usableTop = boxH - COS.doorTopGap; // CabinetOS measures rails from the box top less the door gap
-  const top = usableTop - COS.railFromTop;
-  if (rail === 'none') return { rails: [] as number[], hangs: [] as Hang[], shelfTop: boxH - COS.board, lowerFromTop: undefined as number | undefined };
-  if (rail === 'long') return { rails: [top], hangs: [{ y: top, bottom: top - PLAN.hangLong, length: PLAN.hangLong, kind: 'long' as const }], shelfTop: top - PLAN.hangLong, lowerFromTop: undefined };
-  if (rail === 'short') return { rails: [top], hangs: [{ y: top, bottom: top - PLAN.hangShort, length: PLAN.hangShort, kind: 'short' as const }], shelfTop: top - PLAN.hangShort, lowerFromTop: undefined };
+  const top = under - COS.railBelowShelf;
+  const fromTop = Math.round(usableTop - top);
+  if (rail === 'none') return { rails: [] as number[], hangs: [] as Hang[], shelfTop: boxH - COS.board, fromTop, lowerFromTop: undefined as number | undefined };
+  if (rail === 'long') return { rails: [top], hangs: [{ y: top, bottom: top - PLAN.hangLong, length: PLAN.hangLong, kind: 'long' as const }], shelfTop: top - PLAN.hangLong, fromTop, lowerFromTop: undefined };
+  if (rail === 'short') return { rails: [top], hangs: [{ y: top, bottom: top - PLAN.hangShort, length: PLAN.hangShort, kind: 'short' as const }], shelfTop: top - PLAN.hangShort, fromTop, lowerFromTop: undefined };
   // Double: the lower rail halves the space under the top rail (CabinetOS's bottomRailPositionFromTopMm).
   const lowerFromTop = Math.round(usableTop - (floor + (top - floor) / 2));
   const lower = usableTop - lowerFromTop;
   return {
     rails: [lower, top],
     hangs: [
-      { y: top, bottom: top - PLAN.hangShort, length: PLAN.hangShort, kind: 'short' as const },
-      { y: lower, bottom: lower - PLAN.hangShort, length: PLAN.hangShort, kind: 'short' as const },
+      { y: top, bottom: top - PLAN.hangDouble, length: PLAN.hangDouble, kind: 'short' as const },
+      { y: lower, bottom: lower - PLAN.hangDouble, length: PLAN.hangDouble, kind: 'short' as const },
     ],
-    shelfTop: lower - PLAN.hangShort,
+    shelfTop: lower - PLAN.hangDouble,
+    fromTop,
     lowerFromTop,
   };
 }
@@ -158,14 +182,23 @@ export function unitLayout(box: UnitBox, ins: Inside): Layout {
   const shelvesAsked = rail === 'long' || rail === 'double' ? 0 : clamp(Math.round(ins.shelves), 0, PLAN.maxShelves);
 
   const drawerZone = drawers ? drawers * PLAN.drawerPitch : 0;
-  // Shelf space (CabinetOS getShelfInteriorBoundsFromMetrics): from the bottom panel, or the top of the drawer zone.
-  const floor = drawerZone > 0 ? Math.min(drawerZone, boxH - t) : t;
   const innerTop = boxH - t;
-  const R = railsFor(rail, boxH, floor);
+  // A dust shelf goes straight on top of the drawers (CabinetOS drawerBank.dustShelfEnabled), and the shelf space
+  // starts on top of it (getShelfInteriorBoundsFromMetrics): else on the bottom panel.
+  const dust = drawerZone > 0 && drawerZone + COS.dustShelf <= innerTop ? drawerZone + COS.dustShelf / 2 : null;
+  const floor = drawerZone > 0 ? Math.min(drawerZone + (dust != null ? COS.dustShelf : 0), innerTop) : t;
+  // Hanging goes under a shelf at PLAN.hatShelf from the floor when there's room above it; else under the top.
+  const hatTop = rail !== 'none' && box.hat != null && innerTop - box.hat >= PLAN.hatMinAbove ? box.hat : null;
+  const R = railsFor(rail, boxH, floor, hatTop != null ? hatTop - t : innerTop);
   const shelfTop = Math.min(innerTop, R.shelfTop);
 
-  const shelves = shelvesAsked > 0 && shelfTop - floor > shelvesAsked * t ? spread(floor, shelfTop, shelvesAsked, rail) : [];
-  const shelfGap = shelves.length ? r2((shelfTop - floor - shelves.length * t) / (shelves.length + 1)) : null;
+  const own = shelvesAsked > 0 && shelfTop - floor > shelvesAsked * t ? spread(floor, shelfTop, shelvesAsked, rail) : [];
+  const shelfGap = own.length ? r2((shelfTop - floor - own.length * t) / (own.length + 1)) : null;
+  // The shelf over the hanging, and in a tall room as few more over it as keep the gaps up to PLAN.aboveGap.
+  let above = 0;
+  if (hatTop != null) while ((innerTop - hatTop - above * t) / (above + 1) > PLAN.aboveGap) above++;
+  const hatShelves = hatTop != null ? [hatTop - t / 2, ...wholeMm(hatTop, innerTop, above)] : [];
+  const shelves = [...own, ...hatShelves];
 
   // Drawer fronts (calcDrawerBank): the zone less the top gap and the gaps between, shared equally.
   const drawerFront = drawers ? (drawerZone - COS.drawerTopGap - (drawers - 1) * COS.drawerBetweenGap - COS.drawerBottomGap) / drawers : 0;
@@ -191,17 +224,17 @@ export function unitLayout(box: UnitBox, ins: Inside): Layout {
   const topH = box.topH && box.topH > 0 ? box.topH : 0;
   if (topH) doors.push(...row(boxH, boxH + topH - COS.doorTopGap));
 
-  const problems = check({ w, boxH, floor, innerTop, rail, R, shelves: shelves.length, shelvesAsked, shelfGap, shelfTop, drawers, doorH: below ? doorH : null });
+  const problems = check({ w, boxH, floor, innerTop, rail, R, shelves: own.length, shelvesAsked, shelfGap, shelfTop, drawers, doorH: below ? doorH : null });
 
   const cosRail: CosSettings['hangingRail'] =
     rail === 'none'
       ? { enabled: false, railType: 'full_length', positionFromTopMm: COS.railFromTop, diameterMm: COS.railDiameter }
       : rail === 'double'
-        ? { enabled: true, railType: 'double', positionFromTopMm: COS.railFromTop, bottomRailPositionFromTopMm: R.lowerFromTop, diameterMm: COS.railDiameter }
-        : { enabled: true, railType: rail === 'long' ? 'full_length' : 'half_length', positionFromTopMm: COS.railFromTop, diameterMm: COS.railDiameter };
-  // Shelves under a short rail sit at set heights (CabinetOS "custom": each the clear gap from the bottom of the shelf
-  // space to the shelf's underside); otherwise CabinetOS spreads them with equal gaps itself.
-  const custom = rail === 'short' && shelves.length > 0;
+        ? { enabled: true, railType: 'double', positionFromTopMm: R.fromTop, bottomRailPositionFromTopMm: R.lowerFromTop, diameterMm: COS.railDiameter }
+        : { enabled: true, railType: rail === 'long' ? 'full_length' : 'half_length', positionFromTopMm: R.fromTop, diameterMm: COS.railDiameter };
+  // Shelves under a short rail and the shelf over the hanging sit at set heights (CabinetOS "custom": each the clear
+  // gap from the bottom of the shelf space to the shelf's underside); otherwise CabinetOS spreads them evenly itself.
+  const custom = (rail === 'short' && own.length > 0) || hatShelves.length > 0;
   const cos: CosSettings = {
     hangingRail: cosRail,
     shelvesCount: shelves.length,
@@ -211,16 +244,17 @@ export function unitLayout(box: UnitBox, ins: Inside): Layout {
     frontConfig: drawers ? (below ? 'doors_drawers_external' : 'doors_drawers_internal') : 'doors',
     drawerCount: drawers || 3,
     drawerZoneHeightMm: drawers ? drawerZone : 600,
+    drawerBank: { dustShelfEnabled: dust != null, dustShelfThicknessMm: COS.dustShelf, dustShelfGapMm: 0 },
     doorCount: n,
     ...(n === 1 ? { doorHinge: box.hingeLeft ? ('left' as const) : ('right' as const) } : {}),
   };
 
   // Would one more shelf or drawer still build as drawn?
   const fits = (more: Partial<Inside>) => {
-    const next = { ...ins, shelves: shelves.length, drawers, ...more };
+    const next = { ...ins, shelves: own.length, drawers, ...more };
     if (next.shelves > PLAN.maxShelves || next.drawers > PLAN.maxDrawers) return false;
     const l = unitLayout({ ...box }, next);
-    return l.problems.length === 0 && l.shelves.length === next.shelves;
+    return l.problems.length === 0 && l.ownShelves === (next.rail === 'long' || next.rail === 'double' ? 0 : next.shelves);
   };
 
   return {
@@ -228,6 +262,11 @@ export function unitLayout(box: UnitBox, ins: Inside): Layout {
     boxH,
     inner: { bottom: t, top: innerTop },
     drawerZone,
+    floor,
+    dust,
+    hat: hatTop != null ? hatTop - t / 2 : null,
+    above,
+    ownShelves: own.length,
     drawerFront: r2(drawerFront),
     drawers: drawerFronts,
     drawersBelow: below,
@@ -242,12 +281,13 @@ export function unitLayout(box: UnitBox, ins: Inside): Layout {
       topDoor: topH ? { n, w: doorW, h: r2(topH - COS.doorTopGap) } : null,
       shelf: { n: shelves.length, w: r2(w - 2 * t - 2 * COS.shelfSideGap), d: r2(d - COS.back - COS.shelfFrontGap) },
       drawer: drawers ? { n: drawers, h: r2(drawerFront) } : null,
+      dust: dust != null,
       box: { w, h: boxH, d },
     },
     problems,
-    canAddShelf: rail !== 'long' && rail !== 'double' && problems.length === 0 ? fitsLazy(() => fits({ shelves: shelves.length + 1 })) : false,
+    canAddShelf: rail !== 'long' && rail !== 'double' && problems.length === 0 ? fitsLazy(() => fits({ shelves: own.length + 1 })) : false,
     // One more drawer may take a shelf or two out to make room (the planner does that when it's added).
-    canAddDrawer: problems.length === 0 ? fitsLazy(() => Array.from({ length: shelves.length + 1 }, (_, k) => shelves.length - k).some((k) => fits({ drawers: drawers + 1, shelves: k }))) : false,
+    canAddDrawer: problems.length === 0 ? fitsLazy(() => Array.from({ length: own.length + 1 }, (_, k) => own.length - k).some((k) => fits({ drawers: drawers + 1, shelves: k }))) : false,
     cos,
   };
 }
@@ -264,12 +304,14 @@ function fitsLazy(f: () => boolean) {
   }
 }
 
-/** Shelf centres between the faces lo and hi. Under a short rail they're rounded to whole mm (as sent to CabinetOS). */
+/** Shelf centres between the faces lo and hi. Under a rail they're rounded to whole mm (as sent to CabinetOS). */
 function spread(lo: number, hi: number, n: number, rail: Rail): number[] {
-  const c = evenCentres(lo, hi, n);
-  if (rail !== 'short') return c;
+  return rail === 'none' ? evenCentres(lo, hi, n) : wholeMm(lo, hi, n);
+}
+/** Even shelf centres between lo and hi, each a whole number of mm above lo (CabinetOS's custom offsets are whole mm). */
+function wholeMm(lo: number, hi: number, n: number): number[] {
   const t = COS.board;
-  return c.map((y) => lo + Math.round(y - t / 2 - lo) + t / 2);
+  return evenCentres(lo, hi, n).map((y) => lo + Math.round(y - t / 2 - lo) + t / 2);
 }
 
 function check(a: {
@@ -288,7 +330,8 @@ function check(a: {
 }): string[] {
   const out: string[] = [];
   const mm = (n: number) => `${Math.round(n)} mm`;
-  if (a.drawers && a.floor >= a.innerTop - 100) out.push(`No room for ${plural(a.drawers, 'drawer', 'drawers')}. Take some out.`);
+  if (a.drawers && a.w < PLAN.minDrawerWidth) out.push(`Too narrow for drawers: under ${PLAN.minDrawerWidth} mm. Take them out.`);
+  else if (a.drawers && a.floor >= a.innerTop - 100) out.push(`No room for ${plural(a.drawers, 'drawer', 'drawers')}. Take some out.`);
   else if (a.doorH != null && a.doorH < 300) out.push(`The doors over the drawers would be only ${mm(a.doorH)} high. Take a drawer out.`);
   if (a.rail !== 'none') {
     if (a.w < PLAN.minHangWidth) out.push(`Too narrow for hanging: under ${PLAN.minHangWidth} mm, hangers don't fit across.`);
@@ -308,11 +351,12 @@ function check(a: {
 
 /* ---------------------------------------------------------------- presets and words */
 
-export type PresetKey = 'long' | 'double' | 'short' | 'drawers' | 'shelves' | 'pair';
+export type PresetKey = 'long' | 'double' | 'short' | 'drawhang' | 'drawers' | 'shelves' | 'pair';
 export const PRESETS: { key: PresetKey; label: string }[] = [
   { key: 'long', label: 'Long hanging' },
   { key: 'double', label: 'Double hanging' },
   { key: 'short', label: 'Short hanging + shelves' },
+  { key: 'drawhang', label: 'Drawers + short hanging' },
   { key: 'drawers', label: 'Drawers + shelves' },
   { key: 'shelves', label: 'Shelves' },
   { key: 'pair', label: 'Hanging beside drawers' },
@@ -327,6 +371,8 @@ export function presetInside(key: Exclude<PresetKey, 'pair'>): Inside {
       return { rail: 'double', shelves: 0, drawers: 0, below: false };
     case 'short':
       return { rail: 'short', shelves: 3, drawers: 0, below: false };
+    case 'drawhang':
+      return { rail: 'short', shelves: 0, drawers: 3, below: false };
     case 'drawers':
       return { rail: 'none', shelves: 3, drawers: 3, below: false };
     default:
@@ -337,21 +383,23 @@ export const PAIR: [Inside, Inside] = [presetInside('long'), presetInside('drawe
 
 /** Which preset an inside matches, if any. */
 export function presetOf(ins: Inside): Exclude<PresetKey, 'pair'> | null {
-  for (const k of ['long', 'double', 'short', 'drawers', 'shelves'] as const) {
+  for (const k of ['long', 'double', 'short', 'drawhang', 'drawers', 'shelves'] as const) {
     const p = presetInside(k);
     if (p.rail === ins.rail && p.shelves === ins.shelves && p.drawers === ins.drawers && (!p.drawers || p.below === ins.below)) return k;
   }
   return null;
 }
 
-/** "Short hanging, 3 shelves", "3 drawers inside, 3 shelves", "Long hanging, 2 drawers below the door". */
-export function insideText(ins: Inside, l?: Pick<Layout, 'shelves' | 'drawersBelow' | 'doorCount'>): string {
-  const shelves = l ? l.shelves.length : ins.rail === 'long' || ins.rail === 'double' ? 0 : ins.shelves;
+/** "Short hanging under a shelf, 3 shelves", "3 drawers inside, 3 shelves", "Long hanging, 2 drawers below the door",
+    "Long hanging under a shelf, 1 more shelf at the top" (a tall room). */
+export function insideText(ins: Inside, l?: Pick<Layout, 'ownShelves' | 'drawersBelow' | 'doorCount' | 'hat' | 'above'>): string {
+  const shelves = l ? l.ownShelves : ins.rail === 'long' || ins.rail === 'double' ? 0 : ins.shelves;
   const below = l ? l.drawersBelow : ins.below;
   const parts: string[] = [];
-  if (ins.rail !== 'none') parts.push(`${ins.rail === 'long' ? 'long' : ins.rail === 'short' ? 'short' : 'double'} hanging`);
+  if (ins.rail !== 'none') parts.push(`${ins.rail === 'long' ? 'long' : ins.rail === 'short' ? 'short' : 'double'} hanging${l && l.hat != null ? ' under a shelf' : ''}`);
   if (ins.drawers) parts.push(`${plural(ins.drawers, 'drawer', 'drawers')} ${below ? `below the door${l && l.doorCount === 1 ? '' : 's'}` : 'inside'}`);
   if (shelves) parts.push(plural(shelves, 'shelf', 'shelves'));
+  if (l && l.hat != null && l.above) parts.push(`${l.above} more ${l.above === 1 ? 'shelf' : 'shelves'} at the top`);
   const s = parts.join(', ') || 'empty, no shelves';
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
@@ -374,7 +422,7 @@ export type RunSpace = {
   free: boolean;
   freeH: number; // freestanding unit height
   topCupboards: boolean;
-  topSplit: number; // where the top cupboards start, from the floor
+  topSplit: number; // where the top cupboards start, from the floor (PLAN.hatShelf)
   depth: number; // overall depth including the doors
   sliding: boolean;
 };
@@ -389,13 +437,13 @@ export function runFor(s: RunSpace): RunBox & { top: number } {
   const top = s.free ? s.freeH : s.ceiling - s.infill;
   const withTop = s.topCupboards && top - s.topSplit >= 250;
   const boxH = (withTop ? s.topSplit : top) - s.plinth;
-  return { boxH, topH: withTop ? top - s.topSplit : 0, d: carcassDepth(s.depth, s.sliding), sliding: s.sliding, top };
+  return { boxH, topH: withTop ? top - s.topSplit : 0, d: carcassDepth(s.depth, s.sliding), sliding: s.sliding, hat: PLAN.hatShelf - s.plinth, top };
 }
 
 /** A unit as the customer sets it up: one width, and either one inside or two halves. */
 export type Section = { w: number; custom?: boolean; inside: Inside; split?: [Inside, Inside] | null };
 /** The run the units stand in: their carcass height, top box, depth, doors. */
-export type RunBox = { boxH: number; topH?: number; d: number; sliding?: boolean };
+export type RunBox = { boxH: number; topH?: number; d: number; sliding?: boolean; hat?: number };
 
 export type Piece = {
   section: number; // index of the section it belongs to
@@ -418,7 +466,7 @@ export function planPieces(sections: Section[], run: RunBox): Piece[] {
       : [[s.inside, s.w, '', null]];
     for (const [inside, w, part, hinge] of halves) {
       const hingeLeft = hinge ?? out.length % 2 === 0;
-      const layout = unitLayout({ w, boxH: run.boxH, topH: run.topH, d: run.d, hingeLeft, sliding: run.sliding }, inside);
+      const layout = unitLayout({ w, boxH: run.boxH, topH: run.topH, d: run.d, hingeLeft, sliding: run.sliding, hat: run.hat }, inside);
       out.push({ section: i, part, label: `Unit ${i + 1}${part}`, x, w, inside, layout });
       x += w;
     }
