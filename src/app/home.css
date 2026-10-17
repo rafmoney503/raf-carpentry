@@ -82,18 +82,7 @@
 .home .tile-link::after { content: ''; position: absolute; inset: 0; }
 .home .tile-link:hover { color: var(--color-accent); }
 
-/* Process */
-.home .process { background: var(--color-raised); border-block: 1px solid var(--color-line); }
-.home .process .grid12 { align-items: start; row-gap: 56px; }
-.home .drawing { grid-column: 1 / span 6; position: sticky; top: 112px; margin: 0; }
-.home .drawing img { width: 100%; max-width: 560px; height: auto; }
-.home .drawing figcaption { margin-top: 18px; font-family: var(--font-mono); font-size: 13px; color: var(--color-faint); }
-.home .process-copy { grid-column: 8 / span 5; }
-.home .steps { margin-top: 48px; border-top: 1px solid var(--color-line); }
-.home .step { padding-top: 32px; }
-.home .step h3 { font-weight: 620; font-size: 30px; letter-spacing: -0.02em; line-height: 1.1; }
-.home .step p { margin-top: 10px; color: var(--color-muted); }
-.home .process-foot { margin-top: 44px; display: flex; flex-wrap: wrap; gap: 14px 32px; }
+/* Process: src/components/build-story.css */
 
 /* CabinetOS */
 .home .app { overflow: hidden; }
@@ -182,12 +171,6 @@
   .home .latest-row { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 68%; overflow-x: auto; scroll-snap-type: x mandatory; margin-inline: -20px; padding-inline: 20px; scroll-padding-inline: 20px; padding-bottom: 8px; scrollbar-width: none; }
   .home .latest-row > li { scroll-snap-align: start; }
   .home .latest-card h3 { font-size: 18px; }
-
-  .home .drawing { position: static; }
-  .home .drawing img { max-width: 100%; }
-  .home .steps { margin-top: 36px; }
-  .home .step { padding-top: 26px; }
-  .home .step h3 { font-size: 25px; }
 
   .home .app-frame { width: 100%; }
 

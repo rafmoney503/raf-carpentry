@@ -11,6 +11,7 @@ import { QUOTE_HREF, whatsappText, whatsappUrl } from '@/lib/site';
 import SocialIcon from '@/components/SocialIcon';
 import JobsNear from '@/components/JobsNear';
 import PlannerTeaser from '@/components/PlannerTeaser';
+import BuildStory from '@/components/BuildStory';
 import { HeroLevel } from '@/components/ScrollLevel';
 import { areaPageLinks, getNearJobs } from '@/lib/areas';
 import { businessJsonLd, jsonLd, pageMeta } from '@/lib/seo';
@@ -241,36 +242,24 @@ export default function HomePage() {
         </section>
       ) : null}
 
-      <section className="sec process" id="process">
-        <div className="wrap grid12">
-          <figure className="drawing reveal">
-            <Image src={d.processImage} alt={d.processImageAlt} width={1056} height={1047} sizes="(max-width: 860px) 100vw, 560px" />
-            <figcaption>{d.processCaption}</figcaption>
-          </figure>
-          <div className="process-copy">
-            <h2 className="h2 reveal">{d.processHeading}</h2>
-            <ol className="steps">
-              {d.steps.map((s) => (
-                <li className="step reveal" key={s.title}>
-                  <h3>{s.title}</h3>
-                  <p>{s.description}</p>
-                </li>
-              ))}
-            </ol>
-            <div className="process-foot reveal">
-              <Link className="link-more" href="/how-it-works">
-                Plan your project <span aria-hidden="true">→</span>
-              </Link>
-              <Link className="link-more" href="/sketchup">
-                {d.processLinkLabel} <span aria-hidden="true">→</span>
-              </Link>
-              <Link className="link-more" href="/designs">
-                See all {countModels()} designs in 3D <span aria-hidden="true">→</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* How I work: one wardrobe goes through the four steps in 3D while the page scrolls */}
+      <BuildStory
+        heading={d.processHeading}
+        steps={d.steps}
+        fallback={{ src: d.processImage, alt: d.processImageAlt, caption: d.processCaption }}
+        plannerHref="/wardrobe-planner"
+        quoteHref={QUOTE_HREF}
+      >
+        <Link className="link-more" href="/how-it-works">
+          Plan your project <span aria-hidden="true">→</span>
+        </Link>
+        <Link className="link-more" href="/sketchup">
+          {d.processLinkLabel} <span aria-hidden="true">→</span>
+        </Link>
+        <Link className="link-more" href="/designs">
+          See all {countModels()} designs in 3D <span aria-hidden="true">→</span>
+        </Link>
+      </BuildStory>
 
       <section className={`sec reviews${hasReviews ? '' : ' sec-tight'}`} id="reviews">
         <div className="wrap">

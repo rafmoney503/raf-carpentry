@@ -1,0 +1,136 @@
+/* The home page's build story (BuildStory.tsx). The track is about three screens taller than the window; the pin stays
+   under the menu bar while it scrolls past. --bs-keep leaves the bottom of the window clear for the floating
+   "Plan your project" and WhatsApp buttons, so they never sit on the steps or the buttons. */
+.bs {
+  --bs-head: 64px;
+  --bs-keep: calc(84px + env(safe-area-inset-bottom, 0px));
+  position: relative;
+  background: var(--color-raised);
+  border-block: 1px solid var(--color-line);
+}
+@media (min-width: 768px) { .bs { --bs-head: 72px; } }
+
+.bs-track { position: relative; height: calc(100svh + 300vh); }
+.bs-pin {
+  position: sticky; top: var(--bs-head); box-sizing: border-box;
+  height: calc(100svh - var(--bs-head)); padding-block: 24px var(--bs-keep);
+  display: flex; align-items: center;
+}
+.bs-grid {
+  width: 100%; height: 100%;
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); column-gap: 56px; align-items: center;
+}
+.bs-copy { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.bs .h2 em { font-style: normal; color: var(--color-accent); }
+
+/* the four steps: the one playing is dark with a blue bar filling down its left edge */
+.bs-steps { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--color-line); }
+.bs-step {
+  position: relative; padding: 14px 0 14px 24px; border-top: 1px solid var(--color-line);
+  opacity: 0.45; transition: opacity 0.35s var(--ease-soft);
+}
+.bs-step.on { opacity: 1; }
+.bs-step::before, .bs-bar { content: ''; position: absolute; left: 0; top: 14px; bottom: 14px; width: 2px; }
+.bs-step::before { background: var(--color-line-strong); }
+.bs-bar { background: var(--color-accent); transform: scaleY(0); transform-origin: top; }
+.bs-step h3 {
+  display: flex; align-items: baseline; gap: 12px; margin: 0;
+  font-family: var(--font-display); font-weight: 650; font-size: 24px; line-height: 1.15; letter-spacing: -0.015em;
+}
+.bs-step h3 small { font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; letter-spacing: 0.04em; color: var(--color-faint); }
+.bs-step.on h3 small { color: var(--color-accent); }
+/* the description folds away (still read out) when there isn't room for all four */
+.bs-more { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.4s var(--ease-soft); }
+.bs-more > div { min-height: 0; overflow: hidden; }
+.bs-more p { margin: 0; padding-top: 6px; max-width: 46ch; color: var(--color-muted); font-size: 16px; line-height: 1.55; }
+@media (max-height: 860px), (max-width: 899px) {
+  .bs-step:not(.on) .bs-more { grid-template-rows: 0fr; }
+}
+.bs-ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* the 3D box: a white mount with faint graph paper */
+.bs-stage.mount {
+  padding: 0; width: 100%; aspect-ratio: 5 / 4; max-height: 100%;
+  background-color: var(--color-mount);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-accent) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-accent) 7%, transparent) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.bs-stage canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; opacity: 0; transition: opacity 0.5s var(--ease-soft); }
+.bs-stage.is-ready canvas { opacity: 1; }
+.bs-stage .bs-fallback { object-fit: contain; padding: 28px 28px 44px; transition: opacity 0.4s var(--ease-soft); }
+.bs-stage.is-ready .bs-fallback { opacity: 0; }
+.bs-lbl {
+  position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none; opacity: 0; white-space: nowrap;
+  padding: 3px 5px; border-radius: 2px; background: var(--color-mount);
+  font-family: var(--font-mono); font-size: 13px; font-weight: 500; line-height: 1; color: var(--color-accent);
+}
+.bs-lbl.ink { color: var(--color-ink); }
+.bs-lbl.tag {
+  padding: 6px 9px; border: 1px solid var(--color-line-strong); box-shadow: 0 10px 20px -12px rgb(22 25 28 / 0.4);
+  font-family: var(--font-sans); font-size: 13px; line-height: 1.2; color: var(--color-ink);
+}
+.bs-lbl.tag b { color: var(--color-accent); font-weight: 600; }
+.bs-stamp {
+  position: absolute; right: 18px; top: 16px; z-index: 3; pointer-events: none; opacity: 0; transform: rotate(-6deg);
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border: 2px solid var(--color-accent); border-radius: 2px;
+  background: color-mix(in srgb, var(--color-mount) 85%, transparent);
+  font-family: var(--font-mono); font-size: 14px; font-weight: 600; line-height: 1; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-accent);
+}
+.bs-cap {
+  position: absolute; left: 14px; right: 14px; bottom: 12px; z-index: 2; margin: 0; pointer-events: none;
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.03em; color: var(--color-faint);
+}
+
+/* under the story: more links (and the two buttons on phones) */
+.bs-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 32px; padding-block: 4px 96px; }
+.bs-foot-ctas { display: none; }
+
+/* phones and small tablets: the 3D on top, filling what the heading and steps leave */
+@media (max-width: 899px) {
+  .bs-track { height: calc(100svh + 260vh); }
+  .bs-pin { align-items: stretch; padding-block: 12px var(--bs-keep); }
+  .bs-grid { display: flex; flex-direction: column; align-items: stretch; gap: 16px; }
+  .bs-stage.mount { order: -1; flex: 1 1 auto; min-height: 180px; max-height: 56svh; aspect-ratio: auto; }
+  .bs-copy { flex: none; gap: 12px; }
+  .home .bs .h2 { font-size: 26px; }
+  .bs-step { padding: 10px 0 10px 18px; }
+  .bs-step::before, .bs-bar { top: 10px; bottom: 10px; }
+  .bs-step h3 { font-size: 19px; }
+  .bs-more p { padding-top: 4px; font-size: 15px; }
+  .bs-ctas { display: none; }
+  .bs-foot { padding-block: 0 72px; }
+  .bs-foot-ctas { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; }
+  .bs-stamp { top: auto; bottom: 44px; right: 12px; padding: 6px 8px; font-size: 12px; }
+}
+
+/* shorter phones (an iPhone SE): a little tighter, so the steps stay above the floating buttons */
+@media (max-width: 899px) and (max-height: 720px) {
+  .bs-grid { gap: 12px; }
+  .bs-copy { gap: 10px; }
+  .home .bs .h2 { font-size: 22px; }
+  .bs-step { padding-block: 8px; }
+  .bs-step::before, .bs-bar { top: 8px; bottom: 8px; }
+  .bs-step h3 { font-size: 17px; }
+  .bs-more p { font-size: 14px; line-height: 1.5; }
+  .bs-stage.mount { min-height: 150px; }
+}
+
+/* reduced motion, or too short to pin (a phone on its side): a normal section with the finished wardrobe */
+@media (prefers-reduced-motion: reduce), (max-height: 560px) {
+  .bs-track { height: auto; }
+  .bs-pin { position: static; height: auto; padding-block: 96px 32px; }
+  .bs-grid { height: auto; }
+  .bs-step { opacity: 1; }
+  .bs-step h3 small { color: var(--color-accent); }
+  .bs-step .bs-more { grid-template-rows: 1fr !important; }
+  .bs-bar { transform: scaleY(1) !important; }
+  .bs-ctas { display: flex !important; }
+  .bs-foot-ctas { display: none !important; }
+  .bs-stage.mount { flex: none; height: auto; max-height: none; aspect-ratio: 5 / 4; }
+}
+@media (prefers-reduced-motion: reduce) and (max-width: 899px), (max-height: 560px) and (max-width: 899px) {
+  .bs-pin { padding-block: 64px 24px; }
+  .bs-stage.mount { aspect-ratio: 1 / 1; }
+}
