@@ -11,7 +11,7 @@
    drawing and the sizes all come from the same layout, and Send passes those settings to CabinetOS as they are. */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { COS, PLAN, SLIDE, slidingDoorsFor, PRESETS, presetInside, presetOf, PAIR, canSplit, insideText, planPieces, payloadUnits, runFor } from '@/lib/cabinetos-wardrobe';
+import { COS, PLAN, SLIDE, slidingDoorsFor, slidingDrawerSpans, PRESETS, presetInside, presetOf, PAIR, canSplit, insideText, planPieces, payloadUnits, runFor } from '@/lib/cabinetos-wardrobe';
 
 export function mountPlanner(host: HTMLElement, endpoint = '/api/brief'): () => void {
   let raf = 0, sending = false;
@@ -107,8 +107,9 @@ function calc(){
   return{ends,panels,mods,run,left,f,lv,t,sub,x0,x1:x,pos,fillL,fillR,fixed:!!fx};
 }
 /* Sliding doors across the run with CabinetOS's sums (cabinetos-wardrobe.ts slidingDoorsFor): the span is the units
-   and their end panels, the doors close under the top infill (or at the top of the lower box with top cupboards). */
-const slideDoors=()=>{const c=calc();return slidingDoorsFor(c.run,runBox().zone);};
+   and their end panels, the doors close under the top infill (or at the top of the lower box with top cupboards), and
+   the overlap (and if need be the count) is picked so every drawer behind opens with one door slid across. */
+const slideDoors=()=>{const c=calc();return slidingDoorsFor(c.run,runBox().zone,undefined,slidingDrawerSpans(pieces(),S.fit==='openL'||free()?CFG.endPanel:0));};
 /* Where the span starts, mm from the left wall: the units' left edge, less a left end panel. */
 const spanLeft=c=>c.x0-(S.fit==='openL'||free()?CFG.endPanel:0);
 
@@ -116,6 +117,10 @@ const spanLeft=c=>c.x0-(S.fit==='openL'||free()?CFG.endPanel:0);
 const sections=()=>S.modules.map(m=>({w:m.w,custom:m.custom,inside:m.inside,split:m.split&&canSplit(m.w)?m.split:null}));
 const runBox=()=>runFor({ceiling:S.ceiling,plinth:S.plinth,infill:infill(),free:free(),freeH:topY(),topCupboards:S.height==='top',topSplit:CFG.topSplit,depth:depth(),sliding:S.doors==='sliding'});
 const pieces=()=>planPieces(sections(),runBox());
+/* Units whose drawers a sliding door edge still covers with any one door slid open (CabinetOS flags them too), and
+   what each unit needs checking: its own layout's problems, then that. */
+const caughtLabels=()=>{if(S.doors!=='sliding'||!S.modules.length)return new Set();const ps=pieces().filter(p=>p.layout.drawers.length&&!p.layout.drawersBelow),SD=slideDoors();return new Set(SD.caught.map(k=>ps[k]&&ps[k].label).filter(Boolean));};
+const probs=(p,caught=caughtLabels())=>caught.has(p.label)?[...p.layout.problems,'With sliding doors, two doors meet in front of these drawers, so they can\'t open fully. Drawers work best in a unit that sits behind one door.']:p.layout.problems;
 /* The inside being changed on unit i: its own, or the half picked of a pair. */
 const editInside=m=>m.split&&canSplit(m.w)?m.split[m.edit?1:0]:m.inside;
 /* A pair that has become too narrow to split keeps its drawers half. */
@@ -194,11 +199,11 @@ function hinged(par,key,list,a,P,z){
     const h=handle(pv,left?ww-0.045:-ww+0.045,hy,0.018,tall);
     const o={pivot:pv,kind:'h',sign:left?-1:1,st:rec(key+':'+i)};applyDoor(o);doors.push(o);m.userData.door=o;if(h)h.userData.door=o;picks.push(m);});
 }
-/* Sliding doors as CabinetOS sizes them (slidingDoorsFor): from the span's left end `sx`, `y0` above the floor;
-   every other door runs on the back track. */
+/* Sliding doors as CabinetOS sizes them (slidingDoorsFor): from the span's left end `sx`, `y0` above the floor; the
+   outer doors on the back track, the next ones in front. Each slides towards the neighbour on the other track. */
 function sliding(par,SD,sx,y0,zb){
-  const ov=SLIDE.overlap*MM,dw=SD.w*MM,dh=SD.h*MM,n=SD.n,f=fin(),face=faceMat(dw,dh);
-  for(let i=0;i<n;i++){const d=SD.doors[i],z=zb+(d.back?0.006:0.038),x=sx+d.x0*MM,dir=i<n-1?1:-1;
+  const ov=SD.ov*MM,dw=SD.w*MM,dh=SD.h*MM,n=SD.n,f=fin(),face=faceMat(dw,dh);
+  for(let i=0;i<n;i++){const d=SD.doors[i],z=zb+(d.back?0.006:0.038),x=sx+d.x0*MM,dir=i>0&&SD.doors[i-1].back!==d.back?-1:1;
     const pv=new THREE.Group();pv.position.set(x,y0,z);par.add(pv);
     const m=new THREE.Mesh(new THREE.BoxGeometry(dw,dh,0.022),[alu(),alu(),alu(),alu(),face,f]);m.position.set(dw/2,dh/2,0.011);m.castShadow=m.receiveShadow=true;pv.add(m);
     if(S.handle!=='push'){const hm=S.handle==='black'?black():brass();box(pv,dir>0?0.03:dw-0.042,clamp(1.05-y0,0.4,dh-0.4)-0.25,0.022,dir>0?0.042:dw-0.03,clamp(1.05-y0,0.4,dh-0.4)+0.25,0.032,hm);}
@@ -413,7 +418,7 @@ function drawPlan(){
   if(S.doors==='sliding'&&has&&!S.drawInside){const SD=slideDoors(),sl=spanLeft(c),yT=Y(20+SD.h),yB=Y(20),yc=(yT+yB)/2;
     [...SD.doors.filter(d=>d.back),...SD.doors.filter(d=>!d.back)].forEach(d=>{const a=X(sl+d.x0),w=(d.x1-d.x0)*s;rc(a,yT,w,yB-yT,'#FFFFFF','',1.1);
       ln(a+w*0.3,yc,a+w*0.7,yc,'',1,M);[[0.3,1],[0.7,-1]].forEach(([p,k])=>{ln(a+w*p,yc,a+w*p+6*k,yc-4,'',1,M);ln(a+w*p,yc,a+w*p+6*k,yc+4,'',1,M);});});
-    for(let i=1;i<SD.n;i++)rc(X(sl+SD.doors[i].x0),yT,SLIDE.overlap*s,yB-yT,'rgba(37,71,208,0.18)','',0,'none');
+    for(let i=1;i<SD.n;i++){const a=SD.doors[i-1],b=SD.doors[i];if(a.back!==b.back&&a.x1-b.x0>0.2)rc(X(sl+b.x0),yT,(a.x1-b.x0)*s,yB-yT,'rgba(37,71,208,0.18)','',0,'none');}
     tx(X(sl+SD.span/2),yT+14,`${SD.n} sliding doors ${SD.w} × ${SD.h}`,'middle',M,10);}
   // dimensions across the top
   dimH(0,S.wall,Y(S.ceiling)-52,fr?`${S.wall} space`:`${S.wall}`);
@@ -485,9 +490,9 @@ function cardLive(m,i,ps){const two=ps.length===2,pi=two&&m.edit?1:0,p=ps[pi],in
     </div>
     <dl class="usz">${sizeRows(p).map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
     <p class="note sm">In mm as I cut them: width × height, shelves width × depth. 18 mm board, backs included.</p>
-    ${ps.map(q=>q.layout.problems.length?`<p class="hint">${two?`${i+1}${q.part}: `:''}${esc(q.layout.problems[0])}</p>`:'').join('')||`<p class="okline">${TICK}Builds as drawn</p>`}`;}
+    ${ps.map(q=>{const pr=probs(q);return pr.length?`<p class="hint">${two?`${i+1}${q.part}: `:''}${esc(pr[0])}</p>`:'';}).join('')||`<p class="okline">${TICK}Builds as drawn</p>`}`;}
 function modCard(m,i,ps,mode){
-  const cur=i===S.sel,two=ps.length===2,ok=ps.every(p=>!p.layout.problems.length);
+  const cur=i===S.sel,two=ps.length===2,ok=ps.every(p=>!probs(p).length);
   const head=`<div class="modhead"><b>Unit ${i+1}</b><span class="w">${m.w}</span>${ok?`<span class="okmark" title="Builds as drawn">${TICK}</span>`:'<span class="warnmark">Check</span>'}<span class="sp"></span>
       <button type="button" class="ib" data-act="left" data-v="${i}" aria-label="Move unit ${i+1} left" ${i===0?'disabled':''}><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
       <button type="button" class="ib" data-act="right" data-v="${i}" aria-label="Move unit ${i+1} right" ${i===S.modules.length-1?'disabled':''}><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
@@ -514,6 +519,7 @@ function stepUnits(){const c=calc(),mode=S.unitMode,R=equalRange(),n=S.modules.l
 function stepDoors(){
   return `<div><h2>Doors</h2><p class="lede">Tap any door in the 3D view to open it.</p></div>
   <div class="grp"><h3>Type</h3><div class="chips">${chip('doors','hinged','<span>Hinged<small>Up to 600 mm wide is one door, wider is a pair</small></span>',S.doors==='hinged')}${chip('doors','sliding',`<span>Sliding<small>${S.modules.length?(()=>{const SD=slideDoors();return `${SD.n} doors ${SD.w} wide`;})():'Saves space in front'}, needs ${CFG.depth.sliding} mm depth</small></span>`,S.doors==='sliding')}</div></div>
+  ${(()=>{const cg=caughtLabels();return cg.size?`<p class="hint">${esc([...cg].join(', '))}: two sliding doors meet in front of the drawers, so they can't open fully. See Units.</p>`:'';})()}
   <div class="grp"><h3>Style</h3><div class="chips">${Object.keys(CFG.styles).map(k=>chip('style',k,CFG.styles[k],S.style===k)).join('')}</div></div>
   <div class="grp"><h3>${S.doors==='sliding'?'Pulls':'Handles'}</h3><div class="chips">${Object.keys(CFG.handles).map(k=>chip('handle',k,CFG.handles[k],S.handle===k)).join('')}</div></div>
   <div class="grp"><h3>Height</h3><div class="chips">${chip('height','full',`<span>${free()?'Full-height doors':'One tall door'}<small>${free()?`To ${topY()} mm`:infill()?`Up to the ${infill()} mm infill`:'To the ceiling'}</small></span>`,S.height==='full'||!topOk())}${chip('height','top',`<span>With top cupboards<small>${topOk()?`Main doors ${CFG.topSplit}, top ${topY()-CFG.topSplit}`:`Needs ${CFG.topSplit+CFG.topMin} mm to the top`}</small></span>`,S.height==='top'&&topOk(),!topOk())}</div></div>`;}
@@ -525,7 +531,7 @@ function specRows(){const c=calc(),d=depth();return[
   ...(free()?[]:[['Side infill',(hasL()&&hasR()?`${Math.round(c.fillL)} left, ${Math.round(c.fillR)} right`:`${Math.round(hasL()?c.fillL:c.fillR)} at the wall`)+(c.fixed?'':' (auto)')]]),
   ['Fit',c.t],
   ...pieces().map(p=>{const L=p.layout,z=L.sizes;return[p.label,`${p.w} wide, ${insideText(p.inside,L).toLowerCase()}${S.doors==='hinged'?`; ${z.door.n===1?`door ${z.door.w} × ${z.door.h} hinged on the ${L.doors[0]&&L.doors[0].hingeLeft?'left':'right'}`:`2 doors ${z.door.w} × ${z.door.h}`}`:''}${L.drawersBelow?`; drawer fronts ${p.w} × ${z.drawer.h}`:''}${z.topDoor?`; top ${z.topDoor.n===1?'door':'2 doors'} ${z.topDoor.w} × ${z.topDoor.h}`:''}`];}),
-  ...(()=>{const bad=pieces().filter(p=>p.layout.problems.length);return bad.length?[['Check',bad.map(p=>`${p.label}: ${p.layout.problems[0]}`).join(' ')]]:[];})(),
+  ...(()=>{const cg=caughtLabels(),bad=pieces().filter(p=>probs(p,cg).length);return bad.length?[['Check',bad.map(p=>`${p.label}: ${probs(p,cg)[0]}`).join(' ')]]:[];})(),
   ['Depth',`${d} mm overall`],
   ['Doors',`${S.doors==='sliding'?(()=>{const SD=slideDoors();return `Sliding, ${SD.n} doors ${SD.w} x ${SD.h}`;})():'Hinged'} · ${CFG.styles[S.style].toLowerCase()} · ${CFG.handles[S.handle].toLowerCase()}`],
   ['Height',(S.height==='top'&&topOk()?`Main doors to ${CFG.topSplit} + top cupboards ${topY()-CFG.topSplit}`:`Doors to ${topY()}`)+(free()?`, unit ${topY()} high`:'')],
@@ -539,7 +545,7 @@ function stepSend(){
   return `<div><h2>Send to Raf</h2><p class="lede">I reply within 24 hours with a price and a free visit to measure up.</p></div>
   <dl class="spec">${specRows().map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
   ${c.lv!=='ok'?`<p class="err">${esc(c.t)}. You can still send it; I'll sort the sizes on site.</p>`:''}
-  ${pieces().some(p=>p.layout.problems.length)?'<p class="err">Some units need a look (see Check). You can still send it; I\'ll sort it out on the visit.</p>':`<p class="okline">${TICK}Every unit builds as drawn. It goes straight into CabinetOS, the app I cut from.</p>`}
+  ${(()=>{const cg=caughtLabels();return pieces().some(p=>probs(p,cg).length);})()?'<p class="err">Some units need a look (see Check). You can still send it; I\'ll sort it out on the visit.</p>':`<p class="okline">${TICK}Every unit builds as drawn. It goes straight into CabinetOS, the app I cut from.</p>`}
   <form class="grp" id="form" novalidate>
     <div class="field"><label for="c-name">Your name</label><input id="c-name" data-c="name" autocomplete="name" value="${esc(C.name)}"><small class="priv">Only sent to me. Nothing is kept on this website.</small></div>
     <div class="row2"><div class="field"><label for="c-phone">Mobile</label><input id="c-phone" data-c="phone" type="tel" autocomplete="tel" inputmode="tel" value="${esc(C.phone)}"></div>
@@ -560,7 +566,7 @@ function designPayload(){const c=calc(),fr=free();
     space:{widthMm:S.wall,ceilingMm:S.ceiling,fit:S.fit,depthMm:depth(),plinthMm:S.plinth,topInfillMm:infill(),freeHeightMm:topY()},
     doors:{type:S.doors,style:S.style,handle:S.handle,topCupboards:S.height==='top'&&topOk(),topSplitMm:CFG.topSplit,
       // sliding doors go to CabinetOS as its sliding doors (cabinetos-site src/lib/slidingDoors.ts), same sums
-      ...(S.doors==='sliding'?{sliding:{doorCount:slideDoors().n,overlapMm:SLIDE.overlap,trackDepthMm:SLIDE.trackDepth,heightOffMm:SLIDE.heightOff,track:'bottom',panel:S.style==='mirror'?'mirror':'mdf'}}:{})},
+      ...(S.doors==='sliding'?{sliding:(()=>{const SD=slideDoors();return{system:'eslide',doorCount:SD.n,overlapAuto:true,overlapMm:SD.ov,trackDepthMm:SLIDE.trackDepth,heightOffMm:SLIDE.heightOff,track:'bottom',panel:S.style==='mirror'?'mirror':'mdf'};})()}:{})},
     // each unit with its CabinetOS units and their settings (cabinetos-wardrobe.ts payloadUnits; version 1 had only a layout word)
     colour:colour().n,units:payloadUnits(sections(),runBox()),fillers:{leftMm:fr?0:left,rightMm:fr?0:right},
     unitMode:S.unitMode,sideInfill:fr?null:{mode:S.side.mode,leftMm:left,rightMm:right}};}

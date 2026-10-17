@@ -427,21 +427,98 @@ export type RunSpace = {
   sliding: boolean;
 };
 
-/** Sliding doors across the run, with CabinetOS's sums (cabinetos-site src/lib/slidingDoors.ts, SLIDING_DOOR_RULES):
-    the overlap, track depth and what comes off the height are a bottom-running track's usual numbers, which CabinetOS
-    lets Raf change per project. */
-export const SLIDE = { overlap: 30, trackDepth: 85, heightOff: 40, target: 900, maxDoor: 1200, minDoors: 2, maxDoors: 8 } as const;
+/** Sliding doors across the run, with CabinetOS's sums (cabinetos-site src/lib/slidingDoors.ts, SLIDING_DOOR_RULES and
+    E_SLIDE): an E-Slide kit (bottom rolling, Raf's own board doors), the outer doors on the back track and the next ones
+    in front (4 doors: back, front, front, back, the middle pair meeting edge to edge), and the overlap on Auto: the
+    most, up to 30, that lets every drawer behind open with one door slid across (17 Oct 2026). The track depth and
+    what comes off the height are the E-Slide's, which CabinetOS lets Raf change per project. */
+export const SLIDE = { overlap: 30, minOverlap: 10, trackDepth: 85, heightOff: 40, target: 900, maxDoor: 1200, minDoor: 450, minDoors: 2, maxDoors: 8 } as const;
 
-export type SlidingDoors = { n: number; w: number; h: number; span: number; zone: number; doors: { x0: number; x1: number; back: boolean }[] };
-/** `span`: the units and end panels left to right; `zone`: floor to where the doors close at the top. */
-export function slidingDoorsFor(span: number, zone: number, count?: number): SlidingDoors {
-  const n = count ?? Math.min(SLIDE.maxDoors, Math.max(SLIDE.minDoors, Math.round(span / SLIDE.target), Math.ceil(span / SLIDE.maxDoor)));
-  const w = r2((span + (n - 1) * SLIDE.overlap) / n);
-  const doors = Array.from({ length: n }, (_, i) => {
-    const x0 = r2(i * (w - SLIDE.overlap));
-    return { x0, x1: r2(x0 + w), back: i % 2 === 1 };
+export type SlidingDoors = {
+  n: number; w: number; h: number; span: number; zone: number;
+  ov: number; // the overlap Auto picked
+  overlaps: number; // places two doors overlap (doors on one track meet edge to edge)
+  doors: { x0: number; x1: number; back: boolean }[];
+  caught: number[]; // which of `drawers` stay caught by a door edge however one door is slid
+};
+
+/** Which track each door runs on, left to right (true = back): CabinetOS's slidingTrackPattern. */
+export function slidingTrackPattern(n: number): boolean[] {
+  if (n <= 1) return [true];
+  if (n === 2) return [true, false];
+  if (n % 2 === 1) return Array.from({ length: n }, (_, i) => i % 2 === 0);
+  const half = slidingTrackPattern(n / 2);
+  return [...half, ...[...half].reverse()];
+}
+const overlapCount = (p: readonly boolean[]) => p.reduce((k, b, i) => (i > 0 && b !== p[i - 1] ? k + 1 : k), 0);
+
+function placeDoors(span: number, n: number, ov: number) {
+  const pattern = slidingTrackPattern(n);
+  const k = overlapCount(pattern);
+  const w = r2((span + k * ov) / n);
+  let before = 0;
+  const doors = pattern.map((back, i) => {
+    if (i > 0 && back !== pattern[i - 1]) before += 1;
+    const x0 = r2(i * w - before * ov);
+    return { x0, x1: r2(x0 + w), back };
   });
-  return { n, w, h: r2(Math.max(0, zone - SLIDE.heightOff)), span: r2(span), zone: r2(zone), doors };
+  return { w, k, doors };
+}
+
+/** The clear openings with one door slid as far as it goes (its own track's doors stop it): CabinetOS's slidingGaps. */
+function gapsFor(doors: { x0: number; x1: number; back: boolean }[], span: number): [number, number][] {
+  const out: [number, number][] = [];
+  doors.forEach((d, i) => {
+    let lo = 0;
+    let hi = span;
+    for (let j = i - 1; j >= 0; j--) if (doors[j].back === d.back) { lo = doors[j].x1; break; }
+    for (let j = i + 1; j < doors.length; j++) if (doors[j].back === d.back) { hi = doors[j].x0; break; }
+    const w = d.x1 - d.x0;
+    for (const x0 of [lo, hi - w]) {
+      if (Math.abs(x0 - d.x0) < 0.5 || x0 < lo - 0.01 || x0 + w > hi + 0.01) continue;
+      const cover = doors.map((o, k) => (k === i ? [x0, x0 + w] : [o.x0, o.x1])).sort((a, b) => a[0] - b[0]);
+      let at = 0;
+      for (const [a, b] of cover) {
+        if (a > at + 0.5) out.push([r2(at), r2(a)]);
+        at = Math.max(at, b);
+      }
+      if (span > at + 0.5) out.push([r2(at), r2(span)]);
+    }
+  });
+  return out;
+}
+
+function opens(span: number, n: number, ov: number, drawers: [number, number][]) {
+  const g = gapsFor(placeDoors(span, n, ov).doors, span);
+  return drawers.every(([a, b]) => g.some(([x0, x1]) => x0 <= a + 0.01 && x1 >= b - 0.01));
+}
+/** Auto overlap for n doors: the most from 30 down to 10 that lets every drawer open (30 if none does). */
+function overlapFor(span: number, n: number, drawers: [number, number][]): { ov: number; ok: boolean } {
+  if (!drawers.length) return { ov: SLIDE.overlap, ok: true };
+  for (let ov = SLIDE.overlap; ov >= SLIDE.minOverlap; ov--) if (opens(span, n, ov, drawers)) return { ov, ok: true };
+  return { ov: SLIDE.overlap, ok: false };
+}
+
+/** `span`: the units and end panels left to right; `zone`: floor to where the doors close at the top; `drawers`:
+    where the drawer fronts are along the span (slidingDrawerSpans). Auto count: about 900 a door, but if drawers stay
+    caught, the nearest count in the size limits that frees them. */
+export function slidingDoorsFor(span: number, zone: number, count?: number, drawers: [number, number][] = []): SlidingDoors {
+  const base = Math.min(SLIDE.maxDoors, Math.max(SLIDE.minDoors, Math.round(span / SLIDE.target), Math.ceil(span / SLIDE.maxDoor)));
+  let n = count ?? base;
+  if (count == null && !overlapFor(span, base, drawers).ok) {
+    const order = [base];
+    for (let d = 1; d <= SLIDE.maxDoors; d++) for (const c of [base - d, base + d]) if (c >= SLIDE.minDoors && c <= SLIDE.maxDoors) order.push(c);
+    for (const c of order.slice(1)) {
+      const f = overlapFor(span, c, drawers);
+      const w = (span + overlapCount(slidingTrackPattern(c)) * f.ov) / c;
+      if (f.ok && w <= SLIDE.maxDoor + 0.01 && w >= SLIDE.minDoor - 0.01) { n = c; break; }
+    }
+  }
+  const { ov } = overlapFor(span, n, drawers);
+  const { w, k, doors } = placeDoors(span, n, ov);
+  const g = gapsFor(doors, span);
+  const caught = drawers.flatMap(([a, b], i) => (g.some(([x0, x1]) => x0 <= a + 0.01 && x1 >= b - 0.01) ? [] : [i]));
+  return { n, w, h: r2(Math.max(0, zone - SLIDE.heightOff)), span: r2(span), zone: r2(zone), ov, overlaps: k, doors, caught };
 }
 
 /** CabinetOS's carcass depth: the planner's depth less 18 mm hinged doors, or the sliding track's depth. */
@@ -489,6 +566,14 @@ export function planPieces(sections: Section[], run: RunBox): Piece[] {
     }
   });
   return out;
+}
+
+/** Where each unit's drawer fronts are along the sliding doors' span, as CabinetOS works it out (inside the sides and
+    the 30 mm packers): `left` = what stands left of the first unit in the span (its end panel, or 0). */
+export function slidingDrawerSpans(pieces: Piece[], left: number): [number, number][] {
+  return pieces
+    .filter((p) => p.layout.drawers.length > 0 && !p.layout.drawersBelow)
+    .map((p) => [r2(left + p.x + COS.board + COS.hingeClearance), r2(left + p.x + p.w - COS.board - COS.hingeClearance)]);
 }
 
 /** The old (version 1) layout word for a section, for a CabinetOS that hasn't got the settings yet. */

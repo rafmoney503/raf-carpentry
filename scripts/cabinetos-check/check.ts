@@ -10,7 +10,7 @@
      - the cut list (generateParts): door fronts, shelves, dust shelves, hanging rails, drawer boxes, side panels, against the sizes
        the planner shows
    Prints the first differences and exits 1 if there are any. Run: bash scripts/cabinetos-check/run.sh */
-import { COS, PLAN, PRESETS, SLIDE, presetInside, PAIR, canSplit, payloadUnits, planPieces, runFor, slidingDoorsFor } from '../../src/lib/cabinetos-wardrobe';
+import { COS, PLAN, PRESETS, SLIDE, presetInside, PAIR, canSplit, payloadUnits, planPieces, runFor, slidingDoorsFor, slidingDrawerSpans } from '../../src/lib/cabinetos-wardrobe';
 import { slidingLayout } from 'cos/lib/slidingDoors';
 import { parseWebsiteDesign, websiteDesignToProject } from 'cos/lib/inbound/websiteDesign';
 import { generateParts, getShelfLayoutMetricsForUnit, getOccupiedOpeningWidthMm } from 'cos/components/pages/CabinetApp';
@@ -32,6 +32,9 @@ const int = (a, b) => a + Math.floor(rnd() * (b - a + 1));
 const N = Number(process.env.N || 1500);
 const fails = [];
 let slidingSeen = 0;
+let slidingDrawersSeen = 0;
+let slidingCaught = 0;
+let slidingLowered = 0;
 let units = 0, shelvesSeen = 0, railsSeen = 0, drawersSeen = 0, doorsSeen = 0, okLayouts = 0, hatsSeen = 0, dustSeen = 0;
 const close = (a, b, tol = 0.011) => Math.abs(a - b) <= tol;
 const fail = (where, what) => { if (fails.length < 40) fails.push(`${where}: ${what}`); else fails.length++; };
@@ -65,13 +68,14 @@ for (let k = 0; k < N; k++) {
   const fillL = fit === 'wall' || fit === 'openR' ? int(20, 100) : 0;
   const fillR = fit === 'wall' || fit === 'openL' ? int(20, 100) : 0;
   const width = mods + ends * 18 + fillL + fillR;
-  // sliding doors across the units and end panels, as the planner sizes them
-  const SD = sliding ? slidingDoorsFor(mods + ends * 18, run.zone) : null;
+  // sliding doors across the units and end panels, as the planner sizes them (overlap so the drawers open)
+  const pieces = planPieces(sections, run);
+  const SD = sliding ? slidingDoorsFor(mods + ends * 18, run.zone, undefined, slidingDrawerSpans(pieces, fit === 'openL' || free ? 18 : 0)) : null;
   const design = {
     source: 'rafcarpentry-wardrobe-planner', version: 2,
     space: { widthMm: width, ceilingMm: ceiling, fit, depthMm: depth, plinthMm: plinth, topInfillMm: infill, freeHeightMm: free ? freeH : run.top },
     doors: { type: sliding ? 'sliding' : 'hinged', style: sliding ? 'slab' : 'shaker', handle: 'brass', topCupboards: space.topCupboards, topSplitMm: topSplit,
-      ...(SD ? { sliding: { doorCount: SD.n, overlapMm: SLIDE.overlap, trackDepthMm: SLIDE.trackDepth, heightOffMm: SLIDE.heightOff, track: 'bottom', panel: 'mdf' } } : {}) },
+      ...(SD ? { sliding: { system: 'eslide', doorCount: SD.n, overlapAuto: true, overlapMm: SD.ov, trackDepthMm: SLIDE.trackDepth, heightOffMm: SLIDE.heightOff, track: 'bottom', panel: 'mdf' } } : {}) },
     colour: 'Sage',
     units: payloadUnits(sections, run),
     fillers: { leftMm: fillL, rightMm: fillR },
@@ -85,7 +89,6 @@ for (let k = 0; k < N; k++) {
     fail(`design ${k}`, `mapper refused it: ${e.message}`);
     continue;
   }
-  const pieces = planPieces(sections, run);
   if (project.units.length !== pieces.length) { fail(`design ${k}`, `${pieces.length} planner units, ${project.units.length} in CabinetOS`); continue; }
   if (!free) {
     const used = getOccupiedOpeningWidthMm(project.units);
@@ -97,6 +100,20 @@ for (let k = 0; k < N; k++) {
     const lay = slidingLayout(project.units, project.slidingDoors, { openingDepthMm: project.opening.depth });
     if (!lay || lay.doorCount !== SD.n || !close(lay.doorWidthMm, SD.w) || !close(lay.doorHeightMm, SD.h) || !close(lay.spanMm, SD.span)) {
       fail(`design ${k}`, `sliding doors CabinetOS ${lay ? `${lay.doorCount} x ${lay.doorWidthMm} x ${lay.doorHeightMm} over ${lay.spanMm}` : 'none'}; planner ${SD.n} x ${SD.w} x ${SD.h} over ${SD.span}`);
+    }
+    // the same door on the same track in the same place, and the same overlap (Auto, so the drawers open)
+    if (lay && (lay.overlapMm !== SD.ov || lay.doors.some((d, i) => !SD.doors[i] || d.back !== SD.doors[i].back || !close(d.x0, SD.doors[i].x0) || !close(d.x1, SD.doors[i].x1)))) {
+      fail(`design ${k}`, `sliding door order: CabinetOS ${lay.overlapMm} ${lay.doors.map((d) => `${d.back ? 'B' : 'F'}${d.x0}`)}; planner ${SD.ov} ${SD.doors.map((d) => `${d.back ? 'B' : 'F'}${d.x0}`)}`);
+    }
+    // the drawers the planner thinks open are the ones CabinetOS thinks open
+    if (lay) {
+      const plannerSpans = slidingDrawerSpans(pieces, fit === 'openL' || free ? 18 : 0);
+      if (plannerSpans.length !== lay.drawers.length || lay.drawers.some((d, i) => !close(d.x0, plannerSpans[i][0]) || !close(d.x1, plannerSpans[i][1]))) {
+        fail(`design ${k}`, `drawers along the span: CabinetOS ${lay.drawers.map((d) => `${d.x0}-${d.x1}`)}; planner ${plannerSpans.map(([a, b]) => `${a}-${b}`)}`);
+      }
+      slidingDrawersSeen += lay.drawers.length;
+      slidingCaught += lay.drawers.filter((d) => !d.opens).length;
+      if (SD.ov !== SLIDE.overlap) slidingLowered++;
     }
     const panels = parts.filter((r) => /Sliding door panel$/.test(r.description));
     const q = panels.reduce((a, r) => a + (r.qty ?? 1), 0);
@@ -188,7 +205,7 @@ for (let k = 0; k < N; k++) {
   });
 }
 
-console.log(`${slidingSeen} sliding runs compared.`);
+console.log(`${slidingSeen} sliding runs compared (${slidingDrawersSeen} drawer units behind them, ${slidingCaught} caught, overlap lowered in ${slidingLowered} runs).`);
 console.log(`${units} units in ${N} designs (${okLayouts} build as drawn): ${shelvesSeen} shelves (${hatsSeen} over the hanging), ${railsSeen} rails, ${drawersSeen} drawers, ${dustSeen} dust shelves, ${doorsSeen} doors compared.`);
 if (fails.length) {
   console.log(`\n${fails.length} differences:`);
