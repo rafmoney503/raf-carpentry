@@ -13,18 +13,20 @@ import { CABINETOS_URL, COMPANY, PHONE_DISPLAY, PHONE_HREF, QUOTE_HREF, RAFAL_SO
 
 const host = (url: string) => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/.*$/, '');
 
-/* The rs mark as Rafal Solutions draws it: ink square, 'rs', a yellow corner. `edge` is the colour of whatever it
-   sits on, so the corner looks cut out of the square. */
-export function RsMark({ size = 28, edge = 'border-paper' }: { size?: number; edge?: string }) {
+/* Rafal Solutions' logo as rafalsolutions.co.uk draws it (its src/components/Header.tsx, since 17 Oct 2026): three
+   planks stacked as rising steps with the yellow ball on the top one. `edge` is the colour of whatever it sits on:
+   the ball has a thin ring of it, so it reads as resting on the plank. Under 36 px the ball is drawn a little bigger
+   (as on its browser tab) so it doesn't shrink to a dot. */
+type Edge = 'paper' | 'mount' | 'raised';
+export function RsMark({ size = 28, edge = 'paper' }: { size?: number; edge?: Edge }) {
+  const r = size < 36 ? 11 : 9.5;
   return (
-    <span
-      aria-hidden="true"
-      className="relative inline-grid flex-none place-items-center rounded-[2px] bg-ink font-display font-bold leading-none tracking-[-0.02em] text-paper"
-      style={{ width: size, height: size, fontSize: Math.round(size / 2) }}
-    >
-      rs
-      <span className={`absolute bg-rs ${edge}`} style={{ left: '80%', top: '80%', width: '33%', height: '33%', borderWidth: Math.max(1, Math.round(size * 0.067)), borderStyle: 'solid' }} />
-    </span>
+    <svg aria-hidden="true" width={size} height={size} viewBox="7 7 86 86" className="flex-none">
+      <rect x="10" y="72" width="80" height="14" rx="2" className="fill-ink" />
+      <rect x="34" y="54" width="56" height="14" rx="2" className="fill-ink" />
+      <rect x="58" y="36" width="32" height="14" rx="2" className="fill-ink" />
+      <circle cx="74" cy={36 - r - 1.5} r={r} fill="var(--color-rs)" stroke={`var(--color-${edge})`} strokeWidth="3" />
+    </svg>
   );
 }
 
@@ -79,7 +81,7 @@ export function CompanyCards() {
           <a href={RAFAL_SOLUTIONS_URL} target="_blank" rel="noopener" className={`${card} group border-line-strong transition-colors hover:border-accent`}>
             <span className={pill}>The company</span>
             <div className="mt-5 flex items-center gap-3">
-              <RsMark edge="border-mount" />
+              <RsMark edge="mount" />
               <h3 className="text-[23px] font-[620] leading-tight">{COMPANY.name}</h3>
             </div>
             <p className="mt-3 text-[15px] leading-relaxed text-muted">
@@ -162,7 +164,7 @@ export function TradeNudge({
 }) {
   const body = (
     <aside className="flex items-start gap-4 sm:items-center">
-      <RsMark size={40} edge={bare ? 'border-raised' : 'border-paper'} />
+      <RsMark size={40} edge={bare ? 'raised' : 'paper'} />
       <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between sm:gap-8">
         <div className="max-w-[62ch]">
           <p className="font-mono text-[13px] text-accent">{kicker}</p>
