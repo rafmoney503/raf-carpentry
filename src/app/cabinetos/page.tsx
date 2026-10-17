@@ -5,6 +5,7 @@ import { pageMeta } from '@/lib/seo';
 import AppScreens, { type AppScreen } from '@/components/AppScreens';
 import Compare from './compare';
 import Sizes, { type SizesRule } from './sizes';
+import { TradeNudge } from '@/components/AlsoByMe';
 
 function imageSrc(v: unknown): string {
   if (typeof v === 'string' && v.trim()) return v;
@@ -231,6 +232,12 @@ export default function Cabinetos() {
           </div>
         </Container>
       </section>
+
+      <TradeNudge
+        kicker="Something like this for your own trade?"
+        text="CabinetOS is one of the systems I've built. At Rafal Solutions I build them for other trade businesses too: enquiries straight into ServiceM8, a job app for the phone, planners for your customers."
+        to="/systems"
+      />
     </>
   );
 }

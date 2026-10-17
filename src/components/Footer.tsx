@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import SocialIcon, { networkOf } from './SocialIcon';
-import { GOOGLE_REVIEWS_URL, whatsappText, whatsappUrl } from '@/lib/site';
+import { CosMark, RsMark } from './AlsoByMe';
+import { CABINETOS_URL, COMPANY, GOOGLE_REVIEWS_URL, RAFAL_SOLUTIONS_URL, whatsappText, whatsappUrl } from '@/lib/site';
 
 const explore = [
   { href: '/services', label: 'Services' },
@@ -43,6 +44,22 @@ export default function Footer() {
               Raf Carpentry
             </Link>
             <p className="mt-4 max-w-[32ch] text-pretty text-[15px] text-muted">Fitted furniture in London, drawn before it&apos;s built.</p>
+            {/* My other two names; rafalsolutions.co.uk's footer links back the same way (src/components/AlsoByMe.tsx). */}
+            <div className="mt-7 max-w-[34ch]">
+              <h4 className="font-sans text-sm font-semibold tracking-normal text-ink">Also by me</h4>
+              {[
+                { href: RAFAL_SOLUTIONS_URL, mark: <RsMark size={26} />, name: 'Rafal Solutions', line: 'Systems for trade businesses' },
+                { href: CABINETOS_URL, mark: <CosMark size={26} />, name: 'CabinetOS', line: 'Cut lists for cabinet makers' },
+              ].map((l) => (
+                <a key={l.href} href={l.href} target="_blank" rel="noopener" className="group mt-3 flex items-center gap-3 text-[15px] leading-snug">
+                  {l.mark}
+                  <span>
+                    <span className="block font-medium text-ink group-hover:text-accent">{l.name}</span>
+                    <span className="block text-[13.5px] text-muted">{l.line}</span>
+                  </span>
+                </a>
+              ))}
+            </div>
           </div>
           <div className="md:col-span-2 md:col-start-6">
             <h4 className="mb-3 font-sans text-sm font-semibold tracking-normal text-ink">Explore</h4>
@@ -84,8 +101,11 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-12 grid gap-1.5 border-t border-line pt-6 text-[13px] leading-relaxed text-faint md:mt-16">
-          <p>© {new Date().getFullYear()} Raf Carpentry. Raf Carpentry is a trading name of Rafal Solutions Ltd, registered in England and Wales, company no. 13645392.</p>
-          <p>Registered office: 14 Kings Road, Wood Green, London N22 5SN. VAT no. 521 4613 26.</p>
+          <p>
+            © {new Date().getFullYear()} Raf Carpentry. Raf Carpentry is a trading name of{' '}
+            <a href={RAFAL_SOLUTIONS_URL} target="_blank" rel="noopener" className="underline decoration-line-strong underline-offset-2 hover:text-ink">{COMPANY.name}</a>, registered in England and Wales, company no. {COMPANY.number}.
+          </p>
+          <p>Registered office: {COMPANY.office}. VAT no. {COMPANY.vat}.</p>
           {/* Raf's own tool: sends a client the review link by WhatsApp or text (src/app/review/send). */}
           <p className="mt-2">
             <Link href="/review/send" className="inline-flex items-center gap-1.5 font-mono text-[12.5px] text-accent hover:underline">

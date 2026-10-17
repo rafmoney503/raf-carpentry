@@ -23,6 +23,7 @@
   --color-on-accent: #f6f7f4;
   --color-whatsapp: #25d366; /* WhatsApp's own green, only for WhatsApp buttons and logos */
   --color-whatsapp-hover: #1ebe5d;
+  --color-rs: #ffe45c; /* Rafal Solutions' yellow, only for the corner of its rs mark (src/components/AlsoByMe.tsx) */
 
   /* One corner system across the whole site: square, 2px. rounded-full is kept for the logo. */
   --radius: 2px;

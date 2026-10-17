@@ -59,6 +59,8 @@ const PAGES: { title: string; href: string; sub: string; words: string }[] = [
   { title: 'Blog', href: '/blog', sub: 'Jobs step by step, SketchUp and CabinetOS', words: 'blog posts articles write ups' },
   { title: 'About', href: '/about', sub: 'Who I am and how I work', words: 'about raf rafal story who carpenter london' },
   { title: 'Contact', href: '/contact', sub: 'Phone, WhatsApp, email', words: 'contact phone call email whatsapp number message' },
+  { title: 'The company', href: '/about#company', sub: 'Rafal Solutions Ltd, Raf Carpentry and CabinetOS', words: 'company ltd limited registered number vat rafal solutions trading name office' },
+  { title: 'Rafal Solutions', href: 'https://www.rafalsolutions.co.uk', sub: 'Systems for trade businesses, built by me', words: 'rafal solutions systems automation servicem8 job app apps software trade trades business tradesman decorator builder electrician plumber kitchen fitter joiner' },
 ];
 
 type HowItWorks = {

@@ -162,6 +162,7 @@ export function getMenuPanels(): Record<string, MenuPanel> {
         { label: 'My story', href: '/about#story' },
         { label: 'What makes me different', href: '/about#different' },
         { label: 'Follow the work', href: '/about#follow' },
+        { label: 'The company', href: '/about#company' },
       ],
       image: { src: '/images/raf-at-work.jpg', alt: '', caption: 'Measuring up' },
     },

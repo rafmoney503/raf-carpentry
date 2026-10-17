@@ -8,6 +8,7 @@ import { pageMeta } from '@/lib/seo';
 import { QUOTE_HREF, whatsappText } from '@/lib/site';
 import { getTipsData, tipSections } from '@/lib/tips';
 import { CopyTipLink, TipPhotos } from './tip-extras';
+import { TradeNudge } from '@/components/AlsoByMe';
 
 export function generateMetadata(): Metadata {
   const d = getTipsData();
@@ -121,6 +122,7 @@ export default function TipsPage() {
               ))}
             </ul>
           </nav>
+          <TradeNudge bare />
         </Container>
       </section>
     </>

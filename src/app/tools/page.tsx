@@ -7,6 +7,7 @@ import { toolsSectionId } from '@/lib/menu-panels';
 import { isAmazonLink } from '@/lib/affiliates';
 import Sketch from '@/app/how-it-works/sketches';
 import PlannerTeaser from '@/components/PlannerTeaser';
+import { TradeNudge } from '@/components/AlsoByMe';
 
 type ToolEntry = {
   name: string;
@@ -175,6 +176,8 @@ export default function ToolsPage() {
           </div>
         </Container>
       </section>
+
+      <TradeNudge />
     </>
   );
 }

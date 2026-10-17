@@ -21,6 +21,18 @@ export const SOCIAL_URLS = [
   'https://www.facebook.com/rafcarpentry/',
 ];
 
+/* The company behind Raf Carpentry, and my other two names (src/components/AlsoByMe.tsx shows them).
+   Rafal Solutions Ltd also builds systems for other trade businesses at rafalsolutions.co.uk, whose About page
+   links back here with the same three cards; CabinetOS is the cut-list app. */
+export const COMPANY = {
+  name: 'Rafal Solutions Ltd',
+  number: '13645392',
+  vat: '521 4613 26',
+  office: '14 Kings Road, Wood Green, London N22 5SN',
+};
+export const RAFAL_SOLUTIONS_URL = 'https://www.rafalsolutions.co.uk';
+export const CABINETOS_URL = 'https://www.cabinetos.co.uk';
+
 export const PHONE_DISPLAY = '07792 860221';
 export const PHONE_HREF = 'tel:07792860221';
 export const EMAIL = 'info@rafcarpentry.com';

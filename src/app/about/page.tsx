@@ -3,6 +3,7 @@ import { readPageJson } from '@/lib/pages';
 import { Container, SectionHeading } from '@/components/ui';
 import SocialIcon, { networkOf } from '@/components/SocialIcon';
 import Logo3D from '@/components/Logo3D';
+import { CompanyCards } from '@/components/AlsoByMe';
 import { pageMeta } from '@/lib/seo';
 
 type AboutPageData = {
@@ -36,7 +37,7 @@ export default function About() {
 
   return (
     <>
-      {/* Section ids (story, different, follow) are what the menu's About panel jumps to. */}
+      {/* Section ids (story, different, follow, company) are what the menu's About panel jumps to. */}
       <div id="story">
       <Container className="pb-16 pt-12 md:pb-24 md:pt-20">
         <div className="grid grid-cols-1 items-start gap-12 md:grid-cols-12 md:gap-6">
@@ -119,6 +120,8 @@ export default function About() {
           </div>
         </div>
       </Container>
+
+      <CompanyCards />
     </>
   );
 }

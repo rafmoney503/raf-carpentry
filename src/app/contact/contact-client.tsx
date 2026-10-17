@@ -3,6 +3,7 @@ import { GoogleRating } from '@/components/Reviews';
 import Link from 'next/link';
 import { Container } from '@/components/ui';
 import SocialIcon from '@/components/SocialIcon';
+import { OtherWays } from '@/components/AlsoByMe';
 import { whatsappText, whatsappUrl } from '@/lib/site';
 
 export type ContactPageData = {
@@ -71,6 +72,7 @@ export default function ContactClient({ d }: { d: ContactPageData }) {
               Plan your project <span aria-hidden="true">→</span>
             </Link>
           </div>
+          <OtherWays className="mt-4" />
         </div>
 
         {d.formEnabled ? (

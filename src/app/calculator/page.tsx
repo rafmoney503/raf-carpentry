@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Container, PageHeader } from '@/components/ui';
 import CalculatorClient from './calculator-client';
+import { TradeNudge } from '@/components/AlsoByMe';
 import './calculator.css';
 
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ export default function CalculatorPage() {
       <Container className="pb-24 md:pb-32">
         <CalculatorClient />
       </Container>
+      <TradeNudge />
     </>
   );
 }

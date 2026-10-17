@@ -59,6 +59,8 @@ export const businessJsonLd = {
   image: `${SITE_URL}/images/projects/IMG_8405.jpg`,
   logo: `${SITE_URL}/images/r-logo-final.png`,
   founder: { '@type': 'Person', name: 'Rafal Janczy' },
+  // Raf Carpentry is a trading name of Rafal Solutions Ltd (src/lib/site.ts COMPANY).
+  parentOrganization: { '@type': 'Organization', name: 'Rafal Solutions Ltd', url: 'https://www.rafalsolutions.co.uk', vatID: 'GB521461326' },
   address: {
     '@type': 'PostalAddress',
     streetAddress: '14 Kings Road',
