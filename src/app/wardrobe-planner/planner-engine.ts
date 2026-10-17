@@ -141,6 +141,13 @@ function autoFill(){
 /* ---------- three.js ---------- */
 const stage=$('#stage');let renderer=null,scene,cam,ctl,root,needs=true;const doors=[],picks=[];
 const texCache=new Map(),matCache=new Map();
+/* The unit being changed stands out only on the Units step, where the other units fade back (Raf, 17 Oct 2026: the
+   old blue wire box round it read as clutter, and showed on every step). */
+const modGroups=[],fadeCache=new WeakMap(),WHITE=new THREE.Color('#ffffff');let shownStep=-1;
+function faded(m){let f=fadeCache.get(m);if(f)return f;if(Array.isArray(m)){f=m.map(faded);fadeCache.set(m,f);return f;}if(!f){f=m.clone();if(f.emissive){f.emissive=WHITE.clone();f.emissiveIntensity=0.5;}else if(f.color)f.color.lerp(WHITE,0.5);fadeCache.set(m,f);}return f;}
+function highlight(){if(!renderer)return;const on=S.step===1&&modGroups.length>1;
+  modGroups.forEach((g,i)=>g.traverse(o=>{if(!o.isMesh)return;if(!o.userData.mat0)o.userData.mat0=o.material;o.material=on&&i!==S.sel?faded(o.userData.mat0):o.userData.mat0;}));
+  needs=true;}
 const lin=h=>new THREE.Color(h);
 function shade(hex,f){const c=new THREE.Color(hex);c.lerp(new THREE.Color(f>0?'#ffffff':'#000000'),Math.abs(f));return'#'+c.getHexString();}
 function rng(s){return()=>{s=(s*9301+49297)%233280;return s/233280;};}
@@ -240,8 +247,8 @@ function frameCam(force){const W=S.wall*MM,H=S.ceiling*MM;if(!force&&Math.abs(W-
   ctl.target.set(0,H*0.48,0.3);const az=0.32;cam.position.set(Math.sin(az)*need,H*0.5+0.15,0.3+Math.cos(az)*need);ctl.update();needs=true;}
 function build(){
   if(!renderer)return;
-  if(root){scene.remove(root);root.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.userData.own&&o.material)o.material.dispose();});}
-  doors.length=0;picks.length=0;root=new THREE.Group();scene.add(root);
+  if(root){scene.remove(root);root.traverse(o=>{if(o.geometry)o.geometry.dispose();const mt=o.userData.mat0||o.material;if(o.userData.own&&mt)[].concat(mt).forEach(x=>x.dispose());});}
+  doors.length=0;picks.length=0;modGroups.length=0;root=new THREE.Group();scene.add(root);
   const c=calc(),W=S.wall*MM,H=S.ceiling*MM,D=depth()*MM,X=mm=>-W/2+mm*MM,wallM=std('#E5E3DD',0.95),side=0.12,ext=S.fit==='wall'?0:1.2,fr=free();
   const fl=new THREE.Mesh(new THREE.PlaneGeometry(W+2*ext+0.4,2.6),new THREE.MeshStandardMaterial({map:(()=>{const t=floorTex();t.repeat.set((W+2*ext)/1.3,2);return t;})(),roughness:0.72}));
   fl.material.userData={};fl.userData.own=true;fl.rotation.x=-Math.PI/2;fl.position.set(0,0,1.3);fl.receiveShadow=true;root.add(fl);
@@ -262,7 +269,7 @@ function build(){
     if(P>0.002)box(root,X(c.x0),0,0,X(c.x1),P,zi-0.05,std(shade(colour().c,-0.3),0.7));}
   const RB=runBox(),PCS=pieces();
   S.modules.forEach((m,i)=>{
-    const g=new THREE.Group();root.add(g);const two=!!(m.split&&canSplit(m.w));
+    const g=new THREE.Group();root.add(g);modGroups.push(g);const two=!!(m.split&&canSplit(m.w));
     PCS.filter(p=>p.section===i).forEach((p,h)=>{
       const a=X(c.x0+p.x),b=a+p.w*MM,L=p.layout,pg=new THREE.Group();g.add(pg);
       carcass(pg,a,b,P,P+L.boxH*MM,D,zi);
@@ -271,10 +278,9 @@ function build(){
       hinged(pg,m.id+p.part,L.doors,a,P,zi);
       pg.traverse(o=>{if(o.isMesh){o.userData.mod=i;o.userData.half=two?h:null;if(!o.userData.door)picks.push(o);}});
     });
-    if(i===S.sel){const bx=new THREE.Box3();g.traverse(o=>{if(o.isMesh&&!o.userData.door)bx.expandByObject(o);});bx.expandByScalar(0.01);const hp=new THREE.Box3Helper(bx,new THREE.Color('#2547d0'));hp.material.depthTest=false;hp.material.transparent=true;hp.material.toneMapped=false;hp.renderOrder=5;hp.userData.own=true;root.add(hp);}
   });
   if(!hinge&&S.modules.length){const a=X(c.x0),b=X(c.x1),n=slidingCount(c.mods),mt=P+RB.boxH*MM;box(root,a,mt-0.045,zi,b,mt,D,alu());box(root,a,P,zi,b,P+0.012,D,alu());sliding(root,a,b,P+0.012,mt-0.045,zi,n);}
-  frameCam(false);needs=true;
+  frameCam(false);highlight();needs=true;
 }
 function tap(e){if(!renderer)return;const r=renderer.domElement.getBoundingClientRect(),v=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1),ray=new THREE.Raycaster();ray.setFromCamera(v,cam);
   const h=ray.intersectObjects(picks,false)[0];if(!h)return;
@@ -332,7 +338,7 @@ function drawPlan(){
   const knob=(hx,hy,tall)=>{if(S.handle==='push')return;S.handle==='knob'?o.push(`<circle cx="${f1(hx)}" cy="${f1(hy)}" r="2.5" fill="${I}"/>`):(tall?ln(hx,hy-12,hx,hy+12,'',2.2):ln(hx-8,hy,hx+8,hy,'',2.2));};
   // Every CabinetOS unit (a pair is two), from the same layout as the 3D view and the sizes (cabinetos-wardrobe.ts).
   const RB=runBox(),PCS=pieces(),T=COS.board;
-  PCS.forEach(p=>{const L=p.layout,ux=c.x0+p.x,x0=X(ux),x1=X(ux+p.w),U=v=>X(ux+v),V=v=>Y(P+v),sel=p.section===S.sel;
+  PCS.forEach(p=>{const L=p.layout,ux=c.x0+p.x,x0=X(ux),x1=X(ux+p.w),U=v=>X(ux+v),V=v=>Y(P+v),sel=p.section===S.sel&&S.step===1;
     rc(x0,V(L.boxH),x1-x0,L.boxH*s,sel?'#e9edfb':'#FFFFFF','',1.4);
     if(RB.topH)rc(x0,V(L.boxH+RB.topH),x1-x0,RB.topH*s,'#FFFFFF','',1.4);
     if(S.drawInside){
@@ -520,6 +526,8 @@ function render(){
   const keep=body.dataset.cur===String(S.step)?body.scrollTop:0;body.innerHTML=STEPS[S.step]();body.dataset.cur=S.step;body.scrollTop=keep;
   $('#backBtn').style.visibility=S.step===0?'hidden':'visible';$('#nextBtn').hidden=S.step===4;$('#nextBtn').textContent=NEXT[S.step];
   chips();
+  // the unit being changed stands out on the Units step only
+  if(shownStep!==S.step){shownStep=S.step;highlight();if(S.view==='draw')drawPlan();}
 }
 function chips(){const c=calc();$('#fitText').textContent=c.t;$('#fitChip').className='fit'+(c.lv==='ok'?'':' '+c.lv);$('#dimsChip').textContent=`${S.wall} × ${S.ceiling} · ${S.modules.length} unit${S.modules.length===1?'':'s'}`;}
 function changed(rebuildPanel=true,keepCam=true){S.example=false;S.sent=false;if(S.unitMode==='equal'&&S.modules.length)equalise(S.modules.length);normalise();build();if(S.view==='draw')drawPlan();if(rebuildPanel)render();else chips();}
