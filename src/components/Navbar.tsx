@@ -1,13 +1,15 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
 import { PHONE_DISPLAY, PHONE_HREF, QUOTE_HREF } from '@/lib/site';
 import type { MenuPanel } from '@/lib/menu-panels';
 import MenuPanelView, { MenuFeatureRow, MenuTags } from './MenuPanel';
 import { PLANNER_HREF, PLANNER_IMAGE_SQUARE } from '@/lib/planner-picture';
 import SiteSearch from './SiteSearch';
+import { MiniLevel } from './ScrollLevel';
+import { getDock, getUndocked, subscribeDock } from '@/lib/scroll-level';
 
 const links = [
   { href: '/services', label: 'Services' },
@@ -34,6 +36,9 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
   const [expanded, setExpanded] = useState<string | null>(null); // phone menu: the item whose tags are open
   const [searching, setSearching] = useState(false); // computer: the search panel is open
   const [phoneSearch, setPhoneSearch] = useState(false); // phone menu: something is typed in its search box
+  // The home page's spirit level: once it has scrolled up under the header, a small copy sits beside the logo.
+  const level = useSyncExternalStore(subscribeDock, getDock, getUndocked);
+  const docked = level.present && level.docked;
   const openTimer = useRef(0);
   const closeTimer = useRef(0);
   const show = (href: string, now = false) => {
@@ -106,9 +111,11 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
           <span className="h-9 w-9 flex-none overflow-hidden rounded-full bg-[#f4f1ea] ring-1 ring-line-strong">
             <Image src="/images/r-logo-final.png" alt="" width={36} height={36} className="h-full w-full object-cover" />
           </span>
-          {/* Very narrow phones (under 350 px) show the R only, so the header never runs off the side. */}
-          <span className="max-[349px]:sr-only">Raf Carpentry</span>
+          {/* Very narrow phones (under 350 px) show the R only, so the header never runs off the side. While the small
+              spirit level is docked the name makes way for it at every width (the menu bar is full from 1024 px). */}
+          <span className={docked ? 'sr-only' : 'max-[349px]:sr-only'}>Raf Carpentry</span>
         </Link>
+        {docked ? <MiniLevel /> : null}
 
         <nav aria-label="Main" className="ml-auto hidden gap-1 lg:flex">
           {links.map((l) => (

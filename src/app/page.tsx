@@ -11,6 +11,7 @@ import { QUOTE_HREF, whatsappText, whatsappUrl } from '@/lib/site';
 import SocialIcon from '@/components/SocialIcon';
 import JobsNear from '@/components/JobsNear';
 import PlannerTeaser from '@/components/PlannerTeaser';
+import { HeroLevel } from '@/components/ScrollLevel';
 import { areaPageLinks, getNearJobs } from '@/lib/areas';
 import { businessJsonLd, jsonLd, pageMeta } from '@/lib/seo';
 import './home.css';
@@ -109,6 +110,8 @@ export default function HomePage() {
           <h1 className="h1 anim d1">
             {d.heroTitle} <em>{d.heroTitleAccent}</em>
           </h1>
+          {/* A spirit level that tips while the page scrolls and settles with a tick (src/lib/scroll-level.ts). */}
+          <HeroLevel className="anim d2" />
           <p className="hero-sub anim d2">{d.heroSubtitle}</p>
           <div className="hero-ctas anim d3">
             <Link className="btn btn-primary" href={QUOTE_HREF}>{d.primaryCtaLabel}</Link>
