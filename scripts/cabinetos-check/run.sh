@@ -9,6 +9,13 @@ if [ ! -d "$COS/src/lib" ] || [ ! -d "$COS/node_modules" ]; then
   echo "Needs the cabinetos-site checkout with node_modules: put it next to this folder or set COS=/path/to/cabinetos-site" >&2
   exit 2
 fi
+# CabinetOS keeps an exact copy of the rules file (src/lib/plannerWardrobe.ts) for its Sliding doors card's inside
+# presets: the two must stay the same, so the check proves the card's units too.
+if ! cmp -s src/lib/cabinetos-wardrobe.ts "$COS/src/lib/plannerWardrobe.ts"; then
+  echo "FAIL: cabinetos-site src/lib/plannerWardrobe.ts differs from src/lib/cabinetos-wardrobe.ts. Copy this one over:" >&2
+  echo "  cp src/lib/cabinetos-wardrobe.ts \"$COS/src/lib/plannerWardrobe.ts\"" >&2
+  exit 1
+fi
 OUT=scripts/cabinetos-check/.cache
 A=$COS/scripts/social/app
 mkdir -p "$OUT"
