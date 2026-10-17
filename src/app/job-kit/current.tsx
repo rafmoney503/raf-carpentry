@@ -710,6 +710,7 @@ export function CurrentView({
   onCancel,
   replyAt,
   onCustomer,
+  info,
 }: {
   job: CurrentJob;
   marks: Marks;
@@ -730,6 +731,7 @@ export function CurrentView({
   onCancel: (uuid: string) => Promise<string>;
   replyAt?: string; // their newest email, from the list
   onCustomer?: () => void; // everything for this customer in ServiceM8
+  info?: { line: string; subject: string; open: () => void }; // their latest email in the info@ Inbox
 }) {
   const st = stage(job, marks);
   const [text] = stageText(job, marks);
@@ -884,6 +886,7 @@ export function CurrentView({
           if (at > (marks[job.uuid]?.mailSeen ?? '')) onMark({ mailSeen: at });
         }}
         review={job.status === 'Completed' ? { askedAt: marks[job.uuid]?.reviewAskedAt, onAsked: () => onMark({ reviewAskedAt: Date.now() }) } : undefined}
+        info={info}
       />
 
       <MoneyBox job={job} />

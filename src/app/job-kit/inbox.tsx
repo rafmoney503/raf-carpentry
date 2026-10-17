@@ -131,6 +131,14 @@ export function whenText(iso: string, withTime = false) {
   return withTime ? `${date}, ${time}` : date;
 }
 
+/* "today at 09:10", "yesterday at 08:12", "on Tue 13 Oct at 14:22", for sentences. */
+export function whenSaid(iso: string) {
+  const s = whenText(iso, true);
+  if (/^\d/.test(s)) return `today at ${s}`;
+  if (s.startsWith('Yesterday ')) return `yesterday at ${s.slice(10)}`;
+  return s ? `on ${s.replace(', ', ' at ')}` : '';
+}
+
 /* New, in the main (Focused) inbox, from the last 14 days: what the Today list and the card count. */
 const freshUnread = (inbox: Inbox) => inbox.mails.filter((m) => !m.read && !m.other && !m.mine && Date.now() - Date.parse(m.at) < 14 * 864e5);
 
@@ -293,9 +301,20 @@ function Problem({ error, detail, at }: { error: string; detail?: string; at?: n
   );
 }
 
+/* Their newest email in the list, or Raf's newest to them (the list is newest first): for the job screen's
+   'Reply from info@' line. */
+export function lastWith(inbox: Inbox, email: string): InboxMail | undefined {
+  const e = email.trim().toLowerCase();
+  return e ? inbox.mails.find((m) => (withWho(m)?.email ?? '') === e) : undefined;
+}
+
 /* ---------- one email ---------- */
 
 type Draft = { text?: string };
+/* What a reply answers: their newest email in the conversation, whichever email of it Raf opened, so he always
+   replies to the last thing they said. When they haven't written back to an email Raf sent himself, it's that one
+   (the server sends it to the people he sent it to). */
+type Target = { id: string; to: Who; at: string; subject: string; text: string; mine: boolean; opened: boolean };
 const fileSize = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1e3))} KB`);
 const isPhoto = (type: string) => /^image\/(jpe?g|png|heic|heif|webp|gif)$/i.test(type);
 
@@ -338,7 +357,9 @@ export function EmailView({
   const [whole, setWhole] = useState(false);
   const [allThread, setAllThread] = useState(false);
   const [sent, setSent] = useState<ThreadMail[]>(() => read<Record<string, ThreadMail[]>>(SENT_KEY, {})[id] ?? []);
-  const [draft, setDraftState] = useState<Draft>(() => read<Record<string, Draft>>(DRAFTS_KEY, {})[id] ?? {});
+  const [drafts, setDrafts] = useState<Record<string, Draft>>(() => read<Record<string, Draft>>(DRAFTS_KEY, {}));
+  const [quoteAll, setQuoteAll] = useState(false);
+  const quoteRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState<'' | 'send' | 'draft'>('');
   const [sendProblem, setSendProblem] = useState('');
   const [done, setDone] = useState<'' | 'sent' | 'draft'>('');
@@ -384,40 +405,72 @@ export function EmailView({
   const head: InboxMail | undefined = mail ?? fallback;
   const mine = Boolean(head?.mine);
   const w = (head ? withWho(head) : null) ?? { name: '', email: '' };
-  const first = firstOf(w);
-  const start = first ? `Hi ${first},\n\n` : 'Hi,\n\n';
-  const text = draft.text ?? start;
-  const written = Boolean(text.trim()) && text.trim() !== start.trim();
-  const setDraft = (t: string | undefined) => {
-    const next = { text: t };
-    setDraftState(next);
-    keep<Draft>(DRAFTS_KEY, id, t === undefined ? undefined : next, 40);
-    setDone('');
-    setSendProblem('');
-  };
   const match = matchCustomer(w.email, clients, jobs);
   const thread = [...(mail?.thread ?? []), ...sent].sort((a, b) => a.at.localeCompare(b.at));
   const earlier = allThread ? thread : thread.slice(-4);
-  const youReplied = thread.some((t) => t.dir === 'out' && mail && t.at > mail.at);
   const automatic = head ? noReply(head) : false;
-  const showReply = !mine && (!automatic || replyAnyway);
+
+  // Until the email comes (no signal, first open), the list's copy stands in; one Raf sent waits for its conversation.
+  const target: Target | null =
+    !head || (mine && !mail)
+      ? null
+      : ([
+          ...(mine ? [] : [{ id: head.id, to: replyWho(head), at: head.at, subject: head.subject, text: mail ? mail.text : head.preview, mine: false, opened: true }]),
+          ...(mail?.thread ?? [])
+            .filter((t) => t.dir === 'in' && !NO_REPLY.test(t.from.email))
+            .map((t) => ({ id: t.id, to: t.from, at: t.at, subject: t.subject, text: t.text, mine: false, opened: false })),
+        ].sort((a, b) => b.at.localeCompare(a.at))[0] ?? (w.email && mail ? { id: mail.id, to: w, at: mail.at, subject: mail.subject, text: mail.text, mine: true, opened: true } : null));
+  const toWho = target?.to ?? w;
+  const first = firstOf(toWho);
+  const calledBy = first || shownName(toWho);
+  const start = first ? `Hi ${first},\n\n` : 'Hi,\n\n';
+  const draft = (target ? drafts[target.id] : undefined) ?? drafts[id] ?? {};
+  const text = draft.text ?? start;
+  const written = Boolean(text.trim()) && text.trim() !== start.trim();
+  const setDraft = (t: string | undefined) => {
+    const key = target?.id ?? id;
+    setDrafts((all) => {
+      const next = { ...all };
+      delete next[id];
+      if (t === undefined) delete next[key];
+      else next[key] = { text: t };
+      return next;
+    });
+    if (key !== id) keep<Draft>(DRAFTS_KEY, id, undefined, 40);
+    keep<Draft>(DRAFTS_KEY, key, t === undefined ? undefined : { text: t }, 40);
+    setDone('');
+    setSendProblem('');
+  };
+  // Raf already answered their last email (from here, Outlook or his iPhone): say when, so it isn't sent twice.
+  const repliedSince = target && !target.mine ? thread.filter((t) => t.dir === 'out' && t.at > target.at).pop() : undefined;
+  const youReplied = Boolean(repliedSince);
+  const showReply = Boolean(target) && (!(target?.opened && !target.mine && automatic) || replyAnyway);
   const aiShown = aiOpen ?? !youReplied;
+  const quoteLong = Boolean(target && (target.text.length > 520 || target.text.split('\n').length > 9));
+  // 'Reply to Kasia' at the top: down to her email, with the cursor in the box right under it.
+  const startReply = () => {
+    quoteRef.current?.scrollIntoView({ block: 'start', behavior: 'instant' });
+    const box = textRef.current;
+    if (!box) return;
+    box.focus({ preventScroll: true });
+    box.setSelectionRange(box.value.length, box.value.length);
+  };
 
   const writeDraft = () => {
-    if (!mail) return;
+    if (!mail || !target) return;
     setAiBusy(true);
     setAiProblem('');
     setAiDone(false);
     const had = written ? text : undefined;
-    const all = [...thread.filter((t) => t.at < mail.at), { dir: 'in' as const, from: mail.from, to: mail.to, subject: mail.subject, at: mail.at, text: mail.text, id: mail.id }];
+    const all = [...thread, { dir: mine ? ('out' as const) : ('in' as const), from: mail.from, to: mail.to, subject: mail.subject, at: mail.at, text: mail.text, id: mail.id }].sort((a, b) => a.at.localeCompare(b.at));
     void post<{ text: string }>(
       readPin(),
       {
         mode: 'email',
         source: 'inbox',
         first,
-        name: w.name,
-        what: mail.subject,
+        name: toWho.name,
+        what: target.subject,
         status: '',
         area: '',
         description: match.jobs[0] ? `${match.jobs[0].status}: ${match.jobs[0].description}` : '',
@@ -437,6 +490,7 @@ export function EmailView({
 
   const send = (really: boolean) => {
     setSendProblem('');
+    if (!target) return;
     if (!written) {
       setSendProblem('Write the reply first.');
       textRef.current?.focus({ preventScroll: true });
@@ -444,10 +498,10 @@ export function EmailView({
       return;
     }
     setBusy(really ? 'send' : 'draft');
-    void post<{ sent: { to: Who[]; subject: string; draft: boolean; at: string } }>(readPin(), { action: 'reply', id, text: text.trim(), send: really }, API).then((r) => {
+    void post<{ sent: { to: Who[]; subject: string; draft: boolean; at: string } }>(readPin(), { action: 'reply', id: target.id, text: text.trim(), send: really }, API).then((r) => {
       setBusy('');
       if (!r.ok) return setSendProblem(`${problemText(r.error, r.detail)}${/Drafts/.test(r.detail ?? '') ? '' : ' It wasn’t sent; what you wrote is kept here.'}`);
-      const to = r.data.sent.to.map(shownName).join(', ') || shownName(w);
+      const to = r.data.sent.to.map(shownName).join(', ') || shownName(toWho);
       setDoneTo(to);
       if (really) {
         const mine: ThreadMail = { id: `here-${Date.now()}`, dir: 'out', from: { name: 'You', email: '' }, to: r.data.sent.to, subject: r.data.sent.subject, at: r.data.sent.at, text: text.trim() };
@@ -457,8 +511,7 @@ export function EmailView({
           return next;
         });
       }
-      setDraftState({});
-      keep<Draft>(DRAFTS_KEY, id, undefined, 40);
+      setDraft(undefined);
       setDone(really ? 'sent' : 'draft');
       setAiDone(false);
       setAiNote('');
@@ -522,6 +575,11 @@ export function EmailView({
         ) : null}
         <p className="font-mono text-[12.5px] text-faint">{whenText(head.at, true)}</p>
       </div>
+      {showReply && target ? (
+        <button type="button" onClick={startReply} className="btn btn-primary btn-sm mt-3 h-auto min-h-10 whitespace-normal py-2 text-left leading-snug">
+          {target.mine ? `Write to ${calledBy} again` : target.opened ? `Reply to ${calledBy}` : `Reply to ${calledBy}’s last email`}
+        </button>
+      ) : null}
 
       {problem ? (
         <p role="alert" className="mt-4 rounded-sm border border-ink bg-mount px-3 py-2.5 text-[14.5px] leading-relaxed">
@@ -655,9 +713,9 @@ export function EmailView({
             {done === 'sent' ? `Sent to ${doneTo} from info@rafcarpentry.com. It’s in Sent Items in Outlook.` : `Saved in Drafts in Outlook, addressed to ${doneTo}. Finish it and send it there.`}
           </p>
         ) : null}
-        {mine ? (
+        {!target ? (
           <p className="text-[14.5px] leading-relaxed text-muted">
-            You sent this one{head.from.email ? ` from ${head.from.email}` : ''}, so there’s nobody to reply to here. To write to {w.email ? shownName(w) : 'them'} again, reply to their latest email.
+            {mail ? `You sent this one${head.from.email ? ` from ${head.from.email}` : ''} to nobody else, so there’s nobody to reply to.` : loading ? 'Opening the conversation…' : 'The conversation isn’t on this phone yet: try again when there’s signal.'}
           </p>
         ) : !showReply ? (
           <div>
@@ -669,8 +727,8 @@ export function EmailView({
         ) : (
           <>
             <p className="text-[14.5px] text-muted [overflow-wrap:anywhere]">
-              To: <span className="text-ink">{shownName(w)}</span>
-              {w.name ? <span className="font-mono text-[12.5px] text-faint"> {w.email}</span> : null}
+              To: <span className="text-ink">{shownName(toWho)}</span>
+              {toWho.name ? <span className="font-mono text-[12.5px] text-faint"> {toWho.email}</span> : null}
             </p>
             <div className="rounded-sm border border-line-strong bg-paper px-3 py-1.5">
               <button type="button" onClick={() => setAiOpen(!aiShown)} aria-expanded={aiShown} className="flex min-h-10 w-full items-center justify-between gap-3 text-left text-[15px] font-semibold">
@@ -699,6 +757,27 @@ export function EmailView({
                 </div>
               ) : null}
             </div>
+            {/* What this answers, right above the box, so it's in view while writing. */}
+            <div ref={quoteRef} className="scroll-mt-[calc(env(safe-area-inset-top)_-_20px)] rounded-sm border border-line-strong border-l-[3px] border-l-accent bg-paper px-3 py-2.5">
+              <p className="flex flex-wrap items-baseline justify-between gap-x-3 font-mono text-[12px] text-faint">
+                <span className="font-semibold text-ink">{target.mine ? `No reply from ${calledBy} yet. Your last email:` : `Replying to ${calledBy}’s last email`}</span>
+                <span>{whenText(target.at, true)}</span>
+              </p>
+              {target.subject && target.subject !== head.subject ? <p className="mt-0.5 text-[13.5px] text-muted [overflow-wrap:anywhere]">{target.subject}</p> : null}
+              <p className={`mt-1 whitespace-pre-line text-[14.5px] leading-relaxed [overflow-wrap:anywhere] ${quoteLong && !quoteAll ? 'line-clamp-[9]' : ''}`}>{target.text || '(no text)'}</p>
+              {quoteLong ? (
+                <button type="button" onClick={() => setQuoteAll(!quoteAll)} className="mt-1 h-9 text-[14px] text-accent underline">
+                  {quoteAll ? 'Show less' : 'Show all of it'}
+                </button>
+              ) : null}
+              {!target.opened ? <p className="mt-1.5 font-mono text-[11.5px] leading-relaxed text-faint">Their newest email in this conversation, so your reply answers this one.</p> : null}
+              {target.mine ? <p className="mt-1.5 font-mono text-[11.5px] leading-relaxed text-faint">Your new email goes to the people you sent this to, from info@.</p> : null}
+            </div>
+            {repliedSince ? (
+              <p className="-mt-1 text-[14px] leading-relaxed text-muted">
+                You replied {whenSaid(repliedSince.at)}. Anything you send now goes as another email.
+              </p>
+            ) : null}
             <label className="grid gap-1.5">
               <span className={label}>Your reply</span>
               <textarea ref={textRef} className={`${field} min-h-[170px] py-2.5 leading-relaxed`} rows={7} value={text} onChange={(e) => setDraft(e.target.value)} />

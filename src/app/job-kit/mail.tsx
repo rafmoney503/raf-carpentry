@@ -112,12 +112,14 @@ export function EmailBox({
   replyAt,
   onSeen,
   review,
+  info,
 }: {
   job: CurrentJob;
   what: string;
   replyAt?: string;
   onSeen: (at: string) => void;
   review?: { askedAt?: number; onAsked: () => void }; // on a Completed job
+  info?: { line: string; subject: string; open: () => void }; // their latest email in the info@ Inbox, to reply from info@
 }) {
   const [thread, setThread] = useState<Thread | null>(() => read<Cache>(CACHE_KEY, {})[job.uuid]?.thread ?? null);
   const [sentHere, setSentHere] = useState<Mail[]>(() => read<Record<string, Mail[]>>(SENT_KEY, {})[job.uuid] ?? []);
@@ -336,6 +338,18 @@ export function EmailBox({
           {loading ? 'Checking…' : 'Refresh'}
         </button>
       </div>
+
+      {info ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-sm border border-line-strong bg-paper px-3 py-2.5">
+          <p className="min-w-0 text-[14.5px] leading-snug [overflow-wrap:anywhere]">
+            <span className="font-semibold">{info.line}</span>
+            {info.subject ? <span className="block text-muted">{info.subject}</span> : null}
+          </p>
+          <button type="button" className="btn btn-ghost btn-sm shrink-0" onClick={info.open}>
+            Reply from info@
+          </button>
+        </div>
+      ) : null}
 
       {problem ? (
         <p role="alert" className="mt-3 rounded-sm border border-ink px-3 py-2.5 text-[14.5px] leading-relaxed">

@@ -341,17 +341,32 @@ export function replyHtml(text: string, signOff: string) {
 
 /* Raf's reply to an email, from info@: Outlook makes the reply (to the right person, 'RE:' subject, the earlier
    email quoted underneath), Raf's words and sign-off go on top, then it is sent and lands in Sent Items.
-   send: false leaves it in Drafts for Outlook. If sending fails the reply is still in Drafts. */
+   send: false leaves it in Drafts for Outlook. If sending fails the reply is still in Drafts.
+   The Job Kit replies to their newest email in the conversation; only when they haven't written back yet is it
+   one Raf sent himself (from his iPhone, info@ copied in), and Outlook would address that back to him, so it goes
+   to the people he sent it to instead (his own addresses taken off). */
 export async function reply(id: string, text: string, signOff: string, send: boolean): Promise<{ to: Who[]; subject: string; draft: boolean; at: string }> {
   const t = await getToken();
   need(t.roles, 'read');
   if (send) need(t.roles, 'send');
+  const orig = await graph<GMessage>(`/messages/${encodeURIComponent(id)}?$select=from,sender,toRecipients,ccRecipients`);
+  let readdress: { toRecipients: GAddress[]; ccRecipients: GAddress[] } | null = null;
+  if (isMine(who(orig.from ?? orig.sender))) {
+    const others = (l?: GAddress[]) => (l ?? []).filter((a) => {
+      const w = who(a);
+      return w.email && !isMine(w);
+    });
+    const to = others(orig.toRecipients);
+    const cc = others(orig.ccRecipients);
+    if (!to.length && !cc.length) throw new OutlookError('outlook-error', 400, 'You sent that email to nobody else, so there’s nobody to reply to.');
+    readdress = to.length ? { toRecipients: to, ccRecipients: cc } : { toRecipients: cc, ccRecipients: [] };
+  }
   const draft = await graph<GMessage>(`/messages/${encodeURIComponent(id)}/createReply`, { method: 'POST', body: {}, html: true });
   const old = draft.body?.content ?? '';
   const mine = replyHtml(text, signOff);
   const content = /<body[^>]*>/i.test(old) ? old.replace(/<body[^>]*>/i, (b) => `${b}${mine}`) : `${mine}${old}`;
-  await graph(`/messages/${encodeURIComponent(draft.id)}`, { method: 'PATCH', body: { body: { contentType: 'HTML', content } } });
-  const to = (draft.toRecipients ?? []).map(who);
+  await graph(`/messages/${encodeURIComponent(draft.id)}`, { method: 'PATCH', body: { body: { contentType: 'HTML', content }, ...(readdress ?? {}) } });
+  const to = (readdress?.toRecipients ?? draft.toRecipients ?? []).map(who);
   const subject = (draft.subject ?? '').trim();
   if (!send) return { to, subject, draft: true, at: new Date().toISOString() };
   try {

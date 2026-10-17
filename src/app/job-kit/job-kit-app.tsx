@@ -64,7 +64,7 @@ import {
 } from './current';
 import { CLIENTS_FRESH, CustomerSearch, fetchClients, savedClients, savedCustomers, withCurrent, type Clients, type CustomerDetail } from './customers';
 import { CustomerView } from './customer-view';
-import { customerEmails, EmailView, enquiryFromMail, fetchInbox, INBOX_FRESH, InboxList, inboxLine, inboxTodayLine, markReadHere, openedMail, savedInbox, type Inbox } from './inbox';
+import { customerEmails, EmailView, enquiryFromMail, fetchInbox, firstOf, INBOX_FRESH, InboxList, inboxLine, inboxTodayLine, lastWith, markReadHere, openedMail, savedInbox, whenSaid, type Inbox } from './inbox';
 import type { CurrentJob } from '@/lib/servicem8';
 import './job-kit.css';
 
@@ -85,13 +85,15 @@ type Screen =
   | { name: 'customer'; id: string; from?: 'home' } // one customer from ServiceM8 (customer-view.tsx)
   | { name: 'diary' }
   | { name: 'inbox' } // info@rafcarpentry.com (inbox.tsx)
-  | { name: 'email'; id: string; from?: 'home' }
+  | { name: 'email'; id: string; from?: 'home' | 'job'; job?: string } // job: opened from a ServiceM8 job's 'Reply from info@'
   | { name: 'library'; from?: 'designs'; for?: string }; // for: a current job (ServiceM8 uuid) to send to
 
 /* Where "‹ Back" goes when the app was reopened straight onto a screen (no history to go back through). */
 const parentOf = (s: Screen): Screen =>
   s.name === 'email'
-    ? { name: 'inbox' }
+    ? s.from === 'job' && s.job
+      ? { name: 'sm8', id: s.job }
+      : { name: 'inbox' }
     : s.name === 'enquiry' && s.mail
     ? { name: 'email', id: s.mail }
     : s.name === 'library' && s.for
@@ -784,6 +786,17 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               onMove={moveBooking}
               onCancel={cancelBooking}
               replyAt={sm8.replies?.[cur.uuid] ?? undefined}
+              info={(() => {
+                // Their latest email to info@ (or Raf's latest to them): reply from info@ in the Inbox.
+                const m = cur.email ? lastWith(inbox, cur.email) : undefined;
+                if (!m) return undefined;
+                const name = cur.first || (m.mine ? '' : firstOf(m.from)) || cur.name;
+                return {
+                  line: m.mine ? `You emailed ${name} ${whenSaid(m.at)}, info@ copied in` : `${name} emailed info@ ${whenSaid(m.at)}`,
+                  subject: m.subject,
+                  open: () => go({ name: 'email', id: m.id, from: 'job', job: cur.uuid }),
+                };
+              })()}
               onCustomer={
                 cur.client && !(screen.from === 'customer' && screen.client === cur.client)
                   ? () => {
