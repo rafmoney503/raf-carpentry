@@ -3266,3 +3266,413 @@ dialog.planner::backdrop {
     transform: translateX(-20px);
   }
 }
+
+/* ---------- the tape search in the header ----------
+   The black case sits in the top bar; the yellow blade pulls out of it across the bar and you type on it. The
+   results hang under the bar as cut pieces: the longest (yellow) is the best match. See TapeSearch.tsx. */
+
+.head-row {
+  position: relative;
+}
+@media (min-width: 1080px) {
+  /* a little more height on a computer so the ball on "Tell me the problem" has room to bounce */
+  .head-row {
+    min-height: 72px;
+  }
+}
+.head-actions .menu-btn {
+  order: 1;
+}
+.tape-case {
+  order: 2;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.tape-body {
+  position: relative;
+  z-index: 4;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  border-radius: 12px;
+  transition: transform 0.2s var(--ease);
+}
+.tape-reel {
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--hl);
+  border-radius: 50%;
+  transition: transform 0.38s var(--ease);
+}
+.tape-case:hover .tape-body {
+  transform: translateY(-1px);
+}
+.tape-case.open .tape-reel {
+  transform: scale(0.8);
+}
+.tape-label {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+.tape-label kbd {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+  font-family: var(--f-mono);
+  font-size: 12px;
+}
+.tape-case.open .tape-label {
+  visibility: hidden;
+}
+@media (min-width: 1080px) {
+  .tape-case {
+    order: 0;
+  }
+}
+@media (min-width: 1320px) {
+  .tape-label {
+    display: inline-flex;
+  }
+}
+
+.tape-blade {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  width: 0;
+  overflow: hidden;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px 4px 18px;
+  background-color: var(--hl);
+  background-image: repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px 40px), repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px 8px);
+  background-size: 100% 11px, 100% 6px;
+  background-repeat: no-repeat;
+  background-position: 4px 100%, 0 100%;
+  border: 1.5px solid var(--ink);
+  border-radius: 2px;
+  clip-path: inset(0 0 0 100%);
+  pointer-events: none;
+  transition: clip-path 0.38s var(--ease);
+}
+.tape-blade.open {
+  clip-path: inset(0 0 0 0);
+  pointer-events: auto;
+}
+.tape-blade:focus-within {
+  box-shadow: 0 0 0 3px rgb(21 23 26 / 0.18);
+}
+.tape-hook {
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 5px;
+  height: 30px;
+  background: var(--ink);
+}
+.tape-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 18px;
+  font-weight: 500;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.tape-input::placeholder {
+  color: rgb(21 23 26 / 0.55);
+}
+.tape-input::-webkit-search-cancel-button,
+.tape-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.tape-hint {
+  display: none;
+  flex: 0 0 auto;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+@media (min-width: 1080px) {
+  .tape-hint {
+    display: block;
+  }
+}
+
+.tape-dim {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 39;
+  background: rgb(21 23 26 / 0.4);
+  animation: tape-fade 0.2s ease both;
+}
+.tape-panel {
+  position: fixed;
+  z-index: 41;
+  max-height: calc(100dvh - 120px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 6px;
+}
+.tape-pieces {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.piece {
+  min-width: min(100%, 250px);
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 30px 8px 14px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+  animation: piece-in 0.34s var(--ease) both;
+}
+.piece.best {
+  background: var(--hl);
+}
+.piece.send {
+  background: var(--ink);
+  color: #fff;
+}
+.piece.active {
+  box-shadow: inset 5px 0 0 var(--ink);
+}
+.piece.send.active {
+  box-shadow: inset 5px 0 0 var(--hl);
+}
+.piece-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.piece-text b {
+  font-weight: 600;
+  font-size: 15.5px;
+  line-height: 1.3;
+}
+.piece.best .piece-text b {
+  font-weight: 700;
+}
+.piece-text span {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.piece.best .piece-text span {
+  color: var(--ink-2);
+}
+.piece.send .piece-text span {
+  color: #c9cdd1;
+}
+.piece-kind {
+  flex: 0 0 auto;
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.piece.best .piece-kind {
+  color: var(--ink);
+}
+.piece-big {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.piece-big b {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1;
+  background: linear-gradient(transparent 58%, var(--hl) 58%, var(--hl) 92%, transparent 92%);
+}
+.piece.best .piece-big b {
+  background: none;
+}
+.piece-big em {
+  font-style: normal;
+  font-family: var(--f-mono);
+  font-size: 10.5px;
+  color: var(--muted);
+}
+.tape-note {
+  display: inline-block;
+  margin: 10px 0 0;
+  padding: 4px 8px;
+  background: rgb(21 23 26 / 0.86);
+  font-family: var(--f-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+}
+.tape-tries {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  animation: piece-in 0.34s var(--ease) both;
+}
+.tape-tries span {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.tape-tries button {
+  min-height: 36px;
+  padding: 0 11px;
+  background: var(--paper);
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+body[data-search='open'] .nav {
+  visibility: hidden;
+}
+body[data-search='open'] .float-pill {
+  opacity: 0;
+  pointer-events: none;
+}
+@keyframes piece-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+@keyframes tape-fade {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tape-blade {
+    transition: none;
+  }
+  .piece,
+  .tape-tries,
+  .tape-dim {
+    animation: none;
+  }
+}
+
+/* ---------- "Tell me the problem" with the jumping ball (BounceCta.tsx, bounce-cta.css) ---------- */
+
+.bounce-cta {
+  order: 1;
+  position: relative;
+  width: 206px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 0 0 30px;
+  justify-content: flex-start;
+  font-size: 14.5px;
+}
+.bc-text {
+  position: relative;
+  z-index: 1;
+}
+.bc-socket {
+  position: absolute;
+  top: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #08090a;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.8), 0 0 0 1px rgb(255 255 255 / 0.1);
+}
+.bc-l {
+  left: 12px;
+}
+.bc-r {
+  left: 182px;
+}
+.bc-track {
+  position: absolute;
+  left: 13px;
+  top: 0;
+  width: 178px;
+  height: 38px;
+  z-index: 2;
+  pointer-events: none;
+}
+.bc-track.flip {
+  transform: scaleX(-1);
+}
+.bc-ball {
+  position: absolute;
+  left: 0;
+  top: 15px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff8c8 0 18%, var(--hl) 50%, #e2c238 100%);
+  border: 1px solid var(--ink);
+  transform-origin: 50% 100%;
+}
+.bc-shadow {
+  position: absolute;
+  left: 0;
+  top: -3px;
+  width: 8px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgb(21 23 26 / 0.55);
+  opacity: 0;
+}
+.bc-ring {
+  position: absolute;
+  left: -1px;
+  top: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--hl);
+  opacity: 0;
+}

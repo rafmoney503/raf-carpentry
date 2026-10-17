@@ -28,6 +28,16 @@ export default function ContactForm() {
       if (t) setMessage((m) => m || t);
     };
     window.addEventListener('fill-contact', fill);
+    // The header search's "Send it to Rafal" hands its words over from another page.
+    try {
+      const handed = sessionStorage.getItem('contact-prefill');
+      if (handed) {
+        sessionStorage.removeItem('contact-prefill');
+        setMessage((m) => m || handed);
+      }
+    } catch {
+      /* storage blocked: the form simply starts empty */
+    }
     return () => window.removeEventListener('fill-contact', fill);
   }, []);
 
