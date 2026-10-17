@@ -54,6 +54,13 @@
 .wp .fit.warn { border-left-color: var(--wp-warn); }
 .wp .fit.bad { border-left-color: var(--wp-bad); }
 .wp .fit span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wp .vbtns { display: flex; gap: 6px; align-items: flex-end; flex: 0 0 auto; }
+.wp .vbtn.ic { display: grid; place-items: center; padding: 7px 9px; }
+.wp .vbtn.ic[hidden] { display: none; }
+.wp .vbtn.ic svg { width: 16px; height: 16px; fill: currentColor; }
+.wp .vbtn.ic .i-stop, .wp .vbtn.ic[aria-pressed="true"] .i-play { display: none; }
+.wp .vbtn.ic[aria-pressed="true"] .i-stop { display: block; }
+.wp .vbtn.ic[aria-pressed="true"] { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-on-accent); }
 .wp .vbtn { border: 1px solid var(--color-line-strong); background: var(--color-mount); border-radius: var(--radius); padding: 7px 12px; font-weight: 600; font-size: 13px; white-space: nowrap; }
 .wp .dims { font-family: var(--font-mono); font-size: 12px; color: var(--color-muted); background: var(--color-mount); border: 1px solid var(--color-line-strong); border-radius: var(--radius); padding: 5px 9px; white-space: nowrap; }
 .wp .nogl { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--color-muted); background: var(--color-paper); }

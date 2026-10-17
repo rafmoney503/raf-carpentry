@@ -285,7 +285,7 @@ function build(){
 }
 function tap(e){if(!renderer)return;const r=renderer.domElement.getBoundingClientRect(),v=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1),ray=new THREE.Raycaster();ray.setFromCamera(v,cam);
   const h=ray.intersectObjects(picks,false)[0],u=h?h.object.userData:{},mod=u.mod!=null?u.mod:null;
-  const flip=o=>{const opening=o.st.t<0.5;if(opening&&o.kind==='s')doors.forEach(d=>{if(d!==o&&d.kind==='s')d.st.t=0;});o.st.t=opening?1:0;openLabel();};
+  const flip=o=>{stopPlay();const opening=o.st.t<0.5;if(opening&&o.kind==='s')doors.forEach(d=>{if(d!==o&&d.kind==='s')d.st.t=0;});o.st.t=opening?1:0;openLabel();};
   // On the Units step: a tap on another unit picks it, on the picked unit's door opens or closes it, anywhere else picks none.
   if(S.step===1){
     if(mod==null){if(u.door)flip(u.door);else pick(-1);return;}
@@ -316,7 +316,21 @@ function loop(now){raf=requestAnimationFrame(loop);const dt=Math.min(0.05,(now-l
    drawing it takes the doors off. */
 let btn3d='Open doors';
 const unitDoors=()=>S.step===1&&S.sel>=0&&S.modules.length>1?doors.filter(o=>o.mod===S.sel&&o.kind==='h'):null;
+/* Sliding doors: the play button slides each door open in turn, holds it so you can see behind it, and slides it back
+   (Raf, 17 Oct 2026: 'option for moving one by one with some delay ... just to see how they work'); the door button
+   still moves them one at a time by hand. */
+let play=null;
+function stopPlay(){if(play){clearTimeout(play.t);play=null;}const pb=$('#playBtn');if(pb)pb.setAttribute('aria-pressed','false');}
+function startPlay(){if(!doors.some(o=>o.kind==='s'))return;doors.forEach(o=>{if(o.kind==='s')o.st.t=0;});btn3d='Open doors';
+  let i=0,out=false;play={t:0};$('#playBtn').setAttribute('aria-pressed','true');
+  const tick=()=>{if(!play)return;const ss=doors.filter(o=>o.kind==='s');
+    if(i>=ss.length){stopPlay();openLabel();return;}
+    if(!out){ss[i].st.t=1;out=true;play.t=setTimeout(tick,1900);}else{ss[i].st.t=0;out=false;i++;play.t=setTimeout(tick,800);}
+    openLabel();};
+  play.t=setTimeout(tick,250);}
+offs.push(()=>stopPlay());
 function openLabel(){const b=$('#openBtn');if(!b)return;
+  const pb=$('#playBtn');if(pb){const show=S.view==='3d'&&doors.some(o=>o.kind==='s');pb.hidden=!show;if(!show&&play)stopPlay();}
   if(S.view==='draw'){b.textContent=S.drawInside?'Show the doors':'Show the inside';return;}
   const ud=unitDoors();
   if(ud&&ud.length){b.textContent=`${ud.some(o=>o.st.t<0.5)?'Open':'Close'} unit ${S.sel+1}`;return;}
@@ -324,6 +338,7 @@ function openLabel(){const b=$('#openBtn');if(!b)return;
   b.textContent=doors.length&&!doors.some(o=>o.st.t<0.5)?'Close doors':'Open doors';}
 function toggleDoors(){
   if(S.view==='draw'){S.drawInside=!S.drawInside;drawPlan();openLabel();return;}
+  stopPlay();
   const ud=unitDoors(),ss=doors.filter(o=>o.kind==='s');
   if(ud&&ud.length){const open=ud.some(o=>o.st.t<0.5);ud.forEach(o=>o.st.t=open?1:0);}
   else if(ss.length){const i=ss.findIndex(o=>o.st.t>0.5),nx=i+1;ss.forEach(o=>o.st.t=0);if(nx<ss.length){ss[nx].st.t=1;btn3d=nx===ss.length-1?'Close doors':'Next door';}else btn3d='Open doors';}
@@ -661,6 +676,7 @@ on(body,'submit',async e=>{e.preventDefault();if(sending)return;const C=S.contac
 on($('#backBtn'),'click',()=>{S.step=Math.max(0,S.step-1);render();});
 on($('#nextBtn'),'click',()=>{S.step=Math.min(4,S.step+1);render();});
 on($('#openBtn'),'click',toggleDoors);
+on($('#playBtn'),'click',()=>{if(play){stopPlay();doors.forEach(o=>{if(o.kind==='s')o.st.t=0;});btn3d='Open doors';openLabel();}else startPlay();});
 function setView(v){S.view=v;host.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===v)));
   $('#drawing').hidden=v!=='draw';stage.style.visibility=v==='3d'?'visible':'hidden';if(v==='draw')drawPlan();else needs=true;openLabel();}
 {const ro2=new ResizeObserver(()=>{if(S.view==='draw')drawPlan();});ro2.observe($('#drawing'));observers.push(ro2);}
