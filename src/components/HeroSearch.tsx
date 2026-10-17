@@ -14,16 +14,17 @@ type Kind = HeroKind;
 type Item = HeroItem;
 const ITEMS: Item[] = HERO_ITEMS;
 
-const PH = ['quoting eats my evenings', 'enquiries get lost in WhatsApp', 'working out paint for 30 doors', 'cut lists by hand, every job', 'chasing customers for money', 'I forget to ask for reviews'];
+const PH = ['cut lists by hand, every job', 'quoting eats my evenings', 'enquiries get lost in WhatsApp', 'board layouts worked out on paper', 'chasing customers for money', 'I forget to ask for reviews'];
 const IDEAS = [
-  { t: "A decorator's litres should come from the drawing, not a guess.", q: 'paint' },
+  { t: 'A cut list should come out of the drawing, not a spreadsheet.', q: 'cut list' },
+  { t: 'Customers should see their wardrobe in 3D before you quote.', q: 'wardrobe' },
   { t: 'Every enquiry should be a job before the kettle boils.', q: 'enquiries' },
   { t: 'A finished job should ask for its own review.', q: 'reviews' },
-  { t: 'Customers should see their wardrobe in 3D before you quote.', q: 'wardrobe' },
   { t: 'Money owed should be on your phone every morning.', q: 'payments' },
   { t: 'Your job software should fill itself in from your website.', q: 'servicem8' },
+  { t: "A decorator's litres should come from the drawing, not a guess.", q: 'paint' },
 ];
-const TRIES = ['quotes', 'enquiries', 'paint', 'ServiceM8', 'payments', 'reviews'];
+const TRIES = ['cut lists', 'quotes', 'enquiries', 'ServiceM8', 'payments', 'reviews'];
 
 function search(q: string) {
   const terms = q.toLowerCase().split(/[^a-z0-9]+/).filter((t) => t.length > 1);

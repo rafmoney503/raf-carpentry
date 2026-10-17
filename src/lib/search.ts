@@ -35,7 +35,7 @@ export const HERO_ITEMS: HeroItem[] = [
 
 export type HitKind = 'page' | 'section' | 'system' | 'trade' | 'faq' | 'connection' | 'sum' | 'sketch' | 'whatsapp' | 'send';
 export type Hit = { kind: HitKind; title: string; sub: string; href?: string; external?: boolean; big?: string; bigNote?: string };
-type Entry = Hit & { words: string; titleWords: string };
+type Entry = Hit & { words: string; titleWords: string; boost: number };
 
 // Extra words people might type for each # section, so "faq", "cost" or "formula" finds the right place.
 const SECTION_WORDS: Record<string, string> = {
@@ -64,9 +64,19 @@ const SECTION_WORDS: Record<string, string> = {
 
 const words = (s: string) => s.toLowerCase().replace(/[’']/g, '').split(/[^a-z0-9]+/).filter(Boolean).join(' ');
 
+/* Rafal wants the search to lead with CabinetOS and the systems running today, and to keep decorating in the
+   background. A match on any of these gets a weight on top of its score; it never makes an unrelated result appear. */
+function weight(h: Hit) {
+  const where = `${h.href ?? ''} ${h.title}`.toLowerCase();
+  if (where.includes('cabinetos')) return 4;
+  if (/paint|decorat/.test(where) || where.includes('/systems#next')) return -4;
+  if (where.startsWith('/systems') || h.href?.startsWith('/systems')) return 2;
+  return 0;
+}
+
 function buildIndex(): Entry[] {
   const out: Entry[] = [];
-  const add = (h: Hit, extra = '') => out.push({ ...h, titleWords: words(h.title), words: words(`${h.title} ${h.sub} ${extra}`) });
+  const add = (h: Hit, extra = '') => out.push({ ...h, titleWords: words(h.title), words: words(`${h.title} ${h.sub} ${extra}`), boost: weight(h) });
 
   for (const m of [...MENU, CONTACT_ITEM]) {
     add({ kind: 'page', title: m.label, sub: `${m.title}.`, href: m.href }, `${m.kicker} ${m.line}`);
@@ -117,10 +127,8 @@ export function paintSum(q: string): Hit | null {
   const s = q.toLowerCase();
   const doors = s.match(/(\d{1,3})\s*(?:x\s*)?(?:tall\s+)?doors?\b/);
   const fronts = s.match(/(\d{1,3})\s*(?:x\s*)?(?:drawer\s*)?(?:fronts?|drawers?)\b/);
-  let d = doors ? Number(doors[1]) : 0;
+  const d = doors ? Number(doors[1]) : 0;
   const f = fronts ? Number(fronts[1]) : 0;
-  const example = !d && !f && /\b(paint|painting|litres?|coats?|tins?|spray|decorat\w*)\b/.test(s);
-  if (example) d = 4;
   if (!d && !f) return null;
   const area = d * DOOR + f * FRONT;
   const parts = [d ? `${d} door${d > 1 ? 's' : ''}` : '', f ? `${f} front${f > 1 ? 's' : ''}` : ''].filter(Boolean).join(' and ');
@@ -146,20 +154,20 @@ export function siteSearch(raw: string): Hit[] {
   const best = new Map<string, { e: Entry; s: number }>();
   if (terms.length) {
     for (const e of INDEX) {
-      const s = score(e, terms, phrase);
-      if (s <= 0) continue;
+      const raw = score(e, terms, phrase);
+      if (raw <= 0) continue;
+      const s = Math.max(1, raw + e.boost);
       const key = e.href ?? e.title;
       const had = best.get(key);
       if (!had || s > had.s) best.set(key, { e, s });
     }
   }
   const ranked = [...best.values()].sort((a, b) => b.s - a.s).map(({ e }) => {
-    const { words: _w, titleWords: _t, ...hit } = e;
+    const { words: _w, titleWords: _t, boost: _b, ...hit } = e;
     return hit as Hit;
   });
-  const typedNumbers = sum && /\d/.test(q);
   let hits: Hit[] = ranked.slice(0, sum ? 3 : 4);
-  if (sum) hits = typedNumbers ? [sum, ...hits] : [...hits.slice(0, 1), sum, ...hits.slice(1)];
+  if (sum) hits = [sum, ...hits];
   if (hits.length < 2) hits.push({ kind: 'sketch', title: 'Sketch my system', sub: 'The 60-second planner, with your words in it' });
   const short = q.length > 22 ? `${q.slice(0, 21)}…` : q;
   hits.push({ kind: 'send', title: `Send “${short}” to Rafal`, sub: 'Lands in his ServiceM8 as a job' });
@@ -179,4 +187,11 @@ export const KIND_LABEL: Record<HitKind, string> = {
   send: 'SEND',
 };
 
-export const SEARCH_TRIES = ['quotes', '4 doors', 'ServiceM8', 'WhatsApp', 'payments'];
+export const SEARCH_TRIES = ['cut lists', 'wardrobe planner', 'ServiceM8', 'enquiries', 'quotes'];
+
+// Shown when the tape opens, before anything is typed: the systems running today, CabinetOS as the longest piece.
+export const RUNNING_TODAY: Hit[] = [
+  { kind: 'system', title: 'CabinetOS', sub: 'Cut lists, board layouts and drawings for wardrobe and cabinet makers.', href: '/systems#cabinetos' },
+  { kind: 'system', title: 'Job Kit', sub: 'Enquiries, diary, emails and money owed on my phone, with ServiceM8.', href: '/systems#job-kit' },
+  { kind: 'system', title: 'Wardrobe planner', sub: 'Customers plan in 3D; you get the job and the cut list.', href: '/systems#planner' },
+];

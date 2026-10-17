@@ -3323,32 +3323,9 @@ dialog.planner::backdrop {
 .tape-case.open .tape-reel {
   transform: scale(0.8);
 }
-.tape-label {
-  display: none;
-  align-items: center;
-  gap: 8px;
-}
-.tape-label kbd {
-  display: inline-grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border: 1px solid var(--line-2);
-  border-radius: 2px;
-  font-family: var(--f-mono);
-  font-size: 12px;
-}
-.tape-case.open .tape-label {
-  visibility: hidden;
-}
 @media (min-width: 1080px) {
   .tape-case {
     order: 0;
-  }
-}
-@media (min-width: 1320px) {
-  .tape-label {
-    display: inline-flex;
   }
 }
 
@@ -3547,7 +3524,11 @@ dialog.planner::backdrop {
   text-transform: uppercase;
   color: #fff;
 }
+.tape-note-top {
+  margin: 0 0 8px;
+}
 .tape-tries {
+  margin-top: 10px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
