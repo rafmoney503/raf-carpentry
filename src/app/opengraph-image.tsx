@@ -26,7 +26,7 @@ export default async function OgImage() {
     mono && { name: 'Mono', data: mono, weight: 400 as const, style: 'normal' as const },
   ].filter(Boolean) as { name: string; data: ArrayBuffer; weight: 400 | 700; style: 'normal' }[];
 
-  const grid = 'rgba(21,25,28,0.06)';
+  const grid = 'rgba(255,255,255,0.04)';
   return new ImageResponse(
     (
       <div
@@ -36,31 +36,31 @@ export default async function OgImage() {
           display: 'flex',
           flexDirection: 'column',
           padding: '64px 72px',
-          backgroundColor: '#f5f6f3',
+          backgroundColor: '#08090a',
           backgroundImage: `linear-gradient(${grid} 1px, transparent 1px), linear-gradient(90deg, ${grid} 1px, transparent 1px)`,
           backgroundSize: '24px 24px',
-          color: '#15171a',
+          color: '#eef0ec',
           fontFamily: 'Body',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
           <svg width="60" height="60" viewBox="0 0 100 100">
-            <rect x="10" y="72" width="80" height="14" rx="2" fill="#15171a" />
-            <rect x="34" y="54" width="56" height="14" rx="2" fill="#15171a" />
-            <rect x="58" y="36" width="32" height="14" rx="2" fill="#15171a" />
-            <circle cx="74" cy="25" r="9.5" fill="#ffe45c" stroke="#f5f6f3" strokeWidth="3" />
+            <rect x="10" y="72" width="80" height="14" rx="2" fill="#eef0ec" />
+            <rect x="34" y="54" width="56" height="14" rx="2" fill="#eef0ec" />
+            <rect x="58" y="36" width="32" height="14" rx="2" fill="#eef0ec" />
+            <circle cx="74" cy="25" r="9.5" fill="#ffe45c" stroke="#08090a" strokeWidth="3" />
           </svg>
           <div style={{ fontFamily: 'Display', fontSize: 36, letterSpacing: -1 }}>rafal solutions</div>
         </div>
-        <div style={{ marginTop: 56, fontFamily: 'Mono', fontSize: 22, letterSpacing: 2, color: '#545b62' }}>RAFAL SOLUTIONS LTD · LONDON</div>
+        <div style={{ marginTop: 56, fontFamily: 'Mono', fontSize: 22, letterSpacing: 2, color: '#8f969c' }}>RAFAL SOLUTIONS LTD · LONDON</div>
         <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', fontFamily: 'Display', fontSize: 84, lineHeight: 1.04, letterSpacing: -3 }}>
           <div>Systems for trade</div>
           <div>businesses.</div>
           <div style={{ display: 'flex' }}>
-            <div style={{ display: 'flex', backgroundImage: 'linear-gradient(transparent 58%, #ffe45c 58%, #ffe45c 94%, transparent 94%)', padding: '0 6px', marginLeft: -6 }}>Built by a carpenter.</div>
+            <div style={{ display: 'flex', color: '#ffe45c' }}>Built by a carpenter.</div>
           </div>
         </div>
-        <div style={{ marginTop: 'auto', fontSize: 30, color: '#545b62' }}>Quotes, enquiries, diary and payments on your phone, connected to ServiceM8.</div>
+        <div style={{ marginTop: 'auto', fontSize: 30, color: '#b4bab3' }}>Quotes, enquiries, diary and payments on your phone, connected to ServiceM8.</div>
       </div>
     ),
     { ...size, fonts: fonts.length ? fonts : undefined },

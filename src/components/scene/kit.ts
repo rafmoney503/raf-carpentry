@@ -4,7 +4,9 @@
    Every stroke keeps 1.5 px whatever the scene is scaled to (non-scaling-stroke). */
 
 export const NS = 'http://www.w3.org/2000/svg';
-export const INK = '#15171A';
+/* strokes take the text colour of the scene (light on the dark site); the ball's ring is the page colour */
+export const INK = 'currentColor';
+export const RING = '#08090A';
 export const HL = '#FFE45C';
 export const FAINT = 0.42;
 
@@ -139,7 +141,7 @@ export class Ball {
     public R: number,
   ) {
     this.g = el('g', {}, parent);
-    el('circle', { cx: 0, cy: -R, r: R, fill: HL, stroke: INK, 'stroke-width': 1.5, ...ns }, this.g);
+    el('circle', { cx: 0, cy: -R, r: R, fill: HL, stroke: RING, 'stroke-width': 1.5, ...ns }, this.g);
   }
   draw(x: number, yBottom: number, airV: number, dt: number) {
     const target = airV ? Math.min(0.2, (Math.abs(airV) / 900) * 0.2) : 0;

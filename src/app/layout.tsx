@@ -31,7 +31,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#f5f6f3',
+  themeColor: '#08090a',
 };
 
 const jsonLd = {
@@ -51,7 +51,12 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-GB" className={`${bricolage.variable} ${geist.variable} ${geistMono.variable}`}>
+    <html lang="en-GB" className={`${bricolage.variable} ${geist.variable} ${geistMono.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Pieces that rise in as they reach the screen are hidden only while the page script runs; if it has not
+            started after 5 seconds, everything is simply shown (MotionObserver sets __mo). */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js');setTimeout(function(){if(!window.__mo)document.documentElement.classList.remove('js')},5000)" }} />
+      </head>
       <body>
         <a className="skip" href="#main">
           Skip to content
