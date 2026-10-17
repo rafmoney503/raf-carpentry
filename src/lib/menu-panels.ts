@@ -145,6 +145,7 @@ export function getMenuPanels(): Record<string, MenuPanel> {
       list: [
         { label: 'Wardrobe planner in 3D', href: '/wardrobe-planner' },
         { label: 'Workshop calculator in mm', href: '/calculator' },
+        { label: 'Spirit level on your phone', href: '/tools/spirit-level' },
         { label: 'Workshop tips', href: '/tips' },
         { label: 'Timber Stack, a game', href: '/tools/timber-stack' },
       ],

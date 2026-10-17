@@ -54,6 +54,7 @@ const PAGES: { title: string; href: string; sub: string; words: string }[] = [
   { title: 'Workshop tips', href: '/tips', sub: 'For carpenters and DIYers', words: 'tips tricks diy how to advice' },
   { title: 'Tools I use', href: '/tools', sub: 'My kit, with links', words: 'tools kit amazon dewalt festool makita buy' },
   { title: 'Wardrobe planner', href: '/wardrobe-planner', sub: 'Design your fitted wardrobe in 3D', words: 'wardrobe planner design configurator 3d sizes units doors sliding hinged plinth' },
+  { title: 'Spirit level', href: '/tools/spirit-level', sub: 'Free: your phone as a level, with Set zero', words: 'spirit level bubble phone angle tilt degrees inclinometer zero tare flat plumb pack packers mm per metre' },
   { title: 'Timber Stack', href: '/tools/timber-stack', sub: 'A free game: stack the timber', words: 'game timber stack play fun' },
   { title: 'Where I work', href: '/areas', sub: 'Every area, and the jobs nearest you', words: 'areas where work near me local postcode london cover travel' },
   { title: 'Blog', href: '/blog', sub: 'Jobs step by step, SketchUp and CabinetOS', words: 'blog posts articles write ups' },

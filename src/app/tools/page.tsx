@@ -89,8 +89,30 @@ export default function ToolsPage() {
             </div>
           </Link>
           <Link
+            href="/tools/spirit-level"
+            className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6"
+          >
+            <div>
+              <p className="font-mono text-[13px] text-accent">Free phone tool</p>
+              <h2 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Spirit level</h2>
+              <p className="mt-1 text-[15px] text-muted">Set zero on any surface, so the phone&apos;s buttons don&apos;t matter. Then read the angle and the mm to pack.</p>
+            </div>
+            <div className="flex items-center gap-5">
+              {/* A small spirit level, as drawn on the home page */}
+              <svg viewBox="0 0 76 46" className="w-[64px] sm:w-[76px]" aria-hidden="true">
+                <rect x="2" y="10" width="72" height="20" rx="2" className="fill-mount stroke-ink" strokeWidth="1.6" />
+                <circle cx="10" cy="20" r="2.2" className="fill-none stroke-ink/40" strokeWidth="1.2" />
+                <circle cx="66" cy="20" r="2.2" className="fill-none stroke-ink/40" strokeWidth="1.2" />
+                <rect x="20" y="14" width="36" height="12" rx="6" className="fill-accent/15 stroke-ink" strokeWidth="1.2" />
+                <rect x="29" y="16.5" width="18" height="7" rx="3.5" className="fill-mount stroke-accent" strokeWidth="1.2" />
+                <text x="38" y="43" textAnchor="middle" className="fill-accent font-mono" fontSize="9">0.0°</text>
+              </svg>
+              <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+            </div>
+          </Link>
+          <Link
             href="/tools/timber-stack"
-            className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6 lg:col-span-2"
+            className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6"
           >
             <div>
               <p className="font-mono text-[13px] text-accent">Free game</p>
