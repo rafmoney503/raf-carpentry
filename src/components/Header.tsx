@@ -14,6 +14,14 @@ import { CONTACT_ITEM, MENU, tagHref, type MenuItem } from '@/lib/menu';
 const OPEN_DELAY = 160;
 const CLOSE_DELAY = 260;
 
+/* The logo plays one move made of all three ideas: the mark tips and the yellow corner rolls off as a ball (level),
+   the ball rolls once round the square (rail), then the whole mark turns into the ball, bounces and comes back as rs
+   (drift). It plays shortly after the page opens, when a mouse rests on it, and every 30 seconds while the tab is
+   open. People who ask their phone for less motion never see it move. */
+const LOGO_MOVE_MS = 4800;
+const LOGO_FIRST_MS = 1400;
+const LOGO_EVERY_MS = 30000;
+
 export default function Header() {
   const pathname = usePathname();
   const [panel, setPanel] = useState<MenuItem | null>(null);
@@ -21,6 +29,32 @@ export default function Header() {
   const [expanded, setExpanded] = useState<string | null>(null); // phone: which item's tags are open
   const openTimer = useRef<number | undefined>(undefined);
   const closeTimer = useRef<number | undefined>(undefined);
+  const [logoMove, setLogoMove] = useState(false);
+  const logoTimer = useRef<number | undefined>(undefined);
+  const logoPlaying = useRef(false);
+
+  const playLogo = useCallback(() => {
+    if (logoPlaying.current) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    logoPlaying.current = true;
+    setLogoMove(true);
+    logoTimer.current = window.setTimeout(() => {
+      logoPlaying.current = false;
+      setLogoMove(false);
+    }, LOGO_MOVE_MS + 80);
+  }, []);
+
+  useEffect(() => {
+    const first = window.setTimeout(playLogo, LOGO_FIRST_MS);
+    const every = window.setInterval(() => {
+      if (document.visibilityState === 'visible') playLogo();
+    }, LOGO_EVERY_MS);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(every);
+      window.clearTimeout(logoTimer.current);
+    };
+  }, [playLogo]);
 
   const clearTimers = () => {
     window.clearTimeout(openTimer.current);
@@ -64,9 +98,16 @@ export default function Header() {
     <header className="site-head">
       <div className="wrap">
         <div className="head-row">
-          <Link href="/" className="logo" aria-label="Rafal Solutions home">
-            <span className="logo-mark" aria-hidden="true">
-              rs
+          <Link
+            href="/"
+            className="logo"
+            aria-label="Rafal Solutions home"
+            onPointerEnter={(e) => e.pointerType === 'mouse' && playLogo()}
+            onFocus={(e) => e.currentTarget.matches(':focus-visible') && playLogo()}
+          >
+            <span className={`logo-mark${logoMove ? ' move' : ''}`} aria-hidden="true">
+              <span className="logo-letters">rs</span>
+              <span className="logo-ball" />
             </span>
             <span className="logo-name">Rafal Solutions</span>
           </Link>

@@ -3,6 +3,7 @@ import Image from 'next/image';
 import PageHeader from '@/components/PageHeader';
 import CtaBand from '@/components/CtaBand';
 import { SectionHead } from '@/components/blocks';
+import { SpiritLevel } from '@/components/motion-pieces';
 import { MENU } from '@/lib/menu';
 import { ADDRESS, CABINETOS_URL, COMPANY, COMPANY_NO, IMG, RAFCARPENTRY_URL, VAT_NO } from '@/lib/site';
 
@@ -38,6 +39,7 @@ export default function About() {
             <p className="body">
               Every system here runs my own business first. If it doesn&apos;t save me time on a Monday morning, it doesn&apos;t leave the workshop. So when you explain your job, I already know what a site visit, a deposit and a snagging list feel like.
             </p>
+            <SpiritLevel />
           </div>
         </div>
       </section>

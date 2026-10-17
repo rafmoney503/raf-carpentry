@@ -4,6 +4,7 @@ import CtaBand from '@/components/CtaBand';
 import PaintCalc from '@/components/PaintCalc';
 import OpenSketch from '@/components/OpenSketch';
 import { SectionHead } from '@/components/blocks';
+import { DoorCoats, SpiritLevel } from '@/components/motion-pieces';
 import { MENU } from '@/lib/menu';
 
 const item = MENU.find((m) => m.href === '/paint-schedule')!;
@@ -27,6 +28,7 @@ export default function PaintSchedule() {
 
       <section id="sums" className="section white">
         <div className="wrap">
+          <SpiritLevel className="level-top" />
           <SectionHead kicker="How the sums work" title="Area, coats, coverage, what lands." whisper="Same four numbers a decorator works out in their head, written down." />
           <div className="sums">
             <div className="card">
@@ -34,6 +36,7 @@ export default function PaintSchedule() {
               <p className="formula">
                 litres = m² × coats ÷ coverage ÷ <span className="hl">share that lands</span>
               </p>
+              <DoorCoats />
               <ul className="ticks">
                 <li>Doors and fronts: both faces plus the four 18 mm edges</li>
                 <li>Panels, plinths and fillers: one face</li>

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import PageHeader from '@/components/PageHeader';
 import ContactForm from '@/components/ContactForm';
 import { SectionHead } from '@/components/blocks';
+import { CarryDiagram } from '@/components/motion-pieces';
 import { CONTACT_ITEM } from '@/lib/menu';
 import { ADDRESS, EMAIL, PHONE_DISPLAY, PHONE_HREF, whatsappUrl } from '@/lib/site';
 
@@ -63,6 +64,7 @@ export default function Contact() {
       <section id="next-steps" className="section">
         <div className="wrap">
           <SectionHead kicker="What happens next" title="After you press send." />
+          <CarryDiagram caption="Your message becomes a ServiceM8 job, then a line at the top of my Today list." className="carry-block" />
           <ol className="steps">
             <li>
               <span className="mono small muted">01</span>

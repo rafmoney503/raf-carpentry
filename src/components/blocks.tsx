@@ -172,12 +172,17 @@ export function FlowSection() {
   );
 }
 
+const STEP_SHAPES = ['circle', 'square', 'plus', 'ball'];
+
 export function StepsList() {
   return (
-    <ol className="steps">
-      {STEPS.map((s) => (
+    <ol className="steps" data-motion>
+      {STEPS.map((s, i) => (
         <li key={s.title}>
-          <span className="mono small muted">{s.when}</span>
+          <span className="step-top">
+            <i className={`step-shape ${STEP_SHAPES[i % STEP_SHAPES.length]}`} aria-hidden="true" />
+            <span className="mono small muted">{s.when}</span>
+          </span>
           <h3>{s.title}</h3>
           <p className="body" style={{ fontSize: 15.5 }}>
             {s.text}

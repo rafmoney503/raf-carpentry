@@ -4,6 +4,7 @@ import HeroSearch from '@/components/HeroSearch';
 import OpenSketch from '@/components/OpenSketch';
 import CtaBand from '@/components/CtaBand';
 import { SectionHead, TodayMock } from '@/components/blocks';
+import { CarryDiagram } from '@/components/motion-pieces';
 import { MENU, tagHref } from '@/lib/menu';
 import { TRADES, statusClass } from '@/lib/content';
 import { IMG } from '@/lib/site';
@@ -30,6 +31,7 @@ export default function Home() {
                 See one enquiry, start to finish
               </Link>
             </div>
+            <CarryDiagram label="One enquiry, typed once" className="carry-hero" />
           </div>
           <div className="hero-art">
             <div className="stack">

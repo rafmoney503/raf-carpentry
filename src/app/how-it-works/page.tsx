@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import PageHeader from '@/components/PageHeader';
 import CtaBand from '@/components/CtaBand';
 import { FaqList, FlowSection, SectionHead, StepsList } from '@/components/blocks';
+import { CarryDiagram } from '@/components/motion-pieces';
 import { MENU } from '@/lib/menu';
 
 const item = MENU.find((m) => m.href === '/how-it-works')!;
@@ -27,6 +28,7 @@ export default function HowItWorks() {
       <section id="enquiry" className="section white">
         <div className="wrap">
           <SectionHead kicker="Inside one system" title="One enquiry, start to finish, typed once." whisper="This is how Raf Carpentry runs today. Yellow steps happen on my phone." />
+          <CarryDiagram caption="Your message becomes a ServiceM8 job, then a line at the top of my Today list. The steps below show what happens on the way." className="carry-block" />
           <FlowSection />
         </div>
       </section>
