@@ -50,11 +50,8 @@ export default function PaintCalc() {
   return (
     <div className="paint">
       <div className="paint-controls">
-        <p className="kicker">Being built now</p>
-        <h2 className="h2">Paint litres from the drawing.</h2>
-        <p className="body">
-          For decorators who paint by hand and spray. Count the doors, fronts and panels, pick the coats and the method, and the litres and the shopping list work themselves out. Being built with a London decorator.
-        </p>
+        <h2 className="h3">Count what gets painted</h2>
+        <p className="body">Doors and fronts at standard sizes; panels in square metres. Change any number and the schedule on the right follows.</p>
         <div className="counters">
           {rows.map((r) => (
             <div className="count-row" key={r.label}>

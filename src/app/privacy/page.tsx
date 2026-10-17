@@ -9,12 +9,9 @@ export const metadata: Metadata = {
 
 export default function Privacy() {
   return (
-    <main id="main" className="legal">
+    <div className="legal">
       <div className="wrap">
         <article>
-          <a href="/" className="mono small" style={{ textUnderlineOffset: 3 }}>
-            ← Rafal Solutions
-          </a>
           <p className="kicker">Privacy</p>
           <h1 className="h2">How I handle your details.</h1>
           <p>
@@ -49,6 +46,6 @@ export default function Privacy() {
           <p className="small muted">Last updated 17 October 2026.</p>
         </article>
       </div>
-    </main>
+    </div>
   );
 }

@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { openSketch } from './OpenSketch';
 import { CABINETOS_URL } from '@/lib/site';
@@ -13,19 +15,21 @@ type Item = { k: Kind; title: string; sub: string; href?: string; trade?: string
 
 const ITEMS: Item[] = [
   { k: 'Live', title: 'CabinetOS', sub: 'Cut lists, board layouts and drawings for wardrobe and cabinet makers.', href: CABINETOS_URL, words: 'cabinetos cut list cutlist cutlists cutting board boards sheet sheets optimise waste carpenter carpenters joiner joinery cabinet cabinets wardrobe wardrobes drawing drawings parts mdf materials' },
-  { k: 'Live', title: 'Job Kit', sub: 'The phone app that runs my business: enquiries, diary, emails, texts, money owed.', href: '#systems', words: 'job kit phone app enquiry enquiries whatsapp lost diary schedule booking bookings email emails inbox reply replies text texts admin evenings paperwork today morning' },
-  { k: 'Live', title: 'ServiceM8 connection', sub: 'Jobs, clients, diary, payments, photos, emails and texts, read and written through the official API.', href: '#servicem8', words: 'servicem8 service m8 sm8 api jobs job clients client diary schedule payments invoices photos attachments integration connect connected tradify xero' },
-  { k: 'Live', title: 'Website brief to ServiceM8', sub: 'A customer sends their brief and photos. It lands as a job and they get a reply with designs like theirs.', href: '#flow', words: 'website form lead leads enquiry enquiries photos auto automatic reply email brief customers lost missed' },
-  { k: 'Live', title: 'Wardrobe planner', sub: 'Customers plan their wardrobe in 3D on your site. You get the job and the cut list.', href: '#systems', words: 'wardrobe wardrobes planner configurator 3d design customer customers sizes doors' },
-  { k: 'Being built', title: 'Paint schedule for decorators', sub: 'Litres per coat from the doors, fronts and panels. Brush or spray.', href: '#paint', words: 'paint painting painter painters decorator decorators decorating litres litre coats coat spray spraying brush primer undercoat doors door cupboards cupboard fronts m2 metres tins' },
-  { k: 'Live', title: 'Money owed, every morning', sub: 'Who has paid, what is left, and a message ready to send.', href: '#flow', words: 'money payment payments chase chasing owe owed invoice invoices deposit deposits paid cash late' },
-  { k: 'Live', title: 'Review requests', sub: 'A finished job asks for its Google review, ready for you to send.', href: '#flow', words: 'review reviews google ask stars finished feedback' },
-  { k: 'Live', title: 'Replies drafted for you', sub: 'Claude writes the first draft of each reply. Nothing goes until you press send.', href: '#flow', words: 'reply replies email emails answer answering ai claude chatgpt draft drafts write writing messages' },
+  { k: 'Live', title: 'Job Kit', sub: 'The phone app that runs my business: enquiries, diary, emails, texts, money owed.', href: '/systems#job-kit', words: 'job kit phone app enquiry enquiries whatsapp lost diary schedule booking bookings email emails inbox reply replies text texts admin evenings paperwork today morning' },
+  { k: 'Live', title: 'ServiceM8 connection', sub: 'Jobs, clients, diary, payments, photos, emails and texts, read and written through the official API.', href: '/servicem8', words: 'servicem8 service m8 sm8 api jobs job clients client diary schedule payments invoices photos attachments integration connect connected tradify xero' },
+  { k: 'Live', title: 'Website brief to ServiceM8', sub: 'A customer sends their brief and photos. It lands as a job and they get a reply with designs like theirs.', href: '/how-it-works#enquiry', words: 'website form lead leads enquiry enquiries photos auto automatic reply email brief customers lost missed' },
+  { k: 'Live', title: 'Wardrobe planner', sub: 'Customers plan their wardrobe in 3D on your site. You get the job and the cut list.', href: '/systems#planner', words: 'wardrobe wardrobes planner configurator 3d design customer customers sizes doors' },
+  { k: 'Being built', title: 'Paint schedule for decorators', sub: 'Litres per coat from the doors, fronts and panels. Brush or spray.', href: '/paint-schedule', words: 'paint painting painter painters decorator decorators decorating litres litre coats coat spray spraying brush primer undercoat doors door cupboards cupboard fronts m2 metres tins' },
+  { k: 'Live', title: 'Money owed, every morning', sub: 'Who has paid, what is left, and a message ready to send.', href: '/how-it-works#enquiry', words: 'money payment payments chase chasing owe owed invoice invoices deposit deposits paid cash late' },
+  { k: 'Live', title: 'Review requests', sub: 'A finished job asks for its Google review, ready for you to send.', href: '/how-it-works#enquiry', words: 'review reviews google ask stars finished feedback' },
+  { k: 'Live', title: 'Replies drafted for you', sub: 'Claude writes the first draft of each reply. Nothing goes until you press send.', href: '/how-it-works#enquiry', words: 'reply replies email emails answer answering ai claude chatgpt draft drafts write writing messages' },
   { k: 'Idea', title: 'Quotes from the drawing', sub: 'Materials, labour and VAT worked out from the design you already drew.', trade: '', words: 'quote quotes quoting price pricing estimate estimates estimating evenings vat materials labour' },
-  { k: 'Trade', title: 'Kitchen fitters', sub: 'Fitting packs, appliance lists and snagging photos.', trade: 'Kitchen fitter', words: 'kitchen kitchens fitter fitters fitting appliances snagging worktop worktops' },
-  { k: 'Trade', title: 'Builders and renovators', sub: 'Stage payments, extras and client updates in one place.', trade: 'Builder', words: 'builder builders renovation renovations refurb extension stage payments extras variations bathroom bathrooms loft' },
-  { k: 'Trade', title: 'Electricians and plumbers', sub: 'Job sheets, parts lists and certificates filed on the job.', trade: 'Electrician', words: 'electrician electricians electrical plumber plumbers plumbing heating gas boiler certificate certificates parts' },
-  { k: 'How I work', title: 'How long it takes', sub: 'A mockup in 2 days. A working version in 2 to 4 weeks.', href: '#how', words: 'how long fast quick time delivery cost price process start weeks days own owner' },
+  { k: 'Trade', title: 'Decorators', sub: 'Paint litres and shopping lists from the drawing, by hand or spray.', href: '/trades#decorators', words: 'decorator decorators decorating painter painters' },
+  { k: 'Trade', title: 'Carpenters and joiners', sub: 'Cut lists, 3D designs for clients and a wardrobe planner on your website.', href: '/trades#carpenters', words: 'carpenter carpenters joiner joiners joinery cabinet makers fitted furniture' },
+  { k: 'Trade', title: 'Kitchen fitters', sub: 'Fitting packs, appliance lists and snagging photos.', href: '/trades#kitchen-fitters', words: 'kitchen kitchens fitter fitters fitting appliances snagging worktop worktops' },
+  { k: 'Trade', title: 'Builders and renovators', sub: 'Stage payments, extras and client updates in one place.', href: '/trades#builders', words: 'builder builders renovation renovations refurb extension stage payments extras variations bathroom bathrooms loft' },
+  { k: 'Trade', title: 'Electricians and plumbers', sub: 'Job sheets, parts lists and certificates filed on the job.', href: '/trades#electricians-plumbers', words: 'electrician electricians electrical plumber plumbers plumbing heating gas boiler certificate certificates parts' },
+  { k: 'How I work', title: 'How long it takes', sub: 'A mockup in 2 days. A working version in 2 to 4 weeks.', href: '/how-it-works#steps', words: 'how long fast quick time delivery cost price process start weeks days own owner' },
 ];
 
 const PH = ['quoting eats my evenings', 'enquiries get lost in WhatsApp', 'working out paint for 30 doors', 'cut lists by hand, every job', 'chasing customers for money', 'I forget to ask for reviews'];
@@ -60,6 +64,7 @@ function search(q: string) {
 const pillClass = (k: Kind) => (k === 'Live' ? 'pill live' : k === 'Being built' ? 'pill built' : 'pill');
 
 export default function HeroSearch() {
+  const router = useRouter();
   const [q, setQ] = useState('');
   const [w, setW] = useState(0);
   const [fading, setFading] = useState(false);
@@ -107,7 +112,7 @@ export default function HeroSearch() {
           const first = results[0];
           if (first?.href) {
             setFocused(false);
-            if (first.href.startsWith('#')) document.querySelector(first.href)?.scrollIntoView({ behavior: 'smooth' });
+            if (first.href.startsWith('/')) router.push(first.href);
             else window.open(first.href, '_blank', 'noopener');
           } else if (first) pickItem(first);
           else if (q.trim()) openSketch({ pain: q.trim() });
@@ -149,15 +154,16 @@ export default function HeroSearch() {
                   {results.length === 1 ? '1 match' : `${results.length} matches`} for “{q.trim()}”
                 </p>
                 {results.map((it) =>
-                  it.href ? (
-                    <a
-                      key={it.title}
-                      className="result"
-                      href={it.href}
-                      target={it.href.startsWith('http') ? '_blank' : undefined}
-                      rel={it.href.startsWith('http') ? 'noopener' : undefined}
-                      onClick={() => setFocused(false)}
-                    >
+                  it.href?.startsWith('/') ? (
+                    <Link key={it.title} className="result" href={it.href} onClick={() => setFocused(false)}>
+                      <span className={pillClass(it.k)}>{it.k}</span>
+                      <span className="result-text">
+                        <strong>{it.title}</strong>
+                        <span>{it.sub}</span>
+                      </span>
+                    </Link>
+                  ) : it.href ? (
+                    <a key={it.title} className="result" href={it.href} target="_blank" rel="noopener" onClick={() => setFocused(false)}>
                       <span className={pillClass(it.k)}>{it.k}</span>
                       <span className="result-text">
                         <strong>{it.title}</strong>

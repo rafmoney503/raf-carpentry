@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, Geist, Geist_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import SystemSketch from '@/components/SystemSketch';
 import { ADDRESS, COMPANY, COMPANY_NO, PHONE_DISPLAY, SITE_URL, CABINETOS_URL, RAFCARPENTRY_URL } from '@/lib/site';
 
 /* The same three families as rafcarpentry.com. next/font downloads them at build time and serves them from this
@@ -52,7 +55,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a className="skip" href="#main">
           Skip to content
         </a>
-        {children}
+        <Header />
+        <main id="main">{children}</main>
+        <Footer />
+        <SystemSketch />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <Analytics />
       </body>

@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Receipt from './Receipt';
 import type { SketchPreset } from './OpenSketch';
@@ -54,6 +55,7 @@ function partFor(pain: string, trade: string): Part {
 const money = (n: number) => `£${Math.round(n).toLocaleString('en-GB')}`;
 
 export default function SystemSketch() {
+  const pathname = usePathname();
   const dialog = useRef<HTMLDialogElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [pillHidden, setPillHidden] = useState(true);
@@ -88,25 +90,26 @@ export default function SystemSketch() {
     return () => window.removeEventListener('open-sketch', onOpen);
   }, [open]);
 
-  // The pill shows once the visitor has scrolled a little, and steps aside while the contact section is on screen.
+  // The pill shows once the visitor has scrolled a little, and steps aside while a contact form or the bottom band
+  // (anything marked data-hide-pill) is on screen. Checked again on every page.
   useEffect(() => {
-    let contactOnScreen = false;
-    const update = () => setPillHidden(window.scrollY < 480 || contactOnScreen);
-    const contact = document.getElementById('contact');
-    const io = contact
-      ? new IntersectionObserver(([e]) => {
-          contactOnScreen = e.isIntersecting;
-          update();
-        })
-      : null;
-    if (contact && io) io.observe(contact);
+    const onScreen = new Set<Element>();
+    const update = () => setPillHidden(window.scrollY < 480 || onScreen.size > 0);
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) onScreen.add(e.target);
+        else onScreen.delete(e.target);
+      }
+      update();
+    });
+    document.querySelectorAll('[data-hide-pill]').forEach((el) => io.observe(el));
     window.addEventListener('scroll', update, { passive: true });
     update();
     return () => {
       window.removeEventListener('scroll', update);
-      io?.disconnect();
+      io.disconnect();
     };
-  }, []);
+  }, [pathname]);
 
   const close = () => {
     dialog.current?.close();
