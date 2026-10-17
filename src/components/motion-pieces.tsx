@@ -1,19 +1,9 @@
 /* The small moving pieces, all from the same idea as the yellow ball on the enquiry line.
-   Rail: a ball travelling along an ink line, carrying the work from one place to the next.
-   Drift: faint drawing-board shapes moving very slowly.
+   Carry: a ball carrying one enquiry along a line, from the form to ServiceM8 to the phone.
    Level: tools of the trade, a door being measured and painted and a spirit level settling.
    Each piece is still for people who ask for less motion, and only moves while it is on screen (MotionObserver). */
 
-/* A line with a ball running along it. Sits under page titles. */
-export function Rail() {
-  return (
-    <div className="rail" data-motion aria-hidden="true">
-      <i />
-    </div>
-  );
-}
-
-/* The drifting shapes behind page titles live in DriftChain.tsx: they also link up into a chain. */
+/* The moving shapes at the top of each page live in ShapeScene.tsx (scene/loop.ts and scene/cog.ts). */
 
 const FormIcon = () => (
   <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">

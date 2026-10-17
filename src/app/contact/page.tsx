@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function Contact() {
   return (
     <>
-      <PageHeader item={CONTACT_ITEM} title="Tell me what slows you down." lead="One job, one annoying evening, one thing you type twice. That's enough to start." />
+      <PageHeader item={CONTACT_ITEM} scene="loop" title="Tell me what slows you down." lead="One job, one annoying evening, one thing you type twice. That's enough to start." />
 
       <section id="form" className="contact" data-hide-pill>
         <div className="wrap contact-row">

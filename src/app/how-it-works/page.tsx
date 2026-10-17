@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export default function HowItWorks() {
   return (
     <>
-      <PageHeader item={item} title="From your van to your phone." lead="Half a day with you, a mockup on your phone in 2 days, a working system in 2 to 4 weeks." />
+      <PageHeader item={item} scene="loop" title="From your van to your phone." lead="Half a day with you, a mockup on your phone in 2 days, a working system in 2 to 4 weeks." />
 
       <section id="steps" className="section">
         <div className="wrap">

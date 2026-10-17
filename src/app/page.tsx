@@ -3,6 +3,7 @@ import Link from 'next/link';
 import HeroSearch from '@/components/HeroSearch';
 import OpenSketch from '@/components/OpenSketch';
 import CtaBand from '@/components/CtaBand';
+import SystemsBand from '@/components/SystemsBand';
 import { SectionHead, TodayMock } from '@/components/blocks';
 import { CarryDiagram } from '@/components/motion-pieces';
 import { MENU, tagHref } from '@/lib/menu';
@@ -68,6 +69,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* What a system does: the two moving scenes taking turns */}
+      <SystemsBand />
 
       {/* Running today */}
       <section className="section">

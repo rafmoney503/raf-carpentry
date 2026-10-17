@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default function PaintSchedule() {
   return (
     <>
-      <PageHeader item={item} title="Paint litres from the drawing." lead="For decorators who paint by hand and spray. Being built with a London decorator; the calculator below works today." />
+      <PageHeader item={item} scene="loop" title="Paint litres from the drawing." lead="For decorators who paint by hand and spray. Being built with a London decorator; the calculator below works today." />
 
       <section id="calculator" className="section">
         <div className="wrap">
