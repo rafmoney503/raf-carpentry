@@ -36,9 +36,21 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
   const [expanded, setExpanded] = useState<string | null>(null); // phone menu: the item whose tags are open
   const [searching, setSearching] = useState(false); // computer: the search panel is open
   const [phoneSearch, setPhoneSearch] = useState(false); // phone menu: something is typed in its search box
-  // The home page's spirit level: once it has scrolled up under the header, a small copy sits beside the logo.
+  // The spirit level beside the logo (src/components/ScrollLevel.tsx). On the home page it docks once the big level
+  // under the title has scrolled up under the header. Every other page (17 Oct 2026, Raf: 'can we have it on every
+  // page') docks it once the page has scrolled 160 px: an invisible marker at the top of the page leaves the screen.
+  // That is an IntersectionObserver, not a scroll listener; the level only listens to scrolling while it shows.
   const level = useSyncExternalStore(subscribeDock, getDock, getUndocked);
-  const docked = level.present && level.docked;
+  const topMark = useRef<HTMLSpanElement>(null);
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const el = topMark.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([entry]) => setScrolled(!entry.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  const docked = level.present ? level.docked : scrolled;
   const openTimer = useRef(0);
   const closeTimer = useRef(0);
   const show = (href: string, now = false) => {
@@ -100,6 +112,8 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
   const quoteHref = jobSlug ? `${QUOTE_HREF}?job=${jobSlug}` : QUOTE_HREF;
 
   return (
+    <>
+    <span ref={topMark} aria-hidden="true" className="pointer-events-none absolute left-0 top-0 h-[160px] w-px" />
     <header
       className="sticky top-0 z-50 border-b border-line bg-paper/90 backdrop-blur-md"
       onBlur={(e) => {
@@ -271,5 +285,6 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
         </nav>
       )}
     </header>
+    </>
   );
 }
