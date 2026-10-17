@@ -89,7 +89,13 @@ const PlannerFrame = memo(function PlannerFrame() {
         </div>
         <div className="vbot">
           <div className="fit" id="fitChip"><span id="fitText">Fits</span></div>
-          <button type="button" className="vbtn" id="openBtn">Open doors</button>
+          <div className="vbtns">
+            <button type="button" className="vbtn ic" id="playBtn" hidden aria-pressed="false" aria-label="Watch each door slide" title="Watch each door slide">
+              <svg className="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7.5-4.5z" /></svg>
+              <svg className="i-stop" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5h7v7h-7z" /></svg>
+            </button>
+            <button type="button" className="vbtn" id="openBtn">Open doors</button>
+          </div>
         </div>
         <div className="nogl" id="nogl" hidden>The 3D view needs WebGL, which this browser has turned off. The drawing view still works.</div>
       </section>

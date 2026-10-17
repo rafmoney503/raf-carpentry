@@ -99,7 +99,7 @@ function Units() {
 function Doors() {
   return (
     <>
-      {/* a pair of shaker doors under top cupboards; they swing open on their hinges to show the rail and shelves,
+      {/* a pair of flat doors under top cupboards; they swing open on their hinges to show the rail and shelves,
           then close; the dashed lines point to the hinges, as on a drawing */}
       <g transform="translate(0 5)">
         <path d="M14 66h92" strokeWidth="1" />
@@ -108,16 +108,12 @@ function Doors() {
         <path d="M62 36h30M62 47h30M65 36v-4.5h9V36M78 47v-5h10v5M66 47v-3.5h8V47" strokeWidth="1" />
         <rect x="26" y="8" width="68" height="54" />
         <path d="M26 24h68M60 8v16M28 62v4M92 62v4" strokeWidth="1.2" />
-        <rect x="29.5" y="11.5" width="27" height="9" strokeWidth="0.9" />
-        <rect x="63.5" y="11.5" width="27" height="9" strokeWidth="0.9" />
         <g className="ga-door ga-door-l">
           <rect className="ga-face" x="26" y="24" width="34" height="38" fill="var(--color-mount)" vectorEffect="non-scaling-stroke" />
-          <rect x="30" y="28" width="26" height="30" strokeWidth="0.9" vectorEffect="non-scaling-stroke" />
           <path d="M57 38v9" strokeWidth="1.8" vectorEffect="non-scaling-stroke" />
         </g>
         <g className="ga-door ga-door-r">
           <rect className="ga-face" x="60" y="24" width="34" height="38" fill="var(--color-mount)" vectorEffect="non-scaling-stroke" />
-          <rect x="64" y="28" width="26" height="30" strokeWidth="0.9" vectorEffect="non-scaling-stroke" />
           <path d="M63 38v9" strokeWidth="1.8" vectorEffect="non-scaling-stroke" />
         </g>
         <g className={`${A} ga-swing`}>
@@ -137,8 +133,6 @@ function Colour() {
       <path d="M18 58h84" strokeWidth="1" />
       <rect className="ga-body" x="30" y="6" width="60" height="48" fill={SWATCHES[1]} />
       <path d="M60 6v48M32 54v4M88 54v4" strokeWidth="1.2" />
-      <rect x="34" y="10" width="22" height="40" strokeWidth="0.9" />
-      <rect x="64" y="10" width="22" height="40" strokeWidth="0.9" />
       <path d="M57.5 26v8M62.5 26v8" strokeWidth="1.6" />
       {SWATCHES.map((c, i) => (
         <rect key={c} x={31 + i * 12} y="63" width="10" height="10" fill={c} strokeWidth="1" />
@@ -193,7 +187,7 @@ const STEPS = [
   {
     title: 'Doors',
     Drawing: Doors,
-    text: "Hinged or sliding, shaker, flat or mirror, and the handles you like. Add top cupboards if there's room above.",
+    text: "Hinged or sliding, flat, shaker or mirror, and the handles you like. Add top cupboards if there's room above.",
   },
   {
     title: 'Colour',
