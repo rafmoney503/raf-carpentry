@@ -141,13 +141,14 @@ function autoFill(){
 /* ---------- three.js ---------- */
 const stage=$('#stage');let renderer=null,scene,cam,ctl,root,needs=true;const doors=[],picks=[];
 const texCache=new Map(),matCache=new Map();
-/* The unit being changed stands out only on the Units step, where the other units fade back (Raf, 17 Oct 2026: the
-   old blue wire box round it read as clutter, and showed on every step). */
+/* The unit being changed stands out only on the Units step, where the other units fade back a little (Raf, 17 Oct
+   2026: the old blue wire box round it read as clutter and showed on every step; then 'just a little different than
+   not selected so they all still look same'). A tap anywhere but a unit picks none. */
 const modGroups=[],fadeCache=new WeakMap(),WHITE=new THREE.Color('#ffffff');let shownStep=-1;
-function faded(m){let f=fadeCache.get(m);if(f)return f;if(Array.isArray(m)){f=m.map(faded);fadeCache.set(m,f);return f;}if(!f){f=m.clone();if(f.emissive){f.emissive=WHITE.clone();f.emissiveIntensity=0.5;}else if(f.color)f.color.lerp(WHITE,0.5);fadeCache.set(m,f);}return f;}
-function highlight(){if(!renderer)return;const on=S.step===1&&modGroups.length>1;
+function faded(m){let f=fadeCache.get(m);if(f)return f;if(Array.isArray(m)){f=m.map(faded);fadeCache.set(m,f);return f;}if(!f){f=m.clone();if(f.emissive){f.emissive=WHITE.clone();f.emissiveIntensity=0.2;}else if(f.color)f.color.lerp(WHITE,0.2);fadeCache.set(m,f);}return f;}
+function highlight(){if(!renderer)return;const on=S.step===1&&modGroups.length>1&&S.sel>=0;
   modGroups.forEach((g,i)=>g.traverse(o=>{if(!o.isMesh)return;if(!o.userData.mat0)o.userData.mat0=o.material;o.material=on&&i!==S.sel?faded(o.userData.mat0):o.userData.mat0;}));
-  needs=true;}
+  openLabel();needs=true;}
 const lin=h=>new THREE.Color(h);
 function shade(hex,f){const c=new THREE.Color(hex);c.lerp(new THREE.Color(f>0?'#ffffff':'#000000'),Math.abs(f));return'#'+c.getHexString();}
 function rng(s){return()=>{s=(s*9301+49297)%233280;return s/233280;};}
@@ -275,7 +276,7 @@ function build(){
       carcass(pg,a,b,P,P+L.boxH*MM,D,zi);
       if(RB.topH)carcass(pg,a,b,P+L.boxH*MM,P+(L.boxH+RB.topH)*MM,D,zi);
       interior(pg,L,a,P,zi);
-      hinged(pg,m.id+p.part,L.doors,a,P,zi);
+      const d0=doors.length;hinged(pg,m.id+p.part,L.doors,a,P,zi);for(let k=d0;k<doors.length;k++)doors[k].mod=i;
       pg.traverse(o=>{if(o.isMesh){o.userData.mod=i;o.userData.half=two?h:null;if(!o.userData.door)picks.push(o);}});
     });
   });
@@ -283,23 +284,47 @@ function build(){
   frameCam(false);highlight();needs=true;
 }
 function tap(e){if(!renderer)return;const r=renderer.domElement.getBoundingClientRect(),v=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1),ray=new THREE.Raycaster();ray.setFromCamera(v,cam);
-  const h=ray.intersectObjects(picks,false)[0];if(!h)return;
-  if(h.object.userData.door){const o=h.object.userData.door,opening=o.st.t<0.5;if(opening&&o.kind==='s')doors.forEach(d=>{if(d!==o&&d.kind==='s')d.st.t=0;});o.st.t=opening?1:0;return;}
-  if(h.object.userData.mod!=null){S.sel=h.object.userData.mod;const m=S.modules[S.sel];if(m&&h.object.userData.half!=null)m.edit=h.object.userData.half;S.step=1;build();render();showSel();}}
+  const h=ray.intersectObjects(picks,false)[0],u=h?h.object.userData:{},mod=u.mod!=null?u.mod:null;
+  const flip=o=>{const opening=o.st.t<0.5;if(opening&&o.kind==='s')doors.forEach(d=>{if(d!==o&&d.kind==='s')d.st.t=0;});o.st.t=opening?1:0;openLabel();};
+  // On the Units step: a tap on another unit picks it, on the picked unit's door opens or closes it, anywhere else picks none.
+  if(S.step===1){
+    if(mod==null){if(u.door)flip(u.door);else pick(-1);return;}
+    if(mod!==S.sel){pick(mod,u.half);return;}
+    if(u.door){flip(u.door);return;}
+    const m=S.modules[mod];if(m&&u.half!=null&&m.edit!==u.half){m.edit=u.half;render();showSel();}
+    return;}
+  // Other steps: a door opens or closes; a tap inside a unit opens it on the Units step.
+  if(u.door){flip(u.door);return;}
+  if(mod!=null){S.sel=mod;const m=S.modules[mod];if(m&&u.half!=null)m.edit=u.half;S.step=1;render();showSel();}}
+/* Pick unit i (or none: -1) and show it: faded others, the drawing, its card open. */
+function pick(i,half){if(i===S.sel&&half==null)return;S.sel=i;const m=S.modules[i];if(m&&half!=null)m.edit=half;highlight();if(S.view==='draw')drawPlan();render();showSel();}
+/* The drawing works the same way: a tap on a unit picks it (on another step, opens it on the Units step), anywhere else picks none. */
+let drawHits=[];
+function drawTap(e){const r=$('#drawing').getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,hit=drawHits.find(q=>x>=q.x0&&x<=q.x1&&y>=q.y0&&y<=q.y1);
+  if(S.step!==1){if(hit){S.sel=hit.section;const m=S.modules[hit.section];if(m&&hit.half!=null)m.edit=hit.half;S.step=1;render();showSel();}return;}
+  pick(hit?hit.section:-1,hit?hit.half:undefined);}
 /* The open unit card in view (it grows when it opens). */
 function showSel(){const el=body.querySelector('.mod[aria-current="true"]');if(el)el.scrollIntoView({block:'nearest'});}
 let last=performance.now();
 function loop(now){raf=requestAnimationFrame(loop);const dt=Math.min(0.05,(now-last)/1000);last=now;let act=ctl.update();
   for(const o of doors){const s=o.st;if(s.p!==s.t){s.p=s.t>s.p?Math.min(s.t,s.p+dt*2.2):Math.max(s.t,s.p-dt*2.2);applyDoor(o);act=true;}}
   if((act||needs)&&S.view==='3d'){renderer.render(scene,cam);needs=false;}}
-/* The button under the view: in 3D it opens and closes the doors, in the drawing it takes the doors off. */
+/* The button under the view: in 3D it opens and closes the doors (on the Units step, the picked unit's), in the
+   drawing it takes the doors off. */
 let btn3d='Open doors';
-function openLabel(){$('#openBtn').textContent=S.view==='draw'?(S.drawInside?'Show the doors':'Show the inside'):btn3d;}
+const unitDoors=()=>S.step===1&&S.sel>=0&&S.modules.length>1?doors.filter(o=>o.mod===S.sel&&o.kind==='h'):null;
+function openLabel(){const b=$('#openBtn');if(!b)return;
+  if(S.view==='draw'){b.textContent=S.drawInside?'Show the doors':'Show the inside';return;}
+  const ud=unitDoors();
+  if(ud&&ud.length){b.textContent=`${ud.some(o=>o.st.t<0.5)?'Open':'Close'} unit ${S.sel+1}`;return;}
+  if(doors.some(o=>o.kind==='s')){b.textContent=btn3d;return;}
+  b.textContent=doors.length&&!doors.some(o=>o.st.t<0.5)?'Close doors':'Open doors';}
 function toggleDoors(){
   if(S.view==='draw'){S.drawInside=!S.drawInside;drawPlan();openLabel();return;}
-  const ss=doors.filter(o=>o.kind==='s');
-  if(ss.length){const i=ss.findIndex(o=>o.st.t>0.5),nx=i+1;ss.forEach(o=>o.st.t=0);if(nx<ss.length){ss[nx].st.t=1;btn3d=nx===ss.length-1?'Close doors':'Next door';}else btn3d='Open doors';}
-  else{const open=doors.some(o=>o.st.t<0.5);doors.forEach(o=>o.st.t=open?1:0);btn3d=open?'Close doors':'Open doors';}
+  const ud=unitDoors(),ss=doors.filter(o=>o.kind==='s');
+  if(ud&&ud.length){const open=ud.some(o=>o.st.t<0.5);ud.forEach(o=>o.st.t=open?1:0);}
+  else if(ss.length){const i=ss.findIndex(o=>o.st.t>0.5),nx=i+1;ss.forEach(o=>o.st.t=0);if(nx<ss.length){ss[nx].st.t=1;btn3d=nx===ss.length-1?'Close doors':'Next door';}else btn3d='Open doors';}
+  else{const open=doors.some(o=>o.st.t<0.5);doors.forEach(o=>o.st.t=open?1:0);}
   openLabel();
 }
 
@@ -338,6 +363,7 @@ function drawPlan(){
   const knob=(hx,hy,tall)=>{if(S.handle==='push')return;S.handle==='knob'?o.push(`<circle cx="${f1(hx)}" cy="${f1(hy)}" r="2.5" fill="${I}"/>`):(tall?ln(hx,hy-12,hx,hy+12,'',2.2):ln(hx-8,hy,hx+8,hy,'',2.2));};
   // Every CabinetOS unit (a pair is two), from the same layout as the 3D view and the sizes (cabinetos-wardrobe.ts).
   const RB=runBox(),PCS=pieces(),T=COS.board;
+  drawHits=PCS.map(p=>({x0:X(c.x0+p.x),x1:X(c.x0+p.x+p.w),y0:Y(P+p.layout.boxH+(RB.topH||0)),y1:Y(P),section:p.section,half:p.part?(p.part==='a'?0:1):null}));
   PCS.forEach(p=>{const L=p.layout,ux=c.x0+p.x,x0=X(ux),x1=X(ux+p.w),U=v=>X(ux+v),V=v=>Y(P+v),sel=p.section===S.sel&&S.step===1;
     rc(x0,V(L.boxH),x1-x0,L.boxH*s,sel?'#e9edfb':'#FFFFFF','',1.4);
     if(RB.topH)rc(x0,V(L.boxH+RB.topH),x1-x0,RB.topH*s,'#FFFFFF','',1.4);
@@ -574,7 +600,7 @@ on(host,'click',e=>{
     case'infill-c':S.infillCustom=true;changed();break;
     case'depth':S.depthMode=v;if(v==='custom')S.depthCustom=depth();changed();break;
     case'fill':{const msg=autoFill();normalise();S.modules.forEach((m,i)=>fitInside(i));changed();flash(msg);break;}
-    case'sel':if(S.sel!==Number(v)){S.sel=Number(v);build();if(S.view==='draw')drawPlan();render();showSel();}break;
+    case'sel':pick(Number(v));break;
     case'w':{const [i,w]=v.split(':').map(Number);const m=S.modules[i];if(m){m.w=w;m.custom=false;S.sel=i;changed();}break;}
     case'preset':{const [i,k]=v.split(':');const m=S.modules[Number(i)];if(m){setPreset(m,k);S.sel=Number(i);fitInside(Number(i));changed();}break;}
     case'half':{const [i,h]=v.split(':').map(Number);const m=S.modules[i];if(m){m.edit=h;S.sel=i;render();}break;}
@@ -630,6 +656,7 @@ on($('#openBtn'),'click',toggleDoors);
 function setView(v){S.view=v;host.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===v)));
   $('#drawing').hidden=v!=='draw';stage.style.visibility=v==='3d'?'visible':'hidden';if(v==='draw')drawPlan();else needs=true;openLabel();}
 {const ro2=new ResizeObserver(()=>{if(S.view==='draw')drawPlan();});ro2.observe($('#drawing'));observers.push(ro2);}
+on($('#drawing'),'click',drawTap);
 
 /* ---------- boot ---------- */
 S.example=true;
