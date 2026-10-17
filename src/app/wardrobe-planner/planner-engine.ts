@@ -52,7 +52,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 let uid=1;
 function setPreset(m,key){if(key==='pair'&&canSplit(m.w)){m.split=[{...PAIR[0]},{...PAIR[1]}];m.edit=m.edit||0;}else{m.split=null;m.inside={...presetInside(key==='pair'?'drawers':key)};}}
 const mk=(w,preset)=>{const m={id:'m'+(uid++),w,custom:!CFG.standardWidths.includes(w),inside:presetInside('shelves'),split:null,edit:0};setPreset(m,preset);return m;};
-const S={unitMode:'standard',slidePer:1,side:{mode:'auto',l:50,r:50},wall:2800,ceiling:2400,fit:'wall',plinth:100,plinthCustom:false,infill:50,infillCustom:false,freeH:CFG.freeHeight,depthMode:'std',depthCustom:600,height:'full',doors:'hinged',style:'slab',handle:'brass',colour:'sage',
+const S={unitMode:'standard',perDoor:[],side:{mode:'auto',l:50,r:50},wall:2800,ceiling:2400,fit:'wall',plinth:100,plinthCustom:false,infill:50,infillCustom:false,freeH:CFG.freeHeight,depthMode:'std',depthCustom:600,height:'full',doors:'hinged',style:'slab',handle:'brass',colour:'sage',
   modules:[mk(900,'double'),mk(900,'pair'),mk(900,'short')],sel:0,step:0,view:'3d',open:false,sent:false,drawInside:false,
   contact:{name:'',email:'',phone:'',postcode:'',when:'',notes:'',company:''}};
 const colour=()=>CFG.colours.find(c=>c.k===S.colour)||CFG.colours[0];
@@ -76,14 +76,38 @@ function equalise(n){const R=equalRange();n=clamp(Math.round(n),R.min,R.max);con
   S.modules.forEach((m,i)=>{m.w=base+(i<r?1:0);m.custom=true;});S.sel=clamp(S.sel,0,n-1);normalise();for(let i=had;i<n;i++)fitInside(i);}
 /* Sliding doors with a unit behind each door (Raf, 17 Oct 2026: the sliding doors decide the units behind them): the
    widths CabinetOS's Sliding doors card gives (cabinetos-wardrobe.ts slidingLineUp), each join where two doors meet,
-   so every drawer behind can open. One or two units a door (S.slidePer). Insides stay with the units in order; new
-   units get a layout, extra ones go. */
+   so every drawer behind can open. One or two units behind each door, door by door (S.perDoor; Raf, 17 Oct 2026:
+   'when pick two it changes all units in two even though one unit selected'): with a unit picked, One / Two change
+   just the door in front of it; with none picked, every door. Two is the door's width split in half, odd mm on the
+   left, as CabinetOS's Two per door. A door keeps its units: one becoming two keeps the left one and adds a unit,
+   two becoming one keeps the left one. */
 const endL=()=>S.fit==='openL'||free()?CFG.endPanel:0,endR=()=>S.fit==='openR'||free()?CFG.endPanel:0;
 const lineUpFor=per=>slidingLineUp(unitSpace()+endL()+endR(),per,endL(),endR(),CFG.customMin,CFG.customMax);
-function lineUp(){let L=lineUpFor(S.slidePer);if(!L&&S.slidePer===2){S.slidePer=1;L=lineUpFor(1);}if(!L)return false;
-  const n=L.widths.length,had=S.modules.length;
-  while(S.modules.length<n){const w=L.widths[S.modules.length];S.modules.push(mk(w,layoutFor(w,S.modules.length,n)));}
-  S.modules.length=n;S.modules.forEach((m,i)=>{m.w=L.widths[i];m.custom=true;});if(S.sel>=n)S.sel=n-1;normalise();for(let i=had;i<n;i++)fitInside(i);return true;}
+/* Each door's single-unit width, and whether it can take two. */
+const doorWidths=()=>{const L=lineUpFor(1);return L?L.widths:null;};
+const twoFits=w=>Math.floor(w/2)>=CFG.customMin;
+/* S.perDoor as it applies to the units there are now (one per door when it doesn't match them). */
+function perNow(){const dw=doorWidths();if(!dw)return[];const n=dw.length,p=S.perDoor;
+  return p.length===n&&p.reduce((a,b)=>a+b,0)===S.modules.length?p.slice():Array(n).fill(1);}
+/* The door the unit sits behind (index), or -1. */
+function doorOf(i){if(i<0||i>=S.modules.length)return -1;const p=perNow();let at=0;for(let k=0;k<p.length;k++){at+=p[k];if(i<at)return k;}return -1;}
+function lineUp(want){const dw=doorWidths();if(!dw)return false;const n=dw.length;
+  const cur=S.unitMode==='doors'&&S.perDoor.length===n&&S.perDoor.reduce((a,b)=>a+b,0)===S.modules.length?S.perDoor:null;
+  const base=want||(S.perDoor.length===n?S.perDoor:Array(n).fill(S.perDoor.every(v=>v===2)&&S.perDoor.length?2:1));
+  const per=dw.map((w,k)=>base[k]===2&&twoFits(w)?2:1);
+  const widths=dw.flatMap((w,k)=>per[k]===2?[Math.ceil(w/2),Math.floor(w/2)]:[w]);
+  let keep;
+  if(cur){keep=[];let at=0;dw.forEach((_,k)=>{const old=S.modules.slice(at,at+cur[k]);at+=cur[k];
+      if(per[k]===cur[k])keep.push(...old);else if(per[k]===2)keep.push(old[0],null);else keep.push(old[0]);});}
+  else keep=widths.map((_,i)=>S.modules[i]||null);
+  const selDoor=cur&&S.sel>=0?(()=>{let at=0;for(let k=0;k<n;k++){at+=cur[k];if(S.sel<at)return k;}return -1;})():-1;
+  const fresh=[];
+  S.modules=widths.map((w,i)=>{let m=keep[i];if(!m){m=mk(w,layoutFor(w,i,widths.length));fresh.push(i);}m.w=w;m.custom=true;return m;});
+  S.perDoor=per;
+  if(selDoor>=0&&want)S.sel=per.slice(0,selDoor).reduce((a,b)=>a+b,0);
+  if(S.sel>=S.modules.length)S.sel=S.modules.length-1;normalise();fresh.forEach(i=>fitInside(i));return true;}
+/* How the units sit behind the doors, in words: 'a unit behind each door', 'two units ...', or '5 units behind 3 doors'. */
+function perText(){const p=perNow();if(!p.length)return'';if(p.every(v=>v===1))return'a unit behind each door';if(p.every(v=>v===2))return'two units behind each door';return `${S.modules.length} units behind ${p.length} doors`;}
 const lined=()=>S.unitMode==='doors'&&S.doors==='sliding';
 const nearestStd=w=>CFG.standardWidths.reduce((b,x)=>Math.abs(x-w)<Math.abs(b-w)||(Math.abs(x-w)===Math.abs(b-w)&&x>b)?x:b,CFG.standardWidths[0]);
 const widthsText=()=>{const ws=S.modules.map(m=>m.w),a=Math.min(...ws),b=Math.max(...ws);return a===b?`${a}`:`${a} to ${b}`;};
@@ -97,7 +121,7 @@ function calc(){
     if(!S.modules.length){lv='warn';t='Add a unit to start';}
     else if(left<-0.5){lv='bad';t=`Too wide by ${Math.round(-left)} mm`;}
     else if(left>0.5){lv='warn';t=S.fit==='wall'?`${Math.round(left)} mm gap to fill`:`${Math.round(left)} mm short of the space`;}
-    else t=S.unitMode==='equal'?`Fits · ${S.modules.length} equal unit${S.modules.length===1?'':'s'}, ${widthsText()} mm`:lined()?`Fits · ${S.slidePer===2?'two units':'a unit'} behind each door, ${widthsText()} mm`:'Fits exactly';
+    else t=S.unitMode==='equal'?`Fits · ${S.modules.length} equal unit${S.modules.length===1?'':'s'}, ${widthsText()} mm`:lined()?`Fits · ${perText()}, ${widthsText()} mm`:'Fits exactly';
     sub=`Units ${mods}${panels?' + end panel 18':''} + side infill ${inf} = ${mods+panels*CFG.endPanel+fillL+fillR} of ${S.wall}`;
     x0=S.fit==='openL'?S.wall-fillR-mods:fillL;
   }else{
@@ -535,13 +559,17 @@ function stepUnits(){const c=calc(),mode=S.unitMode,R=equalRange(),n=S.modules.l
   ${mode==='standard'?'<button type="button" class="wbtn primary wide" data-act="fill">Fill my wall with standard sizes</button>':''}
   ${mode==='equal'?`<div class="num"><label for="ucount">Number of units<small>${R.A} mm${free()?'':' between the side infills'}${c.panels?' and end panel'+(c.panels>1?'s':''):''}</small></label><div class="nctl"><button type="button" class="st" data-act="ucount" data-v="-1" aria-label="One unit fewer" ${n<=R.min?'disabled':''}>−</button><input id="ucount" type="number" value="${n}" readonly tabindex="-1" aria-live="polite"><span class="u">units</span><button type="button" class="st" data-act="ucount" data-v="1" aria-label="One unit more" ${n>=R.max?'disabled':''}>+</button></div></div>
   <p class="note">${n} × ${widthsText()} mm${R.A%n?` (the ${R.A%n} mm left over goes 1 mm each to the first units)`:''}.</p>`:''}
-  ${mode==='doors'?`<div class="grp"><h3>Units per door</h3><div class="chips">${chip('slideper','1',`<span>One<small>${per(1)}</small></span>`,S.slidePer===1)}${chip('slideper','2',`<span>Two<small>${per(2)||'Too narrow'}</small></span>`,S.slidePer===2,!per(2))}</div></div>`:''}
+  ${mode==='doors'?(()=>{const dw=doorWidths();if(!dw)return'';const p=perNow(),k=doorOf(S.sel);
+    if(k>=0){const w=dw[k];return `<div class="grp"><h3>Units behind door ${k+1}</h3><div class="chips">${chip('slideper','1',`<span>One<small>${w} mm</small></span>`,p[k]===1)}${chip('slideper','2',`<span>Two<small>${twoFits(w)?`${Math.ceil(w/2)} + ${Math.floor(w/2)} mm`:'Too narrow'}</small></span>`,p[k]===2,!twoFits(w))}</div>
+    <p class="note">Just door ${k+1}, the one in front of unit ${S.sel+1}. <button type="button" class="linkbtn" data-act="unpick">Change every door</button></p></div>`;}
+    return `<div class="grp"><h3>Units per door</h3><div class="chips">${chip('slideper','1',`<span>One<small>${per(1)}</small></span>`,p.every(v=>v===1))}${chip('slideper','2',`<span>Two<small>${per(2)||'Too narrow'}</small></span>`,p.every(v=>v===2),!per(2))}</div>
+    <p class="note">Every door. Pick a unit to change just the door in front of it.</p></div>`;})():''}
   <div class="mods">${(()=>{const PCS=pieces();return S.modules.map((m,i)=>modCard(m,i,PCS.filter(p=>p.section===i),mode)).join('');})()}</div>
   ${mode==='doors'?'':`<button type="button" class="wbtn ghost wide" data-act="add" ${S.modules.length>=(mode==='equal'?R.max:12)?'disabled':''}>Add a unit</button>`}`;}
 function stepDoors(){
   return `<div><h2>Doors</h2><p class="lede">Tap any door in the 3D view to open it.</p></div>
   <div class="grp"><h3>Type</h3><div class="chips">${chip('doors','hinged','<span>Hinged<small>Up to 600 mm wide is one door, wider is a pair</small></span>',S.doors==='hinged')}${chip('doors','sliding',`<span>Sliding<small>${S.modules.length?(()=>{const SD=slideDoors();return `${SD.n} doors ${SD.w} wide`;})():'Saves space in front'}, needs ${CFG.depth.sliding} mm depth</small></span>`,S.doors==='sliding')}</div></div>
-  ${S.doors==='sliding'?(lined()?`<p class="note">The units behind line up with the doors, ${S.slidePer===2?'two':'one'} behind each, so every drawer can open. Change it in Units.</p>`:`<button type="button" class="wbtn ghost wide" data-act="umode" data-v="doors" ${lineUpFor(1)?'':'disabled'}>Line the units up with the doors</button>`):''}
+  ${S.doors==='sliding'?(lined()?`<p class="note">The units behind line up with the doors, ${perText()}, so every drawer can open. Change it in Units.</p>`:`<button type="button" class="wbtn ghost wide" data-act="umode" data-v="doors" ${lineUpFor(1)?'':'disabled'}>Line the units up with the doors</button>`):''}
   ${(()=>{const cg=caughtLabels();return cg.size?`<p class="hint">${esc([...cg].join(', '))}: two sliding doors meet in front of the drawers, so they can't open fully. See Units.</p>`:'';})()}
   <div class="grp"><h3>Style</h3><div class="chips">${Object.keys(CFG.styles).map(k=>chip('style',k,CFG.styles[k],S.style===k)).join('')}</div></div>
   <div class="grp"><h3>${S.doors==='sliding'?'Pulls':'Handles'}</h3><div class="chips">${Object.keys(CFG.handles).map(k=>chip('handle',k,CFG.handles[k],S.handle===k)).join('')}</div></div>
@@ -659,7 +687,8 @@ on(host,'click',e=>{
         else equalise(S.modules.length||Math.round(equalRange().A/900));
         changed();}break;
     case'ucount':equalise(S.modules.length+Number(v));changed();break;
-    case'slideper':S.slidePer=Number(v)===2?2:1;lineUp();changed();break;
+    case'slideper':{const two=Number(v)===2?2:1,k=doorOf(S.sel),p=perNow();lineUp(k>=0?p.map((x,j)=>j===k?two:x):p.map(()=>two));changed();break;}
+    case'unpick':pick(-1);break;
     case'plinth':S.plinth=Number(v);S.plinthCustom=false;changed();break;
     case'plinth-c':S.plinthCustom=true;changed();break;
     case'infill':S.infill=Number(v);S.infillCustom=false;changed();break;
@@ -688,7 +717,7 @@ on(host,'click',e=>{
       // drawers on the front can't sit under sliding doors: they go behind them
       if(v==='sliding')S.modules.forEach(m=>[m.inside,...(m.split||[])].forEach(x=>{if(x)x.below=false;}));
       // sliding doors decide the units behind them: one behind each door (Units can change it); back to hinged keeps the widths
-      let msg='';if(v==='sliding'&&was!=='sliding'&&S.unitMode!=='doors'&&S.modules.length&&lineUpFor(S.slidePer)){S.unitMode='doors';lineUp();msg=`Units lined up with the doors: ${S.modules.length} × ${widthsText()} mm`;}
+      let msg='';if(v==='sliding'&&was!=='sliding'&&S.unitMode!=='doors'&&S.modules.length&&lineUpFor(1)){S.unitMode='doors';lineUp();msg=`Units lined up with the doors: ${S.modules.length} × ${widthsText()} mm`;}
       if(v==='hinged'&&S.unitMode==='doors')S.unitMode='custom';
       changed();if(msg)flash(msg);break;}
     case'style':S.style=v;changed();break;
