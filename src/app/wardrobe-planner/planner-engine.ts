@@ -304,10 +304,10 @@ function build(){
   });
   // sliding doors: a bottom track on the floor, a guide track where they close at the top (CabinetOS's sums)
   if(!hinge&&S.modules.length){const SD=slideDoors(),sx=X(spanLeft(c)),sw=SD.span*MM,zt=SD.zone*MM;box(root,sx,zt-0.045,zi,sx+sw,zt,D,alu());box(root,sx,0,zi,sx+sw,0.012,D,alu());sliding(root,SD,sx,0.02,zi);}
-  frameCam(false);highlight();needs=true;
+  applyOff();frameCam(false);highlight();needs=true;
 }
 function tap(e){if(!renderer)return;const r=renderer.domElement.getBoundingClientRect(),v=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1),ray=new THREE.Raycaster();ray.setFromCamera(v,cam);
-  const h=ray.intersectObjects(picks,false)[0],u=h?h.object.userData:{},mod=u.mod!=null?u.mod:null;
+  const h=ray.intersectObjects(picks,false).find(x=>!(doorsOff&&x.object.userData.door&&x.object.userData.door.kind==='s')),u=h?h.object.userData:{},mod=u.mod!=null?u.mod:null;
   const flip=o=>{stopPlay();const opening=o.st.t<0.5;if(opening&&o.kind==='s')doors.forEach(d=>{if(d!==o&&d.kind==='s')d.st.t=0;});o.st.t=opening?1:0;openLabel();};
   // On the Units step: a tap on another unit picks it, on the picked unit's door opens or closes it, anywhere else picks none.
   if(S.step===1){
@@ -352,12 +352,21 @@ function startPlay(){if(!doors.some(o=>o.kind==='s'))return;doors.forEach(o=>{if
     openLabel();};
   play.t=setTimeout(tick,250);}
 offs.push(()=>stopPlay());
+/* Doors off (Raf, 17 Oct 2026: 'when sliding door selected add extra button door off to see all units inside fully'):
+   with sliding doors the 3D view can take them off, so every unit behind them shows at once; tracks stay, taps go
+   through to the units, and the door and play buttons hide until they're back on. */
+let doorsOff=false;
+function applyOff(){doors.forEach(o=>{if(o.kind==='s')o.pivot.visible=!doorsOff;});}
+function toggleOff(){doorsOff=!doorsOff;stopPlay();if(doorsOff){doors.forEach(o=>{if(o.kind==='s'){o.st.t=0;o.st.p=0;applyDoor(o);}});btn3d='Open doors';}applyOff();needs=true;openLabel();}
 function openLabel(){const b=$('#openBtn');if(!b)return;
-  const pb=$('#playBtn');if(pb){const show=S.view==='3d'&&doors.some(o=>o.kind==='s');pb.hidden=!show;if(!show&&play)stopPlay();}
+  const sl=doors.some(o=>o.kind==='s'),off=sl&&doorsOff;
+  const ob=$('#offBtn');if(ob){ob.hidden=!(S.view==='3d'&&sl);ob.textContent=off?'Doors on':'Doors off';ob.setAttribute('aria-pressed',off?'true':'false');}
+  const pb=$('#playBtn');if(pb){const show=S.view==='3d'&&sl&&!off;pb.hidden=!show;if(!show&&play)stopPlay();}
+  b.hidden=false;
   if(S.view==='draw'){b.textContent=S.drawInside?'Show the doors':'Show the inside';return;}
   const ud=unitDoors();
   if(ud&&ud.length){b.textContent=`${ud.some(o=>o.st.t<0.5)?'Open':'Close'} unit ${S.sel+1}`;return;}
-  if(doors.some(o=>o.kind==='s')){b.textContent=btn3d;return;}
+  if(sl){if(off){b.hidden=true;return;}b.textContent=btn3d;return;}
   b.textContent=doors.length&&!doors.some(o=>o.st.t<0.5)?'Close doors':'Open doors';}
 function toggleDoors(){
   if(S.view==='draw'){S.drawInside=!S.drawInside;drawPlan();openLabel();return;}
@@ -675,7 +684,7 @@ on(host,'click',e=>{
       const c=calc(),room=c.fixed?Math.round(c.left):S.wall-c.run-(S.fit==='wall'?2:1)*CFG.scribe.min;
       const w=S.unitMode==='custom'?clamp(Math.min(900,room),CFG.customMin,CFG.customMax):[...CFG.standardWidths].reverse().find(x=>x<=room)||600;
       const m=mk(w,layoutFor(w,S.modules.length));if(S.unitMode==='custom')m.custom=true;S.modules.push(m);S.sel=S.modules.length-1;normalise();fitInside(S.sel);changed();break;}
-    case'doors':{const was=S.doors;S.doors=v;if(v==='sliding'&&S.depthMode==='shallow')S.depthMode='std';doorState.clear();btn3d='Open doors';openLabel();
+    case'doors':{const was=S.doors;S.doors=v;doorsOff=false;if(v==='sliding'&&S.depthMode==='shallow')S.depthMode='std';doorState.clear();btn3d='Open doors';openLabel();
       // drawers on the front can't sit under sliding doors: they go behind them
       if(v==='sliding')S.modules.forEach(m=>[m.inside,...(m.split||[])].forEach(x=>{if(x)x.below=false;}));
       // sliding doors decide the units behind them: one behind each door (Units can change it); back to hinged keeps the widths
@@ -714,6 +723,7 @@ on(body,'submit',async e=>{e.preventDefault();if(sending)return;const C=S.contac
 on($('#backBtn'),'click',()=>{S.step=Math.max(0,S.step-1);render();});
 on($('#nextBtn'),'click',()=>{S.step=Math.min(4,S.step+1);render();});
 on($('#openBtn'),'click',toggleDoors);
+on($('#offBtn'),'click',toggleOff);
 on($('#playBtn'),'click',()=>{if(play){stopPlay();doors.forEach(o=>{if(o.kind==='s')o.st.t=0;});btn3d='Open doors';openLabel();}else startPlay();});
 function setView(v){S.view=v;host.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===v)));
   $('#drawing').hidden=v!=='draw';stage.style.visibility=v==='3d'?'visible':'hidden';if(v==='draw')drawPlan();else needs=true;openLabel();}

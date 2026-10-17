@@ -90,6 +90,7 @@ const PlannerFrame = memo(function PlannerFrame() {
         <div className="vbot">
           <div className="fit" id="fitChip"><span id="fitText">Fits</span></div>
           <div className="vbtns">
+            <button type="button" className="vbtn tog" id="offBtn" hidden aria-pressed="false">Doors off</button>
             <button type="button" className="vbtn ic" id="playBtn" hidden aria-pressed="false" aria-label="Watch each door slide" title="Watch each door slide">
               <svg className="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7.5-4.5z" /></svg>
               <svg className="i-stop" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5h7v7h-7z" /></svg>
