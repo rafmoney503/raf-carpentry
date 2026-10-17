@@ -3091,9 +3091,8 @@ h2.sys-swap > span {
   }
 }
 
-/* ---------- the tape search in the header ----------
-   The black case sits in the top bar; the yellow blade pulls out of it across the bar and you type on it. The
-   results hang under the bar as cut pieces: the longest (yellow) is the best match. See TapeSearch.tsx. */
+/* ---------- search: the sheet on a computer or iPad (search/SearchSheet.tsx), the field at the top of the phone
+   menu (search/MenuSearch.tsx) ---------- */
 
 .head-row {
   position: relative;
@@ -3107,326 +3106,301 @@ h2.sys-swap > span {
 .head-actions .menu-btn {
   order: 1;
 }
-.tape-case {
-  order: 2;
-  flex: 0 0 auto;
-  display: inline-flex;
-  flex-direction: column;
+.search-btn {
+  display: none;
   align-items: center;
-  gap: 3px;
+  gap: 8px;
   min-height: 44px;
-  padding: 0;
+  padding: 0 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
   background: transparent;
-  border: 0;
   color: var(--ink);
-  font: inherit;
-  font-size: 15px;
-  font-weight: 500;
   cursor: pointer;
+  font: 600 15px var(--f-body);
 }
-.tape-body {
-  position: relative;
-  z-index: 4;
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  background: var(--ink);
-  border-radius: 10px;
-  transition: transform 0.2s var(--ease);
+.search-btn:hover,
+.search-btn[aria-expanded='true'] {
+  border-color: var(--ink);
 }
-.tape-reel {
-  width: 14px;
-  height: 14px;
-  border: 2.5px solid var(--hl);
-  border-radius: 50%;
-  transition: transform 0.38s var(--ease);
-}
-.tape-case:hover .tape-body {
-  transform: translateY(-1px);
-}
-.tape-case.open .tape-reel {
-  transform: scale(0.8);
-}
-/* the word under the case on a phone, beside it on a computer */
-.tape-label {
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1;
+@media (min-width: 768px) {
+  .search-btn {
+    display: inline-flex;
+  }
 }
 @media (min-width: 1080px) {
-  .tape-case {
-    order: 0;
-    flex-direction: row;
-    gap: 10px;
-  }
-  .tape-body {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-  }
-  .tape-reel {
-    width: 18px;
-    height: 18px;
-    border-width: 3px;
-  }
-  .tape-label {
-    font-size: 15px;
-    font-weight: 500;
+  .search-btn {
+    min-height: 40px;
   }
 }
-
-.tape-blade {
-  position: absolute;
-  z-index: 3;
-  left: 0;
-  width: 0;
-  overflow: hidden;
-  height: 44px;
+.ss-dim {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgb(21 23 26 / 0.3);
+  animation: ss-fade 0.18s ease both;
+}
+.ss-sheet {
+  position: fixed;
+  z-index: 81;
+  top: max(16px, env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  box-shadow: 0 18px 48px rgb(21 23 26 / 0.18);
+  animation: ss-drop 0.22s var(--ease) both;
+}
+.ss-field {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 14px 4px 18px;
-  background-color: var(--hl);
-  background-image: repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px 40px), repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px 8px);
-  background-size: 100% 11px, 100% 6px;
-  background-repeat: no-repeat;
-  background-position: 4px 100%, 0 100%;
-  border: 1.5px solid var(--ink);
-  border-radius: 2px;
-  clip-path: inset(0 0 0 100%);
-  pointer-events: none;
-  transition: clip-path 0.38s var(--ease);
+  height: 64px;
+  padding: 0 14px 0 18px;
+  border-bottom: 1px solid var(--line);
 }
-.tape-blade.open {
-  clip-path: inset(0 0 0 0);
-  pointer-events: auto;
-}
-.tape-blade:focus-within {
-  box-shadow: 0 0 0 3px rgb(21 23 26 / 0.18);
-}
-.tape-hook {
-  position: absolute;
-  left: 0;
-  top: 6px;
-  width: 5px;
-  height: 30px;
-  background: var(--ink);
-}
-.tape-input {
+.ss-field input {
   flex: 1 1 auto;
   min-width: 0;
-  height: 32px;
-  padding: 0;
+  height: 60px;
   border: 0;
+  outline: none;
   background: transparent;
   color: var(--ink);
-  font-family: var(--f-body);
-  font-size: 18px;
-  font-weight: 500;
-  outline: none;
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+.ss-field input::placeholder {
+  color: var(--muted);
+}
+.ss-field input::-webkit-search-cancel-button,
+.ss-field input::-webkit-search-decoration {
   -webkit-appearance: none;
-  appearance: none;
 }
-.tape-input::placeholder {
-  color: rgb(21 23 26 / 0.55);
-}
-.tape-input::-webkit-search-cancel-button,
-.tape-input::-webkit-search-decoration {
-  -webkit-appearance: none;
-  appearance: none;
-}
-.tape-hint {
-  display: none;
+.ss-close {
   flex: 0 0 auto;
-  font-family: var(--f-mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 600 13px var(--f-body);
+  cursor: pointer;
 }
-@media (min-width: 1080px) {
-  .tape-hint {
-    display: block;
-  }
-}
-
-.tape-dim {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 39;
-  background: rgb(21 23 26 / 0.4);
-  animation: tape-fade 0.2s ease both;
-}
-.tape-panel {
-  position: fixed;
-  z-index: 41;
-  max-height: calc(100dvh - 120px);
+.ss-body {
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding-bottom: 6px;
+  padding: 6px 8px 14px;
 }
-.tape-pieces {
+.ss-list {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+.ss-group {
+  padding: 12px 12px 4px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ss-row {
   display: flex;
-  flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
-}
-.piece {
-  min-width: min(100%, 250px);
-  min-height: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 30px 8px 14px;
-  background: var(--surface);
-  color: var(--ink);
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 2px;
   cursor: pointer;
-  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
-  animation: piece-in 0.34s var(--ease) both;
 }
-.piece.best {
-  background: var(--hl);
+.ss-row.on {
+  background: rgb(21 23 26 / 0.05);
 }
-.piece.send {
-  background: var(--ink);
-  color: #fff;
-}
-.piece.active {
-  box-shadow: inset 5px 0 0 var(--ink);
-}
-.piece.send.active {
-  box-shadow: inset 5px 0 0 var(--hl);
-}
-.piece-text {
+.ss-text {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  gap: 2px;
 }
-.piece-text b {
+.ss-text b {
   font-weight: 600;
   font-size: 15.5px;
-  line-height: 1.3;
 }
-.piece.best .piece-text b {
-  font-weight: 700;
+.ss-row.best .ss-text b span {
+  background: linear-gradient(transparent 55%, var(--hl) 55%, var(--hl) 92%, transparent 92%);
+  padding: 0 2px;
+  margin-left: -2px;
 }
-.piece-text span {
-  font-size: 13px;
+.ss-text > span {
   color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 14px;
+  line-height: 1.4;
 }
-.piece.best .piece-text span {
-  color: var(--ink-2);
-}
-.piece.send .piece-text span {
-  color: #c9cdd1;
-}
-.piece-kind {
+.ss-kind {
   flex: 0 0 auto;
+  margin-top: 3px;
   font-family: var(--f-mono);
-  font-size: 10.5px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
   color: var(--muted);
 }
-.piece.best .piece-kind {
-  color: var(--ink);
-}
-.piece-big {
+.ss-big {
   flex: 0 0 auto;
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-end;
 }
-.piece-big b {
+.ss-big b {
   font-family: var(--f-display);
-  font-weight: 700;
-  font-size: 24px;
-  line-height: 1;
-  background: linear-gradient(transparent 58%, var(--hl) 58%, var(--hl) 92%, transparent 92%);
+  font-size: 22px;
+  letter-spacing: -0.02em;
 }
-.piece.best .piece-big b {
-  background: none;
-}
-.piece-big em {
+.ss-big em {
   font-style: normal;
   font-family: var(--f-mono);
   font-size: 10.5px;
   color: var(--muted);
 }
-.tape-note {
-  display: inline-block;
-  margin: 10px 0 0;
-  padding: 4px 8px;
-  background: rgb(21 23 26 / 0.86);
-  font-family: var(--f-mono);
-  font-size: 11.5px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #fff;
-}
-.tape-note-top {
-  margin: 0 0 8px;
-}
-.tape-tries {
-  margin-top: 10px;
+.ss-tries {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  padding: 12px 14px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  animation: piece-in 0.34s var(--ease) both;
+  padding: 10px 12px 0;
 }
-.tape-tries span {
+.ss-tries span {
   font-family: var(--f-mono);
   font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--muted);
+  margin-right: 4px;
 }
-.tape-tries button {
-  min-height: 36px;
-  padding: 0 11px;
-  background: var(--paper);
+.ss-tries button {
+  height: 34px;
+  padding: 0 12px;
   border: 1px solid var(--line-2);
   border-radius: 2px;
+  background: var(--surface);
   color: var(--ink);
-  font: inherit;
-  font-size: 14px;
+  font: 500 14px var(--f-body);
   cursor: pointer;
 }
-body[data-search='open'] .nav {
-  visibility: hidden;
+.ss-tries button:hover {
+  border-color: var(--ink);
 }
 body[data-search='open'] .float-pill {
-  opacity: 0;
-  pointer-events: none;
+  visibility: hidden;
 }
-@keyframes piece-in {
+@keyframes ss-fade {
   from {
     opacity: 0;
-    transform: translateY(-10px);
   }
 }
-@keyframes tape-fade {
+@keyframes ss-drop {
   from {
     opacity: 0;
+    transform: translate(-50%, -10px);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tape-blade {
-    transition: none;
-  }
-  .piece,
-  .tape-tries,
-  .tape-dim {
+  .ss-dim,
+  .ss-sheet {
     animation: none;
+  }
+}
+
+/* the phone: the search at the top of the menu */
+.ms {
+  padding: 10px 0 6px;
+}
+.ms-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  border-bottom: 1.5px solid var(--line-2);
+}
+.ms-field:focus-within {
+  border-bottom-color: var(--ink);
+}
+.ms-field input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 46px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: 16px var(--f-body);
+}
+.ms-field input::placeholder {
+  color: var(--muted);
+}
+.ms-field input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+.ms-clear {
+  flex: 0 0 auto;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: 600 14px var(--f-body);
+  padding: 8px 4px;
+  cursor: pointer;
+}
+.ms-results {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 0 8px;
+}
+.ms-best {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.ms-best b {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.ms-best b em {
+  font-style: normal;
+}
+.ms-best > span:not(.kicker):not(.link-more) {
+  color: var(--ink-2);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.ms-tags .tag {
+  cursor: pointer;
+  font-family: var(--f-body);
+  color: var(--ink);
+}
+@media (min-width: 768px) {
+  /* iPads and computers have the Search button instead */
+  .ms {
+    display: none;
   }
 }
 

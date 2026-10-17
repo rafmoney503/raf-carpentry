@@ -3,7 +3,8 @@ import { FAQ, INTEGRATIONS, TRADES } from './content';
 import { CABINETOS_URL } from './site';
 
 /* What the site can find. Everything is searched in the browser, so answers come as the visitor types.
-   The hero search on the home page uses HERO_ITEMS; the tape search in the header searches the whole site:
+   The hero search on the home page uses HERO_ITEMS; the search in the header (SearchSheet on a computer or iPad,
+   MenuSearch at the top of the phone menu) searches the whole site:
    every page, every # section, the systems, the trades, the questions, the connections, a paint sum when the
    visitor types something like "4 doors", and three things it can do (sketch, WhatsApp, send to Rafal). */
 
@@ -145,7 +146,7 @@ export function paintSum(q: string): Hit | null {
 
 /* ---------- the search ---------- */
 
-export function siteSearch(raw: string): Hit[] {
+export function siteSearch(raw: string, max = 5): Hit[] {
   const q = raw.trim();
   if (!q) return [];
   const phrase = words(q);
@@ -166,12 +167,12 @@ export function siteSearch(raw: string): Hit[] {
     const { words: _w, titleWords: _t, boost: _b, ...hit } = e;
     return hit as Hit;
   });
-  let hits: Hit[] = ranked.slice(0, sum ? 3 : 4);
+  let hits: Hit[] = ranked.slice(0, sum ? max - 2 : max - 1);
   if (sum) hits = [sum, ...hits];
   if (hits.length < 2) hits.push({ kind: 'sketch', title: 'Sketch my system', sub: 'The 60-second planner, with your words in it' });
   const short = q.length > 22 ? `${q.slice(0, 21)}…` : q;
   hits.push({ kind: 'send', title: `Send “${short}” to Rafal`, sub: 'Lands in his ServiceM8 as a job' });
-  return hits.slice(0, 5);
+  return hits.slice(0, max);
 }
 
 export const KIND_LABEL: Record<HitKind, string> = {

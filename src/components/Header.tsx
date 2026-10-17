@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CONTACT_ITEM, MENU, tagHref, type MenuItem } from '@/lib/menu';
-import TapeSearch from './TapeSearch';
+import SearchSheet from './search/SearchSheet';
+import MenuSearch from './search/MenuSearch';
 import BounceCta from './BounceCta';
 import StepsMark from './StepsMark';
 
@@ -30,6 +31,7 @@ export default function Header() {
   const [panel, setPanel] = useState<MenuItem | null>(null);
   const [open, setOpen] = useState(false); // phone menu
   const [expanded, setExpanded] = useState<string | null>(null); // phone: which item's tags are open
+  const [menuQ, setMenuQ] = useState(''); // phone: words typed in the search at the top of the menu
   const openTimer = useRef<number | undefined>(undefined);
   const closeTimer = useRef<number | undefined>(undefined);
   const clearTimers = () => {
@@ -51,9 +53,10 @@ export default function Header() {
     else replayLogo();
   }, [pathname, closeAll]);
 
-  // Opening the phone menu plays the logo again.
+  // Opening the phone menu plays the logo again; closing it clears its search.
   useEffect(() => {
     if (open) replayLogo();
+    else setMenuQ('');
   }, [open]);
 
   useEffect(() => {
@@ -109,7 +112,7 @@ export default function Header() {
           </nav>
 
           <div className="head-actions">
-            <TapeSearch
+            <SearchSheet
               onOpen={() => {
                 clearTimers();
                 setPanel(null);
@@ -163,7 +166,8 @@ export default function Header() {
       {open ? (
         <nav id="mobile-menu" className="mobile-menu" aria-label="Main">
           <div className="wrap">
-            {[...MENU, CONTACT_ITEM].map((item) => {
+            <MenuSearch q={menuQ} setQ={setMenuQ} onDone={() => setOpen(false)} />
+            {!menuQ.trim() && [...MENU, CONTACT_ITEM].map((item) => {
               const tagsOpen = expanded === item.href;
               return (
                 <div key={item.href} className="mm-item">
