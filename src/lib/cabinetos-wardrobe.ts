@@ -499,11 +499,15 @@ function overlapFor(span: number, n: number, drawers: [number, number][]): { ov:
   return { ov: SLIDE.overlap, ok: false };
 }
 
+/** The door count for a span with no drawers caught: about 900 a door, none over 1200, at least 2. */
+export const slidingCount = (span: number) =>
+  Math.min(SLIDE.maxDoors, Math.max(SLIDE.minDoors, Math.round(span / SLIDE.target), Math.ceil(span / SLIDE.maxDoor)));
+
 /** `span`: the units and end panels left to right; `zone`: floor to where the doors close at the top; `drawers`:
     where the drawer fronts are along the span (slidingDrawerSpans). Auto count: about 900 a door, but if drawers stay
     caught, the nearest count in the size limits that frees them. */
 export function slidingDoorsFor(span: number, zone: number, count?: number, drawers: [number, number][] = []): SlidingDoors {
-  const base = Math.min(SLIDE.maxDoors, Math.max(SLIDE.minDoors, Math.round(span / SLIDE.target), Math.ceil(span / SLIDE.maxDoor)));
+  const base = slidingCount(span);
   let n = count ?? base;
   if (count == null && !overlapFor(span, base, drawers).ok) {
     const order = [base];
@@ -519,6 +523,28 @@ export function slidingDoorsFor(span: number, zone: number, count?: number, draw
   const g = gapsFor(doors, span);
   const caught = drawers.flatMap(([a, b], i) => (g.some(([x0, x1]) => x0 <= a + 0.01 && x1 >= b - 0.01) ? [] : [i]));
   return { n, w, h: r2(Math.max(0, zone - SLIDE.heightOff)), span: r2(span), zone: r2(zone), ov, overlaps: k, doors, caught };
+}
+
+/**
+ * Unit widths lined up with the sliding doors, as CabinetOS's Sliding doors card fills them in (cabinetos-site
+ * slidingFillWidths, 17 Oct 2026): `per` units behind each door, each join where two doors meet (the middle of their
+ * overlap, or where a pair on one track meet edge to edge), `left` / `right` = an end panel at that end of the span,
+ * taken off the end unit. Two per door: each door's unit split in two equal halves (the odd mm on the left). Whole mm.
+ * Lined up like this, every drawer behind the doors opens at the full 30 mm overlap. Null when a unit would come out
+ * narrower than `min` or wider than `max`.
+ */
+export function slidingLineUp(span: number, per: 1 | 2, left: number, right: number, min = 150, max = 1200): { n: number; widths: number[] } | null {
+  const total = Math.round(span);
+  if (total <= 0) return null;
+  const n = slidingCount(total);
+  const { doors } = placeDoors(total, n, SLIDE.overlap);
+  const at = [0, ...doors.slice(1).map((d, i) => Math.round(r2((doors[i].x1 + d.x0) / 2))), total];
+  let widths = at.slice(1).map((x, i) => x - at[i]);
+  widths[0] -= Math.round(left);
+  widths[widths.length - 1] -= Math.round(right);
+  if (per === 2) widths = widths.flatMap((w) => [Math.ceil(w / 2), Math.floor(w / 2)]);
+  if (widths.some((w) => w < min || w > max)) return null;
+  return { n, widths };
 }
 
 /** CabinetOS's carcass depth: the planner's depth less 18 mm hinged doors, or the sliding track's depth. */

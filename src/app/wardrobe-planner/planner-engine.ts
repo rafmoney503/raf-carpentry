@@ -11,7 +11,7 @@
    drawing and the sizes all come from the same layout, and Send passes those settings to CabinetOS as they are. */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { COS, PLAN, SLIDE, slidingDoorsFor, slidingDrawerSpans, PRESETS, presetInside, presetOf, PAIR, canSplit, insideText, planPieces, payloadUnits, runFor } from '@/lib/cabinetos-wardrobe';
+import { COS, PLAN, SLIDE, slidingDoorsFor, slidingDrawerSpans, slidingLineUp, PRESETS, presetInside, presetOf, PAIR, canSplit, insideText, planPieces, payloadUnits, runFor } from '@/lib/cabinetos-wardrobe';
 
 export function mountPlanner(host: HTMLElement, endpoint = '/api/brief'): () => void {
   let raf = 0, sending = false;
@@ -52,7 +52,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 let uid=1;
 function setPreset(m,key){if(key==='pair'&&canSplit(m.w)){m.split=[{...PAIR[0]},{...PAIR[1]}];m.edit=m.edit||0;}else{m.split=null;m.inside={...presetInside(key==='pair'?'drawers':key)};}}
 const mk=(w,preset)=>{const m={id:'m'+(uid++),w,custom:!CFG.standardWidths.includes(w),inside:presetInside('shelves'),split:null,edit:0};setPreset(m,preset);return m;};
-const S={unitMode:'standard',side:{mode:'auto',l:50,r:50},wall:2800,ceiling:2400,fit:'wall',plinth:100,plinthCustom:false,infill:50,infillCustom:false,freeH:CFG.freeHeight,depthMode:'std',depthCustom:600,height:'full',doors:'hinged',style:'slab',handle:'brass',colour:'sage',
+const S={unitMode:'standard',slidePer:1,side:{mode:'auto',l:50,r:50},wall:2800,ceiling:2400,fit:'wall',plinth:100,plinthCustom:false,infill:50,infillCustom:false,freeH:CFG.freeHeight,depthMode:'std',depthCustom:600,height:'full',doors:'hinged',style:'slab',handle:'brass',colour:'sage',
   modules:[mk(900,'double'),mk(900,'pair'),mk(900,'short')],sel:0,step:0,view:'3d',open:false,sent:false,drawInside:false,
   contact:{name:'',email:'',phone:'',postcode:'',when:'',notes:'',company:''}};
 const colour=()=>CFG.colours.find(c=>c.k===S.colour)||CFG.colours[0];
@@ -66,7 +66,7 @@ const hasL=()=>S.fit==='wall'||S.fit==='openR',hasR=()=>S.fit==='wall'||S.fit===
 const nPanels=()=>S.fit==='wall'?0:free()?2:1;
 /* Side infills that are fixed: typed in Space ('Set the size'), or the standard size when the units are an equal split
    with the infill on Auto. null = Auto (whatever is left at the walls). */
-function fixedSides(){if(free())return null;const set=S.side.mode==='set';if(!set&&S.unitMode!=='equal')return null;
+function fixedSides(){if(free())return null;const set=S.side.mode==='set';if(!set&&S.unitMode!=='equal'&&S.unitMode!=='doors')return null;
   const v=k=>set?S.side[k]:CFG.sideInfill.def;return{l:hasL()?v('l'):0,r:hasR()?v('r'):0,set};}
 /* Width the units share between the side infills and end panels (Equal split). */
 function unitSpace(){const fx=fixedSides()||{l:0,r:0};return S.wall-fx.l-fx.r-nPanels()*CFG.endPanel;}
@@ -74,6 +74,17 @@ function equalRange(){const A=unitSpace();return{A,min:Math.max(1,Math.ceil(A/CF
 function equalise(n){const R=equalRange();n=clamp(Math.round(n),R.min,R.max);const base=Math.floor(R.A/n),r=R.A-base*n;
   const had=S.modules.length;while(S.modules.length<n)S.modules.push(mk(base,layoutFor(base,S.modules.length,n)));S.modules.length=n;
   S.modules.forEach((m,i)=>{m.w=base+(i<r?1:0);m.custom=true;});S.sel=clamp(S.sel,0,n-1);normalise();for(let i=had;i<n;i++)fitInside(i);}
+/* Sliding doors with a unit behind each door (Raf, 17 Oct 2026: the sliding doors decide the units behind them): the
+   widths CabinetOS's Sliding doors card gives (cabinetos-wardrobe.ts slidingLineUp), each join where two doors meet,
+   so every drawer behind can open. One or two units a door (S.slidePer). Insides stay with the units in order; new
+   units get a layout, extra ones go. */
+const endL=()=>S.fit==='openL'||free()?CFG.endPanel:0,endR=()=>S.fit==='openR'||free()?CFG.endPanel:0;
+const lineUpFor=per=>slidingLineUp(unitSpace()+endL()+endR(),per,endL(),endR(),CFG.customMin,CFG.customMax);
+function lineUp(){let L=lineUpFor(S.slidePer);if(!L&&S.slidePer===2){S.slidePer=1;L=lineUpFor(1);}if(!L)return false;
+  const n=L.widths.length,had=S.modules.length;
+  while(S.modules.length<n){const w=L.widths[S.modules.length];S.modules.push(mk(w,layoutFor(w,S.modules.length,n)));}
+  S.modules.length=n;S.modules.forEach((m,i)=>{m.w=L.widths[i];m.custom=true;});if(S.sel>=n)S.sel=n-1;normalise();for(let i=had;i<n;i++)fitInside(i);return true;}
+const lined=()=>S.unitMode==='doors'&&S.doors==='sliding';
 const nearestStd=w=>CFG.standardWidths.reduce((b,x)=>Math.abs(x-w)<Math.abs(b-w)||(Math.abs(x-w)===Math.abs(b-w)&&x>b)?x:b,CFG.standardWidths[0]);
 const widthsText=()=>{const ws=S.modules.map(m=>m.w),a=Math.min(...ws),b=Math.max(...ws);return a===b?`${a}`:`${a} to ${b}`;};
 function calc(){
@@ -86,7 +97,7 @@ function calc(){
     if(!S.modules.length){lv='warn';t='Add a unit to start';}
     else if(left<-0.5){lv='bad';t=`Too wide by ${Math.round(-left)} mm`;}
     else if(left>0.5){lv='warn';t=S.fit==='wall'?`${Math.round(left)} mm gap to fill`:`${Math.round(left)} mm short of the space`;}
-    else t=S.unitMode==='equal'?`Fits · ${S.modules.length} equal unit${S.modules.length===1?'':'s'}, ${widthsText()} mm`:'Fits exactly';
+    else t=S.unitMode==='equal'?`Fits · ${S.modules.length} equal unit${S.modules.length===1?'':'s'}, ${widthsText()} mm`:lined()?`Fits · ${S.slidePer===2?'two units':'a unit'} behind each door, ${widthsText()} mm`:'Fits exactly';
     sub=`Units ${mods}${panels?' + end panel 18':''} + side infill ${inf} = ${mods+panels*CFG.endPanel+fillL+fillR} of ${S.wall}`;
     x0=S.fit==='openL'?S.wall-fillR-mods:fillL;
   }else{
@@ -451,7 +462,7 @@ function stepSpace(){const fr=free();
     ${fr?numRow('freeh','Unit height',S.freeH,`Up to ${S.ceiling-20} mm with this ceiling.`):''}</div>
   ${fr?'':`<div class="grp"><h3>Side infill</h3><div class="chips">${chip('side','auto',`<span>Auto<small>What is left, ${CFG.scribe.min} to ${CFG.scribe.max} mm</small></span>`,S.side.mode==='auto')}${chip('side','set','<span>Set the size<small>Type it in</small></span>',S.side.mode==='set')}</div>
     ${S.side.mode==='set'?(hasL()?numRow('sidel',hasR()?'Left infill':'Infill at the wall',S.side.l,`0 to ${CFG.sideInfill.max} mm`,1):'')+(hasR()?numRow('sider',hasL()?'Right infill':'Infill at the wall',S.side.r,`0 to ${CFG.sideInfill.max} mm`,1):'')+'<p class="note">The units fill what is left between them. Equal split in Units makes them fit exactly.</p>'
-      :`<p class="note">A strip at ${hasL()&&hasR()?'each wall':'the wall'}, cut to the wall's shape so the units sit square.${S.unitMode==='equal'?` Equal split uses ${CFG.sideInfill.def} mm until you set it.`:''}</p>`}</div>`}
+      :`<p class="note">A strip at ${hasL()&&hasR()?'each wall':'the wall'}, cut to the wall's shape so the units sit square.${S.unitMode==='equal'||S.unitMode==='doors'?` ${S.unitMode==='equal'?'Equal split':'Units behind the doors'} use${S.unitMode==='equal'?'s':''} ${CFG.sideInfill.def} mm until you set it.`:''}</p>`}</div>`}
   <div class="grp"><h3>Plinth</h3><div class="chips">${pick('plinth',CFG.plinths,S.plinth,S.plinthCustom)}</div>
     ${S.plinthCustom?numRow('plinthc','Plinth height',S.plinth,`0 to ${CFG.plinthMax} mm. Set back under the doors.`):'<p class="note">The kick board along the floor, set back under the doors.</p>'}</div>
   ${fr?'':`<div class="grp"><h3>Top infill</h3><div class="chips">${pick('infill',CFG.infills,S.infill,S.infillCustom)}</div>
@@ -506,19 +517,22 @@ function modCard(m,i,ps,mode){
     ${two?`<p class="note">Made as two units side by side, ${ps[0].w} + ${ps[1].w}, each with its own door. That is how I cut it, so it's drawn that way.</p>
     <div class="halves" role="group" aria-label="Which half to change">${ps.map((q,h)=>`<button type="button" data-act="half" data-v="${i}:${h}" aria-pressed="${h===pi}"><b>${i+1}${q.part}</b><small>${esc(insideText(q.inside,q.layout))}</small></button>`).join('')}</div>`:''}
     <div class="live" data-live="${i}">${cardLive(m,i,ps)}</div></div>`;}
-function stepUnits(){const c=calc(),mode=S.unitMode,R=equalRange(),n=S.modules.length;
-  const lede=mode==='standard'?'Pick a standard width for each unit.':mode==='custom'?'Type the width of each unit.':'Pick how many units. They share the width equally.';
+function stepUnits(){const c=calc(),mode=S.unitMode,R=equalRange(),n=S.modules.length,sl=S.doors==='sliding';
+  const lede=mode==='standard'?'Pick a standard width for each unit.':mode==='custom'?'Type the width of each unit.':mode==='doors'?'The sliding doors decide the units: each one sits behind its doors, so every drawer can open.':'Pick how many units. They share the width equally.';
+  const per=k=>{const L=lineUpFor(k);return L?`${L.widths.length} × ${Math.min(...L.widths)===Math.max(...L.widths)?L.widths[0]:`${Math.min(...L.widths)} to ${Math.max(...L.widths)}`} mm`:'';};
   return `<div><h2>Units</h2><p class="lede">${lede} Units run left to right.</p></div>
-  <div class="grp"><h3>Unit sizes</h3><div class="chips row3">${chip('umode','standard',`<span>Standard sizes<small>${CFG.standardWidths[0]} to ${CFG.standardWidths[CFG.standardWidths.length-1]} mm</small></span>`,mode==='standard')}${chip('umode','custom',`<span>Custom<small>Any width</small></span>`,mode==='custom')}${chip('umode','equal','<span>Equal split<small>Fills the wall</small></span>',mode==='equal')}</div></div>
+  <div class="grp"><h3>Unit sizes</h3><div class="chips ${sl?'row4':'row3'}">${chip('umode','standard',`<span>Standard sizes<small>${CFG.standardWidths[0]} to ${CFG.standardWidths[CFG.standardWidths.length-1]} mm</small></span>`,mode==='standard')}${chip('umode','custom',`<span>Custom<small>Any width</small></span>`,mode==='custom')}${chip('umode','equal','<span>Equal split<small>Fills the wall</small></span>',mode==='equal')}${sl?chip('umode','doors','<span>Behind the doors<small>Lined up with the sliding doors</small></span>',mode==='doors',!lineUpFor(1)):''}</div></div>
   <div class="fitbar ${c.lv==='ok'?'':c.lv}" role="status"><b>${esc(c.t)}</b><span>${esc(c.sub)}</span></div>
   ${mode==='standard'?'<button type="button" class="wbtn primary wide" data-act="fill">Fill my wall with standard sizes</button>':''}
   ${mode==='equal'?`<div class="num"><label for="ucount">Number of units<small>${R.A} mm${free()?'':' between the side infills'}${c.panels?' and end panel'+(c.panels>1?'s':''):''}</small></label><div class="nctl"><button type="button" class="st" data-act="ucount" data-v="-1" aria-label="One unit fewer" ${n<=R.min?'disabled':''}>−</button><input id="ucount" type="number" value="${n}" readonly tabindex="-1" aria-live="polite"><span class="u">units</span><button type="button" class="st" data-act="ucount" data-v="1" aria-label="One unit more" ${n>=R.max?'disabled':''}>+</button></div></div>
   <p class="note">${n} × ${widthsText()} mm${R.A%n?` (the ${R.A%n} mm left over goes 1 mm each to the first units)`:''}.</p>`:''}
+  ${mode==='doors'?`<div class="grp"><h3>Units per door</h3><div class="chips">${chip('slideper','1',`<span>One<small>${per(1)}</small></span>`,S.slidePer===1)}${chip('slideper','2',`<span>Two<small>${per(2)||'Too narrow'}</small></span>`,S.slidePer===2,!per(2))}</div></div>`:''}
   <div class="mods">${(()=>{const PCS=pieces();return S.modules.map((m,i)=>modCard(m,i,PCS.filter(p=>p.section===i),mode)).join('');})()}</div>
-  <button type="button" class="wbtn ghost wide" data-act="add" ${S.modules.length>=(mode==='equal'?R.max:12)?'disabled':''}>Add a unit</button>`;}
+  ${mode==='doors'?'':`<button type="button" class="wbtn ghost wide" data-act="add" ${S.modules.length>=(mode==='equal'?R.max:12)?'disabled':''}>Add a unit</button>`}`;}
 function stepDoors(){
   return `<div><h2>Doors</h2><p class="lede">Tap any door in the 3D view to open it.</p></div>
   <div class="grp"><h3>Type</h3><div class="chips">${chip('doors','hinged','<span>Hinged<small>Up to 600 mm wide is one door, wider is a pair</small></span>',S.doors==='hinged')}${chip('doors','sliding',`<span>Sliding<small>${S.modules.length?(()=>{const SD=slideDoors();return `${SD.n} doors ${SD.w} wide`;})():'Saves space in front'}, needs ${CFG.depth.sliding} mm depth</small></span>`,S.doors==='sliding')}</div></div>
+  ${S.doors==='sliding'?(lined()?`<p class="note">The units behind line up with the doors, ${S.slidePer===2?'two':'one'} behind each, so every drawer can open. Change it in Units.</p>`:`<button type="button" class="wbtn ghost wide" data-act="umode" data-v="doors" ${lineUpFor(1)?'':'disabled'}>Line the units up with the doors</button>`):''}
   ${(()=>{const cg=caughtLabels();return cg.size?`<p class="hint">${esc([...cg].join(', '))}: two sliding doors meet in front of the drawers, so they can't open fully. See Units.</p>`:'';})()}
   <div class="grp"><h3>Style</h3><div class="chips">${Object.keys(CFG.styles).map(k=>chip('style',k,CFG.styles[k],S.style===k)).join('')}</div></div>
   <div class="grp"><h3>${S.doors==='sliding'?'Pulls':'Handles'}</h3><div class="chips">${Object.keys(CFG.handles).map(k=>chip('handle',k,CFG.handles[k],S.handle===k)).join('')}</div></div>
@@ -527,7 +541,7 @@ function stepColour(){return `<div><h2>Colour</h2><p class="lede">Built in MDF a
   <div class="colours" role="group" aria-label="Colour">${CFG.colours.map(k=>chip('colour',k.k,`<span class="sw" style="background:${k.c}"></span><span>${esc(k.n)}</span>`,S.colour===k.k)).join('')}</div>`;}
 function specRows(){const c=calc(),d=depth();return[
   ['Space',`${S.wall} wide × ${S.ceiling} high, ${S.fit==='wall'?'wall both sides':S.fit==='openL'?'open on the left':S.fit==='openR'?'open on the right':'freestanding'}`],
-  ['Units',S.modules.map(m=>m.w+(m.custom&&S.unitMode!=='equal'?' (custom)':'')).join(' | ')+` = ${c.mods}`+(S.unitMode==='equal'?' (equal split)':'')],
+  ['Units',S.modules.map(m=>m.w+(m.custom&&S.unitMode!=='equal'&&!lined()?' (custom)':'')).join(' | ')+` = ${c.mods}`+(S.unitMode==='equal'?' (equal split)':lined()?' (lined up with the doors)':'')],
   ...(free()?[]:[['Side infill',(hasL()&&hasR()?`${Math.round(c.fillL)} left, ${Math.round(c.fillR)} right`:`${Math.round(hasL()?c.fillL:c.fillR)} at the wall`)+(c.fixed?'':' (auto)')]]),
   ['Fit',c.t],
   ...pieces().map(p=>{const L=p.layout,z=L.sizes;return[p.label,`${p.w} wide, ${insideText(p.inside,L).toLowerCase()}${S.doors==='hinged'?`; ${z.door.n===1?`door ${z.door.w} × ${z.door.h} hinged on the ${L.doors[0]&&L.doors[0].hingeLeft?'left':'right'}`:`2 doors ${z.door.w} × ${z.door.h}`}`:''}${L.drawersBelow?`; drawer fronts ${p.w} × ${z.drawer.h}`:''}${z.topDoor?`; top ${z.topDoor.n===1?'door':'2 doors'} ${z.topDoor.w} × ${z.topDoor.h}`:''}`];}),
@@ -592,7 +606,7 @@ function render(){
   if(shownStep!==S.step){shownStep=S.step;highlight();if(S.view==='draw')drawPlan();}
 }
 function chips(){const c=calc();$('#fitText').textContent=c.t;$('#fitChip').className='fit'+(c.lv==='ok'?'':' '+c.lv);$('#dimsChip').textContent=`${S.wall} × ${S.ceiling} · ${S.modules.length} unit${S.modules.length===1?'':'s'}`;}
-function changed(rebuildPanel=true,keepCam=true){S.example=false;S.sent=false;if(S.unitMode==='equal'&&S.modules.length)equalise(S.modules.length);normalise();build();if(S.view==='draw')drawPlan();if(rebuildPanel)render();else chips();}
+function changed(rebuildPanel=true,keepCam=true){S.example=false;S.sent=false;if(S.unitMode==='equal'&&S.modules.length)equalise(S.modules.length);if(lined())lineUp();normalise();build();if(S.view==='draw')drawPlan();if(rebuildPanel)render();else chips();}
 function numVal(id){return id==='sidel'?S.side.l:id==='sider'?S.side.r:id==='wall'?S.wall:id==='ceiling'?S.ceiling:id==='depthc'?S.depthCustom:id==='plinthc'?S.plinth:id==='infillc'?S.infill:id==='freeh'?S.freeH:(S.modules[Number(id.slice(2))]||{}).w;}
 function setNum(id,v){v=Number(v);if(!isFinite(v))return;
   if(id==='wall'){S.wall=clamp(Math.round(v),500,8000);}
@@ -632,9 +646,11 @@ on(host,'click',e=>{
     case'umode':if(v!==S.unitMode){S.unitMode=v;
         if(v==='standard')S.modules.forEach(m=>{m.w=nearestStd(m.w);m.custom=false;});
         else if(v==='custom')S.modules.forEach(m=>{m.custom=true;});
+        else if(v==='doors')lineUp();
         else equalise(S.modules.length||Math.round(equalRange().A/900));
         changed();}break;
     case'ucount':equalise(S.modules.length+Number(v));changed();break;
+    case'slideper':S.slidePer=Number(v)===2?2:1;lineUp();changed();break;
     case'plinth':S.plinth=Number(v);S.plinthCustom=false;changed();break;
     case'plinth-c':S.plinthCustom=true;changed();break;
     case'infill':S.infill=Number(v);S.infillCustom=false;changed();break;
@@ -654,14 +670,18 @@ on(host,'click',e=>{
     case'dwhere':{const [i,w]=v.split(':');const m=S.modules[Number(i)];if(m){editInside(m).below=w==='below';fitInside(Number(i));changed();}break;}
     case'custom':{const m=S.modules[Number(v)];if(m){m.custom=true;S.sel=Number(v);changed();}break;}
     case'left':case'right':{const i=Number(v),j=a==='left'?i-1:i+1;if(j>=0&&j<S.modules.length){[S.modules[i],S.modules[j]]=[S.modules[j],S.modules[i]];S.sel=j;changed();}break;}
-    case'del':{S.modules.splice(Number(v),1);S.sel=clamp(S.sel,0,Math.max(0,S.modules.length-1));changed();break;}
+    case'del':{if(S.unitMode==='doors')S.unitMode='custom';S.modules.splice(Number(v),1);S.sel=clamp(S.sel,0,Math.max(0,S.modules.length-1));changed();break;}
     case'add':{if(S.unitMode==='equal'){equalise(S.modules.length+1);S.sel=S.modules.length-1;changed();break;}
       const c=calc(),room=c.fixed?Math.round(c.left):S.wall-c.run-(S.fit==='wall'?2:1)*CFG.scribe.min;
       const w=S.unitMode==='custom'?clamp(Math.min(900,room),CFG.customMin,CFG.customMax):[...CFG.standardWidths].reverse().find(x=>x<=room)||600;
       const m=mk(w,layoutFor(w,S.modules.length));if(S.unitMode==='custom')m.custom=true;S.modules.push(m);S.sel=S.modules.length-1;normalise();fitInside(S.sel);changed();break;}
-    case'doors':S.doors=v;if(v==='sliding'&&S.depthMode==='shallow')S.depthMode='std';doorState.clear();btn3d='Open doors';openLabel();
+    case'doors':{const was=S.doors;S.doors=v;if(v==='sliding'&&S.depthMode==='shallow')S.depthMode='std';doorState.clear();btn3d='Open doors';openLabel();
       // drawers on the front can't sit under sliding doors: they go behind them
-      if(v==='sliding')S.modules.forEach(m=>[m.inside,...(m.split||[])].forEach(x=>{if(x)x.below=false;}));changed();break;
+      if(v==='sliding')S.modules.forEach(m=>[m.inside,...(m.split||[])].forEach(x=>{if(x)x.below=false;}));
+      // sliding doors decide the units behind them: one behind each door (Units can change it); back to hinged keeps the widths
+      let msg='';if(v==='sliding'&&was!=='sliding'&&S.unitMode!=='doors'&&S.modules.length&&lineUpFor(S.slidePer)){S.unitMode='doors';lineUp();msg=`Units lined up with the doors: ${S.modules.length} × ${widthsText()} mm`;}
+      if(v==='hinged'&&S.unitMode==='doors')S.unitMode='custom';
+      changed();if(msg)flash(msg);break;}
     case'style':S.style=v;changed();break;
     case'handle':S.handle=v;changed();break;
     case'height':S.height=v;changed();break;

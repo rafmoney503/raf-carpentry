@@ -186,6 +186,9 @@
 /* Unit sizes: Standard / Custom / Equal split on one row */
 .wp .chips.row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .wp .chips.row3 .chip { align-items: flex-start; padding: 8px 10px; }
+/* with sliding doors a fourth way, Behind the doors: two by two */
+.wp .chips.row4 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.wp .chips.row4 .chip { align-items: flex-start; padding: 8px 10px; }
 .wp .chip svg { width: 34px; height: 26px; flex: 0 0 auto; stroke: var(--color-ink); fill: none; stroke-width: 1.5; }
 .wp .wchips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
 .wp .wchips::-webkit-scrollbar { display: none; }
