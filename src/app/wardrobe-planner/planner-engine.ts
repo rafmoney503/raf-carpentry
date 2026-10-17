@@ -304,7 +304,10 @@ function drawTap(e){const r=$('#drawing').getBoundingClientRect(),x=e.clientX-r.
   if(S.step!==1){if(hit){S.sel=hit.section;const m=S.modules[hit.section];if(m&&hit.half!=null)m.edit=hit.half;S.step=1;render();showSel();}return;}
   pick(hit?hit.section:-1,hit?hit.half:undefined);}
 /* The open unit card in view (it grows when it opens). */
-function showSel(){const el=body.querySelector('.mod[aria-current="true"]');if(el)el.scrollIntoView({block:'nearest'});}
+/* Only the steps panel scrolls, never the page, so the 3D view stays on screen on a phone (Raf, 17 Oct 2026: picking a
+   unit pushed the design off the top). */
+function showSel(){const el=body.querySelector('.mod[aria-current="true"]');if(!el)return;const b=body.getBoundingClientRect(),top=el.getBoundingClientRect().top-b.top;
+  if(top<0||top>b.height-90)body.scrollTo({top:Math.max(0,body.scrollTop+top-12),behavior:'smooth'});}
 let last=performance.now();
 function loop(now){raf=requestAnimationFrame(loop);const dt=Math.min(0.05,(now-last)/1000);last=now;let act=ctl.update();
   for(const o of doors){const s=o.st;if(s.p!==s.t){s.p=s.t>s.p?Math.min(s.t,s.p+dt*2.2):Math.max(s.t,s.p-dt*2.2);applyDoor(o);act=true;}}
@@ -574,6 +577,11 @@ function refreshSoft(){const fb=body.querySelector('.fitbar');if(fb){const c=cal
   body.querySelectorAll('[data-sum]').forEach(el=>{const i=Number(el.dataset.sum),m=S.modules[i];if(m)el.textContent=sumText(m,i,PCS.filter(p=>p.section===i));});}
 function syncInputs(){body.querySelectorAll('input[data-num]').forEach(el=>{if(el===document.activeElement)return;const id=el.dataset.num;
   el.value=numVal(id);});}
+/* After typing a size on a phone, the keyboard may have pushed the page up: bring the planner back to the top of the
+   screen so the 3D view shows again. */
+on(host,'focusout',e=>{if(!e.target.matches||!e.target.matches('input,select,textarea'))return;setTimeout(()=>{const a=document.activeElement;
+  if(a&&host.contains(a)&&a.matches('input,select,textarea'))return;const wp=host.closest('.wp')||host;
+  if(innerWidth<900&&scrollY>0&&scrollY<wp.getBoundingClientRect().height){window.scrollTo({top:0,behavior:'smooth'});showSel();}},300);});
 on(host,'click',e=>{
   const t=e.target.closest('[data-act],.steps [data-step],[data-view],[data-bump]');if(!t)return;
   if(t.dataset.step!=null){S.step=Number(t.dataset.step);render();return;}
