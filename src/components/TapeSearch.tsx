@@ -10,7 +10,8 @@ import { KIND_LABEL, RUNNING_TODAY, SEARCH_TRIES, siteSearch, type Hit } from '@
    computer) and the yellow blade pulls out across the bar, and you type on the blade. Results hang underneath as
    cut pieces of timber: the best match is the longest piece, in yellow, and the last piece sends the words to
    Rafal. Before anything is typed it shows the systems running today, CabinetOS first. Arrow keys move between
-   pieces, Enter opens one, Esc puts the tape away. The case is the only thing in the bar: no label. */
+   pieces, Enter opens one, Esc puts the tape away. The case says Search: beside it on a computer, under it on a
+   phone, where the bar has no room for a word beside it. */
 
 const WIDTHS = [100, 88, 76, 64, 56]; // per cent of the blade: the best match is the longest piece
 const WIDTHS_EMPTY = [100, 86, 72];
@@ -150,6 +151,9 @@ export default function TapeSearch({ onOpen }: { onOpen?: () => void }) {
       >
         <span className="tape-body" aria-hidden="true">
           <span className="tape-reel" />
+        </span>
+        <span className="tape-label" aria-hidden="true">
+          Search
         </span>
       </button>
 
