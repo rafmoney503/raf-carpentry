@@ -13,19 +13,7 @@ export function Rail() {
   );
 }
 
-/* Faint shapes behind a page title, on the empty side of the page. */
-export function Drift() {
-  return (
-    <div className="drift" aria-hidden="true">
-      <i className="d-circle" />
-      <i className="d-plus" />
-      <i className="d-dash" />
-      <i className="d-ball" />
-      <i className="d-square" />
-      <i className="d-ring" />
-    </div>
-  );
-}
+/* The drifting shapes behind page titles live in DriftChain.tsx: they also link up into a chain. */
 
 const FormIcon = () => (
   <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">

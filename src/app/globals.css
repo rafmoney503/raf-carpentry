@@ -2504,20 +2504,38 @@ dialog.planner::backdrop {
   z-index: 1;
 }
 .drift {
+  --dc: rgb(21 25 28 / 0.42);
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
+/* linked into a chain: the shapes snap to solid ink */
+.drift.linked {
+  --dc: var(--ink);
+}
 .drift i {
   position: absolute;
   display: block;
+  will-change: transform;
+}
+.drift-links {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  color: var(--ink);
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: butt;
+  fill: none;
 }
 .d-circle {
   top: 14px;
   right: 20px;
   width: 34px;
   height: 34px;
-  border: 1.5px solid rgb(21 25 28 / 0.4);
+  border: 1.5px solid var(--dc);
   border-radius: 50%;
 }
 .d-plus {
@@ -2526,15 +2544,15 @@ dialog.planner::backdrop {
   width: 16px;
   height: 16px;
   background:
-    linear-gradient(rgb(21 25 28 / 0.5), rgb(21 25 28 / 0.5)) center / 1.5px 100% no-repeat,
-    linear-gradient(rgb(21 25 28 / 0.5), rgb(21 25 28 / 0.5)) center / 100% 1.5px no-repeat;
+    linear-gradient(var(--dc), var(--dc)) center / 1.5px 100% no-repeat,
+    linear-gradient(var(--dc), var(--dc)) center / 100% 1.5px no-repeat;
 }
 .d-dash {
   top: 40px;
   right: 160px;
   width: 22px;
   height: 1.5px;
-  background: rgb(21 25 28 / 0.42);
+  background: var(--dc);
 }
 .d-ball {
   top: 54px;
@@ -2550,7 +2568,7 @@ dialog.planner::backdrop {
   right: 210px;
   width: 13px;
   height: 13px;
-  border: 1.5px solid rgb(21 25 28 / 0.42);
+  border: 1.5px solid var(--dc);
   transform: rotate(15deg);
 }
 .d-ring {
@@ -2938,25 +2956,6 @@ dialog.planner::backdrop {
     animation: rail-run 8s cubic-bezier(0.65, 0, 0.35, 1) 0.6s infinite both;
   }
 
-  .d-circle {
-    animation: d-wander 19s ease-in-out infinite alternate;
-  }
-  .d-plus {
-    animation: d-spin 40s linear infinite;
-  }
-  .d-dash {
-    animation: d-slide 12s ease-in-out infinite alternate;
-  }
-  .d-ball {
-    animation: d-float 4.5s ease-in-out infinite alternate;
-  }
-  .d-square {
-    animation: d-tumble 15s ease-in-out infinite alternate;
-  }
-  .d-ring {
-    animation: d-spin 70s linear infinite reverse;
-  }
-
   .carry-track i {
     opacity: 1;
     animation: carry-move 6.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
@@ -3035,32 +3034,9 @@ dialog.planner::backdrop {
     opacity: 0;
   }
 }
-@keyframes d-wander {
-  to {
-    transform: translate(-10px, 12px);
-  }
-}
 @keyframes d-spin {
   to {
     transform: rotate(360deg);
-  }
-}
-@keyframes d-slide {
-  to {
-    transform: translateX(-14px);
-  }
-}
-@keyframes d-float {
-  to {
-    transform: translateY(-10px);
-  }
-}
-@keyframes d-tumble {
-  from {
-    transform: translate(0, 0) rotate(15deg);
-  }
-  to {
-    transform: translate(8px, -8px) rotate(-12deg);
   }
 }
 @keyframes carry-move {
