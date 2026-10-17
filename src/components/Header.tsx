@@ -19,7 +19,11 @@ const CLOSE_DELAY = 260;
 
 /* The logo is three planks stacked as rising steps with the yellow ball on top. The ball climbs three times while the
    stairs move down under it, rolls off the right end, drops beside the steps, rolls back along the bottom and hops up
-   one, two, three, then climbs again (StepsMark 'climb'). People who ask their phone for less motion see it still. */
+   one, two, three (StepsMark 'climb'). It does that twice, climbs three more times and comes to rest on the top step.
+   It starts again when a mouse comes back into the top bar, on each new page and when the phone menu opens.
+   People who ask their phone for less motion see it still. */
+const LOGO_REPLAY = 'logo-replay';
+const replayLogo = () => window.dispatchEvent(new Event(LOGO_REPLAY));
 
 export default function Header() {
   const pathname = usePathname();
@@ -38,11 +42,19 @@ export default function Header() {
     setOpen(false);
   }, []);
 
-  // A new page closes everything.
+  // A new page closes everything, and the logo plays again (not on the first page: it starts by itself there).
+  const firstPage = useRef(true);
   useEffect(() => {
     closeAll();
     setExpanded(null);
+    if (firstPage.current) firstPage.current = false;
+    else replayLogo();
   }, [pathname, closeAll]);
+
+  // Opening the phone menu plays the logo again.
+  useEffect(() => {
+    if (open) replayLogo();
+  }, [open]);
 
   useEffect(() => {
     if (!panel && !open) return;
@@ -67,11 +79,11 @@ export default function Header() {
   const isHere = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <header className="site-head">
+    <header className="site-head" onPointerEnter={(e) => e.pointerType === 'mouse' && replayLogo()}>
       <div className="wrap">
         <div className="head-row">
           <Link href="/" className="logo" aria-label="Rafal Solutions home">
-            <StepsMark play="climb" className="logo-mark" />
+            <StepsMark play="climb" rounds={2} replayEvent={LOGO_REPLAY} className="logo-mark" />
             <span className="logo-name">rafal solutions</span>
           </Link>
 

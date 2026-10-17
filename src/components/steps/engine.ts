@@ -61,6 +61,12 @@ export class StepsEngine {
     this.tasks = [];
   }
 
+  /* nothing moving and nothing waiting */
+  idle() {
+    const b = this.ball;
+    return this.tasks.length === 0 && !b.air && Math.abs(b.sq) < 0.002 && Math.abs(b.sqV) < 0.02 && this.planks.every((p) => Math.abs(p.dip) < 0.01 && Math.abs(p.dipV) < 0.05);
+  }
+
   addTask(fn: (dt: number) => boolean) {
     return new Promise<void>((res) => this.tasks.push({ fn, res }));
   }
@@ -257,12 +263,20 @@ function climbOnce(e: StepsEngine) {
   });
 }
 
-async function climb(e: StepsEngine) {
-  const b = e.ball;
+async function climbs3(e: StepsEngine) {
   for (let i = 0; i < 3; i++) {
     await climbOnce(e);
     await e.wait(rand(0.02, 0.1));
   }
+}
+
+async function climb(e: StepsEngine) {
+  await climbs3(e);
+  await tour(e);
+}
+
+async function tour(e: StepsEngine) {
+  const b = e.ball;
   await e.wait(0.2);
   // it rolls right along the top step, picking up speed, tips over the corner and drops straight down beside the steps
   const x0 = b.x;
@@ -387,4 +401,7 @@ function build(e: StepsEngine) {
 }
 
 export const PLAYS: Record<StepsPlay, (e: StepsEngine) => Promise<unknown>> = { climb, mix, build };
+/* Played once after the last round when a play is told to stop: the climb ends on its three climbs, so the ball comes
+   to rest where the logo has it, on the top step. */
+export const FINALE: Partial<Record<StepsPlay, (e: StepsEngine) => Promise<unknown>>> = { climb: climbs3 };
 export const GAPS: Record<StepsPlay, number> = { climb: 0, mix: 2.2, build: 2 };
