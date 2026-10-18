@@ -83,10 +83,12 @@
   font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.03em; color: var(--color-faint);
   transition: opacity 0.3s var(--ease-soft);
 }
-/* Keep scrolling: an ink tag under the steps while Survey, Draw or Build is playing; it fades once Fit starts but keeps
-   its space, so the steps and the 3D never jump */
+/* Keep scrolling: an ink tag under the steps while Survey, Draw or Build is playing; at Fit the same place holds
+   'Try it yourself' (to the wardrobe planner). Both sit in one grid cell, so the swap never moves the steps or the 3D */
+.bs-next { align-self: flex-start; display: grid; justify-items: start; }
+.bs-next > * { grid-area: 1 / 1; }
 .bs-hint {
-  align-self: flex-start; margin: 0; pointer-events: none;
+  margin: 0; pointer-events: none;
   display: inline-flex; align-items: center; gap: 10px; padding: 12px 16px 12px 17px; border-radius: 2px;
   background: var(--color-ink); color: var(--color-mount); box-shadow: 0 12px 26px -14px rgb(22 25 28 / 0.6);
   font-family: var(--font-mono); font-size: 16px; font-weight: 500; line-height: 1; letter-spacing: 0.01em; white-space: nowrap;
@@ -94,13 +96,24 @@
   transition: opacity 0.35s var(--ease-soft), transform 0.35s var(--ease-soft), visibility 0s linear 0.35s;
 }
 .bs-hint.on { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
-.bs-hint svg { flex: none; }
-@media (max-width: 379px) { .bs-hint { font-size: 14px !important; } }
+.bs-hint svg, .bs-try svg { flex: none; }
+.bs-try {
+  display: inline-flex; align-items: center; gap: 10px; padding: 12px 16px 12px 17px; border-radius: 2px;
+  background: var(--color-ink); color: var(--color-mount); box-shadow: 0 12px 26px -14px rgb(22 25 28 / 0.6);
+  font-family: var(--font-sans); font-size: 16px; font-weight: 600; line-height: 1; white-space: nowrap; text-decoration: none;
+  opacity: 0; visibility: hidden; transform: translateY(6px); pointer-events: none;
+  transition: opacity 0.35s var(--ease-soft), transform 0.35s var(--ease-soft), background-color 0.2s var(--ease-soft), visibility 0s linear 0.35s;
+}
+.bs-try.on { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; pointer-events: auto; }
+.bs-try:hover { background: var(--color-accent); }
+@media (max-width: 379px) { .bs-hint, .bs-try { font-size: 14px !important; } }
 @media (max-width: 359px) { .bs-hint-more { display: none; } }
 @media (prefers-reduced-motion: no-preference) {
   .bs-hint.on svg { animation: bs-nudge 1.4s var(--ease-soft) infinite; }
+  .bs-try.on svg { animation: bs-nudge-x 1.4s var(--ease-soft) infinite; }
 }
 @keyframes bs-nudge { 0%, 100% { transform: none; } 45% { transform: translateY(3px); } }
+@keyframes bs-nudge-x { 0%, 100% { transform: none; } 45% { transform: translateX(3px); } }
 
 /* under the story: more links (and the two buttons on phones) */
 .bs-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 32px; padding-block: 4px 96px; }
@@ -122,7 +135,7 @@
   .bs-foot { padding-block: 0 72px; }
   .bs-foot-ctas { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; }
   .bs-stamp { top: auto; bottom: 44px; right: 12px; padding: 6px 8px; font-size: 12px; }
-  .bs-hint { padding: 11px 14px 11px 15px; font-size: 15px; }
+  .bs-hint, .bs-try { padding: 11px 14px 11px 15px; font-size: 15px; }
 }
 
 /* shorter phones (an iPhone SE): a little tighter, so the steps stay above the floating buttons */
@@ -135,14 +148,14 @@
   .bs-step h3 { font-size: 17px; }
   .bs-more p { font-size: 14px; line-height: 1.5; }
   .bs-stage.mount { min-height: 150px; }
-  .bs-hint { padding: 9px 12px 9px 13px; font-size: 14px; }
+  .bs-hint, .bs-try { padding: 9px 12px 9px 13px; font-size: 14px; }
 }
 
 /* the smallest phones (an iPhone SE of 568 px): step titles only and a smaller tag, so the tag under 04 Fit still
    clears the floating buttons; the descriptions are still read out */
 @media (max-width: 899px) and (max-height: 620px) {
   .bs-step .bs-more { grid-template-rows: 0fr; }
-  .bs-hint { padding: 8px 11px 8px 12px; font-size: 13px !important; }
+  .bs-hint, .bs-try { padding: 8px 11px 8px 12px; font-size: 13px !important; }
 }
 
 /* reduced motion, or too short to pin (a phone on its side): a normal section with the finished wardrobe */
@@ -156,7 +169,7 @@
   .bs-bar { transform: scaleY(1) !important; }
   .bs-ctas { display: flex !important; }
   .bs-foot-ctas { display: none !important; }
-  .bs-hint { display: none; }
+  .bs-next { display: none; }
   .bs-stage.mount { flex: none; height: auto; max-height: none; aspect-ratio: 5 / 4; }
 }
 @media (prefers-reduced-motion: reduce) and (max-width: 899px), (max-height: 560px) and (max-width: 899px) {

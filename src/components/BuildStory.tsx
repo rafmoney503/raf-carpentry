@@ -15,7 +15,10 @@ import './build-story.css';
    wardrobe and every step. The buttons sit under the pinned part on phones, clear of the floating buttons.
    A "Keep scrolling to see it built" tag sits under the steps (18 Oct 2026, Raf: under 04 Fit, bigger, and kept until
    Fit is reached), so a pinned page never looks stuck. It shows while Survey, Draw or Build is playing and fades once
-   Fit starts (back again if they scroll up); its space is kept so nothing jumps. Never in the still layout. */
+   Fit starts (back again if they scroll up); its space is kept so nothing jumps. Never in the still layout.
+   At Fit the tag's place becomes a 'Try it yourself' button to the wardrobe planner (18 Oct 2026, Raf: 'when the
+   scrolling is finished on 4 step a fit and keep scrolling to see it built show button Try it yourself and redirect to
+   wardrobe planner page'): the two share one grid cell, so swapping them moves nothing. */
 
 type Step = { title: string; description: string };
 type Props = {
@@ -222,14 +225,22 @@ export default function BuildStory({ heading, steps, fallback, plannerHref, quot
                   </li>
                 ))}
               </ol>
-              <p className={`bs-hint${idx < steps.length - 1 ? ' on' : ''}`} aria-hidden="true">
-                <span>
-                  Keep scrolling<span className="bs-hint-more"> to see it built</span>
-                </span>
-                <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M6 1.5v8.5M2.5 6.8L6 10.2l3.5-3.4" />
-                </svg>
-              </p>
+              <div className="bs-next">
+                <p className={`bs-hint${idx < steps.length - 1 ? ' on' : ''}`} aria-hidden="true">
+                  <span>
+                    Keep scrolling<span className="bs-hint-more"> to see it built</span>
+                  </span>
+                  <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 1.5v8.5M2.5 6.8L6 10.2l3.5-3.4" />
+                  </svg>
+                </p>
+                <Link className={`bs-try${idx === steps.length - 1 ? ' on' : ''}`} href={plannerHref}>
+                  Try it yourself<span className="sr-only">: plan a wardrobe in 3D</span>
+                  <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M1.5 6h8.5M6.8 2.5L10.2 6 6.8 9.5" />
+                  </svg>
+                </Link>
+              </div>
               <div className="bs-ctas">{ctas}</div>
             </div>
             <div className={`bs-stage mount${ready ? ' is-ready' : ''}`} ref={stage} aria-hidden="true">
