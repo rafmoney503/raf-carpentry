@@ -81,7 +81,24 @@
 .bs-cap {
   position: absolute; left: 14px; right: 14px; bottom: 12px; z-index: 2; margin: 0; pointer-events: none;
   font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.03em; color: var(--color-faint);
+  transition: opacity 0.3s var(--ease-soft);
 }
+/* Keep scrolling: a small ink tag in the caption's place, while the story is waiting for a scroll */
+.bs-hint {
+  position: absolute; left: 10px; bottom: 9px; z-index: 4; margin: 0; pointer-events: none;
+  display: inline-flex; align-items: center; gap: 8px; padding: 7px 10px 7px 11px; border-radius: 2px;
+  background: var(--color-ink); color: var(--color-mount); box-shadow: 0 10px 22px -12px rgb(22 25 28 / 0.55);
+  font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; line-height: 1; letter-spacing: 0.02em; white-space: nowrap;
+  opacity: 0; transform: translateY(6px); transition: opacity 0.35s var(--ease-soft), transform 0.35s var(--ease-soft);
+}
+.bs-hint svg { flex: none; }
+@media (max-width: 359px) { .bs-hint-more { display: none; } }
+.bs-stage.show-hint .bs-hint { opacity: 1; transform: none; }
+.bs-stage.show-hint .bs-cap { opacity: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .bs-stage.show-hint .bs-hint svg { animation: bs-nudge 1.4s var(--ease-soft) infinite; }
+}
+@keyframes bs-nudge { 0%, 100% { transform: none; } 45% { transform: translateY(3px); } }
 
 /* under the story: more links (and the two buttons on phones) */
 .bs-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 32px; padding-block: 4px 96px; }
@@ -128,6 +145,7 @@
   .bs-bar { transform: scaleY(1) !important; }
   .bs-ctas { display: flex !important; }
   .bs-foot-ctas { display: none !important; }
+  .bs-hint { display: none; }
   .bs-stage.mount { flex: none; height: auto; max-height: none; aspect-ratio: 5 / 4; }
 }
 @media (prefers-reduced-motion: reduce) and (max-width: 899px), (max-height: 560px) and (max-width: 899px) {

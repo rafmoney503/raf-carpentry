@@ -12,7 +12,10 @@ import './build-story.css';
    close, and draws only while it is on screen and something has moved.
    Without WebGL the SketchUp drawing from home.json stays in the box and the steps still follow the scroll. With
    reduced motion, or on a screen too short to pin (a phone on its side), it is a normal section showing the finished
-   wardrobe and every step. The buttons sit under the pinned part on phones, clear of the floating buttons. */
+   wardrobe and every step. The buttons sit under the pinned part on phones, clear of the floating buttons.
+   A "Keep scrolling" tag takes the caption's place in the box when the section arrives, and again whenever someone
+   stops part way down (2.2 s without moving, not after scrolling back up), so a pinned page never looks stuck; it
+   goes once the wardrobe is fitted. */
 
 type Step = { title: string; description: string };
 type Props = {
@@ -60,6 +63,13 @@ export default function BuildStory({ heading, steps, fallback, plannerHref, quot
     let curIdx = 0, curPhase = 0;
     const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
     let dirty = true;
+    // the Keep scrolling tag: shown at the start, and after a pause part way down
+    let clock = 0, movedAt = 0, lastTarget = -1, lastDir = 1, hintOn = false;
+    const hint = (on: boolean) => {
+      if (on === hintOn) return;
+      hintOn = on;
+      box.classList.toggle('show-hint', on);
+    };
 
     const bars = () => Array.from(list.current?.querySelectorAll<HTMLElement>('.bs-bar') ?? []);
 
@@ -91,12 +101,19 @@ export default function BuildStory({ heading, steps, fallback, plannerHref, quot
 
     const manual = !!(window as unknown as { __bsManual?: boolean }).__bsManual;
     const step = (dt: number) => {
+      clock += dt;
       target = progress();
+      if (Math.abs(target - lastTarget) > 0.0005) {
+        if (lastTarget >= 0) lastDir = Math.sign(target - lastTarget);
+        lastTarget = target;
+        movedAt = clock;
+      }
       shown += (target - shown) * (1 - Math.exp(-dt * 6));
       if (Math.abs(target - shown) < 0.0005) shown = target;
       mouse.x += (mouse.tx - mouse.x) * (1 - Math.exp(-dt * 4));
       mouse.y += (mouse.ty - mouse.y) * (1 - Math.exp(-dt * 4));
       paint(shown);
+      hint(!isStill && shown < 0.97 && (shown < 0.04 || (lastDir > 0 && clock - movedAt > 2.2)));
     };
     const tick = (now: number) => {
       step(Math.min(0.05, (now - last) / 1000));
@@ -148,6 +165,7 @@ export default function BuildStory({ heading, steps, fallback, plannerHref, quot
     const onMode = () => {
       isStill = mq.matches;
       setStill(isStill);
+      if (isStill) hint(false);
       shown = target = progress();
       dirty = true;
       paint(shown);
@@ -231,6 +249,14 @@ export default function BuildStory({ heading, steps, fallback, plannerHref, quot
                 </svg>
               </div>
               <p className="bs-cap">{ready ? CAPS[still ? 3 : phase] : fallback.caption}</p>
+              <p className="bs-hint">
+                <span>
+                  Keep scrolling<span className="bs-hint-more"> to see it built</span>
+                </span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 1.5v8.5M2.5 6.8L6 10.2l3.5-3.4" />
+                </svg>
+              </p>
             </div>
           </div>
         </div>
