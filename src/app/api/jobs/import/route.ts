@@ -1,5 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// CORS headers for cross-origin requests from claude.ai artifacts
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+// Handle preflight OPTIONS request
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: corsHeaders });
+}
+
 // Type definitions for incoming job data from the Oscar Kitchen tracker
 interface JobImport {
   job: {
@@ -52,17 +64,17 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     if (!API_KEY) {
       console.error('JOBKIT_API_KEY not configured');
-      return NextResponse.json({ error: 'API not configured' }, { status: 503 });
+      return NextResponse.json({ error: 'API not configured' }, { status: 503, headers: corsHeaders });
     }
     if (!authHeader || authHeader !== `Bearer ${API_KEY}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders });
     }
 
     const data: JobImport = await request.json();
 
     // Validate required fields
     if (!data.job?.name || !data.job?.client) {
-      return NextResponse.json({ error: 'Missing job name or client' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing job name or client' }, { status: 400, headers: corsHeaders });
     }
 
     // Log the import (for now - can add database storage later)
@@ -86,10 +98,10 @@ export async function POST(request: NextRequest) {
         diary: data.diary.length,
         completedUnits: data.units.filter(u => u.checked).length
       }
-    });
+    }, { headers: corsHeaders });
 
   } catch (error) {
     console.error('Job import error:', error);
-    return NextResponse.json({ error: 'Import failed' }, { status: 500 });
+    return NextResponse.json({ error: 'Import failed' }, { status: 500, headers: corsHeaders });
   }
 }
