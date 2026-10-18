@@ -219,22 +219,88 @@ export function confirmText(j: CurrentJob, b: Booking) {
     ? `Hi ${j.first}, just to confirm I'll come round ${when} to have a look and measure up. Any problem with that time, just let me know.\nRaf`
     : `Hi ${j.first}, just to confirm I'll be with you ${when}. Any problem with that, just let me know.\nRaf`;
 }
+/* The WhatsApp line that tells the customer a booking is off (Diary, after Cancel). */
+export function cancelText(j: CurrentJob, b: Booking) {
+  const when = `${longDay(b.start.slice(0, 10))} at ${hm(b.start)}`;
+  return kindOf(j) === 'Visit'
+    ? `Hi ${j.first}, sorry, I need to cancel my visit ${when}. When else would suit you?\nRaf`
+    : `Hi ${j.first}, sorry, I can't make it ${when}. I'll be in touch to rearrange.\nRaf`;
+}
 const maps = (address: string) => `https://maps.apple.com/?daddr=${encodeURIComponent(address.replace(/\s*\n\s*/g, ', '))}`;
+/* A booking's end for putting it back (ServiceM8 can send one with no end: an hour). */
+const endOf = (b: Booking) => {
+  if (b.end && b.end > b.start) return b.end;
+  const t = new Date(Date.parse(`${b.start}:00`) + 60 * 60000);
+  return `${localDay(t)}T${t.toTimeString().slice(0, 5)}`;
+};
 
-export function Diary({ sm8, loading, onRefresh, onOpen }: { sm8: Sm8; loading: boolean; onRefresh: () => void; onOpen: (uuid: string) => void }) {
+/* Cancel in the Diary (18 Oct 2026, Raf: 'add to jobkit in diary in a visit option to cancel so I don't have to go
+   to service m8 and do it'): Cancel on every booking, tapped twice (the second tap within 5 seconds), takes it out of
+   ServiceM8's schedule. A note stays where it was, with Tell <first> on WhatsApp and Undo (books the same times
+   again). */
+export function Diary({
+  sm8,
+  loading,
+  onRefresh,
+  onOpen,
+  onCancel,
+  onRebook,
+}: {
+  sm8: Sm8;
+  loading: boolean;
+  onRefresh: () => void;
+  onOpen: (uuid: string) => void;
+  onCancel: (uuid: string) => Promise<string>;
+  onRebook: (jobUuid: string, start: string, end: string, staff?: string) => Promise<string>;
+}) {
   const today = localDay();
+  const now = `${today}T${new Date().toTimeString().slice(0, 5)}`;
+  const [sure, setSure] = useState('');
+  const [busy, setBusy] = useState('');
+  const [fault, setFault] = useState<{ uuid: string; text: string } | null>(null);
+  const [gone, setGone] = useState<Booking[]>([]);
+  const disarm = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const list = (sm8.bookings ?? []).filter((b) => (b.end ?? b.start).slice(0, 10) >= today);
-  const last = list.reduce((k, b) => ((b.end ?? b.start).slice(0, 10) > k ? (b.end ?? b.start).slice(0, 10) : k), addDays(today, 1));
+  // a cancelled one's note sits on the first day it showed on
+  const noteDay = (b: Booking) => (b.start.slice(0, 10) > today ? b.start.slice(0, 10) : today);
+  const last = [...list, ...gone].reduce((k, b) => ((b.end ?? b.start).slice(0, 10) > k ? (b.end ?? b.start).slice(0, 10) : k), addDays(today, 1));
   const days: string[] = [];
-  for (let k = today; k <= last && days.length < 120; k = addDays(k, 1)) if (k === today || k === addDays(today, 1) || bookingsOn(list, k).length) days.push(k);
+  for (let k = today; k <= last && days.length < 120; k = addDays(k, 1))
+    if (k === today || k === addDays(today, 1) || bookingsOn(list, k).length || gone.some((b) => noteDay(b) === k)) days.push(k);
   const byUuid = new Map(sm8.jobs.map((j) => [j.uuid, j]));
   const staffName = new Map((sm8.staff ?? []).map((s) => [s.uuid, s.name]));
   const manyStaff = (sm8.staff ?? []).length > 1;
   const problem = problemText(sm8.error, sm8.detail, sm8.at);
+  const daysLong = (b: Booking) => (b.end ? Math.round((Date.parse(`${b.end.slice(0, 10)}T12:00`) - Date.parse(`${b.start.slice(0, 10)}T12:00`)) / DAY) + 1 : 1);
+  const cancel = (b: Booking) => {
+    if (disarm.current) clearTimeout(disarm.current);
+    setFault(null);
+    if (sure !== b.uuid) {
+      setSure(b.uuid);
+      disarm.current = setTimeout(() => setSure(''), 5000);
+      return;
+    }
+    setSure('');
+    setBusy(b.uuid);
+    void onCancel(b.uuid).then((err) => {
+      setBusy('');
+      if (err) setFault({ uuid: b.uuid, text: err });
+      else setGone((g) => [...g.filter((x) => x.uuid !== b.uuid), b]);
+    });
+  };
+  const undo = (b: Booking) => {
+    setFault(null);
+    setBusy(b.uuid);
+    void onRebook(b.jobUuid, b.start, endOf(b), manyStaff ? b.staffUuid : undefined).then((err) => {
+      setBusy('');
+      if (err) setFault({ uuid: b.uuid, text: err });
+      else setGone((g) => g.filter((x) => x.uuid !== b.uuid));
+    });
+  };
   return (
     <div className="pt-7">
       <h1 className="flex items-center gap-3 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">
-        <Icon name="diary" className="h-[32px] w-[32px] shrink-0 text-accent" />
+        <Icon name="diary" className="h-[32px] w-[32px] shrink-0 jk-sec-ink" />
         Diary
       </h1>
       <p className="mt-2 flex flex-wrap items-center gap-x-3 font-mono text-[13px] text-faint">
@@ -254,6 +320,7 @@ export function Diary({ sm8, loading, onRefresh, onOpen }: { sm8: Sm8; loading: 
 
       {days.map((k) => {
         const on = bookingsOn(list, k);
+        const notes = gone.filter((b) => noteDay(b) === k);
         const isToday = k === today;
         return (
           <section key={k} className="mt-7">
@@ -261,8 +328,41 @@ export function Diary({ sm8, loading, onRefresh, onOpen }: { sm8: Sm8; loading: 
               {dayLabel(k)}
               {isToday || dayLabel(k) === 'Tomorrow' ? `, ${new Date(`${k}T12:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}` : ''}
             </h2>
+            {notes.length ? (
+              <ul className="mt-2.5 grid grid-cols-1 gap-3">
+                {notes.map((b) => {
+                  const j = byUuid.get(b.jobUuid);
+                  return (
+                    <li key={`gone-${b.uuid}`} role="status" className="rounded-sm border border-dashed border-line-strong px-3.5 py-3">
+                      <p className="text-[15px] leading-snug">
+                        <span className="font-semibold">Cancelled in ServiceM8:</span> {kindOf(j)}, {spanText(b, b.start.slice(0, 10))}
+                        {b.start.slice(0, 10) !== k ? ` ${dayLabel(b.start.slice(0, 10))}` : ''}, {j?.name ?? 'a job'}
+                      </p>
+                      <div className="mt-1 flex flex-wrap gap-x-4 text-[14.5px]">
+                        {j?.mobile ? (
+                          <a href={wa(j.mobile, cancelText(j, b))} className="flex h-10 items-center text-accent underline" target="_blank" rel="noopener">
+                            Tell {j.first || 'them'} on WhatsApp
+                          </a>
+                        ) : null}
+                        <button type="button" className="h-10 text-accent underline" disabled={!!busy} onClick={() => undo(b)}>
+                          {busy === b.uuid ? 'Putting it back…' : 'Undo'}
+                        </button>
+                        <button type="button" className="h-10 text-muted underline" onClick={() => setGone((g) => g.filter((x) => x.uuid !== b.uuid))}>
+                          Hide
+                        </button>
+                      </div>
+                      {fault?.uuid === b.uuid ? (
+                        <p role="alert" className="mt-1 text-[14px] leading-relaxed text-ink">
+                          {fault.text}
+                        </p>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
             {on.length ? (
-              <ul className="mt-2.5 grid gap-3">
+              <ul className="mt-2.5 grid grid-cols-1 gap-3">
                 {on.map((b) => {
                   const j = byUuid.get(b.jobUuid);
                   const kind = kindOf(j);
@@ -282,24 +382,43 @@ export function Diary({ sm8, loading, onRefresh, onOpen }: { sm8: Sm8; loading: 
                         ) : null}
                         {manyStaff && staffName.get(b.staffUuid) ? <span className="mt-1 block font-mono text-[12.5px] text-faint">{staffName.get(b.staffUuid)}</span> : null}
                       </button>
-                      {isToday && j && (j.address || contact) ? (
-                        <div className="flex flex-wrap gap-x-4 border-t border-line px-3.5 py-1.5 text-[14.5px]">
-                          {j.address ? (
-                            <a href={maps(j.address)} className="flex h-10 items-center text-accent underline" target="_blank" rel="noopener">
-                              Directions
-                            </a>
-                          ) : null}
-                          {j.mobile ? (
-                            <a href={wa(j.mobile, `Hi ${j.first}, I'm on my way.\nRaf`)} className="flex h-10 items-center text-accent underline" target="_blank" rel="noopener">
-                              On my way
-                            </a>
-                          ) : null}
-                          {contact ? (
-                            <a href={`tel:${contact.replace(/\s+/g, '')}`} className="flex h-10 items-center text-accent underline">
-                              Call
-                            </a>
-                          ) : null}
-                        </div>
+                      <div className="flex flex-wrap items-center gap-x-4 border-t border-line px-3.5 py-0.5 text-[14.5px]">
+                        {isToday && j?.address ? (
+                          <a href={maps(j.address)} className="flex h-10 items-center text-accent underline" target="_blank" rel="noopener">
+                            Directions
+                          </a>
+                        ) : null}
+                        {isToday && j?.mobile ? (
+                          <a href={wa(j.mobile, `Hi ${j.first}, I'm on my way.\nRaf`)} className="flex h-10 items-center text-accent underline" target="_blank" rel="noopener">
+                            On my way
+                          </a>
+                        ) : null}
+                        {isToday && contact ? (
+                          <a href={`tel:${contact.replace(/\s+/g, '')}`} className="flex h-10 items-center text-accent underline">
+                            Call
+                          </a>
+                        ) : null}
+                        {endOf(b) > now ? (
+                        <button
+                          type="button"
+                          className={`ml-auto h-10 underline ${sure === b.uuid ? 'font-semibold text-ink' : 'text-muted'}`}
+                          disabled={!!busy}
+                          onClick={() => cancel(b)}
+                        >
+                          {busy === b.uuid
+                            ? 'Cancelling…'
+                            : sure === b.uuid
+                              ? daysLong(b) > 1
+                                ? `Tap again to cancel all ${daysLong(b)} days`
+                                : 'Tap again to cancel it'
+                              : 'Cancel'}
+                        </button>
+                        ) : null}
+                      </div>
+                      {fault?.uuid === b.uuid ? (
+                        <p role="alert" className="border-t border-line px-3.5 py-2 text-[14px] leading-relaxed">
+                          {fault.text}
+                        </p>
                       ) : null}
                     </li>
                   );
@@ -622,7 +741,7 @@ export function CurrentList({
   return (
     <div className="pt-7">
       <h1 className="flex items-center gap-3 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">
-        <Icon name="jobs" className="h-[32px] w-[32px] shrink-0 text-accent" />
+        <Icon name="jobs" className="h-[32px] w-[32px] shrink-0 jk-sec-ink" />
         Current jobs
       </h1>
       <p className="mt-2 flex flex-wrap items-center gap-x-3 font-mono text-[13px] text-faint">
@@ -648,7 +767,7 @@ export function CurrentList({
             <h2 className="font-mono text-[12.5px] uppercase tracking-[0.06em] text-faint">
               {title} ({js.length})
             </h2>
-            <ul className="mt-2.5 grid gap-3">
+            <ul className="mt-2.5 grid grid-cols-1 gap-3">
               {js.map((j) => (
                 <Card key={j.uuid} j={j} marks={marks} kit={kit} designs={designs} done={done} replies={sm8.replies} onOpen={onOpen} />
               ))}

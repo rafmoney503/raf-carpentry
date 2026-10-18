@@ -204,7 +204,7 @@ export function InboxList({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="flex items-center gap-2.5 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">
-            <Icon name="mail" className="h-[30px] w-[30px] text-accent" />
+            <Icon name="mail" className="h-[30px] w-[30px] jk-sec-ink" />
             Inbox
           </h1>
           <p className="mt-1.5 truncate font-mono text-[12.5px] text-faint">

@@ -31,3 +31,43 @@
 /* iPhone draws the month box at its own width, past the edge of the screen; make it fill the column like the others. */
 .jk-month { -webkit-appearance: none; appearance: none; display: block; text-align: left; }
 .jk-month::-webkit-date-and-time-value { text-align: left; }
+
+/* Section colours (sections.tsx, 18 Oct 2026). Each main part of the app has its own colour: --sec for lines, icons and
+   labels (all dark enough to read as text on white), --sec-soft for a light wash behind a box's heading. To do stays the
+   site's blue. Kept to the Job Kit: the website itself keeps one accent colour. */
+.jk-sec-todo { --sec: var(--color-accent); --sec-soft: rgb(37 71 208 / 0.08); }
+.jk-sec-customers { --sec: #17736e; --sec-soft: rgb(23 115 110 / 0.1); }
+.jk-sec-designs { --sec: #6a45b8; --sec-soft: rgb(106 69 184 / 0.1); }
+.jk-sec-website { --sec: #a35a00; --sec-soft: rgb(163 90 0 / 0.1); }
+.jk-sec-photos { --sec: #b0345a; --sec-soft: rgb(176 52 90 / 0.09); }
+.jk-sec-ink { color: var(--sec, var(--color-accent)); }
+
+/* the line under the top bar in the screen's section colour */
+.jk-secline { height: 3px; background: var(--sec, transparent); }
+
+/* a box on Today: coloured edge, washed heading, icon and arrows in its colour */
+.jk-band { border-left: 4px solid var(--sec) !important; }
+.jk-band-head { background: var(--sec-soft); border-bottom: 1px solid color-mix(in srgb, var(--sec) 22%, transparent); }
+
+/* the colour key: dots in the top bar, and the sheet */
+.jk-dot { display: block; width: 8px; height: 8px; border-radius: 50%; background: var(--sec); }
+.jk-key-back {
+  position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end; justify-content: center;
+  background: rgb(22 25 28 / 0.4); padding: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom));
+  animation: jk-fade 0.2s ease both;
+}
+.jk-key {
+  width: 100%; max-width: 480px; max-height: calc(100dvh - 24px); overflow-y: auto;
+  background: var(--color-paper); border: 1px solid var(--color-line-strong); border-radius: 2px; padding: 18px 16px 16px;
+  box-shadow: 0 20px 50px -20px rgb(22 25 28 / 0.5); animation: jk-rise 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (min-width: 640px) { .jk-key-back { align-items: center; } }
+.jk-key h2:focus { outline: none; }
+.jk-key-row {
+  display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 10px; align-items: start;
+  padding: 8px 12px 9px 10px; background: var(--sec-soft); border-left: 4px solid var(--sec); border-radius: 2px;
+}
+.jk-key-swatch { width: 14px; height: 14px; border-radius: 50%; background: var(--sec); margin-top: 4px; }
+@keyframes jk-fade { from { opacity: 0; } }
+@keyframes jk-rise { from { opacity: 0; transform: translateY(16px); } }
+@media (prefers-reduced-motion: reduce) { .jk-key-back, .jk-key { animation: none; } }

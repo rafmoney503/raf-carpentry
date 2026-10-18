@@ -68,6 +68,7 @@ import { customerEmails, EmailView, enquiryFromMail, fetchInbox, firstOf, INBOX_
 import type { CurrentJob } from '@/lib/servicem8';
 import { StatsPageView, StatsView, statsLine } from './stats';
 import { setStatsOff } from '@/lib/site-stats';
+import { ColourKey, KeyDots, secClass, secOfLine, secOfScreen, useColourKey, type SecId } from './sections';
 import './job-kit.css';
 
 type Tab = SectionId | 'notes' | 'send';
@@ -169,6 +170,7 @@ export type Done = Record<string, { slug: string; title: string }>;
 
 export default function JobKitApp({ done = {}, posts = [], models = [], kinds = [] }: { done?: Done; posts?: Pack[]; models?: LibraryJob[]; kinds?: KindCount[] }) {
   const [ready, setReady] = useState(false);
+  const colourKey = useColourKey(ready);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [status, setStatus] = useState<Status>({ state: 'idle' });
@@ -542,9 +544,12 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
 
   /* ---------- screens ---------- */
 
+  const sec = secOfScreen(screen.name);
   return (
-    <div className="jk min-h-[100dvh] bg-paper text-ink">
+    <div className={`jk min-h-[100dvh] bg-paper text-ink ${secClass(sec)}`}>
       <TopBar
+        sec={sec}
+        onKey={colourKey.show}
         status={status}
         waiting={waiting.length}
         waitingBytes={waitingBytes}
@@ -743,7 +748,14 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
             onEnquiry={() => go({ name: 'enquiry', mail: screen.id })}
           />
         ) : screen.name === 'diary' ? (
-          <Diary sm8={sm8} loading={sm8Loading} onRefresh={() => checkSm8(true)} onOpen={(id) => go({ name: 'sm8', id, from: 'diary' })} />
+          <Diary
+            sm8={sm8}
+            loading={sm8Loading}
+            onRefresh={() => checkSm8(true)}
+            onOpen={(id) => go({ name: 'sm8', id, from: 'diary' })}
+            onCancel={cancelBooking}
+            onRebook={book}
+          />
         ) : screen.name === 'enquiry' ? (
           <NewEnquiry
             key={screen.client ?? screen.named ?? screen.mail ?? 'enquiry'}
@@ -874,6 +886,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
           />
         ) : null}
       </main>
+      {colourKey.open ? <ColourKey onClose={colourKey.hide} /> : null}
     </div>
   );
 }
@@ -884,6 +897,8 @@ const noSubscribe = () => () => {};
 /* ---------- top bar ---------- */
 
 function TopBar({
+  sec,
+  onKey,
   status,
   waiting,
   waitingBytes,
@@ -891,6 +906,8 @@ function TopBar({
   backLabel,
   onStatus,
 }: {
+  sec?: SecId;
+  onKey: () => void;
   status: Status;
   waiting: number;
   waitingBytes: number;
@@ -906,7 +923,7 @@ function TopBar({
     <header className="sticky top-0 z-30 border-b border-line bg-paper pt-[env(safe-area-inset-top)]">
       <div className="mx-auto flex h-14 max-w-[620px] items-center justify-between gap-3 px-4">
         {onHome ? (
-          <button type="button" onClick={onHome} className="-ml-2 flex h-11 items-center gap-1.5 px-2 text-[15px] font-semibold" aria-label={`Back to ${backLabel.toLowerCase()}`}>
+          <button type="button" onClick={onHome} className={`-ml-2 flex h-11 min-w-0 items-center gap-1.5 px-2 text-[15px] font-semibold ${sec ? 'jk-sec-ink' : ''}`} aria-label={`Back to ${backLabel.toLowerCase()}`}>
             <span aria-hidden className="text-[18px] leading-none">‹</span> {backLabel}
           </button>
         ) : (
@@ -920,6 +937,8 @@ function TopBar({
             Job Kit
           </p>
         )}
+        <span className="flex min-w-0 items-center gap-2">
+        <KeyDots onClick={onKey} />
         <button
           type="button"
           onClick={onStatus}
@@ -932,7 +951,10 @@ function TopBar({
             {waiting && s !== 'sending' && !stuck ? `, ${mb(waitingBytes)}` : ''}
           </span>
         </button>
+        </span>
       </div>
+      {/* the screen's section colour (sections.tsx) */}
+      {sec ? <div className="jk-secline" aria-hidden /> : null}
     </header>
   );
 }
@@ -1080,7 +1102,7 @@ function Home({
                     {l.time ? (
                       <span className="w-[46px] shrink-0 font-mono text-[14px] font-semibold text-accent">{l.time}</span>
                     ) : (
-                      <Icon name={l.icon ?? LINE_ICON[l.go]} className={`h-[22px] w-[22px] shrink-0 ${l.urgent ? 'text-accent' : 'text-faint'}`} />
+                      <Icon name={l.icon ?? LINE_ICON[l.go]} className={`h-[22px] w-[22px] shrink-0 jk-sec-ink ${secClass(secOfLine(l.go))}`} />
                     )}
                     <span className={`flex-1 ${l.urgent ? 'font-semibold' : ''}`}>{l.text}</span>
                     <span aria-hidden className="text-accent">
@@ -1103,7 +1125,7 @@ function Home({
         </div>
       </HomeBand>
 
-      <HomeBand icon="person" label="Customers" right="ServiceM8">
+      <HomeBand sec="customers" icon="person" label="Customers" right="ServiceM8">
         <div className="px-4 pb-1">
           {find}
           <HomeRow onClick={onDiary} title="Diary" line={diaryLine(sm8)} />
@@ -1112,20 +1134,20 @@ function Home({
         </div>
       </HomeBand>
 
-      <HomeBand icon="designs" label="Designs in 3D" right={libraryCount ? `${libraryCount} in the library` : undefined}>
+      <HomeBand sec="designs" icon="designs" label="Designs in 3D" right={libraryCount ? `${libraryCount} in the library` : undefined}>
         <div className="px-4">
           <HomeRow onClick={onDesigns} title="Designs for customers" line={designLine(designJobs, designs)} last={!libraryCount} />
           {libraryCount ? <HomeRow onClick={onLibrary} title="Design library" line={libraryLine} last /> : null}
         </div>
       </HomeBand>
 
-      <HomeBand icon="stats" label="Website" right="rafcarpentry.com">
+      <HomeBand sec="website" icon="stats" label="Website" right="rafcarpentry.com">
         <div className="px-4">
           <HomeRow onClick={onStats} title="Website stats" line={webLine} last />
         </div>
       </HomeBand>
 
-      <HomeBand id="kit-jobs" icon="kit" label="Photos and posts">
+      <HomeBand sec="photos" id="kit-jobs" icon="kit" label="Photos and posts">
         <div className="px-4 pb-4">
           {posts.length ? <HomeRow onClick={onPosts} title="Posts for Instagram, TikTok and YouTube" line={postsLine(posts)} /> : null}
           <p className="mt-4 font-semibold">Job Kit jobs</p>
@@ -1191,13 +1213,13 @@ function Home({
   );
 }
 
-function HomeBand({ label, right, icon, tone, id, children }: { label: string; right?: string; icon?: IconName; tone?: 'accent'; id?: string; children: React.ReactNode }) {
+function HomeBand({ label, right, icon, tone, sec, id, children }: { label: string; right?: string; icon?: IconName; tone?: 'accent'; sec?: SecId; id?: string; children: React.ReactNode }) {
   const accent = tone === 'accent';
   return (
-    <section id={id} className={`mt-5 scroll-mt-20 rounded-sm border bg-mount ${accent ? 'border-accent' : 'border-line-strong'}`}>
-      <div className={`flex h-11 items-center gap-2.5 px-4 ${accent ? 'bg-accent text-on-accent' : 'border-b border-line-strong bg-raised'}`}>
-        {icon ? <Icon name={icon} className="h-5 w-5 shrink-0 text-accent" /> : null}
-        <h2 className="flex-1 font-mono text-[13px] font-semibold uppercase tracking-[0.08em]">{label}</h2>
+    <section id={id} className={`mt-5 scroll-mt-20 rounded-sm border bg-mount ${accent ? 'border-accent' : 'border-line-strong'} ${sec ? `jk-band ${secClass(sec)}` : ''}`}>
+      <div className={`flex h-11 items-center gap-2.5 px-4 ${accent ? 'bg-accent text-on-accent' : sec ? 'jk-band-head' : 'border-b border-line-strong bg-raised'}`}>
+        {icon ? <Icon name={icon} className="h-5 w-5 shrink-0 jk-sec-ink" /> : null}
+        <h2 className={`flex-1 font-mono text-[13px] font-semibold uppercase tracking-[0.08em] ${sec ? 'jk-sec-ink' : ''}`}>{label}</h2>
         {right ? <span className={`truncate font-mono text-[12.5px] ${accent ? '' : 'text-muted'}`}>{right}</span> : null}
       </div>
       {children}
@@ -1212,7 +1234,7 @@ function HomeRow({ onClick, title, line, truncate, last }: { onClick: () => void
         <span className="block font-semibold">{title}</span>
         <span className={`mt-0.5 block text-[14.5px] text-muted ${truncate ? 'truncate' : ''}`}>{line}</span>
       </span>
-      <span aria-hidden className="text-[20px] text-accent">→</span>
+      <span aria-hidden className="text-[20px] jk-sec-ink">→</span>
     </button>
   );
 }
