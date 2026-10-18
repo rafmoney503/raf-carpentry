@@ -70,6 +70,24 @@ export function markReadHere(inbox: Inbox, id: string, isRead: boolean): Inbox {
   return next;
 }
 
+/* Delete (18 Oct 2026, Raf: 'remove the email from list here and on server same time'): off the list here and into
+   Deleted Items in Outlook together; Undo moves it back to the Inbox (a moved email gets a new id from Microsoft). */
+export const binOnServer = (pin: string, id: string) => post<{ id: string }>(pin, { action: 'delete', id }, API);
+export const unbinOnServer = (pin: string, id: string) => post<{ id: string }>(pin, { action: 'restore', id }, API);
+export function dropHere(inbox: Inbox, id: string): Inbox {
+  const was = inbox.mails.find((m) => m.id === id);
+  if (!was) return inbox;
+  const next = { ...inbox, mails: inbox.mails.filter((m) => m.id !== id), unread: inbox.unread !== null && !was.read ? Math.max(0, inbox.unread - 1) : inbox.unread };
+  write(LIST_KEY, { ...next, mails: next.mails.slice(0, 90) });
+  return next;
+}
+export function putBackHere(inbox: Inbox, m: InboxMail): Inbox {
+  const mails = [...inbox.mails.filter((x) => x.id !== m.id), m].sort((a, b) => b.at.localeCompare(a.at));
+  const next = { ...inbox, mails, unread: inbox.unread !== null && !m.read ? inbox.unread + 1 : inbox.unread };
+  write(LIST_KEY, { ...next, mails: next.mails.slice(0, 90) });
+  return next;
+}
+
 /* Who wrote it, for replies and matching: the Reply-To when there is one (ServiceM8's 'New brief' emails). */
 const replyWho = (m: Pick<InboxMail, 'from' | 'replyTo'>) => m.replyTo ?? m.from;
 const shownName = (w: Who) => w.name || w.email;
@@ -170,6 +188,7 @@ export function InboxList({
   onRefresh,
   onMore,
   onOpen,
+  onDelete,
   customers,
 }: {
   inbox: Inbox;
@@ -177,8 +196,29 @@ export function InboxList({
   onRefresh: () => void;
   onMore: () => void;
   onOpen: (id: string) => void;
+  onDelete: (id: string) => Promise<string>;
   customers: Set<string>;
 }) {
+  // the bin on each row: tap, then again within 5 s
+  const [sure, setSure] = useState('');
+  const [binning, setBinning] = useState('');
+  const [fault, setFault] = useState<{ id: string; text: string } | null>(null);
+  const disarm = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const bin = (id: string) => {
+    if (disarm.current) clearTimeout(disarm.current);
+    setFault(null);
+    if (sure !== id) {
+      setSure(id);
+      disarm.current = setTimeout(() => setSure(''), 5000);
+      return;
+    }
+    setSure('');
+    setBinning(id);
+    void onDelete(id).then((err) => {
+      setBinning('');
+      if (err) setFault({ id, text: err });
+    });
+  };
   const [filter, setFilter] = useState<'all' | 'unread' | 'customers'>(() => {
     try {
       return (sessionStorage.getItem('raf_jobkit_inbox_filter') as 'all' | 'unread' | 'customers') || 'all';
@@ -246,9 +286,10 @@ export function InboxList({
             <ul className="mt-3 divide-y divide-line rounded-sm border border-line-strong bg-mount">
               {list.map((m) => {
                 const w = withWho(m) ?? { name: '', email: '' };
+                const armed = sure === m.id || binning === m.id;
                 return (
-                  <li key={m.id}>
-                    <button type="button" onClick={() => onOpen(m.id)} className="relative block w-full px-3.5 py-3 pl-6 text-left">
+                  <li key={m.id} className="flex flex-wrap items-stretch">
+                    <button type="button" onClick={() => onOpen(m.id)} className="relative block min-w-0 flex-1 py-3 pl-6 pr-1 text-left">
                       {!m.read && !m.mine ? <span aria-label="Unread" className="absolute left-2 top-[19px] h-2 w-2 rounded-full bg-accent" /> : null}
                       <span className="flex items-baseline justify-between gap-3">
                         <span className={`min-w-0 truncate text-[16px] ${m.read || m.mine ? '' : 'font-semibold'} ${m.mine ? 'text-muted' : ''}`}>{rowName(m)}</span>
@@ -265,6 +306,20 @@ export function InboxList({
                         </span>
                       ) : null}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => bin(m.id)}
+                      disabled={!!binning}
+                      aria-label={armed ? 'Tap again to delete it' : `Delete the email from ${rowName(m)}`}
+                      className={`flex shrink-0 items-center justify-center self-stretch ${armed ? 'w-[74px] bg-ink font-mono text-[12.5px] font-semibold text-mount' : 'w-12 text-faint'}`}
+                    >
+                      {binning === m.id ? '…' : sure === m.id ? 'Delete?' : <Icon name="bin" className="h-[21px] w-[21px]" />}
+                    </button>
+                    {fault?.id === m.id ? (
+                      <p role="alert" className="w-full px-3.5 pb-2.5 text-[14px] leading-relaxed">
+                        {fault.text}
+                      </p>
+                    ) : null}
                   </li>
                 );
               })}
@@ -278,7 +333,7 @@ export function InboxList({
             </button>
           ) : null}
           <p className="mt-6 font-mono text-[12px] leading-relaxed text-faint">
-            Opening an email marks it read in Outlook too. Nothing is deleted or moved from here, and nothing is sent until you press Send.
+            Opening an email marks it read in Outlook too. The bin moves an email to Deleted Items in Outlook (tap it twice), and nothing is sent until you press Send.
           </p>
         </>
       ) : null}
@@ -341,6 +396,7 @@ export function EmailView({
   onCustomer,
   onJob,
   onEnquiry,
+  onDelete,
 }: {
   id: string;
   fallback?: InboxMail; // the list's copy, shown while the email comes
@@ -350,7 +406,27 @@ export function EmailView({
   onCustomer: (uuid: string) => void;
   onJob: (uuid: string) => void;
   onEnquiry: (m: FullMail) => void;
+  onDelete: () => Promise<string>;
 }) {
+  const [binSure, setBinSure] = useState(false);
+  const [binBusy, setBinBusy] = useState(false);
+  const [binProblem, setBinProblem] = useState('');
+  const binDisarm = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const binIt = () => {
+    if (binDisarm.current) clearTimeout(binDisarm.current);
+    setBinProblem('');
+    if (!binSure) {
+      setBinSure(true);
+      binDisarm.current = setTimeout(() => setBinSure(false), 5000);
+      return;
+    }
+    setBinSure(false);
+    setBinBusy(true);
+    void onDelete().then((err) => {
+      setBinBusy(false);
+      if (err) setBinProblem(err);
+    });
+  };
   const [mail, setMail] = useState<FullMail | null>(() => openedMail(id) ?? null);
   const [loading, setLoading] = useState(false);
   const [problem, setProblem] = useState('');
@@ -700,7 +776,16 @@ export function EmailView({
             Open in Outlook
           </a>
         ) : null}
+        <button type="button" onClick={binIt} disabled={binBusy} className={`flex h-10 items-center gap-1.5 underline ${binSure ? 'font-semibold text-ink' : 'text-muted'}`}>
+          <Icon name="bin" className="h-[17px] w-[17px] no-underline" />
+          {binBusy ? 'Deleting…' : binSure ? 'Tap again to delete it' : 'Delete'}
+        </button>
       </p>
+      {binProblem ? (
+        <p role="alert" className="mt-1 text-[14px] leading-relaxed">
+          {binProblem}
+        </p>
+      ) : null}
 
       {/* The reply */}
       <section id="reply" className="mt-5 grid scroll-mt-4 grid-cols-[minmax(0,1fr)] gap-3 rounded-sm border border-line-strong bg-mount p-4">

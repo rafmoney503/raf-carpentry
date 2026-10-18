@@ -71,3 +71,27 @@
 @keyframes jk-fade { from { opacity: 0; } }
 @keyframes jk-rise { from { opacity: 0; transform: translateY(16px); } }
 @media (prefers-reduced-motion: reduce) { .jk-key-back, .jk-key { animation: none; } }
+
+/* the background switch: a square track and knob, the site's 2 px corners */
+.jk-switch {
+  position: relative; flex: none; width: 46px; height: 26px; border-radius: 2px;
+  background: var(--color-raised-2); border: 1px solid var(--color-line-strong); transition: background-color 0.2s ease;
+}
+.jk-switch > span {
+  position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 2px;
+  background: var(--color-mount); box-shadow: 0 1px 2px rgb(22 25 28 / 0.25); transition: transform 0.2s ease;
+}
+.jk-switch.on { background: var(--color-accent); border-color: var(--color-accent); }
+.jk-switch.on > span { transform: translateX(20px); }
+@media (prefers-reduced-motion: reduce) { .jk-switch, .jk-switch > span { transition: none; } }
+
+/* Coloured backgrounds (on unless switched off, sections.tsx useTint): the screen, its top bar, the Today boxes and
+   each To do line washed in their section's colour; cards and boxes stay white on it */
+.jk.jk-tint { --jk-bg: var(--color-paper); background-color: var(--jk-bg); }
+.jk.jk-tint.jk-sec-customers, .jk.jk-tint.jk-sec-designs, .jk.jk-tint.jk-sec-website, .jk.jk-tint.jk-sec-photos {
+  --jk-bg: color-mix(in srgb, var(--sec) 11%, var(--color-paper));
+}
+.jk.jk-tint > header { background-color: var(--jk-bg); }
+.jk-tint .jk-band { background-color: color-mix(in srgb, var(--sec) 7%, var(--color-mount)); }
+.jk-tint .jk-todo { display: grid; gap: 5px; padding-block: 7px; }
+.jk-tint .jk-todo > li { border-width: 0; border-radius: 2px; padding-inline: 10px; background-color: color-mix(in srgb, var(--sec) 12%, var(--color-mount)); }

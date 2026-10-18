@@ -306,6 +306,18 @@ export async function setRead(id: string, read: boolean) {
   await graph(`/messages/${encodeURIComponent(id)}`, { method: 'PATCH', body: { isRead: read } });
 }
 
+/* Delete (18 Oct 2026, Raf: 'the option to remove the email from list here and on server same time'): the email
+   moves to Deleted Items, as Outlook's own Delete does, so it can still be got back there; restore moves it back
+   to the Inbox (Undo). A moved email gets a new id from Microsoft, so both answer with it. */
+export async function binMail(id: string): Promise<string> {
+  const r = await graph<{ id?: string }>(`/messages/${encodeURIComponent(id)}/move`, { method: 'POST', body: { destinationId: 'deleteditems' } });
+  return r?.id ?? '';
+}
+export async function restoreMail(id: string): Promise<string> {
+  const r = await graph<{ id?: string }>(`/messages/${encodeURIComponent(id)}/move`, { method: 'POST', body: { destinationId: 'inbox' } });
+  return r?.id ?? '';
+}
+
 /* An attachment's bytes, for the phone to show. Photos over 2.5 MB are made smaller here (2000 px JPEG), since
    a Vercel answer can't be over 4.5 MB; anything else over 4 MB is opened in Outlook instead. */
 export async function attachment(id: string, att: string): Promise<{ bytes: Uint8Array; type: string; name: string }> {

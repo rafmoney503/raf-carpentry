@@ -64,11 +64,12 @@ import {
 } from './current';
 import { CLIENTS_FRESH, CustomerSearch, fetchClients, savedClients, savedCustomers, withCurrent, type Clients, type CustomerDetail } from './customers';
 import { CustomerView } from './customer-view';
-import { customerEmails, EmailView, enquiryFromMail, fetchInbox, firstOf, INBOX_FRESH, InboxList, inboxLine, inboxTodayLine, lastWith, markReadHere, openedMail, savedInbox, whenSaid, type Inbox } from './inbox';
+import type { InboxMail } from '@/lib/outlook';
+import { binOnServer, customerEmails, dropHere, EmailView, enquiryFromMail, fetchInbox, firstOf, INBOX_FRESH, InboxList, inboxLine, inboxTodayLine, lastWith, markReadHere, openedMail, putBackHere, savedInbox, unbinOnServer, whenSaid, type Inbox } from './inbox';
 import type { CurrentJob } from '@/lib/servicem8';
 import { StatsPageView, StatsView, statsLine } from './stats';
 import { setStatsOff } from '@/lib/site-stats';
-import { ColourKey, KeyDots, secClass, secOfLine, secOfScreen, useColourKey, type SecId } from './sections';
+import { ColourKey, KeyDots, secClass, secOfLine, secOfScreen, TintSwitch, useColourKey, useTint, type SecId } from './sections';
 import './job-kit.css';
 
 type Tab = SectionId | 'notes' | 'send';
@@ -171,6 +172,7 @@ export type Done = Record<string, { slug: string; title: string }>;
 export default function JobKitApp({ done = {}, posts = [], models = [], kinds = [] }: { done?: Done; posts?: Pack[]; models?: LibraryJob[]; kinds?: KindCount[] }) {
   const [ready, setReady] = useState(false);
   const colourKey = useColourKey(ready);
+  const [tint, setTint] = useTint();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [status, setStatus] = useState<Status>({ state: 'idle' });
@@ -244,6 +246,43 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
       return cur;
     });
   }, []);
+  /* Delete an email: into Deleted Items in Outlook, then off the list here; a bar at the bottom offers Undo for 12 s. */
+  const [binned, setBinned] = useState<null | { binId: string; mail?: InboxMail; what: string; busy?: boolean; problem?: string }>(null);
+  const binTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const inboxNow = useRef(inbox);
+  useEffect(() => {
+    inboxNow.current = inbox;
+  }, [inbox]);
+  const removeMail = useCallback(async (id: string) => {
+    const m = inboxNow.current.mails.find((x) => x.id === id);
+    const r = await binOnServer(readPin(), id);
+    if (!r.ok && r.error !== 'outlook-gone') return problemText(r.error, r.detail);
+    setInbox((cur) => dropHere(cur, id));
+    if (binTimer.current) clearTimeout(binTimer.current);
+    if (r.ok) {
+      const name = m ? (m.mine ? m.subject || 'your email' : `the email from ${m.from.name || m.from.email}`) : 'the email';
+      setBinned({ binId: r.data.id || id, mail: m, what: name });
+      binTimer.current = setTimeout(() => setBinned(null), 12000);
+    }
+    return '';
+  }, []);
+  const undoBin = useCallback(() => {
+    if (!binned || binned.busy) return;
+    if (binTimer.current) clearTimeout(binTimer.current);
+    setBinned({ ...binned, busy: true, problem: '' });
+    void unbinOnServer(readPin(), binned.binId).then((r) => {
+      if (!r.ok) {
+        setBinned({ ...binned, busy: false, problem: `${problemText(r.error, r.detail)} It’s still in Deleted Items in Outlook.` });
+        return;
+      }
+      if (binned.mail) {
+        const back = { ...binned.mail, id: r.data.id || binned.mail.id };
+        setInbox((cur) => putBackHere(cur, back));
+      }
+      setBinned(null);
+      checkInbox(true);
+    });
+  }, [binned, checkInbox]);
   const [customerJobs, setCustomerJobs] = useState<CurrentJob[]>([]);
   const customerLoaded = useCallback((d: CustomerDetail) => {
     setCustomerJobs((list) => [...d.jobs, ...list.filter((j) => !d.jobs.some((x) => x.uuid === j.uuid))]);
@@ -269,15 +308,17 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   }, []);
 
   /* Screens are history entries, so the phone's back gesture works. depth counts the ones made since the
-     app opened: "‹ Back" goes back through them, or to the screen above if the app was reopened on one. */
+     app opened: "‹ Back" goes back through them, or to the screen above if the app was reopened on one.
+     Each entry keeps Next's own history fields (...history.state): without them Next's router took every back
+     as a page it didn't make and reloaded the whole page (found 18 Oct 2026, when the email Undo bar vanished). */
   const depth = useRef(0);
   const go = useCallback((s: Screen, push = true) => {
     setScreenState(s);
     keepScreen(s);
     if (push) {
-      history.pushState({ jk: s }, '');
+      history.pushState({ ...history.state, jk: s }, '');
       depth.current += 1;
-    } else history.replaceState({ jk: s }, '');
+    } else history.replaceState({ ...history.state, jk: s }, '');
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
   const back = useCallback(() => {
@@ -303,7 +344,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     if (readPin()) checkClients(); // so the first search is instant
     const first = loadScreen();
     setScreenState(first);
-    history.replaceState({ jk: first }, '');
+    history.replaceState({ ...history.state, jk: first }, '');
     void reload().then(() => setReady(true));
     const offStatus = onStatus(setStatus);
     const offChange = onChange(() => void reload());
@@ -546,7 +587,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
 
   const sec = secOfScreen(screen.name);
   return (
-    <div className={`jk min-h-[100dvh] bg-paper text-ink ${secClass(sec)}`}>
+    <div className={`jk min-h-[100dvh] bg-paper text-ink ${secClass(sec)}${tint ? ' jk-tint' : ''}`}>
       <TopBar
         sec={sec}
         onKey={colourKey.show}
@@ -731,6 +772,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
             onRefresh={() => checkInbox(true)}
             onMore={moreInbox}
             onOpen={(id) => go({ name: 'email', id })}
+            onDelete={removeMail}
           />
         ) : screen.name === 'email' ? (
           <EmailView
@@ -746,6 +788,11 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
             }}
             onJob={(id) => go({ name: 'sm8', id })}
             onEnquiry={() => go({ name: 'enquiry', mail: screen.id })}
+            onDelete={async () => {
+              const err = await removeMail(screen.id);
+              if (!err) back();
+              return err;
+            }}
           />
         ) : screen.name === 'diary' ? (
           <Diary
@@ -850,6 +897,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
           <Settings
             pin={pin}
             status={status}
+            tint={tint}
+            onTint={setTint}
             onPin={(p) => {
               savePin(p);
               setPinState(p);
@@ -867,7 +916,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               const s: Screen = { name: 'job', id: job.id, tab };
               setScreenState(s);
               keepScreen(s);
-              history.replaceState({ jk: s }, '');
+              history.replaceState({ ...history.state, jk: s }, '');
               window.scrollTo({ top: 0, behavior: 'instant' });
             }}
             onAdd={addFiles}
@@ -886,7 +935,26 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
           />
         ) : null}
       </main>
-      {colourKey.open ? <ColourKey onClose={colourKey.hide} /> : null}
+      {binned ? (
+        <div role="status" className="fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(16px,env(safe-area-inset-bottom))]">
+          <div className="mx-auto flex max-w-[588px] items-center gap-3 rounded-sm bg-ink px-4 py-2.5 text-[14.5px] leading-snug text-mount shadow-[0_14px_30px_-12px_rgb(22_25_28/0.6)]">
+            <span className="min-w-0 flex-1">
+              {binned.problem || (
+                <>
+                  Deleted <b className="font-semibold">{binned.what}</b>. It’s in Deleted Items in Outlook.
+                </>
+              )}
+            </span>
+            <button type="button" onClick={undoBin} disabled={binned.busy} className="h-10 shrink-0 font-semibold underline">
+              {binned.busy ? 'Putting it back…' : 'Undo'}
+            </button>
+            <button type="button" onClick={() => setBinned(null)} aria-label="Close" className="h-10 w-8 shrink-0 text-[20px] leading-none opacity-70">
+              ×
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {colourKey.open ? <ColourKey onClose={colourKey.hide} tint={tint} onTint={setTint} /> : null}
     </div>
   );
 }
@@ -1095,17 +1163,17 @@ function Home({
       <HomeBand tone="accent" label="To do" right={lines.length ? `${lines.length} thing${lines.length === 1 ? '' : 's'}` : 'All clear'}>
         <div className="px-4 py-1">
           {lines.length ? (
-            <ul className="divide-y divide-line">
+            <ul className="jk-todo divide-y divide-line">
               {lines.map((l) => (
-                <li key={l.text}>
+                <li key={l.text} className={secClass(secOfLine(l.go))}>
                   <button type="button" onClick={() => onToday(l)} className="flex min-h-11 w-full items-center gap-2.5 py-2 text-left text-[16px]">
                     {l.time ? (
-                      <span className="w-[46px] shrink-0 font-mono text-[14px] font-semibold text-accent">{l.time}</span>
+                      <span className="w-[46px] shrink-0 font-mono text-[14px] font-semibold jk-sec-ink">{l.time}</span>
                     ) : (
-                      <Icon name={l.icon ?? LINE_ICON[l.go]} className={`h-[22px] w-[22px] shrink-0 jk-sec-ink ${secClass(secOfLine(l.go))}`} />
+                      <Icon name={l.icon ?? LINE_ICON[l.go]} className="h-[22px] w-[22px] shrink-0 jk-sec-ink" />
                     )}
                     <span className={`flex-1 ${l.urgent ? 'font-semibold' : ''}`}>{l.text}</span>
-                    <span aria-hidden className="text-accent">
+                    <span aria-hidden className="jk-sec-ink">
                       →
                     </span>
                   </button>
@@ -1707,7 +1775,7 @@ const CHECK_TEXT: Record<string, string> = {
   error: 'Something went wrong. Try again in a minute.',
 };
 
-function Settings({ pin, status, onPin }: { pin: string; status: Status; onPin: (p: string) => void }) {
+function Settings({ pin, status, onPin, tint, onTint }: { pin: string; status: Status; onPin: (p: string) => void; tint: boolean; onTint: (on: boolean) => void }) {
   const [value, setValue] = useState(pin);
   const [result, setResult] = useState('');
   const [checking, setChecking] = useState(false);
@@ -1746,6 +1814,10 @@ function Settings({ pin, status, onPin }: { pin: string; status: Status; onPin: 
           {result}
         </p>
       ) : null}
+      <h2 className="mt-9 font-mono text-[12.5px] uppercase tracking-[0.06em] text-faint">Colours</h2>
+      <div className="mt-2">
+        <TintSwitch on={tint} onChange={onTint} />
+      </div>
       <div className="mt-10 grid gap-3 border-t border-line pt-5 text-[14.5px] leading-relaxed text-muted">
         <p>Photos are made smaller on the phone (2400 px, about 0.5 to 1 MB) and their hidden location data is dropped. Clips are sent as filmed, in 3 MB pieces, so film them at 1080p, not 4K.</p>
         <p>Anything taken with Take photo or Film goes straight into the app, not your camera roll. Once it is sent, the phone deletes its copy.</p>

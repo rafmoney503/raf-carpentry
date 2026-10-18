@@ -1,5 +1,5 @@
 import { guard } from '@/lib/job-kit-server';
-import { attachment, inbox, message, OutlookError, outlookSetUp, outlookMissing, reply, setRead } from '@/lib/outlook';
+import { attachment, binMail, inbox, message, OutlookError, outlookSetUp, outlookMissing, reply, restoreMail, setRead } from '@/lib/outlook';
 import { signOff } from '@/lib/mail-text';
 
 /* The Job Kit's Inbox: Raf's info@rafcarpentry.com mailbox (Microsoft 365) through src/lib/outlook.ts, behind the PIN.
@@ -9,7 +9,9 @@ import { signOff } from '@/lib/mail-text';
    { action: 'file', id, att }             an attachment's bytes (photos made smaller when big)
    { action: 'reply', id, text, send }     Raf's reply from info@ with his sign-off: sent (send: true) or left in
                                            Drafts for Outlook. Only ever because Raf pressed the button.
-   Nothing here deletes or moves an email. */
+   { action: 'delete', id }                moves it to Deleted Items (as Outlook's Delete does); answers its new id
+   { action: 'restore', id }               moves it from Deleted Items back to the Inbox (Undo); answers its new id
+   Nothing is deleted for good from here: Deleted Items is emptied by Outlook's own rules. */
 export const maxDuration = 30;
 
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
@@ -44,6 +46,8 @@ export async function POST(req: Request) {
       const f = await attachment(id, att);
       return new Response(f.bytes as BodyInit, { headers: { ...noStore, 'content-type': f.type, 'x-file-name': encodeURIComponent(f.name) } });
     }
+    if (body.action === 'delete') return Response.json({ id: await binMail(id) }, { headers: noStore });
+    if (body.action === 'restore') return Response.json({ id: await restoreMail(id) }, { headers: noStore });
     if (body.action === 'reply') {
       const text = str(body.text, 10000);
       if (!text) return Response.json({ error: 'missing-mail' }, { status: 400 });

@@ -1,7 +1,7 @@
 /* Small line icons for the Job Kit's sections, drawn like the site's sketches (round ends, one weight), so each
    card on the Today screen and each line in the Today list shows where it goes. Decorative: the text says it. */
 
-export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats';
+export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin';
 
 const PATHS: Record<IconName, React.ReactNode> = {
   // the website stats: a browser window with a bar chart in it
@@ -88,6 +88,14 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <circle cx="12" cy="8.4" r="3.8" />
       <path d="M4.6 20.4c.9-3.9 3.8-6 7.4-6s6.5 2.1 7.4 6" />
+    </>
+  ),
+  // a bin with its lid: delete
+  bin: (
+    <>
+      <path d="M4 6.5h16M9.5 6.5V4.5h5v2" />
+      <path d="M6 6.5l1 13.5h10l1-13.5" />
+      <path d="M10 10.5v6M14 10.5v6" />
     </>
   ),
   // a pound coin: money still to collect

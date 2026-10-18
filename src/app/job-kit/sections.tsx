@@ -1,12 +1,16 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 /* The Job Kit's main sections, each with its own colour (18 Oct 2026, Raf: 'everything looks same, can we distinguish the
    different sections with slightly different colors ... and maybe make a pop up legend to learn now and then the main
    sections colors, nothing too crazy but noticeable'). The colours live in job-kit.css (.jk-sec-<id> sets --sec and
    --sec-soft); a screen's section colours the line under the top bar, the back label and its title icon, and each box
    on Today. The colour key opens from the dots in the top bar, and by itself on the first open and twice more a week
-   apart, while the colours are new. */
+   apart, while the colours are new.
+   Coloured backgrounds (18 Oct 2026, Raf: 'I'd like the background to be same color as section ... in todo section
+   ... backgrounds as well ... a switch so I can turn on and off the background in whole app if I get used to'): on by
+   default, each screen washed in its section's colour, the Today boxes and each To do line too; the switch is in the
+   colour key and in Settings (localStorage raf_jobkit_tint, '0' = off). */
 
 export type SecId = 'todo' | 'customers' | 'designs' | 'website' | 'photos';
 
@@ -32,6 +36,60 @@ export const secOfLine = (go: string): SecId =>
   go === 'designs' ? 'designs' : go === 'posts' || go === 'jobs' ? 'photos' : 'customers';
 
 export const secClass = (s?: SecId) => (s ? `jk-sec-${s}` : '');
+
+/* ---------- coloured backgrounds: on unless switched off ---------- */
+
+const TINT_KEY = 'raf_jobkit_tint';
+const TINT_EVENT = 'jk-tint';
+const tintOn = () => {
+  try {
+    return localStorage.getItem(TINT_KEY) !== '0';
+  } catch {
+    return true; // no storage: stays on
+  }
+};
+const tintListen = (fire: () => void) => {
+  window.addEventListener(TINT_EVENT, fire);
+  window.addEventListener('storage', fire);
+  return () => {
+    window.removeEventListener(TINT_EVENT, fire);
+    window.removeEventListener('storage', fire);
+  };
+};
+export function useTint() {
+  const on = useSyncExternalStore(tintListen, tintOn, () => true);
+  const set = (v: boolean) => {
+    try {
+      localStorage.setItem(TINT_KEY, v ? '1' : '0');
+    } catch {
+      /* no storage: can't be switched off */
+    }
+    window.dispatchEvent(new Event(TINT_EVENT));
+  };
+  return [on, set] as const;
+}
+
+export function TintSwitch({ on, onChange, compact }: { on: boolean; onChange: (on: boolean) => void; compact?: boolean }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={() => onChange(!on)}
+      className={`flex w-full items-center justify-between gap-3 rounded-sm border border-line-strong bg-mount px-3 text-left ${compact ? 'py-2' : 'py-2.5'}`}
+    >
+      <span className="min-w-0">
+        <span className="block text-[15px] font-semibold leading-tight">Coloured backgrounds</span>
+        {compact ? null : (
+          <span className="mt-0.5 block text-[13px] leading-snug text-muted">{on ? 'Each screen and To do line in its colour.' : 'Off: colour on the lines and icons only.'}</span>
+        )}
+      </span>
+      <span aria-hidden className={`jk-switch${on ? ' on' : ''}`}>
+        <span />
+      </span>
+    </button>
+  );
+}
 
 /* ---------- the colour key ---------- */
 
@@ -82,7 +140,7 @@ export function KeyDots({ onClick }: { onClick: () => void }) {
   );
 }
 
-export function ColourKey({ onClose }: { onClose: () => void }) {
+export function ColourKey({ onClose, tint, onTint }: { onClose: () => void; tint: boolean; onTint: (on: boolean) => void }) {
   const title = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     title.current?.focus();
@@ -110,6 +168,9 @@ export function ColourKey({ onClose }: { onClose: () => void }) {
             </li>
           ))}
         </ul>
+        <div className="mt-3">
+          <TintSwitch on={tint} onChange={onTint} compact />
+        </div>
         <p className="mt-2.5 font-mono text-[12px] leading-snug text-faint">Open this again with the coloured dots at the top.</p>
         <button type="button" onClick={onClose} className="btn btn-primary mt-3 w-full">
           Got it
