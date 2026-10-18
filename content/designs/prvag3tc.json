@@ -1,0 +1,37 @@
+{
+  "code": "prvag3tc",
+  "request": "design-2026-10-radiator-cover-ealing-h4st",
+  "updatedFor": "2026-10-18T15:55:55.212Z",
+  "title": "Radiator cover with fluted columns",
+  "area": "Ealing",
+  "made": "2026-10-18",
+  "options": [
+    {
+      "name": "The design",
+      "text": "A radiator cover with an oak top, a white fluted column at each end and two doors in the middle with a mesh panel, so the heat still comes through. Both doors open outwards to reach the radiator and its valves. Press Open the doors to see inside.",
+      "model": {
+        "src": "/designs/prvag3tc/a-gzy52f.glb",
+        "poster": {
+          "src": "/designs/prvag3tc/a-gzy52f.jpg",
+          "w": 1600,
+          "h": 800,
+          "alt": "3D model of a white radiator cover with an oak top, fluted columns at each end and two mesh doors"
+        },
+        "shape": "wide"
+      },
+      "sizes": [
+        { "label": "Width of the oak top", "value": "1646 mm" },
+        { "label": "Height, to the top of the oak", "value": "680 mm" },
+        { "label": "Depth of the oak top", "value": "200 mm" },
+        { "label": "Doors", "value": "two, 698 mm each, with a mesh panel" },
+        { "label": "Fluted columns", "value": "three flutes, stopping 85 mm from the top and bottom" }
+      ]
+    }
+  ],
+  "notes": [
+    "The width, height and depth and the door widths come from the drawing.",
+    "The column width, the flute size, the door frames and the thickness of the oak top are standard sizes to start from and will be checked on site.",
+    "The radiator is only there to show where it sits.",
+    "Colours on screen are a guide."
+  ]
+}
