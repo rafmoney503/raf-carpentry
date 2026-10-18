@@ -177,6 +177,10 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   const [items, setItems] = useState<Item[]>([]);
   const [status, setStatus] = useState<Status>({ state: 'idle' });
   const [screen, setScreenState] = useState<Screen>({ name: 'home' });
+  const screenNow = useRef(screen);
+  useEffect(() => {
+    screenNow.current = screen;
+  }, [screen]);
   const [pin, setPinState] = useState('');
   const [busy, setBusy] = useState<Record<string, number>>({}); // slot key -> photos still being saved
   const [problem, setProblem] = useState('');
@@ -345,12 +349,37 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     const first = loadScreen();
     setScreenState(first);
     history.replaceState({ ...history.state, jk: first }, '');
+    /* Opening the app starts at the top (18 Oct 2026, Raf: 'when I open jobkit ... first thing it does goes to search
+       bar in customers, I'd like it to be at the top of the app'): the phone mustn't put back an old scroll position,
+       and a search box that had the keyboard when the app went into the background is let go, so coming back doesn't
+       jump down to it with the keyboard up. Back from Today after more than 30 s away goes to the top too. */
+    try {
+      history.scrollRestoration = 'manual';
+    } catch {
+      /* older phones: nothing to change */
+    }
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    let hiddenAt = 0;
+    const letGoOfSearch = () => {
+      const a = document.activeElement;
+      if (a instanceof HTMLInputElement && a.type === 'search') a.blur();
+    };
     void reload().then(() => setReady(true));
     const offStatus = onStatus(setStatus);
     const offChange = onChange(() => void reload());
     const online = () => wake();
     const visible = () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenAt = Date.now();
+        letGoOfSearch();
+        return;
+      }
       if (document.visibilityState === 'visible') {
+        if (hiddenAt && Date.now() - hiddenAt > 30_000 && screenNow.current.name === 'home') {
+          letGoOfSearch();
+          window.scrollTo({ top: 0, behavior: 'instant' });
+        }
+        hiddenAt = 0;
         void reload();
         wake();
         checkDesigns();
@@ -358,6 +387,12 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         checkInbox();
         if (readPin()) checkClients();
       }
+    };
+    // the phone put the page back from its cache (iOS does this for a home-screen app): same as coming back
+    const shown = (e: PageTransitionEvent) => {
+      if (!e.persisted) return;
+      letGoOfSearch();
+      if (screenNow.current.name === 'home') window.scrollTo({ top: 0, behavior: 'instant' });
     };
     const back = (e: PopStateEvent) => {
       depth.current = Math.max(0, depth.current - 1);
@@ -368,6 +403,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     window.addEventListener('online', online);
     document.addEventListener('visibilitychange', visible);
     window.addEventListener('popstate', back);
+    window.addEventListener('pageshow', shown);
     wake();
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/job-kit-sw.js', { scope: '/job-kit' }).catch(() => {});
     setStatsOff(true); // this phone's visits to the website aren't counted in the Website stats (src/lib/site-stats.ts)
@@ -378,8 +414,13 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
       window.removeEventListener('online', online);
       document.removeEventListener('visibilitychange', visible);
       window.removeEventListener('popstate', back);
+      window.removeEventListener('pageshow', shown);
     };
   }, [reload, checkDesigns, checkSm8, checkClients, checkInbox]);
+  // once the screens are drawn (they wait for the phone's storage), start at the top of the one the app opened on
+  useEffect(() => {
+    if (ready) window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [ready]);
 
   const job = screen.name === 'job' || screen.name === 'design' ? jobs.find((j) => j.id === screen.id) : undefined;
   // A ServiceM8 job: in the Current jobs, or from a customer opened from the search (an older one).
