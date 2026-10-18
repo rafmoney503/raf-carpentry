@@ -96,21 +96,39 @@
   transition: opacity 0.35s var(--ease-soft), transform 0.35s var(--ease-soft), visibility 0s linear 0.35s;
 }
 .bs-hint.on { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
-.bs-hint svg, .bs-try svg { flex: none; }
+.bs-hint svg, .bs-try > svg { flex: none; }
 .bs-try {
-  display: inline-flex; align-items: center; gap: 10px; padding: 12px 16px 12px 17px; border-radius: 2px;
-  background: var(--color-ink); color: var(--color-mount); box-shadow: 0 12px 26px -14px rgb(22 25 28 / 0.6);
-  font-family: var(--font-sans); font-size: 16px; font-weight: 600; line-height: 1; white-space: nowrap; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 12px; max-width: 100%; padding: 6px 14px 6px 6px; border-radius: 2px;
+  background: var(--color-mount); color: var(--color-ink); border: 1px solid var(--color-line-strong);
+  box-shadow: 0 12px 26px -16px rgb(22 25 28 / 0.45); text-decoration: none;
   opacity: 0; visibility: hidden; transform: translateY(6px); pointer-events: none;
-  transition: opacity 0.35s var(--ease-soft), transform 0.35s var(--ease-soft), background-color 0.2s var(--ease-soft), visibility 0s linear 0.35s;
+  transition: opacity 0.35s var(--ease-soft), transform 0.35s var(--ease-soft), border-color 0.2s var(--ease-soft), visibility 0s linear 0.35s;
 }
 .bs-try.on { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; pointer-events: auto; }
-.bs-try:hover { background: var(--color-accent); }
-@media (max-width: 379px) { .bs-hint, .bs-try { font-size: 14px !important; } }
+.bs-try-pic { position: relative; flex: none; width: 56px; height: 56px; overflow: hidden; border-radius: 2px; background: var(--color-paper); }
+.bs-try-pic img { object-fit: cover; }
+.bs-try-3d {
+  position: absolute; left: 3px; top: 3px; z-index: 1; padding: 1px 4px; border-radius: 2px; background: var(--color-mount);
+  font-family: var(--font-mono); font-size: 10px; font-weight: 600; line-height: 1.3; color: var(--color-ink);
+}
+.bs-try-words { display: grid; gap: 3px; min-width: 0; }
+.bs-try-kick { font-family: var(--font-mono); font-size: 12px; line-height: 1.2; color: var(--color-accent); }
+.bs-try-title { font-size: 16px; font-weight: 650; line-height: 1.2; white-space: nowrap; transition: color 0.2s var(--ease-soft); }
+.bs-try svg { color: var(--color-accent); }
+.bs-try:hover { border-color: var(--color-accent); }
+.bs-try:hover .bs-try-title { color: var(--color-accent); }
+/* computers under 960 px tall: a smaller picture and tighter gaps, so the buttons under it stay clear of the floating ones */
+@media (min-width: 900px) and (max-height: 960px) {
+  .bs-copy { gap: 18px; }
+  .bs-try { padding: 5px 12px 5px 5px; }
+  .bs-try-pic { width: 44px; height: 44px; }
+  .bs-try-title { font-size: 15px; }
+}
+@media (max-width: 379px) { .bs-hint { font-size: 14px !important; } .bs-try-title { font-size: 14px; } }
 @media (max-width: 359px) { .bs-hint-more { display: none; } }
 @media (prefers-reduced-motion: no-preference) {
   .bs-hint.on svg { animation: bs-nudge 1.4s var(--ease-soft) infinite; }
-  .bs-try.on svg { animation: bs-nudge-x 1.4s var(--ease-soft) infinite; }
+  .bs-try.on > svg { animation: bs-nudge-x 1.4s var(--ease-soft) infinite; }
 }
 @keyframes bs-nudge { 0%, 100% { transform: none; } 45% { transform: translateY(3px); } }
 @keyframes bs-nudge-x { 0%, 100% { transform: none; } 45% { transform: translateX(3px); } }
@@ -135,7 +153,11 @@
   .bs-foot { padding-block: 0 72px; }
   .bs-foot-ctas { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; }
   .bs-stamp { top: auto; bottom: 44px; right: 12px; padding: 6px 8px; font-size: 12px; }
-  .bs-hint, .bs-try { padding: 11px 14px 11px 15px; font-size: 15px; }
+  .bs-hint { padding: 11px 14px 11px 15px; font-size: 15px; }
+  .bs-try { gap: 10px; padding: 5px 12px 5px 5px; }
+  .bs-try-pic { width: 48px; height: 48px; }
+  .bs-try-kick { font-size: 11.5px; }
+  .bs-try-title { font-size: 15px; }
 }
 
 /* shorter phones (an iPhone SE): a little tighter, so the steps stay above the floating buttons */
@@ -148,14 +170,21 @@
   .bs-step h3 { font-size: 17px; }
   .bs-more p { font-size: 14px; line-height: 1.5; }
   .bs-stage.mount { min-height: 150px; }
-  .bs-hint, .bs-try { padding: 9px 12px 9px 13px; font-size: 14px; }
+  .bs-hint { padding: 9px 12px 9px 13px; font-size: 14px; }
+  .bs-try-pic { width: 42px; height: 42px; }
+  .bs-try-kick { font-size: 11px; }
+  .bs-try-title { font-size: 14px; }
 }
 
 /* the smallest phones (an iPhone SE of 568 px): step titles only and a smaller tag, so the tag under 04 Fit still
    clears the floating buttons; the descriptions are still read out */
 @media (max-width: 899px) and (max-height: 620px) {
   .bs-step .bs-more { grid-template-rows: 0fr; }
-  .bs-hint, .bs-try { padding: 8px 11px 8px 12px; font-size: 13px !important; }
+  .bs-hint { padding: 8px 11px 8px 12px; font-size: 13px !important; }
+  .bs-try { gap: 8px; padding: 3px 9px 3px 3px; }
+  .bs-try-pic { width: 32px; height: 32px; }
+  .bs-try-3d { display: none; }
+  .bs-try-kick { display: none; }
 }
 
 /* reduced motion, or too short to pin (a phone on its side): a normal section with the finished wardrobe */

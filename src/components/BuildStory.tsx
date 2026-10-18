@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { BuildStoryScene } from '@/lib/build-story-scene';
+import PlannerClip from '@/components/PlannerClip';
+import { PLANNER_CLIP_SQUARE, PLANNER_IMAGE_SQUARE } from '@/lib/planner-picture';
 import './build-story.css';
 
 /* Home page, "Nothing gets cut until you've seen it": one wardrobe goes through Survey, Draw, Build and Fit in 3D while
@@ -16,9 +18,11 @@ import './build-story.css';
    A "Keep scrolling to see it built" tag sits under the steps (18 Oct 2026, Raf: under 04 Fit, bigger, and kept until
    Fit is reached), so a pinned page never looks stuck. It shows while Survey, Draw or Build is playing and fades once
    Fit starts (back again if they scroll up); its space is kept so nothing jumps. Never in the still layout.
-   At Fit the tag's place becomes a 'Try it yourself' button to the wardrobe planner (18 Oct 2026, Raf: 'when the
-   scrolling is finished on 4 step a fit and keep scrolling to see it built show button Try it yourself and redirect to
-   wardrobe planner page'): the two share one grid cell, so swapping them moves nothing. */
+   At Fit the tag's place becomes a small picture of the wardrobe planner that opens it (18 Oct 2026, Raf: 'show button
+   Try it yourself and redirect to wardrobe planner page', then, as that doubled the button under it, 'in button Plan
+   yours in 3D put try it yourself label and instead of black button put graphic miniature with redirect'): the
+   planner's own 3D still with its door loop playing (only once Fit is reached), 'Free planner / Plan your wardrobe
+   in 3D'. The two share one grid cell, so swapping them moves nothing. */
 
 type Step = { title: string; description: string };
 type Props = {
@@ -192,9 +196,10 @@ export default function BuildStory({ heading, steps, fallback, plannerHref, quot
   }, [steps.length]);
 
   const [lead, accent] = splitHeading(heading);
+  const atFit = idx === steps.length - 1 && !still;
   const ctas = (
     <>
-      <Link className="btn btn-ghost" href={plannerHref}>Plan yours in 3D</Link>
+      <Link className="btn btn-ghost" href={plannerHref}>Try it yourself</Link>
       <Link className="btn btn-primary" href={quoteHref}>Get a quote</Link>
     </>
   );
@@ -234,9 +239,19 @@ export default function BuildStory({ heading, steps, fallback, plannerHref, quot
                     <path d="M6 1.5v8.5M2.5 6.8L6 10.2l3.5-3.4" />
                   </svg>
                 </p>
-                <Link className={`bs-try${idx === steps.length - 1 ? ' on' : ''}`} href={plannerHref}>
-                  Try it yourself<span className="sr-only">: plan a wardrobe in 3D</span>
-                  <svg width="16" height="16" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <Link className={`bs-try${atFit ? ' on' : ''}`} href={plannerHref}>
+                  <span className="bs-try-pic">
+                    <Image src={PLANNER_IMAGE_SQUARE} alt="" fill sizes="56px" />
+                    {atFit ? <PlannerClip {...PLANNER_CLIP_SQUARE} /> : null}
+                    <span className="bs-try-3d" aria-hidden="true">
+                      3D
+                    </span>
+                  </span>
+                  <span className="bs-try-words">
+                    <span className="bs-try-kick">Free planner</span>
+                    <span className="bs-try-title">Plan your wardrobe in 3D</span>
+                  </span>
+                  <svg width="18" height="18" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M1.5 6h8.5M6.8 2.5L10.2 6 6.8 9.5" />
                   </svg>
                 </Link>
