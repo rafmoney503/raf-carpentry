@@ -105,7 +105,12 @@ export default function Footer() {
             © {new Date().getFullYear()} Raf Carpentry. Raf Carpentry is a trading name of{' '}
             <a href={RAFAL_SOLUTIONS_URL} target="_blank" rel="noopener" className="underline decoration-line-strong underline-offset-2 hover:text-ink">{COMPANY.name}</a>, registered in England and Wales, company no. {COMPANY.number}.
           </p>
-          <p>Registered office: {COMPANY.office}. VAT no. {COMPANY.vat}.</p>
+          <p>
+            Registered office: {COMPANY.office}. VAT no. {COMPANY.vat}.{' '}
+            <Link href="/privacy" className="underline decoration-line-strong underline-offset-2 hover:text-ink">
+              Privacy
+            </Link>
+          </p>
           {/* Raf's own tool: sends a client the review link by WhatsApp or text (src/app/review/send). */}
           <p className="mt-2">
             <Link href="/review/send" className="inline-flex items-center gap-1.5 font-mono text-[12.5px] text-accent hover:underline">

@@ -1,6 +1,6 @@
 'use client';
 /* eslint-disable @next/next/no-img-element -- the pictures here are small thumbnails kept on the phone (data URLs), not site images */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { clipInfo, shrinkPhoto } from './media';
 import { KINDS, progress, REVIEW_OPTIONS, SECTIONS, SHOW_OPTIONS, TOOLS, type Section, type SectionId, type Slot } from './plan';
 import {
@@ -66,6 +66,8 @@ import { CLIENTS_FRESH, CustomerSearch, fetchClients, savedClients, savedCustome
 import { CustomerView } from './customer-view';
 import { customerEmails, EmailView, enquiryFromMail, fetchInbox, firstOf, INBOX_FRESH, InboxList, inboxLine, inboxTodayLine, lastWith, markReadHere, openedMail, savedInbox, whenSaid, type Inbox } from './inbox';
 import type { CurrentJob } from '@/lib/servicem8';
+import { StatsPageView, StatsView, statsLine } from './stats';
+import { setStatsOff } from '@/lib/site-stats';
 import './job-kit.css';
 
 type Tab = SectionId | 'notes' | 'send';
@@ -86,11 +88,15 @@ type Screen =
   | { name: 'diary' }
   | { name: 'inbox' } // info@rafcarpentry.com (inbox.tsx)
   | { name: 'email'; id: string; from?: 'home' | 'job'; job?: string } // job: opened from a ServiceM8 job's 'Reply from info@'
-  | { name: 'library'; from?: 'designs'; for?: string }; // for: a current job (ServiceM8 uuid) to send to
+  | { name: 'library'; from?: 'designs'; for?: string } // for: a current job (ServiceM8 uuid) to send to
+  | { name: 'stats' } // Website stats (stats.tsx)
+  | { name: 'stats-page'; path: string }; // one page of the website: its heatmap
 
 /* Where "‹ Back" goes when the app was reopened straight onto a screen (no history to go back through). */
 const parentOf = (s: Screen): Screen =>
-  s.name === 'email'
+  s.name === 'stats-page'
+    ? { name: 'stats' }
+    : s.name === 'email'
     ? s.from === 'job' && s.job
       ? { name: 'sm8', id: s.job }
       : { name: 'inbox' }
@@ -117,7 +123,7 @@ const parentOf = (s: Screen): Screen =>
           : { name: 'home' };
 const backLabel = (s: Screen) => {
   const p = parentOf(s).name;
-  return p === 'designs' ? 'Designs' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : p === 'inbox' ? 'Inbox' : p === 'email' ? 'Email' : 'Today';
+  return p === 'stats' ? 'Stats' : p === 'designs' ? 'Designs' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : p === 'inbox' ? 'Inbox' : p === 'email' ? 'Email' : 'Today';
 };
 
 const thisMonth = () => {
@@ -131,7 +137,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'library', 'customer', 'inbox', 'email'].includes(s.name)) return s;
+    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-page'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -321,6 +327,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     window.addEventListener('popstate', back);
     wake();
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/job-kit-sw.js', { scope: '/job-kit' }).catch(() => {});
+    setStatsOff(true); // this phone's visits to the website aren't counted in the Website stats (src/lib/site-stats.ts)
     navigator.storage?.persist?.().catch(() => {});
     return () => {
       offStatus();
@@ -631,6 +638,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
             onNew={() => go({ name: 'new' })}
             onOpen={(id) => go({ name: 'job', id, tab: 'before' })}
             onSettings={() => go({ name: 'settings' })}
+            onStats={() => go({ name: 'stats' })}
           />
         ) : screen.name === 'new' ? (
           <NewJob
@@ -822,6 +830,10 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
           <PostsList packs={posts} onOpen={(slug) => go({ name: 'post', slug })} />
         ) : screen.name === 'post' ? (
           posts.find((p) => p.slug === screen.slug) ? <PostView pack={posts.find((p) => p.slug === screen.slug)!} /> : <PostsList packs={posts} onOpen={(slug) => go({ name: 'post', slug })} />
+        ) : screen.name === 'stats' ? (
+          <StatsView onPage={(path) => go({ name: 'stats-page', path })} />
+        ) : screen.name === 'stats-page' ? (
+          <StatsPageView key={screen.path} path={screen.path} />
         ) : screen.name === 'settings' ? (
           <Settings
             pin={pin}
@@ -867,6 +879,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
 }
 
 const QUIET_START = 2000;
+const noSubscribe = () => () => {};
 
 /* ---------- top bar ---------- */
 
@@ -964,6 +977,7 @@ function Home({
   onNew,
   onOpen,
   onSettings,
+  onStats,
 }: {
   jobs: Job[];
   items: Item[];
@@ -992,8 +1006,11 @@ function Home({
   onNew: () => void;
   onOpen: (id: string) => void;
   onSettings: () => void;
+  onStats: () => void;
 }) {
   const { standalone, ios } = useStandalone();
+  // the last Website stats kept on this phone (stats.tsx), read straight from storage
+  const webLine = useSyncExternalStore(noSubscribe, statsLine, () => 'Visitors, pages and heatmaps of rafcarpentry.com');
   const mailLine = inboxTodayLine(inbox, customers);
   const lines = [...(mailLine ? [mailLine] : []), ...todayLines({ sm8, marks, kit: [...jobs, ...designJobs], designs, done, postsLeft: posts.length - postedEverywhere(posts) })];
   // Finished: on the website, and nothing of it left to send.
@@ -1099,6 +1116,12 @@ function Home({
         <div className="px-4">
           <HomeRow onClick={onDesigns} title="Designs for customers" line={designLine(designJobs, designs)} last={!libraryCount} />
           {libraryCount ? <HomeRow onClick={onLibrary} title="Design library" line={libraryLine} last /> : null}
+        </div>
+      </HomeBand>
+
+      <HomeBand icon="stats" label="Website" right="rafcarpentry.com">
+        <div className="px-4">
+          <HomeRow onClick={onStats} title="Website stats" line={webLine} last />
         </div>
       </HomeBand>
 

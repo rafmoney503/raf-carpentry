@@ -4,8 +4,9 @@ import './globals.css';
 import './motion.css';
 import LayoutShell from '@/components/LayoutShell';
 import { getMenuPanels } from '@/lib/menu-panels';
-import { Analytics } from '@vercel/analytics/next';
+import VercelAnalytics from '@/components/VercelAnalytics';
 import MotionObserver from '@/components/MotionObserver';
+import SiteStats from '@/components/SiteStats';
 
 // Fonts are self-hosted from src/fonts (SIL Open Font Licence), so builds never depend on Google Fonts.
 const bricolage = localFont({
@@ -45,8 +46,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <LayoutShell menu={getMenuPanels()}>{children}</LayoutShell>
         {/* Plays the moving line drawings (motion.css) only while they are on screen. */}
         <MotionObserver />
-        {/* Vercel Web Analytics: page views only, no cookies. Turn it on in Vercel > project > Analytics. */}
-        <Analytics />
+        {/* Vercel Web Analytics: page views only, no cookies (not for those who opted out on /privacy). */}
+        <VercelAnalytics />
+        {/* The website's own visitor counter for the Job Kit's Website stats (no cookies; /privacy explains it). */}
+        <SiteStats />
       </body>
     </html>
   );
