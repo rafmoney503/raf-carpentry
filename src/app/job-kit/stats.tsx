@@ -310,7 +310,7 @@ export function StatsView({ onPage }: { onPage: (path: string) => void }) {
             )}
             {r.countries.length > 1 ? (
               <p className="mt-2 font-mono text-[12px] text-faint">
-                From: {r.countries.map((c) => `${c.country === 'GB' ? 'UK' : c.country} ${c.visits}`).join(' · ')}
+                From: {r.countries.map((c) => `${c.country === 'GB' ? 'UK' : c.country === '?' ? 'unknown' : c.country} ${c.visits}`).join(' · ')}
               </p>
             ) : null}
           </Band>
