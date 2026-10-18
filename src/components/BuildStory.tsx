@@ -22,7 +22,9 @@ import './build-story.css';
    Try it yourself and redirect to wardrobe planner page', then, as that doubled the button under it, 'in button Plan
    yours in 3D put try it yourself label and instead of black button put graphic miniature with redirect'): the
    planner's own 3D still with its door loop playing (only once Fit is reached), 'Free planner / Plan your wardrobe
-   in 3D'. The two share one grid cell, so swapping them moves nothing. */
+   in 3D'. The two share one grid cell, so swapping them moves nothing. The ghost button beside Get a quote went the
+   same way, so it was taken out (Raf: 'we have doubled the redirection ... maybe remove this button'); Get a quote
+   stands alone, and the card shows in the still layout too so the planner is always one tap away. */
 
 type Step = { title: string; description: string };
 type Props = {
@@ -196,10 +198,10 @@ export default function BuildStory({ heading, steps, fallback, plannerHref, quot
   }, [steps.length]);
 
   const [lead, accent] = splitHeading(heading);
-  const atFit = idx === steps.length - 1 && !still;
+  // the planner card shows at Fit, and always in the still layout (which shows the finished wardrobe)
+  const atFit = still || idx === steps.length - 1;
   const ctas = (
     <>
-      <Link className="btn btn-ghost" href={plannerHref}>Try it yourself</Link>
       <Link className="btn btn-primary" href={quoteHref}>Get a quote</Link>
     </>
   );
