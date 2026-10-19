@@ -1,4 +1,4 @@
-import { getAllDesigns } from './designs';
+import { getAllDesigns, type Design, type DesignPlace } from './designs';
 import { DESIGN_KINDS, kindsIn, kindWords, type DesignKind, type KindCount } from './design-kinds';
 import { getAllProjects, getProject, modelOf, type Model3DInfo, type Project } from './projects';
 import type { MatchItem } from './design-match';
@@ -7,7 +7,8 @@ import { getService, jobMatches } from './services';
 /* Everything on the public Designs in 3D page (rafcarpentry.com/designs): every finished job with a 3D model,
    plus any customer design marked `"public": true` in its content/designs JSON (only once that customer has
    said it can be shown; none are by default). Newest first. A job sits under the kinds of its services; a
-   customer design under the kinds its title and option names mention. */
+   customer design under the kinds its title and option names mention. Never the same piece twice: a design
+   that a finished job was built from (the job JSON's `design`) leaves the page, and the job shows instead. */
 
 export type LibraryItem = {
   id: string; // the job's slug, or "d-<code>"
@@ -28,20 +29,42 @@ function kindsOfJob(p: Project) {
   }).map((k) => k.slug);
 }
 
+/* The finished job built from a customer design, if there is one yet. */
+export function jobForDesign(code: string): Project | undefined {
+  return getAllProjects().find((p) => p.design === code);
+}
+
+const designKinds = (d: Design) => kindsIn([d.title, ...d.options.map((o) => o.name)].join(' ')).map((k) => k.slug);
+
+/* A public design's place on the Designs in 3D page: its first kind's page, opened on it. */
+export const webLinkOf = (d: Design) => `/designs${designKinds(d)[0] ? `/${designKinds(d)[0]}` : ''}#d-${d.code}`;
+
+/* Where a design stands, for the Job Kit's "Where this design is". */
+export function placeOf(d: Design): DesignPlace {
+  const p = jobForDesign(d.code);
+  return {
+    public: Boolean(d.public),
+    web: d.public && !p && !d.example && d.options.length ? webLinkOf(d) : undefined,
+    job: p ? { slug: p.slug, title: p.title } : undefined,
+  };
+}
+
 export function getLibraryItems(): LibraryItem[] {
-  const jobs: LibraryItem[] = getAllProjects().flatMap((p) => {
+  const projects = getAllProjects();
+  const built = new Set(projects.map((p) => p.design).filter(Boolean));
+  const jobs: LibraryItem[] = projects.flatMap((p) => {
     const model = modelOf(p);
     return model ? [{ id: p.slug, title: p.title, area: p.area, month: p.finished, model, kinds: kindsOfJob(p), job: p.slug }] : [];
   });
   const designs: LibraryItem[] = getAllDesigns()
-    .filter((d) => d.public && !d.example && d.options.length)
+    .filter((d) => d.public && !d.example && d.options.length && !built.has(d.code))
     .map((d) => ({
       id: `d-${d.code}`,
       title: d.title,
       area: d.area,
       month: d.made.slice(0, 7),
       model: d.options[0].model,
-      kinds: kindsIn([d.title, ...d.options.map((o) => o.name)].join(' ')).map((k) => k.slug),
+      kinds: designKinds(d),
       code: d.code,
     }));
   return [...designs, ...jobs].sort((a, b) => b.month.localeCompare(a.month));

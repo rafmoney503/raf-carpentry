@@ -14,7 +14,9 @@ notes.txt. Clips arrive in 3 MB pieces (name.mov.part01of05 ...) and are joined 
 
 Output: OUT/<YYYY-MM What Area>/ with 0 Before, 1 Finished (finished photos and the reveal clip), 2 Build steps
 (stage photos and the other clips), 3 Drawings, notes.txt, photos.txt (file: slot, caption) and job.json.
-File times are set to when each photo was taken, as the app strips the photos' hidden data (EXIF, GPS)."""
+File times are set to when each photo was taken, as the app strips the photos' hidden data (EXIF, GPS).
+A job built from a customer's 3D design (job.json "fromDesign") prints that design's code: the job JSON gets
+"design": <code>, which keeps the website from showing the piece twice."""
 import json, os, re, shutil, subprocess, sys, tarfile, io
 from datetime import datetime
 
@@ -149,3 +151,18 @@ if missing:
     print(f"  still on the phone or on the way: {len(missing)} ({', '.join(missing[:6])}{'...' if len(missing) > 6 else ''})")
 if incomplete:
     print(f"  clips with pieces missing: {', '.join(incomplete)}")
+
+# Built from a customer's 3D design (started from the design in the Job Kit, or on the same ServiceM8 job): the job
+# page links it ("design": code), so /designs shows the finished job instead of the design and the design's /d
+# pages point here. Its model can be the job's 3D if no measured one is built.
+if job.get('fromDesign'):
+    ddir = os.path.join(REPO, 'content/designs')
+    found = [json.load(open(os.path.join(ddir, f))) for f in sorted(os.listdir(ddir)) if f.endswith('.json')] if os.path.isdir(ddir) else []
+    found = [d for d in found if d.get('request') == job['fromDesign']]
+    if found:
+        d = max(found, key=lambda x: x.get('updatedFor') or '')
+        print(f"  built from the 3D design {d['code']} ({d['title']}, {d['area']}): put \"design\": \"{d['code']}\" in the job JSON")
+        for o in d.get('options', []):
+            print(f"    option {o['name']}: {o['model']['src']} (reuse as the job's 3D if no model is built to the real sizes)")
+    else:
+        print(f"  built from the design request {job['fromDesign']}, which has no design page yet")

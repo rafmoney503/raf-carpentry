@@ -67,6 +67,10 @@ export type Project = {
   /* The Job Kit job this page was made from (its id in the inbox), so the app on Raf's phone can show
      "On your website" with a link to this page. */
   jobKit?: string;
+  /* The customer design (content/designs/<code>.json) this job was built from, when there was one. The design
+     then leaves the Designs in 3D page (the finished job shows instead, with its photos), the Job Kit shows it as
+     built, and its /d pages link here. */
+  design?: string;
 };
 
 const dir = path.join(process.cwd(), 'content/projects');

@@ -30,7 +30,23 @@ export type Design = {
 };
 
 /* A design as the Job Kit's Design library lists it (from /api/job-kit/designs, behind the PIN). */
-export type LibraryDesign = { code: string; title: string; area: string; made: string; options: string[]; poster: { src: string; w: number; h: number }; words: string };
+export type LibraryDesign = {
+  code: string;
+  title: string;
+  area: string;
+  made: string;
+  options: string[];
+  poster: { src: string; w: number; h: number };
+  words: string;
+  public?: boolean; // shown on the Designs in 3D page
+  job?: { slug: string; title: string }; // built: the finished job's page
+};
+
+/* Where a design stands on the website, for the Job Kit (from /api/job-kit/designs, behind the PIN):
+   public  its JSON says it may be shown on /designs
+   web     the address it has there, while it shows (public and not built yet)
+   job     the finished job built from it (a job JSON with "design": its code), which shows on /designs instead */
+export type DesignPlace = { public: boolean; web?: string; job?: { slug: string; title: string } };
 
 const dir = path.join(process.cwd(), 'content/designs');
 

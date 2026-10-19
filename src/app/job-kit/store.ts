@@ -39,6 +39,7 @@ export type Job = {
   design?: DesignBrief;
   sm8?: string; // the ServiceM8 job it belongs to (Current jobs); stays on the phone
   sharedAt?: number; // a design's link last sent to the customer (Send on WhatsApp)
+  fromDesign?: string; // a photo job built from a design request (its id): the job page reuses that design
 };
 export type Item = {
   id: string;
@@ -66,6 +67,9 @@ export type Item = {
 /* A design request: what the customer wants, the options to show, and changes after they've seen it.
    The customer's mobile stays on this phone (for the "Send on WhatsApp" button) and is never sent. */
 export type DesignBrief = { brief: string; options: string; mobile: string; changes: { at: number; text: string }[];
+  // Raf's answer to "Show it on the website?" (the customer said yes, or not this one); the next design run
+  // sets or clears `public` in the design's JSON to match
+  publish?: { ok: boolean; at: number };
   plans?: PlanItem[]; // the planners, one tab each on the customer's page (Raf, 11 Oct 2026: several pieces, or copies as options)
   // one planner per request, before the list (still read, turned into plans by plansOf)
   wardrobe?: WardrobeSpec; alcove?: AlcoveSpec; bookcase?: BookcaseSpec; chest?: ChestSpec };
@@ -224,6 +228,7 @@ export function notesTxt(job: Job, items: Item[]) {
     `Area: ${job.area}`,
     `Finished: ${monthName(job.month)}`,
     `Kind of job: ${job.kinds.join(', ')}`,
+    ...(job.fromDesign ? [`Built from the 3D design request: ${job.fromDesign}`] : []),
     '',
     ...talkLines(n.talk),
     `Before photo spots: ${n.spots}`,
@@ -285,6 +290,8 @@ export function jobJson(job: Job, items: Item[], ready: boolean) {
     readyAt: job.readyAt ? new Date(job.readyAt).toISOString() : null,
     updatedAt: new Date(job.updatedAt).toISOString(),
     items: list,
+    // a job built from a design request: scripts/job-kit-fetch.py finds its design (code) to reuse and link
+    ...(job.kind !== 'design' && job.fromDesign ? { fromDesign: job.fromDesign } : {}),
     // design requests: the brief, the options and every change asked for, oldest first (never the mobile)
     ...(job.kind === 'design' && job.design
       ? {
@@ -292,6 +299,8 @@ export function jobJson(job: Job, items: Item[], ready: boolean) {
             brief: job.design.brief,
             options: job.design.options,
             changes: job.design.changes.map((c) => ({ at: new Date(c.at).toISOString(), text: c.text })),
+            // on the Designs in 3D page or not (scripts/design-requests.py compares it with the design's `public`)
+            publish: job.design.publish ? { ok: job.design.publish.ok, at: new Date(job.design.publish.at).toISOString() } : null,
             // the planners (src/lib/wardrobe.ts, src/lib/planners/): one tab each, what Raf picked and the sums the app showed him
             plans: plansOf(job.design).map((it) => {
               const o = planOfItem(it);
@@ -313,6 +322,7 @@ function designTxt(job: Job, items: Item[]) {
   return [
     `Design request: ${job.what}`,
     `Area: ${job.area}`,
+    ...(d.publish ? [`On the website (Designs in 3D): ${d.publish.ok ? 'yes, the customer agreed' : 'no'}`] : []),
     '',
     ...talkLines(job.notes.talk),
     'What they want:',

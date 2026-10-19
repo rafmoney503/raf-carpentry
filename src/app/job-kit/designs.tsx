@@ -6,7 +6,7 @@ import { Area, field, label, Missing, SectionView, TalkBox } from './parts';
 import { DESIGN_IDEAS, DESIGN_SPACE, type Section, type Slot } from './plan';
 import { emptyBrief, emptyNotes, newJobId, plansOf, type DesignBrief, type Item, type Job, type Size } from './store';
 import { Planners } from './planners';
-import type { LibraryDesign } from '@/lib/designs';
+import type { DesignPlace, LibraryDesign } from '@/lib/designs';
 
 /* Designs: Raf's requests for a customer's 3D design. He fills in the space (photos), sizes, what they want
    and the options, and taps Send for design; it goes to the inbox like a job. A scheduled Claude run builds it
@@ -15,7 +15,10 @@ import type { LibraryDesign } from '@/lib/designs';
    here turns into "Design ready" with Send on WhatsApp and Copy link. Changes are added to the same request
    and the same link updates. */
 
-export type DesignsReady = Record<string, { code: string; title: string; updatedFor: string }>;
+/* A request's page, once made, and where the design stands (DesignPlace from the server; missing in answers
+   kept on the phone from before 19 Oct 2026). */
+export type ReadyInfo = { code: string; title: string; updatedFor: string } & Partial<DesignPlace>;
+export type DesignsReady = Record<string, ReadyInfo>;
 type State = 'draft' | 'sending' | 'waiting' | 'ready' | 'updating';
 
 const SITE = 'https://www.rafcarpentry.com';
@@ -62,6 +65,39 @@ export async function fetchDesigns(pin: string): Promise<{ ready: DesignsReady; 
 }
 
 const when = (t?: number) => (t ? new Date(t).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '');
+
+/* ---------- links between a design, its job and the website ---------- */
+
+/* The photo job (Job Kit job) built from a design request: started from the design, or on the same ServiceM8 job. */
+export const kitJobFor = (design: Job, kit: Job[]) =>
+  kit.find((k) => k.kind !== 'design' && (k.fromDesign === design.id || (!k.fromDesign && Boolean(design.sm8) && k.sm8 === design.sm8)));
+
+/* The design request a photo job was built from (or shares a ServiceM8 job with). */
+export const designFor = (job: Job, kit: Job[]) =>
+  job.fromDesign ? kit.find((k) => k.id === job.fromDesign) : job.sm8 ? kit.find((k) => k.kind === 'design' && k.sm8 === job.sm8) : undefined;
+
+/* Ready, sent to the customer, not built, and no answer yet to "Show it on the website?". */
+export const askWebsite = (j: Job, r?: ReadyInfo) => Boolean(r && designState(j, r) === 'ready' && j.sharedAt && !j.design?.publish && !r.job && !r.public);
+
+/* Is it the same piece? Same area and a shared word in what it is ("Wardrobe" and "Two-door wardrobes"). */
+const STOP = new Set(['with', 'from', 'into', 'over', 'under', 'side', 'sides', 'both', 'each', 'their', 'room', 'this', 'that', 'some', 'like', 'more']);
+const wordsOf = (t: string) => new Set((t.toLowerCase().match(/[a-z]{4,}/g) ?? []).map((w) => w.replace(/s$/, '')).filter((w) => !STOP.has(w)));
+const fold = (t: string) => t.trim().toLowerCase().replace(/\s+/g, ' ');
+export const sameArea = (a: string, b: string) => Boolean(fold(a)) && fold(a) === fold(b);
+export const sameWhat = (a: string, b: string) => {
+  const w = wordsOf(b);
+  return [...wordsOf(a)].some((x) => w.has(x));
+};
+
+/* Designs already made for this: requests on the phone for the same ServiceM8 job or the same piece in the same
+   area, and customer designs in the library (made from another phone, or before) for the same piece there. */
+export function similarDesigns(n: { what: string; area: string; sm8?: string }, kit: Job[], library: LibraryDesign[], ready: DesignsReady) {
+  const requests = kit.filter((k) => k.kind === 'design');
+  const mine = requests.filter((k) => (n.sm8 && k.sm8 === n.sm8) || (sameArea(k.area, n.area) && sameWhat(k.what, n.what)));
+  const onPhone = new Set(requests.map((k) => ready[k.id]?.code).filter(Boolean));
+  const lib = library.filter((d) => !onPhone.has(d.code) && sameArea(d.area, n.area) && sameWhat(d.title, n.what));
+  return { mine, lib, sameJob: Boolean(n.sm8) && mine.some((k) => k.sm8 === n.sm8) };
+}
 
 /* UK mobile to the digits WhatsApp wants: "07700 900123" -> "447700900123". */
 function toIntl(raw: string) {
@@ -110,7 +146,9 @@ export function DesignsList({ jobs, items, ready, onNew, onOpen, onLibrary }: { 
             const st = designState(j, ready[j.id]);
             const thumb = items.find((i) => i.jobId === j.id && i.thumb)?.thumb;
             const shared = st === 'ready' && j.sharedAt && j.sharedAt >= (Date.parse(ready[j.id]?.updatedFor ?? '') || 0);
-            const text = { draft: 'Not sent yet', sending: 'Sending…', waiting: `Sent ${when(j.readyAt)}, design on its way`, ready: shared ? 'Sent to the customer' : 'Design ready to send', updating: 'Changes on their way' }[st];
+            const r = ready[j.id];
+            const place = r?.job ? ' · built' : r?.public ? ' · on the website' : askWebsite(j, r) ? ' · website?' : '';
+            const text = { draft: 'Not sent yet', sending: 'Sending…', waiting: `Sent ${when(j.readyAt)}, design on its way`, ready: (shared ? 'Sent to the customer' : 'Design ready to send') + place, updating: 'Changes on their way' + place }[st];
             return (
               <li key={j.id}>
                 <button type="button" onClick={() => onOpen(j.id)} className="flex w-full items-stretch gap-3 rounded-sm border border-line-strong bg-mount p-2.5 text-left transition-colors hover:border-ink">
@@ -144,14 +182,25 @@ export function NewDesign({
   onCancel,
   onCreate,
   initial,
+  similar,
+  onOpenRequest,
 }: {
   onCancel: () => void;
   onCreate: (j: Job) => void | Promise<void>;
   initial?: { what: string; area: string; mobile?: string; sm8?: string }; // from a ServiceM8 job
+  /* Designs already made for this (similarDesigns): shown before a second one is started. */
+  similar?: (n: { what: string; area: string; sm8?: string }) => { mine: Job[]; lib: LibraryDesign[]; sameJob: boolean };
+  onOpenRequest?: (id: string) => void;
 }) {
   const [what, setWhat] = useState(initial?.what ?? '');
   const [area, setArea] = useState(initial?.area ?? '');
   const [tried, setTried] = useState(false);
+  // Made from a ServiceM8 job that already has a design: say so at once; otherwise checked on Start.
+  const [found, setFound] = useState(() => {
+    const f = initial?.sm8 && similar ? similar({ what: initial.what, area: initial.area, sm8: initial.sm8 }) : undefined;
+    return f?.sameJob ? f : undefined;
+  });
+  const [anyway, setAnyway] = useState(Boolean(found)); // the warning's been shown: Start goes ahead
   const whatRef = useRef<HTMLInputElement>(null);
   const areaRef = useRef<HTMLInputElement>(null);
   return (
@@ -163,6 +212,14 @@ export function NewDesign({
         if (!what.trim() || !area.trim()) {
           (what.trim() ? areaRef : whatRef).current?.focus();
           return;
+        }
+        if (!anyway && similar) {
+          const f = similar({ what, area, sm8: initial?.sm8 });
+          if (f.mine.length || f.lib.length) {
+            setFound(f);
+            setAnyway(true);
+            return;
+          }
         }
         const now = Date.now();
         const d = new Date();
@@ -184,6 +241,44 @@ export function NewDesign({
       }}
     >
       <h1 className="font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">New design</h1>
+      {found && (found.mine.length || found.lib.length) ? (
+        <div role="alert" className="mt-5 rounded-sm border border-ink bg-mount p-4">
+          <p className="font-semibold">{found.sameJob ? 'This job already has a design' : 'Already made?'}</p>
+          <p className="mt-0.5 text-[14.5px] leading-relaxed text-muted">
+            {found.sameJob ? 'Open it to send changes: the customer keeps the same link.' : `Found by the area and what it is. If it’s the same piece, open it and send changes instead.`}
+          </p>
+          <ul className="mt-3 grid gap-2">
+            {found.mine.map((k) => (
+              <li key={k.id} className="flex items-center gap-3 rounded-sm border border-line-strong bg-paper px-3 py-2">
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold leading-snug">{k.what}</span>
+                  <span className="block text-[13.5px] text-muted">
+                    {k.area} · {k.readyAt ? `sent ${when(k.readyAt)}` : 'not sent yet'}
+                  </span>
+                </span>
+                {onOpenRequest ? (
+                  <button type="button" className="btn btn-primary btn-sm shrink-0" onClick={() => onOpenRequest(k.id)}>
+                    Open it
+                  </button>
+                ) : null}
+              </li>
+            ))}
+            {found.lib.map((d) => (
+              <li key={d.code} className="flex items-center gap-3 rounded-sm border border-line-strong bg-paper px-3 py-2">
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold leading-snug">{d.title}</span>
+                  <span className="block text-[13.5px] text-muted">
+                    {d.area} · in your Design library{d.job ? ', built' : ''}
+                  </span>
+                </span>
+                <a href={linkOf(d.code)} target="_blank" rel="noopener" className="btn btn-ghost btn-sm shrink-0">
+                  Open
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       <div className="mt-6 grid gap-5">
         <label className="grid gap-1.5">
           <span className={label}>What</span>
@@ -199,7 +294,7 @@ export function NewDesign({
       </div>
       <div className="mt-8 flex gap-3">
         <button type="submit" className="btn btn-primary flex-1">
-          Start the design
+          {found && (found.mine.length || found.lib.length) ? 'Start a new one anyway' : 'Start the design'}
         </button>
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
           Cancel
@@ -222,10 +317,11 @@ export function DesignView({
   onJob,
   onSend,
   onForget,
+  places,
 }: {
   job: Job;
   items: Item[];
-  ready?: { code: string; title: string; updatedFor: string };
+  ready?: ReadyInfo;
   busy: Record<string, number>;
   onAdd: (jobId: string, section: Section, slot: Slot, files: File[]) => Promise<void>;
   onRemove: (i: Item) => Promise<void>;
@@ -233,6 +329,9 @@ export function DesignView({
   onJob: (change: (j: Job) => Job) => Promise<void>;
   onSend: () => Promise<void>;
   onForget: () => Promise<void>;
+  /* "Where this design is" (design-places.tsx), under the link once it's ready. The answer to "Show it on the
+     website?" goes through this screen's own saving, so typing elsewhere never loses it. */
+  places?: (p: { job: Job; onPublish: (ok: boolean) => void; onLink: (uuid: string | undefined) => void }) => React.ReactNode;
 }) {
   const st = designState(job, ready);
   const live = items.filter((i) => !i.lost);
@@ -330,7 +429,15 @@ export function DesignView({
             </a>
           </div>
         </div>
-      ) : st === 'waiting' || st === 'sending' ? (
+      ) : null}
+      {(st === 'ready' || st === 'updating') && places
+        ? places({
+            job: { ...job, design: d },
+            onPublish: (ok) => save({ d: { ...latest.current.d, publish: { ok, at: Date.now() } } }),
+            onLink: (uuid) => void onJob((j) => ({ ...keep(j), sm8: uuid })),
+          })
+        : null}
+      {st === 'ready' || st === 'updating' ? null : st === 'waiting' || st === 'sending' ? (
         <div className="mt-5 rounded-sm border border-accent bg-accent-soft p-4">
           <p className="flex items-center gap-2 font-semibold">
             <Mark state="sending" /> {st === 'sending' ? 'Sending…' : `Sent ${when(job.readyAt)}`}

@@ -30,7 +30,8 @@ import Mark from './mark';
 import { Icon, type IconName } from './icons';
 import { Area, Chips, field, label, Missing, SectionView, TalkBox } from './parts';
 import { PostsList, PostView, postedEverywhere, type Pack } from './posts';
-import { DesignsList, DesignView, designState, fetchDesigns, NewDesign, savedLibrary, savedReady, type DesignsReady } from './designs';
+import { designFor, DesignsList, DesignView, designState, fetchDesigns, kitJobFor, NewDesign, savedLibrary, savedReady, similarDesigns, type DesignsReady } from './designs';
+import { DesignPlaces } from './design-places';
 import { Library, type LibraryJob } from './library';
 import type { KindCount } from '@/lib/design-kinds';
 import type { LibraryDesign } from '@/lib/designs';
@@ -80,7 +81,7 @@ import './job-kit.css';
 type Tab = SectionId | 'notes' | 'send';
 type Screen =
   | { name: 'home' }
-  | { name: 'new'; from?: string }
+  | { name: 'new'; from?: string; design?: string } // design: started from a design request ("Start the Job Kit for it")
   | { name: 'job'; id: string; tab: Tab }
   | { name: 'settings' }
   | { name: 'posts' }
@@ -89,7 +90,7 @@ type Screen =
   | { name: 'design'; id: string }
   | { name: 'new-design'; from?: string; wa?: string } // wa: started from a WhatsApp chat's photos
   | { name: 'current' }
-  | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer' | 'timeline' | 'wa'; client?: string; chat?: string }
+  | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer' | 'timeline' | 'wa' | 'design'; client?: string; chat?: string; design?: string }
   | { name: 'enquiry'; client?: string; named?: string; mail?: string; wa?: string } // client: started from a customer's page; named: from a search that found nobody; mail: from an email in the Inbox
   | { name: 'customer'; id: string; from?: 'home' } // one customer from ServiceM8 (customer-view.tsx)
   | { name: 'diary' }
@@ -110,6 +111,8 @@ const parentOf = (s: Screen): Screen =>
     ? { name: 'wa-chat', id: s.wa }
     : s.name === 'sm8' && s.from === 'wa' && s.chat
     ? { name: 'wa-chat', id: s.chat }
+    : s.name === 'sm8' && s.from === 'design' && s.design
+    ? { name: 'design', id: s.design }
     : s.name === 'stats-page'
     ? { name: 'stats' }
     : s.name === 'email'
@@ -141,7 +144,7 @@ const parentOf = (s: Screen): Screen =>
           : { name: 'home' };
 const backLabel = (s: Screen) => {
   const p = parentOf(s).name;
-  return p === 'stats' ? 'Stats' : p === 'designs' ? 'Designs' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'timeline' ? 'Timeline' : p === 'whatsapp' ? 'WhatsApp' : p === 'wa-chat' ? 'Chat' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : p === 'inbox' ? 'Inbox' : p === 'email' ? 'Email' : 'Today';
+  return p === 'stats' ? 'Stats' : p === 'designs' ? 'Designs' : p === 'design' ? 'Design' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'timeline' ? 'Timeline' : p === 'whatsapp' ? 'WhatsApp' : p === 'wa-chat' ? 'Chat' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : p === 'inbox' ? 'Inbox' : p === 'email' ? 'Email' : 'Today';
 };
 
 const thisMonth = () => {
@@ -444,6 +447,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   const cur = screen.name === 'sm8' ? findJob(screen.id) : undefined;
   const sendTo = screen.name === 'library' && screen.for ? findJob(screen.for) : undefined;
   const from = (screen.name === 'new' || screen.name === 'new-design') && screen.from ? findJob(screen.from) : undefined;
+  const fromDesign = screen.name === 'new' && screen.design ? jobs.find((j) => j.id === screen.design && j.kind === 'design') : undefined;
   const allClients = useMemo(() => withCurrent(clients.clients, sm8.jobs), [clients.clients, sm8.jobs]);
   const customerOf = (uuid: string) => allClients.find((c) => c.uuid === uuid) ?? savedCustomers()[uuid]?.client;
   const customers = useMemo(() => customerEmails(allClients, sm8.jobs), [allClients, sm8.jobs]);
@@ -536,6 +540,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     [book, moveBooking],
   );
   const designJobs = useMemo(() => jobs.filter((j) => j.kind === 'design'), [jobs]);
+  // Customer designs not built yet: a built one is counted (and listed) as its finished job.
+  const libraryOwn = library.filter((d) => !(d.job && models.some((m) => m.slug === d.job!.slug))).length;
   const waChats = useWaChats();
 
   /* Off this phone only: the inbox and the website keep everything. */
@@ -746,7 +752,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                   go({ name: 'inbox' });
                 }
               }
-              else if (l.go === 'designs') go({ name: 'designs' });
+              else if (l.go === 'designs') go(l.id ? { name: 'design', id: l.id } : { name: 'designs' });
               else if (l.go === 'posts') go({ name: 'posts' });
               else document.getElementById('kit-jobs')?.scrollIntoView({ behavior: 'instant', block: 'start' });
             }}
@@ -756,8 +762,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               checkDesigns();
               go({ name: 'designs' });
             }}
-            libraryCount={library.length + models.length}
-            libraryLine={`${library.length ? `${library.length} made for customers, ` : ''}${models.length} from finished jobs`}
+            libraryCount={libraryOwn + models.length}
+            libraryLine={`${libraryOwn ? `${libraryOwn} made for customers, ` : ''}${models.length} from finished jobs`}
             onLibrary={() => {
               checkDesigns();
               go({ name: 'library' });
@@ -772,11 +778,20 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
           />
         ) : screen.name === 'new' ? (
           <NewJob
-            key={screen.from ?? 'new'}
-            initial={from ? { what: whatOf(from.description), area: from.area, sm8: from.uuid } : undefined}
+            key={screen.design ?? screen.from ?? 'new'}
+            initial={
+              fromDesign
+                ? { what: fromDesign.what, area: fromDesign.area, sm8: fromDesign.sm8, design: fromDesign.what }
+                : from
+                  ? { what: whatOf(from.description), area: from.area, sm8: from.uuid, design: designJobs.find((k) => k.sm8 === from.uuid)?.what }
+                  : undefined
+            }
             onCancel={back}
             onCreate={async (j) => {
-              await putJob(j);
+              // Built from a design: started from it, or the design on the same ServiceM8 job (job-kit-fetch.py
+              // then finds the design to reuse and link on the job page).
+              const dj = fromDesign ?? (j.sm8 ? designJobs.find((k) => k.sm8 === j.sm8) : undefined);
+              await putJob(dj ? { ...j, fromDesign: dj.id } : j);
               await reload();
               wake(QUIET_START);
               go({ name: 'job', id: j.id, tab: 'before' }, false);
@@ -799,6 +814,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         ) : screen.name === 'new-design' ? (
           <NewDesign
             key={screen.wa ?? screen.from ?? 'new'}
+            similar={(n) => similarDesigns(n, designJobs, library, designs)}
+            onOpenRequest={(id) => go({ name: 'design', id }, false)}
             initial={
               screen.wa && waChat(screen.wa)
                 ? (() => {
@@ -855,6 +872,30 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 wake();
               }}
               onForget={() => forget(job.id)}
+              places={({ job: dj, onPublish, onLink }) => {
+                const kitJob = kitJobFor(dj, jobs);
+                return (
+                  <DesignPlaces
+                    job={dj}
+                    ready={designs[dj.id]!}
+                    kitJob={kitJob}
+                    kitDone={kitJob ? done[kitJob.id] : undefined}
+                    sm8Job={dj.sm8 ? findJob(dj.sm8) : undefined}
+                    sm8Jobs={sm8.jobs}
+                    designOn={(uuid) => designJobs.find((k) => k.sm8 === uuid)}
+                    onPublish={onPublish}
+                    onLink={onLink}
+                    onStartKit={() => go({ name: 'new', from: dj.sm8, design: dj.id })}
+                    onOpenKit={(id) => go({ name: 'job', id, tab: 'before' })}
+                    onOpenSm8={(uuid) => go({ name: 'sm8', id: uuid, from: 'design', design: dj.id })}
+                    onOpenDesign={(id) => go({ name: 'design', id })}
+                    onLibrary={() => {
+                      checkDesigns();
+                      go({ name: 'library', from: 'designs' });
+                    }}
+                  />
+                );
+              }}
             />
           ) : null
         ) : screen.name === 'current' ? (
@@ -1083,6 +1124,10 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         ) : job ? (
           <JobView
             job={job}
+            fromDesign={(() => {
+              const dj = designFor(job, jobs);
+              return dj ? { what: dj.what, onOpen: () => go({ name: 'design', id: dj.id }) } : undefined;
+            })()}
             done={done[job.id]}
             onPost={done[job.id] && posts.some((p) => p.slug === done[job.id].slug) ? () => go({ name: 'post', slug: done[job.id].slug }) : undefined}
             items={items.filter((i) => i.jobId === job.id)}
@@ -1544,7 +1589,7 @@ function designLine(list: Job[], ready: DesignsReady) {
 
 /* ---------- new job ---------- */
 
-function NewJob({ onCancel, onCreate, initial }: { onCancel: () => void; onCreate: (j: Job) => void | Promise<void>; initial?: { what: string; area: string; sm8?: string } }) {
+function NewJob({ onCancel, onCreate, initial }: { onCancel: () => void; onCreate: (j: Job) => void | Promise<void>; initial?: { what: string; area: string; sm8?: string; design?: string } }) {
   const [what, setWhat] = useState(initial?.what ?? '');
   const [area, setArea] = useState(initial?.area ?? '');
   const [month, setMonth] = useState(thisMonth());
@@ -1580,6 +1625,11 @@ function NewJob({ onCancel, onCreate, initial }: { onCancel: () => void; onCreat
       }}
     >
       <h1 className="font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">New job</h1>
+      {initial?.design ? (
+        <p className="mt-3 rounded-sm border border-line-strong bg-mount px-3.5 py-2.5 text-[14.5px] leading-relaxed text-muted">
+          Built from the 3D design <span className="font-semibold text-ink">{initial.design}</span>: the job page will use it, and it comes off Designs in 3D once the job is on My Work.
+        </p>
+      ) : null}
       <div className="mt-6 grid gap-5">
         <label className="grid gap-1.5">
           <span className={label}>What</span>
@@ -1619,6 +1669,7 @@ const TABS: { id: Tab; title: string }[] = [...SECTIONS.map((s) => ({ id: s.id a
 
 function JobView({
   job,
+  fromDesign,
   done,
   onPost,
   items,
@@ -1634,6 +1685,7 @@ function JobView({
   onForget,
 }: {
   job: Job;
+  fromDesign?: { what: string; onOpen: () => void }; // the 3D design it was built from
   done?: { slug: string; title: string };
   onPost?: () => void;
   items: Item[];
@@ -1665,6 +1717,17 @@ function JobView({
         <p className="kicker">{monthName(job.month)}</p>
         <h1 className="mt-1 font-display text-[28px] font-[680] leading-[1.05] tracking-[-0.025em]">{job.what}</h1>
         <p className="mt-0.5 text-[15.5px] text-muted">{job.area}</p>
+        {fromDesign ? (
+          <button type="button" onClick={fromDesign.onOpen} className="mt-2 flex w-full items-center gap-2 rounded-sm border border-line-strong bg-mount px-3 py-2 text-left text-[14.5px]">
+            <Icon name="designs" className="h-[20px] w-[20px] shrink-0 text-accent" />
+            <span className="min-w-0 flex-1">
+              Built from the 3D design <span className="font-semibold">{fromDesign.what}</span>
+            </span>
+            <span aria-hidden className="text-accent">
+              →
+            </span>
+          </button>
+        ) : null}
         <p className="mt-1.5 font-mono text-[12.5px] text-faint">Saves by itself as you go. Come back to it any time from Jobs.</p>
       </div>
 

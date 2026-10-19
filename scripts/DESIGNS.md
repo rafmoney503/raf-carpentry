@@ -22,6 +22,9 @@ python3 scripts/design-requests.py          # prints "Nothing to do." when there
 
 Nothing to do: stop. No commit, no message.
 
+Lines marked `[publish]` or `[unpublish]` are quick: Raf answered "Show it on the website?" on a ready design. Do
+them after any builds, in the same run (they don't count towards the 2): step 8.
+
 ## 2. Read the request
 
 ```sh
@@ -115,7 +118,7 @@ writes the same build as one block for the SketchUp connector (not tried there y
 }
 ```
 
-One option: name it after the piece ("The design"). `shape` "tall" (1600 x 1200 poster) for wardrobes and
+When updating, keep `"public"` as it is (step 8 changes it). One option: name it after the piece ("The design"). `shape` "tall" (1600 x 1200 poster) for wardrobes and
 cupboards, "wide" (1600 x 800) for seats, desks and long runs. Rules for every word: UK English, plain, no
 dashes, no prices, deposits, timescales or guarantees, never the customer's name, street or mobile, never say
 Raf paints or stains anything.
@@ -144,3 +147,36 @@ git fetch -q origin && git rebase -q origin/main && git push -q origin HEAD:main
 Check the deploy is READY (Vercel connector `list_deployments`, project prj_IkzuBXXOBx9bpqK3nZEduUPQyPAM, no team
 arguments) and that `https://www.rafcarpentry.com/d/<code>` opens. The Job Kit shows "Design ready" by itself
 (it asks `/api/job-kit/designs`, behind the PIN, when the app opens).
+
+## 8. On the website or off (`[publish]` / `[unpublish]`)
+
+Raf ticked "Yes, they're happy" (the customer agreed it can be shown) or "Not this one" / "Take it off" under
+"Where this design is" in the Job Kit. For `[publish]`, open `content/designs/<code>.json` and add `"public": true`
+after `"made"`; for `[unpublish]`, remove the `"public"` line. Nothing else changes: the code, the files and the
+customer's link stay as they are.
+
+Before publishing, read the design's title, area, option names and texts once more: they show on
+rafcarpentry.com/designs and the /d/<code>/like page. Area only, never a name, street, house number or mobile;
+no prices or timescales. If something there would identify the customer, fix the words (keep the code) in the same
+commit.
+
+A design a finished job was built from (printed `built: <slug>`) doesn't show on /designs whatever `"public"` says:
+the job shows instead (src/lib/design-library.ts). Set the flag anyway so it matches Raf's answer.
+
+```sh
+npm run build            # /designs and /designs/<kind> must still build
+git add content/designs
+git commit -m "Design <code>: on the website"       # or "Design <code>: off the website"; plus the attribution lines
+git fetch -q origin && git rebase -q origin/main && git push -q origin HEAD:main
+```
+
+Check the deploy is READY and that https://www.rafcarpentry.com/designs lists it (or no longer does). The Job Kit's
+"Where this design is" then shows "On the website" by itself.
+
+## When the job is built
+
+Raf starts the Job Kit from the design ("Start the Job Kit for it") or from the same ServiceM8 job, so the Job Kit
+job carries `fromDesign`. When that job is processed (CLAUDE.md, Job Kit app), `scripts/job-kit-fetch.py` prints
+`built from the 3D design <code>`: put `"design": "<code>"` in the new job JSON. The finished job then shows on
+My Work, in /designs and in the Job Kit's library in place of the design, never both, and the design's /d pages
+link to the job.

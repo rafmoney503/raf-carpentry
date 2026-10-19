@@ -50,7 +50,9 @@ export function Library({
   const [copied, setCopied] = useState('');
 
   const all = useMemo<Entry[]>(() => {
-    const ds: Entry[] = designs.map((d) => ({
+    // One card per piece: a design that's been built shows as its finished job (with photos) instead.
+    const builtFrom = new Map(designs.filter((d) => d.job).map((d) => [d.job!.slug, d]));
+    const ds: Entry[] = designs.filter((d) => !(d.job && models.some((m) => m.slug === d.job!.slug))).map((d) => ({
       key: `d-${d.code}`,
       kind: 'design',
       title: d.title,
@@ -59,7 +61,7 @@ export function Library({
       sort: d.made,
       poster: d.poster,
       link: `${SITE}/d/${d.code}/like`,
-      note: d.options.length > 1 ? `${d.options.length} options` : '',
+      note: [d.options.length > 1 ? `${d.options.length} options` : '', d.public ? 'on the website' : ''].filter(Boolean).join(' · '),
       words: d.words,
     }));
     const js: Entry[] = models.map((m) => ({
@@ -71,8 +73,8 @@ export function Library({
       sort: `${m.finished}-01`,
       poster: m.poster,
       link: `${SITE}/portfolio/${m.slug}#in-3d`,
-      note: m.standard ? 'standard sizes' : '',
-      words: m.words,
+      note: builtFrom.has(m.slug) ? 'designed in 3D first' : m.standard ? 'standard sizes' : '',
+      words: builtFrom.has(m.slug) ? `${m.words} ${builtFrom.get(m.slug)!.words}` : m.words,
     }));
     return [...ds, ...js].sort((a, b) => b.sort.localeCompare(a.sort));
   }, [designs, models]);
@@ -232,7 +234,7 @@ export function Library({
         <p className="mt-6 font-mono text-[13.5px] text-faint">{query.trim() ? `Nothing matches “${query.trim()}”.` : 'No designs here yet.'}</p>
       )}
       <p className="mt-6 text-[13.5px] leading-relaxed text-faint">
-        A customer design goes as an example: the page says it was made for a home in that area (never a name or street) and asks “Something like this for you?” instead of the approve button. A finished job opens its page at the 3D model, with the photos of the real thing.
+        A customer design goes as an example: the page says it was made for a home in that area (never a name or street) and asks “Something like this for you?” instead of the approve button. A finished job opens its page at the 3D model, with the photos of the real thing. A design that’s been built shows once, as its finished job.
       </p>
     </div>
   );

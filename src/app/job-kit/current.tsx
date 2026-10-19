@@ -6,7 +6,7 @@ import { parseBrief, stripInvisible } from './brief-paste';
 import { Icon, type IconName } from './icons';
 import { field, label, Missing, TalkBox } from './parts';
 import type { DesignsReady } from './designs';
-import { designState } from './designs';
+import { askWebsite, designState } from './designs';
 import type { Job } from './store';
 import { clock, post, problemText } from './sm8-post';
 import { EmailBox } from './mail';
@@ -1408,6 +1408,10 @@ export function todayLines({
   const making = designJobs.filter((d) => ['waiting', 'sending', 'updating'].includes(designState(d, designs[d.id])));
   if (toSend.length) lines.push({ text: `${n(toSend.length, 'design', 'designs')} ready to send`, go: 'designs', urgent: true });
   if (making.length) lines.push({ text: `${n(making.length, 'design', 'designs')} being made`, go: 'designs' });
+  // Sent to the customer a day or more ago and the website question not answered yet (design-places.tsx).
+  const askWeb = designJobs.filter((d) => askWebsite(d, designs[d.id]) && Date.now() - (d.sharedAt ?? 0) > DAY);
+  if (askWeb.length === 1) lines.push({ text: `${askWeb[0].what}: show it on the website?`, go: 'designs', id: askWeb[0].id });
+  else if (askWeb.length) lines.push({ text: `${askWeb.length} designs: show them on the website?`, go: 'designs' });
   // Completed in ServiceM8 but not fully paid (the last 30 days ServiceM8 sends).
   const owing = list.filter((j) => j.status === 'Completed' && (moneyOf(j).left ?? 0) > 0 && moneyOf(j).payments !== null);
   if (owing.length) {

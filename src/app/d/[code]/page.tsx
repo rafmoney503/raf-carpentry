@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { Container } from '@/components/ui';
 import { getAllDesigns, getDesign } from '@/lib/designs';
 import { SITE_URL } from '@/lib/seo';
+import { jobForDesign } from '@/lib/design-library';
+import Link from 'next/link';
 import DesignView from './design-view';
 
 /* A customer's private 3D design: rafcarpentry.com/d/<code> (see src/lib/designs.ts). Not indexed. */
@@ -28,6 +30,7 @@ export default async function DesignPage({ params }: { params: Promise<{ code: s
   const { code } = await params;
   const d = getDesign(code);
   if (!d) notFound();
+  const built = jobForDesign(d.code);
   return (
     <Container className="py-10 md:py-14">
       <div className="mx-auto max-w-[980px]">
@@ -39,6 +42,13 @@ export default async function DesignPage({ params }: { params: Promise<{ code: s
         <p className="mt-3 max-w-[60ch] text-[16.5px] leading-relaxed text-muted">
           {d.intro ?? 'Drag to turn it round, use the buttons under it to open the doors or take it apart, and pinch to zoom.'}
         </p>
+        {built ? (
+          <p className="mt-4">
+            <Link href={`/portfolio/${built.slug}`} className="link-more">
+              It’s built. See the finished job, with photos <span aria-hidden="true">→</span>
+            </Link>
+          </p>
+        ) : null}
         <div className="mt-7">
           <DesignView title={d.title} area={d.area} link={`${SITE_URL}/d/${d.code}`} options={d.options} />
         </div>

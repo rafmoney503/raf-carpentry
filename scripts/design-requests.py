@@ -6,6 +6,11 @@ changes}), <id>/notes.txt (the same as a brief) and the photos (before/ = the sp
 pictures of what they like). It needs work when it was sent (readyAt) and no design answers that send yet:
 content/designs/<code>.json with "request": <id> and "updatedFor" >= readyAt. See scripts/DESIGNS.md.
 
+It also lists designs to put on the website or take off: Raf answers "Show it on the website?" on a ready design
+(job.json design.publish {ok, at}); when that differs from the design's "public" flag it prints [publish] or
+[unpublish] (DESIGNS.md step 8). A design a finished job was built from (a job JSON with "design": <code>) shows
+as built: the website shows the job instead, whatever "public" says.
+
   python3 scripts/design-requests.py              what needs doing (nothing printed but "Nothing to do." if none)
   python3 scripts/design-requests.py --all        every design request, done or not
   python3 scripts/design-requests.py --json       what needs doing, as JSON (for a scheduled run)
@@ -69,6 +74,15 @@ for f in sorted(os.listdir(ddir)) if os.path.isdir(ddir) else []:
         if d.get('request'):
             designs[d['request']] = d
 
+# Finished jobs built from a design: code -> job slug.
+built = {}
+pdir = os.path.join(REPO, 'content/projects')
+for f in sorted(os.listdir(pdir)) if os.path.isdir(pdir) else []:
+    if f.endswith('.json'):
+        p = json.load(open(os.path.join(pdir, f)))
+        if p.get('design'):
+            built[p['design']] = p['slug']
+
 git('fetch', '-q', '--prune', 'origin', '+refs/heads/job/*:refs/remotes/origin/job/*')
 branches = [b.strip() for b in git('for-each-ref', '--format=%(refname:short)', 'refs/remotes/origin/job/').splitlines() if b.strip()]
 
@@ -99,6 +113,11 @@ for b in branches:
         state = 'photos on the way'
     else:
         state = 'update' if d else 'new'
+    # On the website or off: Raf's answer against the design's "public" flag.
+    pub = (j.get('design') or {}).get('publish')
+    publish = None
+    if d and pub is not None and bool(pub.get('ok')) != bool(d.get('public')):
+        publish = 'on' if pub.get('ok') else 'off'
     requests.append({
         'id': jid,
         'branch': b,
@@ -107,6 +126,10 @@ for b in branches:
         'readyAt': j.get('readyAt'),
         'state': state,
         'code': d['code'] if d else None,
+        'public': bool(d and d.get('public')),
+        'publish': publish,
+        'publishAt': (pub or {}).get('at'),
+        'built': built.get(d['code']) if d else None,
         'photos': len(j.get('items', [])) - len(missing),
         'missing': missing,
         'design': j.get('design', {}),
@@ -115,6 +138,7 @@ for b in branches:
     })
 requests.sort(key=lambda r: r['readyAt'] or '')
 todo = [r for r in requests if r['state'] in ('new', 'update')]
+publishing = [r for r in requests if r['publish'] and r not in todo]
 
 
 def new_code():
@@ -170,7 +194,7 @@ if FETCH:
         print(f"  option {letter}: {pl['name']} ({pl['kind']} planner): {wp}  (build with scripts/planner-model.py, see scripts/DESIGNS.md step 3b)")
     sys.exit(0)
 
-show = requests if ALL else todo
+show = requests if ALL else todo + publishing
 if AS_JSON:
     print(json.dumps(show, indent=2))
     sys.exit(0)
@@ -179,7 +203,12 @@ if not show:
     sys.exit(0)
 for r in show:
     d = r['design'] or {}
-    print(f"{r['id']}  [{r['state']}]" + (f"  code {r['code']}" if r['code'] else ''))
+    if r in publishing:
+        f = os.path.join('content/designs', f"{r['code']}.json")
+        print(f"{r['id']}  [{'publish' if r['publish'] == 'on' else 'unpublish'}]  code {r['code']}" + (f"  (built: {r['built']})" if r['built'] else ''))
+        print(f"    {r['what']}, {r['area']}; Raf answered {(r['publishAt'] or '')[:16]}: " + ('the customer is happy for it to go on the website. Set "public": true in ' if r['publish'] == 'on' else 'take it off the website. Remove "public" from ') + f + ' (DESIGNS.md step 8)')
+        continue
+    print(f"{r['id']}  [{r['state']}]" + (f"  code {r['code']}" if r['code'] else '') + ('  on the website' if r['public'] else '') + (f"  built: {r['built']}" if r['built'] else ''))
     print(f"    {r['what']}, {r['area']}; sent {(r['readyAt'] or '')[:16]}; {r['photos']} photo{'' if r['photos'] == 1 else 's'}" + (f", {len(r['missing'])} still on the phone" if r['missing'] else ''))
     if r['talk']:
         print(f"    said: {r['talk'][:160]}")
