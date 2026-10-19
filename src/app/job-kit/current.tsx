@@ -31,7 +31,19 @@ export type Sm8 = { jobs: CurrentJob[]; at: number; bookings?: Booking[] | null;
 /* mailSeen: the newest of their messages Raf has seen in the job's Emails and texts (London time);
    reviewAskedAt: when the review request went from the Job Kit; progress: how far along a job going ahead is, 0 to 100
    (Job timeline), and progressAt when that was set. */
-export type Marks = Record<string, { quoteSentAt?: number; hidden?: boolean; mailSeen?: string; reviewAskedAt?: number; progress?: number; progressAt?: number }>;
+export type Marks = Record<
+  string,
+  { quoteSentAt?: number; hidden?: boolean; mailSeen?: string; reviewAskedAt?: number; progress?: number; progressAt?: number; visitsDone?: string[] }
+>;
+
+/* Visits marked Done in the Job Kit (19 Oct 2026, Raf: 'when visit is set add also done button that clears the
+   booking'): kept on the phone (the job's marks, by booking), so they leave the Diary, Today and the job's In the
+   diary. ServiceM8 keeps the booking as it is, as the record that the visit happened; Cancel is still the way to
+   take one out of ServiceM8's schedule. */
+export const isVisitDone = (b: Booking, marks: Marks) => Boolean(marks[b.jobUuid]?.visitsDone?.includes(b.uuid));
+export const withoutDone = (sm8: Sm8, marks: Marks): Sm8 => (sm8.bookings ? { ...sm8, bookings: sm8.bookings.filter((b) => !isVisitDone(b, marks)) } : sm8);
+/* Done shows on a visit from its day on (a visit can finish early, or be ticked off later). */
+const canDone = (b: Booking, j: CurrentJob | undefined, today: string) => kindOf(j) === 'Visit' && b.start.slice(0, 10) <= today;
 
 const LIST_KEY = 'raf_jobkit_sm8';
 const MARKS_KEY = 'raf_jobkit_sm8_marks';
@@ -248,13 +260,15 @@ export function Diary({
   onOpen,
   onCancel,
   onRebook,
+  onDone,
 }: {
-  sm8: Sm8;
+  sm8: Sm8; // without the visits already marked done
   loading: boolean;
   onRefresh: () => void;
   onOpen: (uuid: string) => void;
   onCancel: (uuid: string) => Promise<string>;
   onRebook: (jobUuid: string, start: string, end: string, staff?: string) => Promise<string>;
+  onDone: (b: Booking, done: boolean) => void; // mark a visit done (true) or put it back (false)
 }) {
   const today = localDay();
   const now = `${today}T${new Date().toTimeString().slice(0, 5)}`;
@@ -262,14 +276,19 @@ export function Diary({
   const [busy, setBusy] = useState('');
   const [fault, setFault] = useState<{ uuid: string; text: string } | null>(null);
   const [gone, setGone] = useState<Booking[]>([]);
+  const [ticked, setTicked] = useState<Booking[]>([]); // visits marked done while the Diary is open
   const disarm = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const list = (sm8.bookings ?? []).filter((b) => (b.end ?? b.start).slice(0, 10) >= today);
   // a cancelled one's note sits on the first day it showed on
   const noteDay = (b: Booking) => (b.start.slice(0, 10) > today ? b.start.slice(0, 10) : today);
+  const done = (b: Booking) => {
+    onDone(b, true);
+    setTicked((t) => [...t.filter((x) => x.uuid !== b.uuid), b]);
+  };
   const last = [...list, ...gone].reduce((k, b) => ((b.end ?? b.start).slice(0, 10) > k ? (b.end ?? b.start).slice(0, 10) : k), addDays(today, 1));
   const days: string[] = [];
   for (let k = today; k <= last && days.length < 120; k = addDays(k, 1))
-    if (k === today || k === addDays(today, 1) || bookingsOn(list, k).length || gone.some((b) => noteDay(b) === k)) days.push(k);
+    if (k === today || k === addDays(today, 1) || bookingsOn(list, k).length || [...gone, ...ticked].some((b) => noteDay(b) === k)) days.push(k);
   const byUuid = new Map(sm8.jobs.map((j) => [j.uuid, j]));
   const staffName = new Map((sm8.staff ?? []).map((s) => [s.uuid, s.name]));
   const manyStaff = (sm8.staff ?? []).length > 1;
@@ -324,6 +343,7 @@ export function Diary({
       {days.map((k) => {
         const on = bookingsOn(list, k);
         const notes = gone.filter((b) => noteDay(b) === k);
+        const doneHere = ticked.filter((b) => noteDay(b) === k);
         const isToday = k === today;
         return (
           <section key={k} className="mt-7">
@@ -364,6 +384,42 @@ export function Diary({
                 })}
               </ul>
             ) : null}
+            {doneHere.length ? (
+              <ul className="mt-2.5 grid grid-cols-1 gap-3">
+                {doneHere.map((b) => {
+                  const j = byUuid.get(b.jobUuid);
+                  return (
+                    <li key={`done-${b.uuid}`} role="status" className="rounded-sm border border-dashed border-line-strong px-3.5 py-3">
+                      <p className="flex items-start gap-2 text-[15px] leading-snug">
+                        <Mark state="sent" />
+                        <span>
+                          <span className="font-semibold">Visit done:</span> {spanText(b, b.start.slice(0, 10))}, {j?.name ?? 'a job'}
+                        </span>
+                      </p>
+                      <p className="mt-0.5 pl-6 text-[13.5px] leading-snug text-faint">Off your Diary. ServiceM8 keeps it as the visit that happened.</p>
+                      <div className="mt-1 flex flex-wrap gap-x-4 pl-6 text-[14.5px]">
+                        <button type="button" className="h-10 text-accent underline" onClick={() => onOpen(b.jobUuid)}>
+                          {j?.status === 'Quote' ? 'Open the job for the quote' : 'Open the job'}
+                        </button>
+                        <button
+                          type="button"
+                          className="h-10 text-accent underline"
+                          onClick={() => {
+                            onDone(b, false);
+                            setTicked((t) => t.filter((x) => x.uuid !== b.uuid));
+                          }}
+                        >
+                          Undo
+                        </button>
+                        <button type="button" className="h-10 text-muted underline" onClick={() => setTicked((t) => t.filter((x) => x.uuid !== b.uuid))}>
+                          Hide
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
             {on.length ? (
               <ul className="mt-2.5 grid grid-cols-1 gap-3">
                 {on.map((b) => {
@@ -385,6 +441,13 @@ export function Diary({
                         ) : null}
                         {manyStaff && staffName.get(b.staffUuid) ? <span className="mt-1 block font-mono text-[12.5px] text-faint">{staffName.get(b.staffUuid)}</span> : null}
                       </button>
+                      {canDone(b, j, today) ? (
+                        <div className="border-t border-line px-3.5 py-2.5">
+                          <button type="button" className="btn btn-ghost btn-sm w-full gap-2 bg-paper" disabled={!!busy} onClick={() => done(b)}>
+                            <Mark state="sent" /> Visit done
+                          </button>
+                        </div>
+                      ) : null}
                       <div className="flex flex-wrap items-center gap-x-4 border-t border-line px-3.5 py-0.5 text-[14.5px]">
                         {isToday && j?.address ? (
                           <a href={maps(j.address)} className="flex h-10 items-center text-accent underline" target="_blank" rel="noopener">
@@ -427,7 +490,7 @@ export function Diary({
                   );
                 })}
               </ul>
-            ) : (
+            ) : doneHere.length ? null : (
               <p className="mt-2 font-mono text-[13.5px] text-faint">Nothing booked.</p>
             )}
           </section>
@@ -446,19 +509,23 @@ function BookingsBox({
   onBook,
   onMove,
   onCancel,
+  onDone,
 }: {
   job: CurrentJob;
-  bookings: Booking[];
+  bookings: Booking[]; // without the visits already marked done
   staff: Staff[];
   loaded: boolean;
   onBook: (start: string, end: string, staff?: string) => Promise<string>;
   onMove: (uuid: string, start: string, end: string) => Promise<string>;
   onCancel: (uuid: string) => Promise<string>;
+  onDone?: (b: Booking, done: boolean) => void;
 }) {
   const kind = kindOf(job);
+  const [ticked, setTicked] = useState<Booking | null>(null); // the visit just marked done, for Undo
   const today = localDay();
   const now = `${today}T${new Date().toTimeString().slice(0, 5)}`;
-  const upcoming = bookings.filter((b) => (b.end ?? b.start) >= now);
+  // still to come, and today's visits until they're marked done
+  const upcoming = bookings.filter((b) => (b.end ?? b.start) >= now || (onDone && canDone(b, job, today) && b.start.slice(0, 10) === today));
   // lastDay is only set for a booking over several days (moving it keeps its length).
   const [form, setForm] = useState<null | { uuid?: string; day: string; lastDay?: string; from: string; to: string; staff: string }>(null);
   const [busy, setBusy] = useState(false);
@@ -522,7 +589,24 @@ function BookingsBox({
     <section className="mt-6 rounded-sm border border-line-strong bg-mount p-4">
       <h2 className="text-[19px] font-[650]">In the diary</h2>
       {!loaded ? <p className="mt-2 text-[14.5px] text-muted">ServiceM8 didn’t send the schedule this time; Refresh on Current jobs to try again.</p> : null}
-      {loaded && !upcoming.length && !form ? <p className="mt-2 text-[14.5px] text-muted">Nothing booked for this job in ServiceM8.</p> : null}
+      {ticked ? (
+        <p role="status" className="mt-2 flex flex-wrap items-center gap-x-3 text-[14.5px] leading-relaxed text-muted">
+          <span className="flex items-center gap-1.5">
+            <Mark state="sent" /> Visit done ({spanText(ticked, ticked.start.slice(0, 10))}), off your Diary.
+          </span>
+          <button
+            type="button"
+            className="h-10 text-accent underline"
+            onClick={() => {
+              onDone?.(ticked, false);
+              setTicked(null);
+            }}
+          >
+            Undo
+          </button>
+        </p>
+      ) : null}
+      {loaded && !upcoming.length && !form && !ticked ? <p className="mt-2 text-[14.5px] text-muted">Nothing booked for this job in ServiceM8.</p> : null}
       {upcoming.length ? (
         <ul className="mt-3 grid gap-2.5">
           {upcoming.map((b) => (
@@ -539,6 +623,19 @@ function BookingsBox({
                   <a href={wa(job.mobile, confirmText(job, b))} className="flex h-10 items-center text-accent underline" target="_blank" rel="noopener">
                     Confirm on WhatsApp
                   </a>
+                ) : null}
+                {onDone && canDone(b, job, today) ? (
+                  <button
+                    type="button"
+                    className="flex h-10 items-center gap-1.5 font-semibold text-accent underline"
+                    disabled={busy}
+                    onClick={() => {
+                      onDone(b, true);
+                      setTicked(b);
+                    }}
+                  >
+                    <Mark state="sent" /> Done
+                  </button>
                 ) : null}
                 <button type="button" className="h-10 text-accent underline" disabled={busy} onClick={() => open(b)}>
                   Move
@@ -1022,7 +1119,19 @@ export function CurrentView({
 
       <PropertyBox job={job} />
 
-      <BookingsBox job={job} bookings={bookings} staff={staff} loaded={bookingsLoaded} onBook={onBook} onMove={onMove} onCancel={onCancel} />
+      <BookingsBox
+        job={job}
+        bookings={bookings}
+        staff={staff}
+        loaded={bookingsLoaded}
+        onBook={onBook}
+        onMove={onMove}
+        onCancel={onCancel}
+        onDone={(b, d) => {
+          const was = (marks[job.uuid]?.visitsDone ?? []).filter((x) => x !== b.uuid);
+          onMark({ visitsDone: d ? [...was, b.uuid] : was });
+        }}
+      />
 
       <EmailBox
         job={job}

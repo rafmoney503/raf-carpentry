@@ -59,6 +59,8 @@ import {
   stage,
   todayLines,
   whatOf,
+  withoutDone,
+  type Booking,
   type Marks,
   type Sm8,
   type TodayLine,
@@ -319,6 +321,18 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
       return next;
     });
   }, []);
+
+  /* A visit marked Done (or put back): on the phone only, see isVisitDone in current.tsx. */
+  const markVisit = useCallback((b: Booking, done: boolean) => {
+    setMarks((m) => {
+      const was = (m[b.jobUuid]?.visitsDone ?? []).filter((x) => x !== b.uuid);
+      const next = { ...m, [b.jobUuid]: { ...m[b.jobUuid], visitsDone: done ? [...was, b.uuid] : was } };
+      saveMarks(next);
+      return next;
+    });
+  }, []);
+  // The schedule as the Diary, Today and a job's In the diary show it: without the visits marked done.
+  const diarySm8 = useMemo(() => withoutDone(sm8, marks), [sm8, marks]);
 
   const reload = useCallback(async () => {
     try {
@@ -695,7 +709,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
             posts={posts}
             onPosts={() => go({ name: 'posts' })}
             onClear={removeJobs}
-            sm8={sm8}
+            sm8={diarySm8}
             marks={marks}
             inbox={inbox}
             customers={customers}
@@ -948,7 +962,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
           />
         ) : screen.name === 'diary' ? (
           <Diary
-            sm8={sm8}
+            sm8={diarySm8}
+            onDone={markVisit}
             loading={sm8Loading}
             onRefresh={() => checkSm8(true)}
             onOpen={(id) => go({ name: 'sm8', id, from: 'diary' })}
@@ -1063,7 +1078,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               }}
               extra={<WaJobBox chats={waChats} job={cur.uuid} onOpen={(id) => go({ name: 'wa-chat', id })} />}
               onOpenKit={(k) => go(k.kind === 'design' ? { name: 'design', id: k.id } : { name: 'job', id: k.id, tab: 'before' })}
-              bookings={(sm8.bookings ?? []).filter((b) => b.jobUuid === cur.uuid)}
+              bookings={(diarySm8.bookings ?? []).filter((b) => b.jobUuid === cur.uuid)}
               staff={sm8.staff ?? []}
               bookingsLoaded={sm8.bookings !== null}
               onBook={(start, end, staff) => book(cur.uuid, start, end, staff)}
