@@ -1,0 +1,52 @@
+{
+  "code": "ujb9vbc6",
+  "request": "design-2026-10-rafal-janczy-hi-w4-r3kh",
+  "updatedFor": "2026-10-19T10:30:49.482Z",
+  "title": "Birch ply wardrobes either side of the chimney breast",
+  "area": "W4",
+  "made": "2026-10-19",
+  "intro": "Both options from your drawings of the front bedroom, side by side in 3D. Open the doors to see the inside, and tap any part to see what it is.",
+  "options": [
+    {
+      "name": "Option 01F: two drawer columns",
+      "text": "A birch ply wardrobe in each alcove, two doors each, with a row of three drawers under each door, six drawers a wardrobe. Inside, a top shelf and hanging rail in every column, long hanging in the outer column on the left and adjustable shelves in the others. The chimney breast is faced in birch ply with two shelves, a removable panel with ventilation holes over the old fireplace, and a niche in the side of each wardrobe facing the bed.",
+      "model": {
+        "src": "/designs/ujb9vbc6/a-p8vhnj.glb",
+        "poster": { "src": "/designs/ujb9vbc6/a-p8vhnj.jpg", "w": 1600, "h": 800, "alt": "3D model of two birch ply wardrobes either side of a panelled chimney breast, each with two doors over two columns of drawers" },
+        "shape": "wide"
+      },
+      "sizes": [
+        { "label": "Each wardrobe", "value": "1160 mm wide" },
+        { "label": "Chimney breast, between them", "value": "1630 mm" },
+        { "label": "Height, to the ceiling", "value": "2550 mm" },
+        { "label": "Drawers", "value": "3 in each column, 600 mm high in all" },
+        { "label": "Niche in each side", "value": "about 140 x 330 mm" },
+        { "label": "Depth", "value": "about 600 mm" }
+      ]
+    },
+    {
+      "name": "Option 01E: one drawer column",
+      "text": "The same pair of birch ply wardrobes with one column of four drawers in each, on the outer side, under a shorter door. Next to the chimney breast a full height door; on the left that side has long hanging over two low shelves, on the right adjustable shelves all the way down. The chimney breast panel, its shelves, the removable panel over the old fireplace and the two niches are as in option 01F.",
+      "model": {
+        "src": "/designs/ujb9vbc6/b-boxq8b.glb",
+        "poster": { "src": "/designs/ujb9vbc6/b-boxq8b.jpg", "w": 1600, "h": 800, "alt": "3D model of two birch ply wardrobes either side of a panelled chimney breast, each with four drawers on the outer side" },
+        "shape": "wide"
+      },
+      "sizes": [
+        { "label": "Each wardrobe", "value": "1160 mm wide" },
+        { "label": "Chimney breast, between them", "value": "1630 mm" },
+        { "label": "Height, to the ceiling", "value": "2550 mm" },
+        { "label": "Drawers", "value": "4 in the outer column, 800 mm high in all" },
+        { "label": "Niche in each side", "value": "about 140 x 330 mm" },
+        { "label": "Depth", "value": "about 600 mm" }
+      ]
+    }
+  ],
+  "notes": [
+    "The widths, the height and the drawer heights come from your drawings.",
+    "The depth of the wardrobes, how far the chimney breast comes out, the plinth and the size of the niches are standard sizes until they are measured.",
+    "Both options are shown with the niche in the side of each wardrobe; it can be left out.",
+    "The wall lights and the room are only there to show where things go.",
+    "Colours on screen are a guide."
+  ]
+}
