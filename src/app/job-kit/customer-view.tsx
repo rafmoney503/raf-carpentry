@@ -158,6 +158,7 @@ export function CustomerView({
                 <li key={j.uuid}>
                   <button
                     type="button"
+                    data-jk-id={j.uuid}
                     onClick={() => onOpenJob(j)}
                     className={`block w-full rounded-sm border bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink ${j.status === 'Quote' || j.status === 'Work Order' ? 'border-accent/60' : 'border-line-strong'}`}
                   >

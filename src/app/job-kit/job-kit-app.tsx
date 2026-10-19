@@ -68,7 +68,7 @@ import {
 import { CLIENTS_FRESH, CustomerSearch, fetchClients, savedClients, savedCustomers, withCurrent, type Clients, type CustomerDetail } from './customers';
 import { CustomerView } from './customer-view';
 import type { InboxMail } from '@/lib/outlook';
-import { binOnServer, customerEmails, dropHere, EmailView, enquiryFromMail, fetchInbox, firstOf, INBOX_FRESH, InboxList, inboxLine, inboxTodayLine, lastWith, markReadHere, openedMail, putBackHere, savedInbox, unbinOnServer, whenSaid, type Inbox } from './inbox';
+import { binOnServer, customerEmails, dropHere, EmailView, enquiryFromMail, fetchInbox, firstOf, freshUnread, INBOX_FRESH, InboxList, inboxLine, inboxTodayLine, lastWith, markReadHere, openedMail, putBackHere, savedInbox, unbinOnServer, whenSaid, type Inbox } from './inbox';
 import type { CurrentJob } from '@/lib/servicem8';
 import { StatsPageView, StatsView, statsLine } from './stats';
 import { setStatsOff } from '@/lib/site-stats';
@@ -78,12 +78,14 @@ import { addSend, enquiryFromChat, WaChatView, waHomeLine, WaJobBox, WaList, waT
 import { getWaFile as getWaFileBlob, pickedOf, pickedText, sendToJob, updateChat, useWaChats, waChat, type WaChat } from './wa-store';
 import type { Change } from '@/lib/job-timeline';
 import { ColourKey, KeyDots, secClass, secOfLine, secOfScreen, TintSwitch, useColourKey, useTint, type SecId } from './sections';
+import { LIST_SCREENS, PickNote, Sidebar, sideOf, useWide, type SideId } from './desktop';
 import './job-kit.css';
 
 type Tab = SectionId | 'notes' | 'send';
 type Screen =
   | { name: 'home' }
   | { name: 'new'; from?: string; design?: string } // design: started from a design request ("Start the Job Kit for it")
+  | { name: 'kit' } // the Job Kit jobs on their own (a computer's sidebar; on the phone they're on Today)
   | { name: 'job'; id: string; tab: Tab }
   | { name: 'settings' }
   | { name: 'posts' }
@@ -104,6 +106,36 @@ type Screen =
   | { name: 'library'; from?: 'designs'; for?: string } // for: a current job (ServiceM8 uuid) to send to
   | { name: 'stats' } // Website stats (stats.tsx)
   | { name: 'stats-page'; path: string }; // one page of the website: its heatmap
+
+/* On a computer (desktop.tsx), the list drawn beside a screen: the one it's opened from. */
+function listFor(s: Screen): Screen | null {
+  switch (s.name) {
+    case 'sm8':
+      return s.from === 'diary' ? { name: 'diary' } : s.from === 'customer' && s.client ? { name: 'customer', id: s.client } : s.from === 'wa' ? { name: 'whatsapp' } : s.from === 'design' ? { name: 'designs' } : { name: 'current' };
+    case 'customer':
+      return { name: 'current' };
+    case 'enquiry':
+      return s.wa ? { name: 'whatsapp' } : s.mail ? { name: 'inbox' } : { name: 'current' };
+    case 'email':
+      return s.from === 'job' && s.job ? { name: 'current' } : { name: 'inbox' };
+    case 'design':
+      return { name: 'designs' };
+    case 'new-design':
+      return s.wa ? { name: 'whatsapp' } : { name: 'designs' };
+    case 'wa-chat':
+      return { name: 'whatsapp' };
+    case 'post':
+      return { name: 'posts' };
+    case 'job':
+      return { name: 'kit' };
+    case 'new':
+      return s.design ? { name: 'designs' } : s.from ? { name: 'current' } : { name: 'kit' };
+    default:
+      return null;
+  }
+}
+/* Screens that get the whole width on a computer. */
+const ROOMY = ['home', 'timeline', 'library', 'stats', 'stats-page'];
 
 /* Where "‹ Back" goes when the app was reopened straight onto a screen (no history to go back through). */
 const parentOf = (s: Screen): Screen =>
@@ -160,7 +192,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-page'].includes(s.name)) return s;
+    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-page', 'kit'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -192,6 +224,7 @@ export type Done = Record<string, { slug: string; title: string }>;
 
 export default function JobKitApp({ done = {}, posts = [], models = [], kinds = [] }: { done?: Done; posts?: Pack[]; models?: LibraryJob[]; kinds?: KindCount[] }) {
   const [ready, setReady] = useState(false);
+  const wide = useWide(); // a computer: the desktop layout (desktop.tsx)
   const colourKey = useColourKey(ready);
   const [tint, setTint] = useTint();
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -459,9 +492,6 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   // A ServiceM8 job: in the Current jobs, or from a customer opened from the search (an older one).
   const findJob = (uuid: string) => sm8.jobs.find((j) => j.uuid === uuid) ?? customerJobs.find((j) => j.uuid === uuid);
   const cur = screen.name === 'sm8' ? findJob(screen.id) : undefined;
-  const sendTo = screen.name === 'library' && screen.for ? findJob(screen.for) : undefined;
-  const from = (screen.name === 'new' || screen.name === 'new-design') && screen.from ? findJob(screen.from) : undefined;
-  const fromDesign = screen.name === 'new' && screen.design ? jobs.find((j) => j.id === screen.design && j.kind === 'design') : undefined;
   const allClients = useMemo(() => withCurrent(clients.clients, sm8.jobs), [clients.clients, sm8.jobs]);
   const customerOf = (uuid: string) => allClients.find((c) => c.uuid === uuid) ?? savedCustomers()[uuid]?.client;
   const customers = useMemo(() => customerEmails(allClients, sm8.jobs), [allClients, sm8.jobs]);
@@ -675,9 +705,536 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
 
   /* ---------- screens ---------- */
 
+  /* Any screen, drawn from its own Screen (the param shadows the current one), so on a computer the list can sit beside
+     the screen opened from it (desktop.tsx). */
+  const renderScreen = (screen: Screen): React.ReactNode => {
+    const job = screen.name === 'job' || screen.name === 'design' ? jobs.find((j) => j.id === screen.id) : undefined;
+    const cur = screen.name === 'sm8' ? findJob(screen.id) : undefined;
+    const sendTo = screen.name === 'library' && screen.for ? findJob(screen.for) : undefined;
+    const from = (screen.name === 'new' || screen.name === 'new-design') && screen.from ? findJob(screen.from) : undefined;
+    const fromDesign = screen.name === 'new' && screen.design ? jobs.find((j) => j.id === screen.design && j.kind === 'design') : undefined;
+    return screen.name === 'home' ? (
+              <Home
+                jobs={jobs.filter((j) => j.kind !== 'design')}
+                items={items}
+                done={done}
+                posts={posts}
+                onPosts={() => go({ name: 'posts' })}
+                onClear={removeJobs}
+                sm8={diarySm8}
+                marks={marks}
+                inbox={inbox}
+                customers={customers}
+                onInbox={() => {
+                  checkInbox();
+                  go({ name: 'inbox' });
+                }}
+                find={
+                  <CustomerSearch
+                    place="today"
+                    clients={clients}
+                    jobs={sm8.jobs}
+                    loading={clientsLoading}
+                    onNeed={() => checkClients()}
+                    onRefresh={() => checkClients(true)}
+                    onOpen={(id) => go({ name: 'customer', id, from: 'home' })}
+                    onNewNamed={(named) => go({ name: 'enquiry', named })}
+                  />
+                }
+                onCurrent={() => {
+                  checkSm8();
+                  go({ name: 'current' });
+                }}
+                onDiary={() => {
+                  checkSm8();
+                  go({ name: 'diary' });
+                }}
+                onTimeline={() => {
+                  checkSm8();
+                  go({ name: 'timeline' });
+                }}
+                waChats={waChats}
+                onWhatsApp={() => go({ name: 'whatsapp' })}
+                onToday={(l) => {
+                  if (l.go === 'current') {
+                    checkSm8();
+                    go({ name: 'current' });
+                  } else if (l.go === 'diary') {
+                    checkSm8();
+                    go({ name: 'diary' });
+                  } else if (l.go === 'timeline') {
+                    checkSm8();
+                    go({ name: 'timeline' });
+                  } else if (l.go === 'whatsapp') {
+                    if (l.id) {
+                      checkClients();
+                      go({ name: 'wa-chat', id: l.id });
+                    } else go({ name: 'whatsapp' });
+                  } else if (l.go === 'sm8' && l.id) go({ name: 'sm8', id: l.id, from: 'home' });
+                  else if (l.go === 'inbox') {
+                    if (l.id) go({ name: 'email', id: l.id, from: 'home' });
+                    else {
+                      checkInbox();
+                      go({ name: 'inbox' });
+                    }
+                  }
+                  else if (l.go === 'designs') go(l.id ? { name: 'design', id: l.id } : { name: 'designs' });
+                  else if (l.go === 'posts') go({ name: 'posts' });
+                  else document.getElementById('kit-jobs')?.scrollIntoView({ behavior: 'instant', block: 'start' });
+                }}
+                designJobs={designJobs}
+                designs={designs}
+                onDesigns={() => {
+                  checkDesigns();
+                  go({ name: 'designs' });
+                }}
+                libraryCount={libraryOwn + models.length}
+                libraryLine={`${libraryOwn ? `${libraryOwn} made for customers, ` : ''}${models.length} from finished jobs`}
+                onLibrary={() => {
+                  checkDesigns();
+                  go({ name: 'library' });
+                }}
+                pin={pin}
+                status={status}
+                waitingBytes={waitingBytes}
+                onNew={() => go({ name: 'new' })}
+                onOpen={(id) => go({ name: 'job', id, tab: 'before' })}
+                onSettings={() => go({ name: 'settings' })}
+                onStats={() => go({ name: 'stats' })}
+              />
+            ) : screen.name === 'new' ? (
+              <NewJob
+                key={screen.design ?? screen.from ?? 'new'}
+                initial={
+                  fromDesign
+                    ? { what: fromDesign.what, area: fromDesign.area, sm8: fromDesign.sm8, design: fromDesign.what }
+                    : from
+                      ? { what: whatOf(from.description), area: from.area, sm8: from.uuid, design: designJobs.find((k) => k.sm8 === from.uuid)?.what }
+                      : undefined
+                }
+                onCancel={back}
+                onCreate={async (j) => {
+                  // Built from a design: started from it, or the design on the same ServiceM8 job (job-kit-fetch.py
+                  // then finds the design to reuse and link on the job page).
+                  const dj = fromDesign ?? (j.sm8 ? designJobs.find((k) => k.sm8 === j.sm8) : undefined);
+                  await putJob(dj ? { ...j, fromDesign: dj.id } : j);
+                  await reload();
+                  wake(QUIET_START);
+                  go({ name: 'job', id: j.id, tab: 'before' }, false);
+                }}
+              />
+            ) : screen.name === 'designs' ? (
+              <DesignsList
+                jobs={designJobs}
+                items={items}
+                ready={designs}
+                onNew={() => go({ name: 'new-design' })}
+                onOpen={(id) => go({ name: 'design', id })}
+                onLibrary={() => {
+                  checkDesigns();
+                  go({ name: 'library', from: 'designs' });
+                }}
+              />
+            ) : screen.name === 'library' ? (
+              <Library designs={library} models={models} kinds={kinds} hasPin={Boolean(pin)} to={sendTo ? { name: sendTo.name, first: sendTo.first, mobile: sendTo.mobile || sendTo.phone } : undefined} />
+            ) : screen.name === 'new-design' ? (
+              <NewDesign
+                key={screen.wa ?? screen.from ?? 'new'}
+                similar={(n) => similarDesigns(n, designJobs, library, designs)}
+                onOpenRequest={(id) => go({ name: 'design', id }, false)}
+                initial={
+                  screen.wa && waChat(screen.wa)
+                    ? (() => {
+                        // From a WhatsApp chat: what from the ticked words, the area and mobile from the job or the chat.
+                        const c = waChat(screen.wa)!;
+                        const text = pickedText(c);
+                        return {
+                          what: from ? whatOf(from.description) : whatOf(withoutGreeting(text)),
+                          area: from?.area ?? '',
+                          mobile: from?.mobile || c.number || '',
+                          sm8: from?.uuid,
+                        };
+                      })()
+                    : from
+                      ? { what: whatOf(from.description), area: from.area, mobile: from.mobile, sm8: from.uuid }
+                      : undefined
+                }
+                onCancel={back}
+                onCreate={async (j) => {
+                  const c = screen.wa ? waChat(screen.wa) : undefined;
+                  await putJob(c ? { ...j, design: { ...j.design!, brief: pickedText(c) } } : j);
+                  await reload();
+                  if (c) {
+                    // the ticked photos become the photos of the space
+                    const files: File[] = [];
+                    for (const name of pickedOf(c).files.filter((f) => /\.(jpe?g|png|gif|heic|heif)$/i.test(f))) {
+                      const b = await getWaFileBlob(c.id, name);
+                      if (b) files.push(new File([b], name, { type: b.type || 'image/jpeg', lastModified: Date.now() }));
+                    }
+                    if (files.length) await addFiles(j.id, DESIGN_SPACE, DESIGN_SPACE.slots[0], files);
+                    await updateChat(c.id, (x) => ({ ...x, design: j.id }));
+                  }
+                  wake(QUIET_START);
+                  go({ name: 'design', id: j.id }, false);
+                }}
+              />
+            ) : screen.name === 'design' ? (
+              job ? (
+                <DesignView
+                  key={job.id}
+                  job={job}
+                  items={items.filter((i) => i.jobId === job.id)}
+                  ready={designs[job.id]}
+                  busy={busy}
+                  onAdd={addFiles}
+                  onRemove={removeItem}
+                  onCaption={setCaption}
+                  onJob={async (change) => {
+                    await touch(job.id, change);
+                    wake(16_000);
+                  }}
+                  onSend={async () => {
+                    await touch(job.id, (j) => ({ ...j, readyAt: Date.now() }));
+                    wake();
+                  }}
+                  onForget={() => forget(job.id)}
+                  places={({ job: dj, onPublish, onLink }) => {
+                    const kitJob = kitJobFor(dj, jobs);
+                    return (
+                      <DesignPlaces
+                        job={dj}
+                        ready={designs[dj.id]!}
+                        kitJob={kitJob}
+                        kitDone={kitJob ? done[kitJob.id] : undefined}
+                        sm8Job={dj.sm8 ? findJob(dj.sm8) : undefined}
+                        sm8Jobs={sm8.jobs}
+                        designOn={(uuid) => designJobs.find((k) => k.sm8 === uuid)}
+                        onPublish={onPublish}
+                        onLink={onLink}
+                        onStartKit={() => go({ name: 'new', from: dj.sm8, design: dj.id })}
+                        onOpenKit={(id) => go({ name: 'job', id, tab: 'before' })}
+                        onOpenSm8={(uuid) => go({ name: 'sm8', id: uuid, from: 'design', design: dj.id })}
+                        onOpenDesign={(id) => go({ name: 'design', id })}
+                        onLibrary={() => {
+                          checkDesigns();
+                          go({ name: 'library', from: 'designs' });
+                        }}
+                      />
+                    );
+                  }}
+                />
+              ) : null
+            ) : screen.name === 'current' ? (
+              <CurrentList
+                sm8={sm8}
+                marks={marks}
+                kit={jobs}
+                designs={designs}
+                done={done}
+                loading={sm8Loading}
+                onRefresh={() => checkSm8(true)}
+                onNew={() => go({ name: 'enquiry' })}
+                onOpen={(id) => go({ name: 'sm8', id })}
+                clients={clients}
+                clientsLoading={clientsLoading}
+                onFindNeed={() => checkClients()}
+                onFindRefresh={() => checkClients(true)}
+                onCustomer={(id) => go({ name: 'customer', id })}
+                onNewNamed={(named) => go({ name: 'enquiry', named })}
+              />
+            ) : screen.name === 'inbox' ? (
+              <InboxList
+                inbox={inbox}
+                loading={inboxLoading}
+                customers={customers}
+                onRefresh={() => checkInbox(true)}
+                onMore={moreInbox}
+                onOpen={(id) => go({ name: 'email', id })}
+                onDelete={removeMail}
+              />
+            ) : screen.name === 'email' ? (
+              <EmailView
+                key={screen.id}
+                id={screen.id}
+                fallback={inbox.mails.find((m) => m.id === screen.id)}
+                clients={allClients}
+                jobs={[...sm8.jobs, ...customerJobs.filter((j) => !sm8.jobs.some((x) => x.uuid === j.uuid))]}
+                onRead={(id, isRead) => setInbox((cur) => markReadHere(cur, id, isRead))}
+                onCustomer={(id) => {
+                  checkClients();
+                  go({ name: 'customer', id });
+                }}
+                onJob={(id) => go({ name: 'sm8', id })}
+                onEnquiry={() => go({ name: 'enquiry', mail: screen.id })}
+                onDelete={async () => {
+                  const err = await removeMail(screen.id);
+                  if (!err) back();
+                  return err;
+                }}
+              />
+            ) : screen.name === 'diary' ? (
+              <Diary
+                sm8={diarySm8}
+                onDone={markVisit}
+                loading={sm8Loading}
+                onRefresh={() => checkSm8(true)}
+                onOpen={(id) => go({ name: 'sm8', id, from: 'diary' })}
+                onCancel={cancelBooking}
+                onRebook={book}
+              />
+            ) : screen.name === 'timeline' ? (
+              <JobTimeline
+                sm8={sm8}
+                marks={marks}
+                loading={sm8Loading}
+                focus={screen.job}
+                onRefresh={() => checkSm8(true)}
+                onOpen={(id) => go({ name: 'sm8', id, from: 'timeline' })}
+                onSave={saveTimeline}
+                onProgress={(uuid, progress) => mark(uuid, { progress, progressAt: Date.now() })}
+                onComplete={(uuid) => void changeStatus(uuid, 'Completed')}
+              />
+            ) : screen.name === 'whatsapp' ? (
+              <WaList chats={waChats} onOpen={(id) => go({ name: 'wa-chat', id })} />
+            ) : screen.name === 'wa-chat' ? (
+              waChat(screen.id) ? (
+                <WaChatView
+                  key={screen.id}
+                  chat={waChat(screen.id)!}
+                  clients={allClients}
+                  jobs={sm8.jobs}
+                  onNewJob={() => {
+                    checkClients();
+                    go({ name: 'enquiry', wa: screen.id });
+                  }}
+                  onAdded={(j) => void sendToJob(screen.id, addSend(waChat(screen.id)!, j))}
+                  onDesign={() => {
+                    const c = waChat(screen.id)!;
+                    const job = c.sends[c.sends.length - 1]?.job;
+                    go({ name: 'new-design', wa: screen.id, from: job });
+                  }}
+                  onOpenJob={(id) => {
+                    checkSm8();
+                    go({ name: 'sm8', id, from: 'wa', chat: screen.id });
+                  }}
+                  onCustomer={(id) => {
+                    checkClients();
+                    go({ name: 'customer', id });
+                  }}
+                  onGone={() => go({ name: 'whatsapp' }, false)}
+                />
+              ) : (
+                <p className="pt-16 text-center font-mono text-[14px] text-faint">{waChats.length ? 'That chat isn’t on this phone any more.' : 'Opening the chat…'}</p>
+              )
+            ) : screen.name === 'enquiry' ? (
+              <NewEnquiry
+                key={screen.client ?? screen.named ?? screen.mail ?? screen.wa ?? 'enquiry'}
+                clients={allClients}
+                forClient={screen.client ? customerOf(screen.client) : undefined}
+                named={screen.named}
+                seed={
+                  screen.mail && openedMail(screen.mail)
+                    ? enquiryFromMail(openedMail(screen.mail)!)
+                    : screen.wa && waChat(screen.wa)
+                      ? enquiryFromChat(waChat(screen.wa)!, allClients.find((c) => c.uuid === waChat(screen.wa!)!.client))
+                      : undefined
+                }
+                seedFrom={screen.wa ? 'whatsapp' : 'email'}
+                onCustomer={(id) => go({ name: 'customer', id })}
+                onCancel={back}
+                onCreate={async (e) => {
+                  const r = await sendEnquiry(readPin(), e);
+                  if (!r.ok) return problemText(r.error, r.detail);
+                  lastClients.current = 0; // a new customer: the next search fetches the list again
+                  setSm8((s) => {
+                    const next = { ...s, jobs: [r.data.job, ...s.jobs.filter((j) => j.uuid !== r.data.job.uuid)] };
+                    keepSm8(next);
+                    return next;
+                  });
+                  const c = screen.wa ? waChat(screen.wa) : undefined;
+                  if (c) {
+                    // the ticked photos and PDFs follow the new job into its diary (wa-store.ts sends them)
+                    const job = r.data.job;
+                    await updateChat(c.id, (x) => ({ ...x, client: job.client ?? x.client, clientName: job.name }), true);
+                    await sendToJob(c.id, { job: job.uuid, number: job.number, what: whatOf(job.description), mode: 'new', files: pickedOf(c).files });
+                    go({ name: 'sm8', id: job.uuid, from: 'wa', chat: c.id }, false);
+                    return '';
+                  }
+                  go({ name: 'sm8', id: r.data.job.uuid }, false);
+                  return '';
+                }}
+              />
+            ) : screen.name === 'sm8' ? (
+              cur ? (
+                <CurrentView
+                  key={cur.uuid}
+                  job={cur}
+                  marks={marks}
+                  kit={jobs}
+                  designs={designs}
+                  done={done}
+                  onStatus={(s) => changeStatus(cur.uuid, s)}
+                  onMark={(patch) => {
+                    mark(cur.uuid, patch);
+                    if (patch.hidden) back();
+                  }}
+                  onDesign={() => go({ name: 'new-design', from: cur.uuid })}
+                  onLibrary={() => {
+                    checkDesigns();
+                    go({ name: 'library', for: cur.uuid });
+                  }}
+                  onKit={() => go({ name: 'new', from: cur.uuid })}
+                  onTimeline={() => {
+                    checkSm8();
+                    go({ name: 'timeline', job: cur.uuid });
+                  }}
+                  extra={<WaJobBox chats={waChats} job={cur.uuid} onOpen={(id) => go({ name: 'wa-chat', id })} />}
+                  onOpenKit={(k) => go(k.kind === 'design' ? { name: 'design', id: k.id } : { name: 'job', id: k.id, tab: 'before' })}
+                  bookings={(diarySm8.bookings ?? []).filter((b) => b.jobUuid === cur.uuid)}
+                  staff={sm8.staff ?? []}
+                  bookingsLoaded={sm8.bookings !== null}
+                  onBook={(start, end, staff) => book(cur.uuid, start, end, staff)}
+                  onMove={moveBooking}
+                  onCancel={cancelBooking}
+                  replyAt={sm8.replies?.[cur.uuid] ?? undefined}
+                  info={(() => {
+                    // Their latest email to info@ (or Raf's latest to them): reply from info@ in the Inbox.
+                    const m = cur.email ? lastWith(inbox, cur.email) : undefined;
+                    if (!m) return undefined;
+                    const name = cur.first || (m.mine ? '' : firstOf(m.from)) || cur.name;
+                    return {
+                      line: m.mine ? `You emailed ${name} ${whenSaid(m.at)}, info@ copied in` : `${name} emailed info@ ${whenSaid(m.at)}`,
+                      subject: m.subject,
+                      open: () => go({ name: 'email', id: m.id, from: 'job', job: cur.uuid }),
+                    };
+                  })()}
+                  onCustomer={
+                    cur.client && !(screen.from === 'customer' && screen.client === cur.client)
+                      ? () => {
+                          checkClients();
+                          go({ name: 'customer', id: cur.client! });
+                        }
+                      : undefined
+                  }
+                />
+              ) : (
+                <p className="pt-16 text-center font-mono text-[14px] text-faint">Getting the job from ServiceM8…</p>
+              )
+            ) : screen.name === 'customer' ? (
+              <CustomerView
+                key={screen.id}
+                uuid={screen.id}
+                fallback={customerOf(screen.id)}
+                onLoaded={customerLoaded}
+                onOpenJob={(j) => go({ name: 'sm8', id: j.uuid, from: 'customer', client: screen.id })}
+                onNew={(c) => go({ name: 'enquiry', client: c.uuid })}
+              />
+            ) : screen.name === 'posts' ? (
+              <PostsList packs={posts} onOpen={(slug) => go({ name: 'post', slug })} />
+            ) : screen.name === 'post' ? (
+              posts.find((p) => p.slug === screen.slug) ? <PostView pack={posts.find((p) => p.slug === screen.slug)!} /> : <PostsList packs={posts} onOpen={(slug) => go({ name: 'post', slug })} />
+            ) : screen.name === 'stats' ? (
+              <StatsView onPage={(path) => go({ name: 'stats-page', path })} />
+            ) : screen.name === 'stats-page' ? (
+              <StatsPageView key={screen.path} path={screen.path} />
+            ) : screen.name === 'settings' ? (
+              <Settings
+                pin={pin}
+                status={status}
+                tint={tint}
+                onTint={setTint}
+                onPin={(p) => {
+                  savePin(p);
+                  setPinState(p);
+                }}
+              />
+            ) : screen.name === 'kit' ? (
+              <div className="pt-7">
+                <h1 className="flex items-center gap-3 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">
+                  <Icon name="kit" className="h-[32px] w-[32px] shrink-0 jk-sec-ink" />
+                  Job Kit jobs
+                </h1>
+                <KitJobs
+                  jobs={jobs.filter((j) => j.kind !== 'design')}
+                  items={items}
+                  done={done}
+                  onClear={removeJobs}
+                  onNew={() => go({ name: 'new' })}
+                  onOpen={(id: string) => go({ name: 'job', id, tab: 'before' })}
+                />
+              </div>
+            ) : job ? (
+              <JobView
+                job={job}
+                fromDesign={(() => {
+                  const dj = designFor(job, jobs);
+                  return dj ? { what: dj.what, onOpen: () => go({ name: 'design', id: dj.id }) } : undefined;
+                })()}
+                done={done[job.id]}
+                onPost={done[job.id] && posts.some((p) => p.slug === done[job.id].slug) ? () => go({ name: 'post', slug: done[job.id].slug }) : undefined}
+                items={items.filter((i) => i.jobId === job.id)}
+                tab={screen.tab}
+                busy={busy}
+                onTab={(tab) => {
+                  const s: Screen = { name: 'job', id: job.id, tab };
+                  setScreenState(s);
+                  keepScreen(s);
+                  history.replaceState({ ...history.state, jk: s }, '');
+                  window.scrollTo({ top: 0, behavior: 'instant' });
+                }}
+                onAdd={addFiles}
+                onRemove={removeItem}
+                onCaption={setCaption}
+                onJob={(change) => touch(job.id, change)}
+                onNotes={async (notes) => {
+                  await touch(job.id, (j) => ({ ...j, notes }));
+                  wake(16_000);
+                }}
+                onSend={async () => {
+                  await touch(job.id, (j) => ({ ...j, readyAt: Date.now() }));
+                  wake();
+                }}
+                onForget={() => forget(job.id)}
+              />
+            ) : null;
+  };
+
   const sec = secOfScreen(screen.name);
+  // A computer (desktop.tsx): the sidebar, the list beside what's opened from it, and more width.
+  const list = wide ? listFor(screen) : null;
+  const listOnly = wide && LIST_SCREENS.includes(screen.name);
+  const left = list ?? (listOnly ? screen : null);
+  const picked = 'id' in screen ? screen.id : 'slug' in screen ? screen.slug : '';
+  const roomy = wide && ROOMY.includes(screen.name);
+  const sideGo = (id: SideId) => {
+    if (id === 'current' || id === 'diary' || id === 'timeline') checkSm8();
+    if (id === 'inbox') checkInbox();
+    if (id === 'designs' || id === 'library') checkDesigns();
+    go(id === 'kit' ? { name: 'kit' } : id === 'stats' ? { name: 'stats' } : ({ name: id } as Screen));
+  };
+  const sideCounts: Partial<Record<SideId, number>> = wide
+    ? {
+        home:
+          (inboxTodayLine(inbox, customers) ? 1 : 0) +
+          waTodayLines(waChats).length +
+          todayLines({ sm8: diarySm8, marks, kit: jobs, designs, done, postsLeft: posts.length - postedEverywhere(posts) }).length,
+        inbox: freshUnread(inbox).length,
+        whatsapp: waChats.filter((c) => !c.sends.length).length,
+      }
+    : {};
   return (
-    <div className={`jk min-h-[100dvh] bg-paper text-ink ${secClass(sec)}${tint ? ' jk-tint' : ''}`}>
+    <div
+      className={`jk min-h-[100dvh] bg-paper text-ink ${secClass(sec)}${tint ? ' jk-tint' : ''}${wide ? ` jk-desk${left ? ' jk-split' : ''}${roomy ? ' jk-roomy' : ''}` : ''}`}
+    >
+      {wide ? <Sidebar active={sideOf(screen.name, 'from' in screen ? screen.from : undefined)} counts={sideCounts} onGo={sideGo} /> : null}
+      {wide && left ? (
+        <section className="jk-listpane" aria-label="List">
+          {ready ? renderScreen(left) : null}
+          {/* the one open beside it, picked out in the list */}
+          {picked ? <style>{`.jk-listpane [data-jk-id=${JSON.stringify(picked)}]{box-shadow:inset 4px 0 0 var(--sec-mark,var(--sec));background-color:color-mix(in srgb,var(--sec) 12%,var(--color-mount))!important;border-color:var(--sec)!important}`}</style> : null}
+        </section>
+      ) : null}
+      <div className="jk-main">
       <TopBar
         sec={sec}
         onKey={colourKey.show}
@@ -687,9 +1244,10 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         onHome={screen.name === 'home' ? undefined : back}
         backLabel={backLabel(screen)}
         onStatus={() => go({ name: 'settings' })}
+        wide={wide}
       />
       {problem ? (
-        <div className="mx-auto max-w-[620px] px-4 pt-3">
+        <div className="jk-wrap px-4 pt-3">
           <p role="alert" className="flex items-start justify-between gap-3 rounded-sm border border-line-strong bg-mount px-3 py-2.5 text-[14.5px]">
             <span>{problem}</span>
             <button type="button" className="font-mono text-[13px] text-accent" onClick={() => setProblem('')}>
@@ -698,481 +1256,18 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
           </p>
         </div>
       ) : null}
-      <main className="mx-auto max-w-[620px] px-4 pb-[calc(env(safe-area-inset-bottom)+48px)]">
+      <main className="jk-wrap px-4 pb-[calc(env(safe-area-inset-bottom)+48px)]">
         {!ready ? (
           <p className="pt-16 text-center font-mono text-[14px] text-faint">Opening…</p>
-        ) : screen.name === 'home' ? (
-          <Home
-            jobs={jobs.filter((j) => j.kind !== 'design')}
-            items={items}
-            done={done}
-            posts={posts}
-            onPosts={() => go({ name: 'posts' })}
-            onClear={removeJobs}
-            sm8={diarySm8}
-            marks={marks}
-            inbox={inbox}
-            customers={customers}
-            onInbox={() => {
-              checkInbox();
-              go({ name: 'inbox' });
-            }}
-            find={
-              <CustomerSearch
-                place="today"
-                clients={clients}
-                jobs={sm8.jobs}
-                loading={clientsLoading}
-                onNeed={() => checkClients()}
-                onRefresh={() => checkClients(true)}
-                onOpen={(id) => go({ name: 'customer', id, from: 'home' })}
-                onNewNamed={(named) => go({ name: 'enquiry', named })}
-              />
-            }
-            onCurrent={() => {
-              checkSm8();
-              go({ name: 'current' });
-            }}
-            onDiary={() => {
-              checkSm8();
-              go({ name: 'diary' });
-            }}
-            onTimeline={() => {
-              checkSm8();
-              go({ name: 'timeline' });
-            }}
-            waChats={waChats}
-            onWhatsApp={() => go({ name: 'whatsapp' })}
-            onToday={(l) => {
-              if (l.go === 'current') {
-                checkSm8();
-                go({ name: 'current' });
-              } else if (l.go === 'diary') {
-                checkSm8();
-                go({ name: 'diary' });
-              } else if (l.go === 'timeline') {
-                checkSm8();
-                go({ name: 'timeline' });
-              } else if (l.go === 'whatsapp') {
-                if (l.id) {
-                  checkClients();
-                  go({ name: 'wa-chat', id: l.id });
-                } else go({ name: 'whatsapp' });
-              } else if (l.go === 'sm8' && l.id) go({ name: 'sm8', id: l.id, from: 'home' });
-              else if (l.go === 'inbox') {
-                if (l.id) go({ name: 'email', id: l.id, from: 'home' });
-                else {
-                  checkInbox();
-                  go({ name: 'inbox' });
-                }
-              }
-              else if (l.go === 'designs') go(l.id ? { name: 'design', id: l.id } : { name: 'designs' });
-              else if (l.go === 'posts') go({ name: 'posts' });
-              else document.getElementById('kit-jobs')?.scrollIntoView({ behavior: 'instant', block: 'start' });
-            }}
-            designJobs={designJobs}
-            designs={designs}
-            onDesigns={() => {
-              checkDesigns();
-              go({ name: 'designs' });
-            }}
-            libraryCount={libraryOwn + models.length}
-            libraryLine={`${libraryOwn ? `${libraryOwn} made for customers, ` : ''}${models.length} from finished jobs`}
-            onLibrary={() => {
-              checkDesigns();
-              go({ name: 'library' });
-            }}
-            pin={pin}
-            status={status}
-            waitingBytes={waitingBytes}
-            onNew={() => go({ name: 'new' })}
-            onOpen={(id) => go({ name: 'job', id, tab: 'before' })}
-            onSettings={() => go({ name: 'settings' })}
-            onStats={() => go({ name: 'stats' })}
-          />
-        ) : screen.name === 'new' ? (
-          <NewJob
-            key={screen.design ?? screen.from ?? 'new'}
-            initial={
-              fromDesign
-                ? { what: fromDesign.what, area: fromDesign.area, sm8: fromDesign.sm8, design: fromDesign.what }
-                : from
-                  ? { what: whatOf(from.description), area: from.area, sm8: from.uuid, design: designJobs.find((k) => k.sm8 === from.uuid)?.what }
-                  : undefined
-            }
-            onCancel={back}
-            onCreate={async (j) => {
-              // Built from a design: started from it, or the design on the same ServiceM8 job (job-kit-fetch.py
-              // then finds the design to reuse and link on the job page).
-              const dj = fromDesign ?? (j.sm8 ? designJobs.find((k) => k.sm8 === j.sm8) : undefined);
-              await putJob(dj ? { ...j, fromDesign: dj.id } : j);
-              await reload();
-              wake(QUIET_START);
-              go({ name: 'job', id: j.id, tab: 'before' }, false);
-            }}
-          />
-        ) : screen.name === 'designs' ? (
-          <DesignsList
-            jobs={designJobs}
-            items={items}
-            ready={designs}
-            onNew={() => go({ name: 'new-design' })}
-            onOpen={(id) => go({ name: 'design', id })}
-            onLibrary={() => {
-              checkDesigns();
-              go({ name: 'library', from: 'designs' });
-            }}
-          />
-        ) : screen.name === 'library' ? (
-          <Library designs={library} models={models} kinds={kinds} hasPin={Boolean(pin)} to={sendTo ? { name: sendTo.name, first: sendTo.first, mobile: sendTo.mobile || sendTo.phone } : undefined} />
-        ) : screen.name === 'new-design' ? (
-          <NewDesign
-            key={screen.wa ?? screen.from ?? 'new'}
-            similar={(n) => similarDesigns(n, designJobs, library, designs)}
-            onOpenRequest={(id) => go({ name: 'design', id }, false)}
-            initial={
-              screen.wa && waChat(screen.wa)
-                ? (() => {
-                    // From a WhatsApp chat: what from the ticked words, the area and mobile from the job or the chat.
-                    const c = waChat(screen.wa)!;
-                    const text = pickedText(c);
-                    return {
-                      what: from ? whatOf(from.description) : whatOf(withoutGreeting(text)),
-                      area: from?.area ?? '',
-                      mobile: from?.mobile || c.number || '',
-                      sm8: from?.uuid,
-                    };
-                  })()
-                : from
-                  ? { what: whatOf(from.description), area: from.area, mobile: from.mobile, sm8: from.uuid }
-                  : undefined
-            }
-            onCancel={back}
-            onCreate={async (j) => {
-              const c = screen.wa ? waChat(screen.wa) : undefined;
-              await putJob(c ? { ...j, design: { ...j.design!, brief: pickedText(c) } } : j);
-              await reload();
-              if (c) {
-                // the ticked photos become the photos of the space
-                const files: File[] = [];
-                for (const name of pickedOf(c).files.filter((f) => /\.(jpe?g|png|gif|heic|heif)$/i.test(f))) {
-                  const b = await getWaFileBlob(c.id, name);
-                  if (b) files.push(new File([b], name, { type: b.type || 'image/jpeg', lastModified: Date.now() }));
-                }
-                if (files.length) await addFiles(j.id, DESIGN_SPACE, DESIGN_SPACE.slots[0], files);
-                await updateChat(c.id, (x) => ({ ...x, design: j.id }));
-              }
-              wake(QUIET_START);
-              go({ name: 'design', id: j.id }, false);
-            }}
-          />
-        ) : screen.name === 'design' ? (
-          job ? (
-            <DesignView
-              key={job.id}
-              job={job}
-              items={items.filter((i) => i.jobId === job.id)}
-              ready={designs[job.id]}
-              busy={busy}
-              onAdd={addFiles}
-              onRemove={removeItem}
-              onCaption={setCaption}
-              onJob={async (change) => {
-                await touch(job.id, change);
-                wake(16_000);
-              }}
-              onSend={async () => {
-                await touch(job.id, (j) => ({ ...j, readyAt: Date.now() }));
-                wake();
-              }}
-              onForget={() => forget(job.id)}
-              places={({ job: dj, onPublish, onLink }) => {
-                const kitJob = kitJobFor(dj, jobs);
-                return (
-                  <DesignPlaces
-                    job={dj}
-                    ready={designs[dj.id]!}
-                    kitJob={kitJob}
-                    kitDone={kitJob ? done[kitJob.id] : undefined}
-                    sm8Job={dj.sm8 ? findJob(dj.sm8) : undefined}
-                    sm8Jobs={sm8.jobs}
-                    designOn={(uuid) => designJobs.find((k) => k.sm8 === uuid)}
-                    onPublish={onPublish}
-                    onLink={onLink}
-                    onStartKit={() => go({ name: 'new', from: dj.sm8, design: dj.id })}
-                    onOpenKit={(id) => go({ name: 'job', id, tab: 'before' })}
-                    onOpenSm8={(uuid) => go({ name: 'sm8', id: uuid, from: 'design', design: dj.id })}
-                    onOpenDesign={(id) => go({ name: 'design', id })}
-                    onLibrary={() => {
-                      checkDesigns();
-                      go({ name: 'library', from: 'designs' });
-                    }}
-                  />
-                );
-              }}
-            />
-          ) : null
-        ) : screen.name === 'current' ? (
-          <CurrentList
-            sm8={sm8}
-            marks={marks}
-            kit={jobs}
-            designs={designs}
-            done={done}
-            loading={sm8Loading}
-            onRefresh={() => checkSm8(true)}
-            onNew={() => go({ name: 'enquiry' })}
-            onOpen={(id) => go({ name: 'sm8', id })}
-            clients={clients}
-            clientsLoading={clientsLoading}
-            onFindNeed={() => checkClients()}
-            onFindRefresh={() => checkClients(true)}
-            onCustomer={(id) => go({ name: 'customer', id })}
-            onNewNamed={(named) => go({ name: 'enquiry', named })}
-          />
-        ) : screen.name === 'inbox' ? (
-          <InboxList
-            inbox={inbox}
-            loading={inboxLoading}
-            customers={customers}
-            onRefresh={() => checkInbox(true)}
-            onMore={moreInbox}
-            onOpen={(id) => go({ name: 'email', id })}
-            onDelete={removeMail}
-          />
-        ) : screen.name === 'email' ? (
-          <EmailView
-            key={screen.id}
-            id={screen.id}
-            fallback={inbox.mails.find((m) => m.id === screen.id)}
-            clients={allClients}
-            jobs={[...sm8.jobs, ...customerJobs.filter((j) => !sm8.jobs.some((x) => x.uuid === j.uuid))]}
-            onRead={(id, isRead) => setInbox((cur) => markReadHere(cur, id, isRead))}
-            onCustomer={(id) => {
-              checkClients();
-              go({ name: 'customer', id });
-            }}
-            onJob={(id) => go({ name: 'sm8', id })}
-            onEnquiry={() => go({ name: 'enquiry', mail: screen.id })}
-            onDelete={async () => {
-              const err = await removeMail(screen.id);
-              if (!err) back();
-              return err;
-            }}
-          />
-        ) : screen.name === 'diary' ? (
-          <Diary
-            sm8={diarySm8}
-            onDone={markVisit}
-            loading={sm8Loading}
-            onRefresh={() => checkSm8(true)}
-            onOpen={(id) => go({ name: 'sm8', id, from: 'diary' })}
-            onCancel={cancelBooking}
-            onRebook={book}
-          />
-        ) : screen.name === 'timeline' ? (
-          <JobTimeline
-            sm8={sm8}
-            marks={marks}
-            loading={sm8Loading}
-            focus={screen.job}
-            onRefresh={() => checkSm8(true)}
-            onOpen={(id) => go({ name: 'sm8', id, from: 'timeline' })}
-            onSave={saveTimeline}
-            onProgress={(uuid, progress) => mark(uuid, { progress, progressAt: Date.now() })}
-            onComplete={(uuid) => void changeStatus(uuid, 'Completed')}
-          />
-        ) : screen.name === 'whatsapp' ? (
-          <WaList chats={waChats} onOpen={(id) => go({ name: 'wa-chat', id })} />
-        ) : screen.name === 'wa-chat' ? (
-          waChat(screen.id) ? (
-            <WaChatView
-              key={screen.id}
-              chat={waChat(screen.id)!}
-              clients={allClients}
-              jobs={sm8.jobs}
-              onNewJob={() => {
-                checkClients();
-                go({ name: 'enquiry', wa: screen.id });
-              }}
-              onAdded={(j) => void sendToJob(screen.id, addSend(waChat(screen.id)!, j))}
-              onDesign={() => {
-                const c = waChat(screen.id)!;
-                const job = c.sends[c.sends.length - 1]?.job;
-                go({ name: 'new-design', wa: screen.id, from: job });
-              }}
-              onOpenJob={(id) => {
-                checkSm8();
-                go({ name: 'sm8', id, from: 'wa', chat: screen.id });
-              }}
-              onCustomer={(id) => {
-                checkClients();
-                go({ name: 'customer', id });
-              }}
-              onGone={() => go({ name: 'whatsapp' }, false)}
-            />
-          ) : (
-            <p className="pt-16 text-center font-mono text-[14px] text-faint">{waChats.length ? 'That chat isn’t on this phone any more.' : 'Opening the chat…'}</p>
-          )
-        ) : screen.name === 'enquiry' ? (
-          <NewEnquiry
-            key={screen.client ?? screen.named ?? screen.mail ?? screen.wa ?? 'enquiry'}
-            clients={allClients}
-            forClient={screen.client ? customerOf(screen.client) : undefined}
-            named={screen.named}
-            seed={
-              screen.mail && openedMail(screen.mail)
-                ? enquiryFromMail(openedMail(screen.mail)!)
-                : screen.wa && waChat(screen.wa)
-                  ? enquiryFromChat(waChat(screen.wa)!, allClients.find((c) => c.uuid === waChat(screen.wa!)!.client))
-                  : undefined
-            }
-            seedFrom={screen.wa ? 'whatsapp' : 'email'}
-            onCustomer={(id) => go({ name: 'customer', id })}
-            onCancel={back}
-            onCreate={async (e) => {
-              const r = await sendEnquiry(readPin(), e);
-              if (!r.ok) return problemText(r.error, r.detail);
-              lastClients.current = 0; // a new customer: the next search fetches the list again
-              setSm8((s) => {
-                const next = { ...s, jobs: [r.data.job, ...s.jobs.filter((j) => j.uuid !== r.data.job.uuid)] };
-                keepSm8(next);
-                return next;
-              });
-              const c = screen.wa ? waChat(screen.wa) : undefined;
-              if (c) {
-                // the ticked photos and PDFs follow the new job into its diary (wa-store.ts sends them)
-                const job = r.data.job;
-                await updateChat(c.id, (x) => ({ ...x, client: job.client ?? x.client, clientName: job.name }), true);
-                await sendToJob(c.id, { job: job.uuid, number: job.number, what: whatOf(job.description), mode: 'new', files: pickedOf(c).files });
-                go({ name: 'sm8', id: job.uuid, from: 'wa', chat: c.id }, false);
-                return '';
-              }
-              go({ name: 'sm8', id: r.data.job.uuid }, false);
-              return '';
-            }}
-          />
-        ) : screen.name === 'sm8' ? (
-          cur ? (
-            <CurrentView
-              key={cur.uuid}
-              job={cur}
-              marks={marks}
-              kit={jobs}
-              designs={designs}
-              done={done}
-              onStatus={(s) => changeStatus(cur.uuid, s)}
-              onMark={(patch) => {
-                mark(cur.uuid, patch);
-                if (patch.hidden) back();
-              }}
-              onDesign={() => go({ name: 'new-design', from: cur.uuid })}
-              onLibrary={() => {
-                checkDesigns();
-                go({ name: 'library', for: cur.uuid });
-              }}
-              onKit={() => go({ name: 'new', from: cur.uuid })}
-              onTimeline={() => {
-                checkSm8();
-                go({ name: 'timeline', job: cur.uuid });
-              }}
-              extra={<WaJobBox chats={waChats} job={cur.uuid} onOpen={(id) => go({ name: 'wa-chat', id })} />}
-              onOpenKit={(k) => go(k.kind === 'design' ? { name: 'design', id: k.id } : { name: 'job', id: k.id, tab: 'before' })}
-              bookings={(diarySm8.bookings ?? []).filter((b) => b.jobUuid === cur.uuid)}
-              staff={sm8.staff ?? []}
-              bookingsLoaded={sm8.bookings !== null}
-              onBook={(start, end, staff) => book(cur.uuid, start, end, staff)}
-              onMove={moveBooking}
-              onCancel={cancelBooking}
-              replyAt={sm8.replies?.[cur.uuid] ?? undefined}
-              info={(() => {
-                // Their latest email to info@ (or Raf's latest to them): reply from info@ in the Inbox.
-                const m = cur.email ? lastWith(inbox, cur.email) : undefined;
-                if (!m) return undefined;
-                const name = cur.first || (m.mine ? '' : firstOf(m.from)) || cur.name;
-                return {
-                  line: m.mine ? `You emailed ${name} ${whenSaid(m.at)}, info@ copied in` : `${name} emailed info@ ${whenSaid(m.at)}`,
-                  subject: m.subject,
-                  open: () => go({ name: 'email', id: m.id, from: 'job', job: cur.uuid }),
-                };
-              })()}
-              onCustomer={
-                cur.client && !(screen.from === 'customer' && screen.client === cur.client)
-                  ? () => {
-                      checkClients();
-                      go({ name: 'customer', id: cur.client! });
-                    }
-                  : undefined
-              }
-            />
-          ) : (
-            <p className="pt-16 text-center font-mono text-[14px] text-faint">Getting the job from ServiceM8…</p>
-          )
-        ) : screen.name === 'customer' ? (
-          <CustomerView
-            key={screen.id}
-            uuid={screen.id}
-            fallback={customerOf(screen.id)}
-            onLoaded={customerLoaded}
-            onOpenJob={(j) => go({ name: 'sm8', id: j.uuid, from: 'customer', client: screen.id })}
-            onNew={(c) => go({ name: 'enquiry', client: c.uuid })}
-          />
-        ) : screen.name === 'posts' ? (
-          <PostsList packs={posts} onOpen={(slug) => go({ name: 'post', slug })} />
-        ) : screen.name === 'post' ? (
-          posts.find((p) => p.slug === screen.slug) ? <PostView pack={posts.find((p) => p.slug === screen.slug)!} /> : <PostsList packs={posts} onOpen={(slug) => go({ name: 'post', slug })} />
-        ) : screen.name === 'stats' ? (
-          <StatsView onPage={(path) => go({ name: 'stats-page', path })} />
-        ) : screen.name === 'stats-page' ? (
-          <StatsPageView key={screen.path} path={screen.path} />
-        ) : screen.name === 'settings' ? (
-          <Settings
-            pin={pin}
-            status={status}
-            tint={tint}
-            onTint={setTint}
-            onPin={(p) => {
-              savePin(p);
-              setPinState(p);
-            }}
-          />
-        ) : job ? (
-          <JobView
-            job={job}
-            fromDesign={(() => {
-              const dj = designFor(job, jobs);
-              return dj ? { what: dj.what, onOpen: () => go({ name: 'design', id: dj.id }) } : undefined;
-            })()}
-            done={done[job.id]}
-            onPost={done[job.id] && posts.some((p) => p.slug === done[job.id].slug) ? () => go({ name: 'post', slug: done[job.id].slug }) : undefined}
-            items={items.filter((i) => i.jobId === job.id)}
-            tab={screen.tab}
-            busy={busy}
-            onTab={(tab) => {
-              const s: Screen = { name: 'job', id: job.id, tab };
-              setScreenState(s);
-              keepScreen(s);
-              history.replaceState({ ...history.state, jk: s }, '');
-              window.scrollTo({ top: 0, behavior: 'instant' });
-            }}
-            onAdd={addFiles}
-            onRemove={removeItem}
-            onCaption={setCaption}
-            onJob={(change) => touch(job.id, change)}
-            onNotes={async (notes) => {
-              await touch(job.id, (j) => ({ ...j, notes }));
-              wake(16_000);
-            }}
-            onSend={async () => {
-              await touch(job.id, (j) => ({ ...j, readyAt: Date.now() }));
-              wake();
-            }}
-            onForget={() => forget(job.id)}
-          />
-        ) : null}
+        ) : listOnly ? (
+          <PickNote name={screen.name} />
+        ) : (
+          renderScreen(screen)
+        )}
       </main>
+      </div>
       {binned ? (
-        <div role="status" className="fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(16px,env(safe-area-inset-bottom))]">
+        <div role="status" className="jk-fixbar fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(16px,env(safe-area-inset-bottom))]">
           <div className="mx-auto flex max-w-[588px] items-center gap-3 rounded-sm bg-ink px-4 py-2.5 text-[14.5px] leading-snug text-mount shadow-[0_14px_30px_-12px_rgb(22_25_28/0.6)]">
             <span className="min-w-0 flex-1">
               {binned.problem || (
@@ -1209,8 +1304,10 @@ function TopBar({
   onHome,
   backLabel,
   onStatus,
+  wide,
 }: {
   sec?: SecId;
+  wide?: boolean; // a computer: the sidebar has the name, so Today's top bar leaves it out
   onKey: () => void;
   status: Status;
   waiting: number;
@@ -1224,12 +1321,14 @@ function TopBar({
   const good = s === 'idle' && !waiting;
   const stuck = s === 'wrong-pin' || s === 'no-pin' || s === 'not-set-up' || s === 'inbox-key' || s === 'inbox-missing';
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-paper pt-[env(safe-area-inset-top)]">
-      <div className="mx-auto flex h-14 max-w-[620px] items-center justify-between gap-3 px-4">
+    <header className="jk-top sticky top-0 z-30 border-b border-line bg-paper pt-[env(safe-area-inset-top)]">
+      <div className="jk-wrap flex h-14 items-center justify-between gap-3 px-4">
         {onHome ? (
           <button type="button" onClick={onHome} className={`-ml-2 flex h-11 min-w-0 items-center gap-1.5 px-2 text-[15px] font-semibold ${sec ? 'jk-sec-ink' : ''}`} aria-label={`Back to ${backLabel.toLowerCase()}`}>
             <span aria-hidden className="text-[18px] leading-none">‹</span> {backLabel}
           </button>
+        ) : wide ? (
+          <span />
         ) : (
           <p className="flex items-center gap-2 font-display text-[19px] font-[680] tracking-[-0.02em]">
             <span aria-hidden className="jk-r">
@@ -1341,26 +1440,13 @@ function Home({
   onStats: () => void;
 }) {
   const { standalone, ios } = useStandalone();
+  const wide = useWide(); // a computer: no home-screen advice, and the boxes in columns
   // the last Website stats kept on this phone (stats.tsx), read straight from storage
   const webLine = useSyncExternalStore(noSubscribe, statsLine, () => 'Visitors, pages and heatmaps of rafcarpentry.com');
   const mailLine = inboxTodayLine(inbox, customers);
   const waLines: TodayLine[] = waTodayLines(waChats).map((l) => ({ text: l.text, go: 'whatsapp', id: l.id, urgent: l.urgent }));
   const lines = [...(mailLine ? [mailLine] : []), ...waLines, ...todayLines({ sm8, marks, kit: [...jobs, ...designJobs], designs, done, postsLeft: posts.length - postedEverywhere(posts) })];
   const goingAhead = sm8.jobs.filter((j) => j.status === 'Work Order').length;
-  // Finished: on the website, and nothing of it left to send.
-  const finished = jobs.filter((j) => done[j.id] && !items.some((i) => i.jobId === j.id && !i.sent && !i.lost));
-  const [sure, setSure] = useState(false);
-  const disarm = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const clear = () => {
-    if (disarm.current) clearTimeout(disarm.current);
-    if (!sure) {
-      setSure(true);
-      disarm.current = setTimeout(() => setSure(false), 5000);
-      return;
-    }
-    setSure(false);
-    void onClear(finished.map((j) => j.id));
-  };
   const [install, setInstall] = useState<(Event & { prompt: () => Promise<void> }) | null>(null);
   useEffect(() => {
     const keep = (e: Event) => {
@@ -1376,7 +1462,7 @@ function Home({
       <p className="kicker">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
       <h1 className="mt-1 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">Today</h1>
 
-      {!standalone ? (
+      {!standalone && !wide ? (
         <div className="mt-5 rounded-sm border border-accent bg-accent-soft px-4 py-3.5 text-[15px] leading-relaxed">
           {install ? (
             <>
@@ -1404,6 +1490,7 @@ function Home({
         </button>
       ) : null}
 
+      <div className="jk-home-bands">
       <HomeBand tone="accent" label="To do" right={lines.length ? `${lines.length} thing${lines.length === 1 ? '' : 's'}` : 'All clear'}>
         <div className="px-4 py-1">
           {lines.length ? (
@@ -1472,66 +1559,91 @@ function Home({
       <HomeBand sec="photos" id="kit-jobs" icon="kit" label="Photos and posts">
         <div className="px-4 pb-4">
           {posts.length ? <HomeRow onClick={onPosts} title="Posts for Instagram, TikTok and YouTube" line={postsLine(posts)} /> : null}
-          <p className="mt-4 font-semibold">Job Kit jobs</p>
-          <p className="mt-1.5 text-[15px] leading-relaxed text-muted">Photos, clips and sizes for each job, sent to your inbox as you go. Everything saves by itself.</p>
-          <button type="button" onClick={onNew} className="btn btn-primary mt-4 w-full">
-            New job
-          </button>
-          {jobs.length ? (
-            <ul className="mt-5 grid gap-3">
-              {jobs.map((j) => {
-                const mine = items.filter((i) => i.jobId === j.id && !i.lost);
-                const photos = mine.filter((i) => i.kind === 'photo').length;
-                const clips = mine.filter((i) => i.kind === 'video').length;
-                const left = mine.filter((i) => !i.sent).length;
-                const sizes = j.notes.sizes.filter((s) => s.w || s.h || s.d).length;
-                const cover = mine.find((i) => i.slot === 'main-upright') ?? [...mine].reverse().find((i) => i.thumb);
-                return (
-                  <li key={j.id}>
-                    <button type="button" onClick={() => onOpen(j.id)} className="flex w-full items-stretch gap-3 rounded-sm border border-line-strong bg-mount p-2.5 text-left transition-colors hover:border-ink">
-                      <span className="relative block h-[76px] w-[76px] shrink-0 overflow-hidden rounded-sm bg-raised">
-                        {cover?.thumb ? <img src={cover.thumb} alt="" className="h-full w-full object-cover" /> : null}
-                      </span>
-                      <span className="min-w-0 flex-1 py-0.5">
-                        <span className="block truncate text-[16.5px] font-semibold leading-snug">{j.what}</span>
-                        <span className="block truncate text-[14.5px] text-muted">
-                          {j.area} · {monthName(j.month)}
-                        </span>
-                        <span className="mt-1 block font-mono text-[12.5px] text-faint">
-                          {photos} photo{photos === 1 ? '' : 's'} · {clips} clip{clips === 1 ? '' : 's'} · {sizes} size{sizes === 1 ? '' : 's'}
-                        </span>
-                        <span className="mt-0.5 flex items-center gap-1.5 font-mono text-[12.5px] text-faint">
-                          <Mark state={left ? 'waiting' : 'sent'} />
-                          {left ? `${left} waiting to send` : done[j.id] ? 'Done: on your website' : j.readyAt ? 'Sent to Claude, waiting for the page' : 'All sent, still open'}
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="mt-5 font-mono text-[13.5px] text-faint">No jobs yet. Start one on the first visit, before anything moves.</p>
-          )}
-
-          {finished.length ? (
-            <div className="mt-4 rounded-sm border border-line-strong bg-mount px-4 py-3.5">
-              <p className="text-[14.5px] leading-relaxed text-muted">
-                {finished.length === 1 ? '1 job is' : `${finished.length} jobs are`} finished and on your website. Clearing takes {finished.length === 1 ? 'it' : 'them'} off this phone only: the inbox and the website keep everything.
-              </p>
-              <button type="button" onClick={clear} className={`btn btn-sm mt-3 ${sure ? 'btn-primary' : 'btn-ghost'}`}>
-                {sure ? `Tap again to clear ${finished.length === 1 ? 'it' : `all ${finished.length}`}` : `Clear finished (${finished.length})`}
-              </button>
-            </div>
-          ) : null}
+          <KitJobs heading jobs={jobs} items={items} done={done} onClear={onClear} onNew={onNew} onOpen={onOpen} />
         </div>
       </HomeBand>
+      </div>
 
       <p className="mt-8 border-t border-line pt-4 font-mono text-[12.5px] leading-relaxed text-faint">
-        On this phone: {waitingBytes ? `${mb(waitingBytes)} waiting to send` : 'nothing waiting, all sent'}.
+        On this {wide ? 'computer' : 'phone'}: {waitingBytes ? `${mb(waitingBytes)} waiting to send` : 'nothing waiting, all sent'}.
         {status.state === 'offline' ? ' It sends when the signal is back and the app is open.' : ''}
       </p>
     </div>
+  );
+}
+
+/* The Job Kit jobs: New job, the list, and Clear finished. On Today's Photos and posts box on the phone, and a screen of
+   its own on a computer ('kit', beside the job opened from it). */
+function KitJobs({ jobs, items, done, onClear, onNew, onOpen, heading }: { jobs: Job[]; items: Item[]; done: Done; onClear: (ids: string[]) => Promise<void>; onNew: () => void; onOpen: (id: string) => void; heading?: boolean }) {
+  // Finished: on the website, and nothing of it left to send.
+  const finished = jobs.filter((j) => done[j.id] && !items.some((i) => i.jobId === j.id && !i.sent && !i.lost));
+  const [sure, setSure] = useState(false);
+  const disarm = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const clear = () => {
+    if (disarm.current) clearTimeout(disarm.current);
+    if (!sure) {
+      setSure(true);
+      disarm.current = setTimeout(() => setSure(false), 5000);
+      return;
+    }
+    setSure(false);
+    void onClear(finished.map((j) => j.id));
+  };
+  return (
+    <>
+      {heading ? <p className="mt-4 font-semibold">Job Kit jobs</p> : null}
+      <p className={`${heading ? 'mt-1.5' : 'mt-2'} text-[15px] leading-relaxed text-muted`}>Photos, clips and sizes for each job, sent to your inbox as you go. Everything saves by itself.</p>
+      <button type="button" onClick={onNew} className="btn btn-primary mt-4 w-full">
+        New job
+      </button>
+      {jobs.length ? (
+        <ul className="mt-5 grid gap-3">
+          {jobs.map((j) => {
+            const mine = items.filter((i) => i.jobId === j.id && !i.lost);
+            const photos = mine.filter((i) => i.kind === 'photo').length;
+            const clips = mine.filter((i) => i.kind === 'video').length;
+            const left = mine.filter((i) => !i.sent).length;
+            const sizes = j.notes.sizes.filter((s) => s.w || s.h || s.d).length;
+            const cover = mine.find((i) => i.slot === 'main-upright') ?? [...mine].reverse().find((i) => i.thumb);
+            return (
+              <li key={j.id}>
+                <button type="button" data-jk-id={j.id} onClick={() => onOpen(j.id)} className="flex w-full items-stretch gap-3 rounded-sm border border-line-strong bg-mount p-2.5 text-left transition-colors hover:border-ink">
+                  <span className="relative block h-[76px] w-[76px] shrink-0 overflow-hidden rounded-sm bg-raised">
+                    {cover?.thumb ? <img src={cover.thumb} alt="" className="h-full w-full object-cover" /> : null}
+                  </span>
+                  <span className="min-w-0 flex-1 py-0.5">
+                    <span className="block truncate text-[16.5px] font-semibold leading-snug">{j.what}</span>
+                    <span className="block truncate text-[14.5px] text-muted">
+                      {j.area} · {monthName(j.month)}
+                    </span>
+                    <span className="mt-1 block font-mono text-[12.5px] text-faint">
+                      {photos} photo{photos === 1 ? '' : 's'} · {clips} clip{clips === 1 ? '' : 's'} · {sizes} size{sizes === 1 ? '' : 's'}
+                    </span>
+                    <span className="mt-0.5 flex items-center gap-1.5 font-mono text-[12.5px] text-faint">
+                      <Mark state={left ? 'waiting' : 'sent'} />
+                      {left ? `${left} waiting to send` : done[j.id] ? 'Done: on your website' : j.readyAt ? 'Sent to Claude, waiting for the page' : 'All sent, still open'}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="mt-5 font-mono text-[13.5px] text-faint">No jobs yet. Start one on the first visit, before anything moves.</p>
+      )}
+
+      {finished.length ? (
+        <div className="mt-4 rounded-sm border border-line-strong bg-mount px-4 py-3.5">
+          <p className="text-[14.5px] leading-relaxed text-muted">
+            {finished.length === 1 ? '1 job is' : `${finished.length} jobs are`} finished and on your website. Clearing takes {finished.length === 1 ? 'it' : 'them'} off this phone only: the inbox and the website keep everything.
+          </p>
+          <button type="button" onClick={clear} className={`btn btn-sm mt-3 ${sure ? 'btn-primary' : 'btn-ghost'}`}>
+            {sure ? `Tap again to clear ${finished.length === 1 ? 'it' : `all ${finished.length}`}` : `Clear finished (${finished.length})`}
+          </button>
+        </div>
+      ) : null}
+    </>
   );
 }
 

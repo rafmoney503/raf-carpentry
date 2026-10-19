@@ -158,7 +158,7 @@ export function whenSaid(iso: string) {
 }
 
 /* New, in the main (Focused) inbox, from the last 14 days: what the Today list and the card count. */
-const freshUnread = (inbox: Inbox) => inbox.mails.filter((m) => !m.read && !m.other && !m.mine && Date.now() - Date.parse(m.at) < 14 * 864e5);
+export const freshUnread = (inbox: Inbox) => inbox.mails.filter((m) => !m.read && !m.other && !m.mine && Date.now() - Date.parse(m.at) < 14 * 864e5);
 
 export function inboxLine(inbox: Inbox) {
   if (inbox.error === 'outlook-not-set-up') return 'Connect info@rafcarpentry.com: a few steps left';
@@ -288,7 +288,7 @@ export function InboxList({
                 const w = withWho(m) ?? { name: '', email: '' };
                 const armed = sure === m.id || binning === m.id;
                 return (
-                  <li key={m.id} className="flex flex-wrap items-stretch">
+                  <li key={m.id} data-jk-id={m.id} className="flex flex-wrap items-stretch">
                     <button type="button" onClick={() => onOpen(m.id)} className="relative block min-w-0 flex-1 py-3 pl-6 pr-1 text-left">
                       {!m.read && !m.mine ? <span aria-label="Unread" className="absolute left-2 top-[19px] h-2 w-2 rounded-full bg-accent" /> : null}
                       <span className="flex items-baseline justify-between gap-3">

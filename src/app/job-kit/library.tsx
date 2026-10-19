@@ -198,7 +198,7 @@ export function Library({
       ) : null}
 
       {list.length ? (
-        <ul className="mt-5 grid gap-3">
+        <ul className="jk-lib-list mt-5 grid gap-3">
           {list.map((e) => (
             <li key={e.key} className="rounded-sm border border-line-strong bg-mount p-2.5">
               <div className="flex gap-3">

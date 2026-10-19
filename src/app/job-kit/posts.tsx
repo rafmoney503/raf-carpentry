@@ -93,7 +93,7 @@ export function PostsList({ packs, onOpen }: { packs: Pack[]; onOpen: (slug: str
   const [showPosted, setShowPosted] = useState(false);
   const card = (p: Pack, next: boolean) => (
     <li key={p.slug}>
-      <button type="button" onClick={() => onOpen(p.slug)} className="flex w-full items-stretch gap-3 rounded-sm border border-line-strong bg-mount p-2.5 text-left transition-colors hover:border-ink">
+      <button type="button" data-jk-id={p.slug} onClick={() => onOpen(p.slug)} className="flex w-full items-stretch gap-3 rounded-sm border border-line-strong bg-mount p-2.5 text-left transition-colors hover:border-ink">
         <img src={p.poster} alt="" className="h-[112px] w-[63px] shrink-0 rounded-sm bg-raised object-cover" />
         <span className="min-w-0 flex-1 py-0.5">
           {next ? <span className="kicker block text-[12.5px]">Next up</span> : null}

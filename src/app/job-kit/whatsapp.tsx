@@ -160,7 +160,7 @@ export function WaList({ chats, onOpen }: { chats: WaChat[]; onOpen: (id: string
               const photos = c.files.filter((f) => f.kind === 'photo').length;
               return (
                 <li key={c.id}>
-                  <button type="button" onClick={() => onOpen(c.id)} className="block w-full rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left">
+                  <button type="button" data-jk-id={c.id} onClick={() => onOpen(c.id)} className="block w-full rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left">
                     <span className="flex items-baseline justify-between gap-3">
                       <span className="truncate text-[16.5px] font-semibold leading-snug">{c.clientName || c.name}</span>
                       <span className="shrink-0 font-mono text-[12px] text-faint">{ago(c.updatedAt)}</span>

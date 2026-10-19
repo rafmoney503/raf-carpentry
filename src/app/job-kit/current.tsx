@@ -427,7 +427,7 @@ export function Diary({
                   const kind = kindOf(j);
                   const contact = j?.mobile || j?.phone;
                   return (
-                    <li key={`${b.uuid}-${k}`} className="rounded-sm border border-line-strong bg-mount">
+                    <li key={`${b.uuid}-${k}`} data-jk-id={b.jobUuid} className="rounded-sm border border-line-strong bg-mount">
                       <button type="button" onClick={() => onOpen(b.jobUuid)} className="block w-full px-3.5 py-3 text-left">
                         <span className="flex items-baseline justify-between gap-3">
                           <span className="font-mono text-[15px] font-semibold text-ink">{spanText(b, k)}</span>
@@ -769,7 +769,7 @@ function Card({
   const owed = j.status === 'Completed' && (moneyOf(j).left ?? 0) > 0;
   return (
     <li>
-      <button type="button" onClick={() => onOpen(j.uuid)} className="block w-full rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
+      <button type="button" data-jk-id={j.uuid} onClick={() => onOpen(j.uuid)} className="block w-full rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
         <span className="flex items-baseline justify-between gap-3">
           <span className="truncate text-[16.5px] font-semibold leading-snug">{j.name}</span>
           {j.number ? <span className="shrink-0 font-mono text-[12px] text-faint">#{j.number}</span> : null}

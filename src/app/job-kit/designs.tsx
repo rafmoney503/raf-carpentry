@@ -151,7 +151,7 @@ export function DesignsList({ jobs, items, ready, onNew, onOpen, onLibrary }: { 
             const text = { draft: 'Not sent yet', sending: 'Sending…', waiting: `Sent ${when(j.readyAt)}, design on its way`, ready: (shared ? 'Sent to the customer' : 'Design ready to send') + place, updating: 'Changes on their way' + place }[st];
             return (
               <li key={j.id}>
-                <button type="button" onClick={() => onOpen(j.id)} className="flex w-full items-stretch gap-3 rounded-sm border border-line-strong bg-mount p-2.5 text-left transition-colors hover:border-ink">
+                <button type="button" data-jk-id={j.id} onClick={() => onOpen(j.id)} className="flex w-full items-stretch gap-3 rounded-sm border border-line-strong bg-mount p-2.5 text-left transition-colors hover:border-ink">
                   <span className="relative block h-[76px] w-[76px] shrink-0 overflow-hidden rounded-sm bg-raised">
                     {/* eslint-disable-next-line @next/next/no-img-element -- a thumbnail kept on the phone */}
                     {thumb ? <img src={thumb} alt="" className="h-full w-full object-cover" /> : null}

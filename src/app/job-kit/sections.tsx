@@ -34,7 +34,7 @@ export function secOfScreen(name: string): SecId | undefined {
   if (name === 'timeline') return 'timeline';
   if (name === 'whatsapp' || name === 'wa-chat') return 'whatsapp';
   if (['stats', 'stats-page'].includes(name)) return 'website';
-  if (['posts', 'post', 'job', 'new'].includes(name)) return 'photos';
+  if (['posts', 'post', 'job', 'new', 'kit'].includes(name)) return 'photos';
   return undefined;
 }
 

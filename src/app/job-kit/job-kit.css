@@ -3,6 +3,9 @@
 .jk { -webkit-tap-highlight-color: transparent; }
 .jk input, .jk textarea, .jk button { touch-action: manipulation; }
 
+/* The column every screen sits in: a phone's width, centred (wider on a computer, below). */
+.jk-wrap { max-width: 620px; margin-inline: auto; }
+
 /* The little R in the top bar: Raf's mark on blue, like the app's home-screen icon. */
 .jk-r { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 2px; background: var(--color-accent); }
 
@@ -98,7 +101,7 @@
 .jk.jk-tint.jk-sec-customers, .jk.jk-tint.jk-sec-whatsapp, .jk.jk-tint.jk-sec-timeline, .jk.jk-tint.jk-sec-designs, .jk.jk-tint.jk-sec-website, .jk.jk-tint.jk-sec-photos {
   --jk-bg: color-mix(in srgb, var(--sec) 11%, var(--color-paper));
 }
-.jk.jk-tint > header { background-color: var(--jk-bg); }
+.jk.jk-tint .jk-top { background-color: var(--jk-bg); }
 .jk-tint .jk-band { background-color: color-mix(in srgb, var(--sec) 7%, var(--color-mount)); }
 .jk-tint .jk-todo { display: grid; gap: 5px; padding-block: 7px; }
 .jk-tint .jk-todo > li { border-width: 0; border-radius: 2px; padding-inline: 10px; background-color: color-mix(in srgb, var(--sec) 12%, var(--color-mount)); }
@@ -212,3 +215,44 @@
   background: rgb(22 25 28 / 0.92);
 }
 .jk-wa-view img { max-width: 100%; max-height: calc(100dvh - 24px); object-fit: contain; }
+
+/* On a computer (desktop.tsx, 19 Oct 2026): the sections down the left, a list beside what's opened from it (each
+   scrolling on its own), and the screen in a wider column. Set by the app from 1024 px wide; nothing here touches the
+   phone. --jk-left is where the screen's column starts, for the bars fixed to the bottom of it. */
+.jk-desk { display: grid; grid-template-columns: 236px minmax(0, 1fr); --jk-left: 236px; }
+.jk-desk.jk-split { grid-template-columns: 236px 400px minmax(0, 1fr); --jk-left: 636px; }
+@media (max-width: 1279px) {
+  .jk-desk { grid-template-columns: 216px minmax(0, 1fr); --jk-left: 216px; }
+  .jk-desk.jk-split { grid-template-columns: 216px 344px minmax(0, 1fr); --jk-left: 560px; }
+}
+.jk-main { min-width: 0; }
+.jk-desk .jk-wrap { max-width: 760px; }
+.jk-desk.jk-roomy .jk-wrap { max-width: 1240px; }
+.jk-desk .jk-wa-bar, .jk-desk .jk-fixbar { left: var(--jk-left); }
+
+.jk-side {
+  position: sticky; top: 0; height: 100dvh; overflow-y: auto; display: flex; flex-direction: column;
+  background: var(--color-paper); border-right: 1px solid var(--color-line-strong);
+}
+/* on a short screen the sidebar scrolls; nothing in it gets squashed to fit */
+.jk-side > * { flex-shrink: 0; }
+.jk-side-item { color: var(--color-ink); transition: background-color 0.12s ease; }
+.jk-side-item:hover { background: color-mix(in srgb, var(--sec) 8%, transparent); }
+.jk-side-item.is-on { background: color-mix(in srgb, var(--sec) 14%, var(--color-mount)); box-shadow: inset 3px 0 0 var(--sec-mark, var(--sec)); }
+.jk-side-count {
+  flex: none; min-width: 22px; padding: 1px 6px; border-radius: 2px; text-align: center;
+  font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; background: var(--sec); color: var(--color-on-accent);
+}
+
+.jk-listpane {
+  position: sticky; top: 0; height: 100dvh; overflow-y: auto; overscroll-behavior: contain; min-width: 0;
+  padding: 0 16px 48px; border-right: 1px solid var(--color-line-strong);
+}
+.jk-listpane [data-jk-id] { transition: background-color 0.12s ease; }
+
+/* Today on a computer: the boxes in columns, as many as fit at 340 px or more */
+.jk-desk .jk-home-bands { columns: 3 340px; column-gap: 20px; margin-top: 20px; }
+.jk-desk .jk-home-bands > section { margin: 0 0 20px; break-inside: avoid; }
+
+/* the Design library's cards side by side */
+.jk-desk .jk-lib-list { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
