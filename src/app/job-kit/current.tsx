@@ -36,14 +36,18 @@ export type Marks = Record<
   { quoteSentAt?: number; hidden?: boolean; mailSeen?: string; reviewAskedAt?: number; progress?: number; progressAt?: number; visitsDone?: string[] }
 >;
 
-/* Visits marked Done in the Job Kit (19 Oct 2026, Raf: 'when visit is set add also done button that clears the
-   booking'): kept on the phone (the job's marks, by booking), so they leave the Diary, Today and the job's In the
-   diary. ServiceM8 keeps the booking as it is, as the record that the visit happened; Cancel is still the way to
-   take one out of ServiceM8's schedule. */
+/* Bookings marked Done in the Job Kit (19 Oct 2026, Raf: 'when visit is set add also done button that clears the
+   booking'; visits first, then any booking): kept in the job's marks, by booking (and in step with the computer),
+   so they leave the Diary, Today and the job's In the diary. ServiceM8 keeps the booking as it is, as the record
+   that it happened; Cancel is still the way to take one out of ServiceM8's schedule. */
 export const isVisitDone = (b: Booking, marks: Marks) => Boolean(marks[b.jobUuid]?.visitsDone?.includes(b.uuid));
 export const withoutDone = (sm8: Sm8, marks: Marks): Sm8 => (sm8.bookings ? { ...sm8, bookings: sm8.bookings.filter((b) => !isVisitDone(b, marks)) } : sm8);
-/* Done shows on a visit from its day on (a visit can finish early, or be ticked off later). */
-const canDone = (b: Booking, j: CurrentJob | undefined, today: string) => kindOf(j) === 'Visit' && b.start.slice(0, 10) <= today;
+/* Done shows on any booking from the day it ends (a meeting can finish early, or be ticked off later): a visit on a
+   Quote job, and since 19 Oct 2026 work and meetings on a Work Order or Completed job too (Raf: 'I have been to a
+   meeting with Oscar and there is no button done which I could press and clear from diary'). A booking over several
+   days gets it on its last day. */
+const canDone = (b: Booking, today: string) => (b.end ?? b.start).slice(0, 10) <= today;
+const doneWord = (j?: CurrentJob) => (kindOf(j) === 'Visit' ? 'Visit done' : 'Done');
 
 const LIST_KEY = 'raf_jobkit_sm8';
 const MARKS_KEY = 'raf_jobkit_sm8_marks';
@@ -393,10 +397,10 @@ export function Diary({
                       <p className="flex items-start gap-2 text-[15px] leading-snug">
                         <Mark state="sent" />
                         <span>
-                          <span className="font-semibold">Visit done:</span> {spanText(b, b.start.slice(0, 10))}, {j?.name ?? 'a job'}
+                          <span className="font-semibold">{doneWord(j)}:</span> {spanText(b, b.start.slice(0, 10))}, {j?.name ?? 'a job'}
                         </span>
                       </p>
-                      <p className="mt-0.5 pl-6 text-[13.5px] leading-snug text-faint">Off your Diary. ServiceM8 keeps it as the visit that happened.</p>
+                      <p className="mt-0.5 pl-6 text-[13.5px] leading-snug text-faint">Off your Diary. ServiceM8 keeps the booking as it is.</p>
                       <div className="mt-1 flex flex-wrap gap-x-4 pl-6 text-[14.5px]">
                         <button type="button" className="h-10 text-accent underline" onClick={() => onOpen(b.jobUuid)}>
                           {j?.status === 'Quote' ? 'Open the job for the quote' : 'Open the job'}
@@ -441,10 +445,10 @@ export function Diary({
                         ) : null}
                         {manyStaff && staffName.get(b.staffUuid) ? <span className="mt-1 block font-mono text-[12.5px] text-faint">{staffName.get(b.staffUuid)}</span> : null}
                       </button>
-                      {canDone(b, j, today) ? (
+                      {canDone(b, today) ? (
                         <div className="border-t border-line px-3.5 py-2.5">
                           <button type="button" className="btn btn-ghost btn-sm w-full gap-2 bg-paper" disabled={!!busy} onClick={() => done(b)}>
-                            <Mark state="sent" /> Visit done
+                            <Mark state="sent" /> {doneWord(j)}
                           </button>
                         </div>
                       ) : null}
@@ -524,8 +528,8 @@ function BookingsBox({
   const [ticked, setTicked] = useState<Booking | null>(null); // the visit just marked done, for Undo
   const today = localDay();
   const now = `${today}T${new Date().toTimeString().slice(0, 5)}`;
-  // still to come, and today's visits until they're marked done
-  const upcoming = bookings.filter((b) => (b.end ?? b.start) >= now || (onDone && canDone(b, job, today) && b.start.slice(0, 10) === today));
+  // still to come, and today's bookings until they're marked done
+  const upcoming = bookings.filter((b) => (b.end ?? b.start) >= now || (onDone && canDone(b, today) && (b.end ?? b.start).slice(0, 10) === today));
   // lastDay is only set for a booking over several days (moving it keeps its length).
   const [form, setForm] = useState<null | { uuid?: string; day: string; lastDay?: string; from: string; to: string; staff: string }>(null);
   const [busy, setBusy] = useState(false);
@@ -592,7 +596,7 @@ function BookingsBox({
       {ticked ? (
         <p role="status" className="mt-2 flex flex-wrap items-center gap-x-3 text-[14.5px] leading-relaxed text-muted">
           <span className="flex items-center gap-1.5">
-            <Mark state="sent" /> Visit done ({spanText(ticked, ticked.start.slice(0, 10))}), off your Diary.
+            <Mark state="sent" /> {doneWord(job)} ({spanText(ticked, ticked.start.slice(0, 10))}), off your Diary.
           </span>
           <button
             type="button"
@@ -624,7 +628,7 @@ function BookingsBox({
                     Confirm on WhatsApp
                   </a>
                 ) : null}
-                {onDone && canDone(b, job, today) ? (
+                {onDone && canDone(b, today) ? (
                   <button
                     type="button"
                     className="flex h-10 items-center gap-1.5 font-semibold text-accent underline"
