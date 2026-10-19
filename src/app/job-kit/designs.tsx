@@ -505,7 +505,7 @@ export function DesignView({
           <Area label="What they want" value={d.brief} onChange={(e) => save({ d: { ...d, brief: e.target.value } })} placeholder="e.g. Two wardrobes either side of the chimney, rail and shelves, panelled doors, top boxes to the ceiling" />
           <Area label="Options to show (optional)" value={d.options} onChange={(e) => save({ d: { ...d, options: e.target.value } })} placeholder="e.g. A: flat doors. B: panelled doors with a bridge over the chimney" />
           <label className="grid gap-1.5">
-            <span className={label}>Customer’s mobile (optional, stays on this phone)</span>
+            <span className={label}>Customer’s mobile (optional, stays on the device you type it on)</span>
             <input className={`${field} h-12 font-mono`} type="tel" inputMode="tel" autoComplete="off" value={d.mobile} onChange={(e) => save({ d: { ...d, mobile: e.target.value } })} placeholder="07…" />
             <span className="text-[13.5px] text-faint">So Send on WhatsApp opens their chat with the link typed in. It is never sent anywhere else.</span>
           </label>
@@ -559,7 +559,7 @@ export function DesignView({
 
         <div className="border-t border-line pt-4">
           <button type="button" className={`h-10 text-[14.5px] font-semibold ${sure ? 'text-ink underline' : 'text-muted'}`} onClick={() => (sure ? void onForget() : setSure(true))}>
-            {sure ? 'Tap again to remove it from this phone' : 'Remove this request from the phone'}
+            {sure ? 'Tap again to remove it from your phone and computer' : 'Remove this request from the Job Kit'}
           </button>
         </div>
       </div>

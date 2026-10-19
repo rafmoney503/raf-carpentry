@@ -1,4 +1,4 @@
-import { allItems, allJobs, delFile, getFile, getItem, getJob, jobJson, notesTxt, putItem, putJob, type Item } from './store';
+import { allItems, allJobs, delFile, editedElsewhere, getFile, getItem, getJob, jobJson, notesTxt, putItem, putJob, type Item, type Job } from './store';
 
 /* Sends what the phone is holding to the inbox, one file at a time, oldest first. Clips go in 3 MB pieces
    (a Vercel function takes up to 4.5 MB), so a lost signal only costs the piece that was on its way.
@@ -118,7 +118,7 @@ async function sendItem(start: Item, pin: string): Promise<Result> {
     item = { ...fresh, parts, sentParts: p };
     await putItem(item);
   }
-  await putItem({ ...item, sent: true });
+  await putItem({ ...item, sent: true, sentAt: Date.now() });
   await delFile(item.id);
   changed();
   return { ok: true };
@@ -142,6 +142,14 @@ export async function sendDetails(jobId: string, pin = readPin(), keepalive = fa
 }
 
 const needsDetails = (j: { updatedAt: number; detailsSentAt?: number }) => j.updatedAt > (j.detailsSentAt || 0);
+/* With the phone and the computer in step (sync.ts): a job's details wait until every photo and clip of it is in
+   the inbox (some may still be on the other device), and go from the device that made the latest change, or from
+   the one that sent its last files after it, so the inbox never gets an older view of the job. */
+const mayDetail = (j: Job, items: Item[]) => {
+  const mine = items.filter((i) => i.jobId === j.id);
+  if (mine.some((i) => !i.sent && !i.lost)) return false;
+  return !editedElsewhere(j) || mine.some((i) => !i.remote && (i.sentAt || 0) > j.updatedAt);
+};
 /* Details wait until the typing has stopped for a bit (each send is a save in the inbox), unless Send was pressed. */
 const QUIET = 15_000;
 const due = (j: { updatedAt: number; detailsSentAt?: number; readyAt?: number }) =>
@@ -160,7 +168,9 @@ async function loop() {
       if (!pin) return set({ state: 'no-pin' });
       if (typeof navigator !== 'undefined' && navigator.onLine === false) return set({ state: 'offline' });
 
-      const waiting = (await allItems()).filter((i) => !i.sent && !i.lost).sort((a, b) => a.createdAt - b.createdAt);
+      const all = await allItems();
+      // a photo whose file is on the other device is sent from there
+      const waiting = all.filter((i) => !i.sent && !i.lost && !i.remote).sort((a, b) => a.createdAt - b.createdAt);
       let r: Result = { ok: true };
       if (waiting.length) {
         r = await sendItem(waiting[0], pin);
@@ -171,7 +181,7 @@ async function loop() {
           continue;
         }
       } else {
-        const pending = (await allJobs()).filter(needsDetails);
+        const pending = (await allJobs()).filter((j) => needsDetails(j) && mayDetail(j, all));
         const jobs = pending.filter(due);
         if (!jobs.length) {
           if (again) continue;

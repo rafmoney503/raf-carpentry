@@ -40,6 +40,7 @@ export type Job = {
   sm8?: string; // the ServiceM8 job it belongs to (Current jobs); stays on the phone
   sharedAt?: number; // a design's link last sent to the customer (Send on WhatsApp)
   fromDesign?: string; // a photo job built from a design request (its id): the job page reuses that design
+  syncedIn?: number; // the updatedAt of the version last taken in from the other device (sync.ts); stays on this device
 };
 export type Item = {
   id: string;
@@ -61,7 +62,9 @@ export type Item = {
   parts: number;
   sentParts: number;
   sent: boolean;
+  sentAt?: number; // when this device finished sending it
   lost?: boolean; // the phone dropped the file before it was sent
+  remote?: boolean; // the file is on the other device (phone or computer): only its details and thumbnail are here (sync.ts)
 };
 
 /* A design request: what the customer wants, the options to show, and changes after they've seen it.
@@ -171,6 +174,18 @@ export const putFile = (id: string, b: Blob) => run<void>('files', 'readwrite', 
 export const delFile = (id: string) => run<void>('files', 'readwrite', (s) => s.delete(id));
 
 export const getJob = (id: string) => run<Job | undefined>('jobs', 'readonly', (s) => s.get(id));
+
+/* ---------- kept in step with the other device (sync.ts) ---------- */
+
+/* A job whose latest version came from the other device (sync.ts sets syncedIn to its updatedAt when it takes one
+   in; any edit here changes updatedAt). That device sends its details to the inbox, so they aren't sent twice from
+   two views of the same job (uploader.ts). */
+export const editedElsewhere = (j: Job) => j.syncedIn !== undefined && j.syncedIn === j.updatedAt;
+
+/* Screens that copy a job into their own state while it's edited (a design request, the Notes tab) are keyed by the
+   version last taken in from the other device, so a change from there shows at once rather than being written over
+   by the copy on screen. */
+export const remoteStamp = (j: Job) => j.syncedIn || 0;
 
 /* ---------- names ---------- */
 

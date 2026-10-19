@@ -18,6 +18,7 @@ import {
   putFile,
   putItem,
   putJob,
+  remoteStamp,
   uid,
   type Item,
   type Job,
@@ -79,6 +80,7 @@ import { getWaFile as getWaFileBlob, pickedOf, pickedText, sendToJob, updateChat
 import type { Change } from '@/lib/job-timeline';
 import { ColourKey, KeyDots, secClass, secOfLine, secOfScreen, TintSwitch, useColourKey, useTint, type SecId } from './sections';
 import { LIST_SCREENS, PickNote, Sidebar, sideOf, useWide, type SideId } from './desktop';
+import { onApplied, onSync, startSync, syncNow, syncSoon, syncWords, type SyncState } from './sync';
 import './job-kit.css';
 
 type Tab = SectionId | 'notes' | 'send';
@@ -230,6 +232,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [status, setStatus] = useState<Status>({ state: 'idle' });
+  const [sync, setSync] = useState<SyncState>({ state: 'idle', at: 0, others: [], waiting: 0 });
+  const [, setSyncTick] = useState(0); // posted ticks from the other device: Today's Posts line reads them
   const [screen, setScreenState] = useState<Screen>({ name: 'home' });
   const screenNow = useRef(screen);
   useEffect(() => {
@@ -347,31 +351,38 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   }, []);
   const sm8Ref = useRef(sm8);
   sm8Ref.current = sm8;
+  // marks are read from storage, not the screen's copy, so one just in from the other device isn't overwritten
   const mark = useCallback((uuid: string, patch: Marks[string]) => {
-    setMarks((m) => {
+    setMarks(() => {
+      const m = readMarks();
       const next = { ...m, [uuid]: { ...m[uuid], ...patch } };
       saveMarks(next);
       return next;
     });
+    syncSoon();
   }, []);
 
   /* A visit marked Done (or put back): on the phone only, see isVisitDone in current.tsx. */
   const markVisit = useCallback((b: Booking, done: boolean) => {
-    setMarks((m) => {
+    setMarks(() => {
+      const m = readMarks();
       const was = (m[b.jobUuid]?.visitsDone ?? []).filter((x) => x !== b.uuid);
       const next = { ...m, [b.jobUuid]: { ...m[b.jobUuid], visitsDone: done ? [...was, b.uuid] : was } };
       saveMarks(next);
       return next;
     });
+    syncSoon();
   }, []);
   // The schedule as the Diary, Today and a job's In the diary show it: without the visits marked done.
   const diarySm8 = useMemo(() => withoutDone(sm8, marks), [sm8, marks]);
 
-  const reload = useCallback(async () => {
+  /* quiet: a reload after the other device's changes came in, so it doesn't start another round of syncing */
+  const reload = useCallback(async (quiet = false) => {
     try {
       const [j, i] = await Promise.all([allJobs(), allItems()]);
       setJobs(j.sort((a, b) => b.updatedAt - a.updatedAt));
       setItems(i);
+      if (!quiet) syncSoon();
     } catch {
       setProblem('This phone would not open the app’s storage. In Safari, turn off Private Browsing and open the app again.');
     }
@@ -471,12 +482,23 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     window.addEventListener('popstate', back);
     window.addEventListener('pageshow', shown);
     wake();
+    // in step with the other device (phone or computer): see sync.ts
+    const stopSync = startSync();
+    const offSync = onSync(setSync);
+    const offApplied = onApplied((kinds) => {
+      if (kinds.has('job') || kinds.has('item')) void reload(true);
+      if (kinds.has('mark')) setMarks(readMarks());
+      if (kinds.has('posted')) setSyncTick((t) => t + 1);
+    });
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/job-kit-sw.js', { scope: '/job-kit' }).catch(() => {});
     setStatsOff(true); // this phone's visits to the website aren't counted in the Website stats (src/lib/site-stats.ts)
     navigator.storage?.persist?.().catch(() => {});
     return () => {
       offStatus();
       offChange();
+      stopSync();
+      offSync();
+      offApplied();
       window.removeEventListener('online', online);
       document.removeEventListener('visibilitychange', visible);
       window.removeEventListener('popstate', back);
@@ -588,7 +610,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   const libraryOwn = library.filter((d) => !(d.job && models.some((m) => m.slug === d.job!.slug))).length;
   const waChats = useWaChats();
 
-  /* Off this phone only: the inbox and the website keep everything. */
+  /* Off this phone and the computer (sync.ts; a device still sending a job's photos keeps it): the inbox and the website keep everything. */
   const removeJobs = useCallback(
     async (ids: string[]) => {
       for (const id of ids) {
@@ -610,7 +632,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     [removeJobs, back],
   );
 
-  const waiting = useMemo(() => items.filter((i) => !i.sent && !i.lost), [items]);
+  const waiting = useMemo(() => items.filter((i) => !i.sent && !i.lost && !i.remote), [items]);
   const waitingBytes = waiting.reduce((n, i) => n + Math.max(0, i.bytes - i.sentParts * CHUNK), 0);
 
   /* ---------- changes ---------- */
@@ -796,6 +818,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 }}
                 pin={pin}
                 status={status}
+                sync={sync}
                 waitingBytes={waitingBytes}
                 onNew={() => go({ name: 'new' })}
                 onOpen={(id) => go({ name: 'job', id, tab: 'before' })}
@@ -881,7 +904,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
             ) : screen.name === 'design' ? (
               job ? (
                 <DesignView
-                  key={job.id}
+                  key={`${job.id}:${remoteStamp(job)}`}
                   job={job}
                   items={items.filter((i) => i.jobId === job.id)}
                   ready={designs[job.id]}
@@ -1141,11 +1164,13 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               <Settings
                 pin={pin}
                 status={status}
+                sync={sync}
                 tint={tint}
                 onTint={setTint}
                 onPin={(p) => {
                   savePin(p);
                   setPinState(p);
+                  syncNow();
                 }}
               />
             ) : screen.name === 'kit' ? (
@@ -1401,6 +1426,7 @@ function Home({
   onLibrary,
   pin,
   status,
+  sync,
   waitingBytes,
   onNew,
   onOpen,
@@ -1433,6 +1459,7 @@ function Home({
   onLibrary: () => void;
   pin: string;
   status: Status;
+  sync: SyncState;
   waitingBytes: number;
   onNew: () => void;
   onOpen: (id: string) => void;
@@ -1566,7 +1593,7 @@ function Home({
 
       <p className="mt-8 border-t border-line pt-4 font-mono text-[12.5px] leading-relaxed text-faint">
         On this {wide ? 'computer' : 'phone'}: {waitingBytes ? `${mb(waitingBytes)} waiting to send` : 'nothing waiting, all sent'}.
-        {status.state === 'offline' ? ' It sends when the signal is back and the app is open.' : ''}
+        {status.state === 'offline' ? ' It sends when the signal is back and the app is open.' : ''} {pin ? syncWords(sync) : ''}
       </p>
     </div>
   );
@@ -1636,7 +1663,7 @@ function KitJobs({ jobs, items, done, onClear, onNew, onOpen, heading }: { jobs:
       {finished.length ? (
         <div className="mt-4 rounded-sm border border-line-strong bg-mount px-4 py-3.5">
           <p className="text-[14.5px] leading-relaxed text-muted">
-            {finished.length === 1 ? '1 job is' : `${finished.length} jobs are`} finished and on your website. Clearing takes {finished.length === 1 ? 'it' : 'them'} off this phone only: the inbox and the website keep everything.
+            {finished.length === 1 ? '1 job is' : `${finished.length} jobs are`} finished and on your website. Clearing takes {finished.length === 1 ? 'it' : 'them'} off your phone and computer: the inbox and the website keep everything.
           </p>
           <button type="button" onClick={clear} className={`btn btn-sm mt-3 ${sure ? 'btn-primary' : 'btn-ghost'}`}>
             {sure ? `Tap again to clear ${finished.length === 1 ? 'it' : `all ${finished.length}`}` : `Clear finished (${finished.length})`}
@@ -1880,7 +1907,7 @@ function JobView({
 
       <div className="pt-5">
         {tab === 'notes' ? (
-          <NotesForm job={job} onNotes={onNotes} />
+          <NotesForm key={remoteStamp(job)} job={job} onNotes={onNotes} />
         ) : tab === 'send' ? (
           <SendPanel job={job} done={done} onPost={onPost} items={items} onSend={onSend} onForget={onForget} onJob={onJob} />
         ) : (
@@ -2009,7 +2036,10 @@ function SendPanel({
   const live = items.filter((i) => !i.lost);
   const lost = items.length - live.length;
   const left = live.filter((i) => !i.sent);
-  const leftBytes = left.reduce((n, i) => n + Math.max(0, i.bytes - i.sentParts * CHUNK), 0);
+  const here = left.filter((i) => !i.remote);
+  const there = left.length - here.length; // still on the other device (phone or computer), sent from there
+  const leftBytes = here.reduce((n, i) => n + Math.max(0, i.bytes - i.sentParts * CHUNK), 0);
+  const wide = useWide();
   const sizes = job.notes.sizes.filter((s) => s.w || s.h || s.d).length;
   const notesFilled = [job.notes.materials, job.notes.hardware, job.notes.tricky, job.notes.wanted, job.notes.okToShow].filter((v) => v.trim()).length;
   const sentToClaude = job.readyAt && (job.detailsSentAt || 0) >= job.readyAt && !left.length;
@@ -2047,7 +2077,12 @@ function SendPanel({
       </table>
 
       <p className="mt-5 font-mono text-[13px] leading-relaxed text-faint">
-        {left.length ? `${left.length} still on this phone (${mb(leftBytes)}). Keep the app open with signal and they go.` : 'Every photo and clip is in your inbox, none left on this phone.'}
+        {here.length
+          ? `${here.length} still on this ${wide ? 'computer' : 'phone'} (${mb(leftBytes)}). Keep the app open with signal and they go.`
+          : there
+            ? ''
+            : `Every photo and clip is in your inbox, none left on this ${wide ? 'computer' : 'phone'}.`}
+        {there ? ` ${there} still on your ${wide ? 'phone' : 'computer'}: they go from there when the Job Kit is open on it.` : ''}
         {lost ? ` ${lost} could not be sent (the phone cleared them).` : ''}
       </p>
 
@@ -2108,7 +2143,7 @@ function SendPanel({
         </p>
         {sentToClaude ? (
           <button type="button" className={`mt-4 h-10 text-[14.5px] font-semibold ${sure ? 'text-ink underline' : 'text-muted'}`} onClick={() => (sure ? void onForget() : setSure(true))}>
-            {sure ? 'Tap again to remove it from this phone' : 'Remove this job from the phone (it stays in the inbox)'}
+            {sure ? 'Tap again to remove it from your phone and computer' : 'Remove this job from the Job Kit (it stays in the inbox)'}
           </button>
         ) : null}
       </div>
@@ -2159,7 +2194,7 @@ const CHECK_TEXT: Record<string, string> = {
   error: 'Something went wrong. Try again in a minute.',
 };
 
-function Settings({ pin, status, onPin, tint, onTint }: { pin: string; status: Status; onPin: (p: string) => void; tint: boolean; onTint: (on: boolean) => void }) {
+function Settings({ pin, status, sync, onPin, tint, onTint }: { pin: string; status: Status; sync: SyncState; onPin: (p: string) => void; tint: boolean; onTint: (on: boolean) => void }) {
   const [value, setValue] = useState(pin);
   const [result, setResult] = useState('');
   const [checking, setChecking] = useState(false);
@@ -2198,6 +2233,17 @@ function Settings({ pin, status, onPin, tint, onTint }: { pin: string; status: S
           {result}
         </p>
       ) : null}
+      <h2 className="mt-9 font-mono text-[12.5px] uppercase tracking-[0.06em] text-faint">Phone and computer</h2>
+      <p role="status" className="mt-2 text-[15.5px] leading-relaxed">
+        {sync.state === 'syncing' && !sync.at ? 'Getting in step…' : syncWords(sync)}
+        {sync.waiting && sync.state !== 'syncing' ? ` ${sync.waiting} change${sync.waiting === 1 ? '' : 's'} still to go.` : ''}
+      </p>
+      <p className="mt-2 text-[14.5px] leading-relaxed text-muted">
+        Kept in step: your Job Kit jobs and design requests with their notes and photo thumbnails, how far along each job is, quotes sent, visits done, reviews asked, hidden jobs and posted ticks. Each photo is sent to your inbox from the device that took it. Stay where they are: WhatsApp chats, a customer’s mobile on a design request, and anything you’re still writing.
+      </p>
+      <button type="button" className="btn btn-ghost btn-sm mt-3" disabled={sync.state === 'syncing' || !pin} onClick={() => syncNow()}>
+        {sync.state === 'syncing' ? 'Bringing them into step…' : 'Bring them into step now'}
+      </button>
       <h2 className="mt-9 font-mono text-[12.5px] uppercase tracking-[0.06em] text-faint">Colours</h2>
       <div className="mt-2">
         <TintSwitch on={tint} onChange={onTint} />

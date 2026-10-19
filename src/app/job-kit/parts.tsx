@@ -189,7 +189,7 @@ export function ItemPanel({ item, onRemove, onCaption }: { item: Item; onRemove:
         <span>{mb(item.bytes)}</span>
         {item.w && item.h ? <span>{item.w} x {item.h}</span> : null}
         {item.duration ? <span>{Math.round(item.duration)} s</span> : null}
-        <span>{item.sent ? 'sent' : item.sentParts ? `sending, ${item.sentParts} of ${item.parts} pieces` : 'waiting to send'}</span>
+        <span>{item.sent ? 'sent' : item.remote ? 'on your other device, sent from there' : item.sentParts ? `sending, ${item.sentParts} of ${item.parts} pieces` : 'waiting to send'}</span>
       </div>
       {long ? <p className="mt-2 text-[14px] leading-snug text-ink">Longer than 30 s. Fine for the time-lapse; the site plays up to 24 s of any other clip, so it will be cut.</p> : null}
       <label className="mt-2.5 grid gap-1">

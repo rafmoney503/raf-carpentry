@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from './icons';
 import Mark from './mark';
+import { onApplied, POSTED_KEY, syncSoon } from './sync';
 
 /* Posts: ready-made post packs for Instagram, TikTok and YouTube Shorts (scripts/social-pack.py makes them into
    public/social/<job>/ and content/social/<job>.json). Each button copies the caption and opens the phone's
    share sheet with the video or photos, so Raf picks the app, adds a sound there and posts. Nothing posts by
-   itself and no app accounts are connected. What he has posted is ticked on this phone only. */
+   itself and no app accounts are connected. What he has posted is ticked here and kept in step with the computer
+   (sync.ts). */
 
 export type Pack = {
   slug: string;
@@ -24,7 +26,6 @@ export type Pack = {
 
 type Where = 'reel' | 'carousel' | 'tiktok' | 'youtube';
 type Posted = Record<string, Partial<Record<Where, string>>>;
-const POSTED_KEY = 'raf_jobkit_posted';
 const WHERE: Where[] = ['reel', 'carousel', 'tiktok', 'youtube'];
 const SHORT: Record<Where, string> = { reel: 'Reel', carousel: 'Photos', tiktok: 'TikTok', youtube: 'YouTube' };
 
@@ -44,6 +45,8 @@ export const postedEverywhere = (packs: Pack[]) => {
 
 function usePosted() {
   const [posted, setPosted] = useState<Posted>(() => (typeof window === 'undefined' ? {} : readPosted()));
+  // ticked on the other device
+  useEffect(() => onApplied((kinds) => void (kinds.has('posted') && setPosted(readPosted()))), []);
   const toggle = (slug: string, where: Where) => {
     const now = readPosted();
     const mine = { ...(now[slug] || {}) };
@@ -56,6 +59,7 @@ function usePosted() {
       /* private mode: kept until the app closes */
     }
     setPosted(next);
+    syncSoon();
   };
   return { posted, toggle };
 }

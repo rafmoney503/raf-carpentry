@@ -128,7 +128,7 @@ export function Sidebar({ active, counts, onGo }: { active?: SideId; counts: Par
         >
           Settings
         </button>
-        <p className="px-2 pt-2 font-mono text-[11.5px] leading-snug text-faint">The same app as on your phone. Things from ServiceM8, the inbox and the website show on both.</p>
+        <p className="px-2 pt-2 font-mono text-[11.5px] leading-snug text-faint">The same app as on your phone, kept in step with it. WhatsApp chats stay on the device they came into.</p>
       </div>
     </aside>
   );
