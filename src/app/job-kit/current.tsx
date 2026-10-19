@@ -824,6 +824,7 @@ export function CurrentView({
   onLibrary,
   onKit,
   onTimeline,
+  extra,
   onOpenKit,
   bookings,
   staff,
@@ -846,6 +847,7 @@ export function CurrentView({
   onLibrary: () => void;
   onKit: () => void;
   onTimeline?: () => void; // the Job timeline, this job's sheet open
+  extra?: React.ReactNode; // after Where it's up to: the WhatsApp chat it came from (whatsapp.tsx WaJobBox)
   onOpenKit: (k: Job) => void;
   bookings: Booking[];
   staff: Staff[];
@@ -1016,6 +1018,8 @@ export function CurrentView({
         <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint">Moving a job here moves it in ServiceM8 too. Nothing is ever deleted there.</p>
       </section>
 
+      {extra}
+
       <PropertyBox job={job} />
 
       <BookingsBox job={job} bookings={bookings} staff={staff} loaded={bookingsLoaded} onBook={onBook} onMove={onMove} onCancel={onCancel} />
@@ -1141,6 +1145,7 @@ export function NewEnquiry({
   forClient,
   named,
   seed,
+  seedFrom = 'email',
   onCustomer,
 }: {
   onCancel: () => void;
@@ -1148,7 +1153,8 @@ export function NewEnquiry({
   clients?: Client[]; // ServiceM8's customers (with the current jobs'), for "Already a customer?"
   forClient?: Client; // started from a customer's page
   named?: string; // started from a search that found nobody
-  seed?: Enquiry; // started from an email in the Inbox (inbox.tsx enquiryFromMail)
+  seed?: Enquiry; // started from an email in the Inbox (inbox.tsx enquiryFromMail) or a WhatsApp chat (whatsapp.tsx enquiryFromChat)
+  seedFrom?: 'email' | 'whatsapp';
   onCustomer?: (uuid: string) => void;
 }) {
   // What's typed is kept on the phone until it reaches ServiceM8, so no signal never loses an enquiry.
@@ -1251,13 +1257,15 @@ export function NewEnquiry({
         <div role="alert" className="mt-4 rounded-sm border border-ink bg-mount px-3.5 py-3">
           <p className="text-[15px] leading-relaxed">You have an enquiry that hasn’t gone to ServiceM8 yet{e.name.trim() ? ` for ${e.name.trim()}` : ''}. Send it first, or clear it.</p>
           <button type="button" className="btn btn-ghost btn-sm mt-2.5" onClick={() => update(clashSeed)}>
-            Clear it and fill in from the email
+            Clear it and fill in from the {seedFrom === 'whatsapp' ? 'WhatsApp chat' : 'email'}
           </button>
         </div>
       ) : null}
       {seed && !clashSeed && sameEmail(e.email, seed.email) ? (
         <p className="mt-4 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-[14.5px] leading-relaxed text-muted">
-          Filled in from the email: check the name, add their mobile if you have it, then Add to ServiceM8.
+          {seedFrom === 'whatsapp'
+            ? 'Filled in from the WhatsApp chat: check the name and the words, add their mobile if it’s missing, then Add to ServiceM8. The ticked photos and PDFs go into the job’s diary straight after.'
+            : 'Filled in from the email: check the name, add their mobile if you have it, then Add to ServiceM8.'}
         </p>
       ) : null}
 
@@ -1351,7 +1359,7 @@ export function NewEnquiry({
 
 /* ---------- the morning summary ---------- */
 
-export type TodayLine = { text: string; go: 'current' | 'designs' | 'posts' | 'jobs' | 'diary' | 'sm8' | 'inbox' | 'timeline'; urgent?: boolean; id?: string; time?: string; icon?: IconName };
+export type TodayLine = { text: string; go: 'current' | 'designs' | 'posts' | 'jobs' | 'diary' | 'sm8' | 'inbox' | 'timeline' | 'whatsapp'; urgent?: boolean; id?: string; time?: string; icon?: IconName };
 
 export function todayLines({
   sm8,

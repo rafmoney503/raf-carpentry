@@ -32,6 +32,11 @@ export function readToken(token: string, now = Date.now()): { job: string; n: nu
 
 /* A uuid that is always the same for this job's photo number i. */
 export function photoUuid(job: string, i: number) {
-  const h = createHash('sha256').update(`${job}:photo:${i}`).digest('hex');
+  return stableUuid(`${job}:photo:${i}`);
+}
+/* The same words always give the same uuid (a v4-shaped one), so sending a thing again to ServiceM8 is a 409, not
+   a second copy. */
+export function stableUuid(words: string) {
+  const h = createHash('sha256').update(words).digest('hex');
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-${((parseInt(h[16], 16) & 3) | 8).toString(16)}${h.slice(17, 20)}-${h.slice(20, 32)}`;
 }

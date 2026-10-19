@@ -1,5 +1,6 @@
 import { guard } from '@/lib/job-kit-server';
-import { addBooking, allClients, cancelBooking, clientJobs, createEnquiry, currentJobs, moveBooking, setStatus, sm8SetUp, Sm8Error, STATUSES, type Status } from '@/lib/servicem8';
+import { addBooking, addJobNote, allClients, cancelBooking, clientJobs, createEnquiry, currentJobs, moveBooking, setStatus, sm8SetUp, Sm8Error, STATUSES, touchJob, type Status } from '@/lib/servicem8';
+import { stableUuid } from '@/lib/brief-token';
 import { jobMail, recentReplies, sendJobEmail, sendJobText } from '@/lib/servicem8-mail';
 import { e164 } from '@/lib/mail-text';
 import { lookupProperty } from '@/lib/property';
@@ -22,6 +23,10 @@ import { lookupProperty } from '@/lib/property';
    { action: 'send-mail', job, to, subject, text, save? } an email to the customer through ServiceM8, filed on the job
                                                          (save: the job has no email, so `to` is saved on its contact)
    { action: 'send-text', job, to, text }                a text (SMS) to the customer through ServiceM8, filed on the job
+   { action: 'note', job, text, key? }                   a note on the job (a WhatsApp chat's messages; key: the same
+                                                         note isn't added twice when sent again)
+   { action: 'touch', job }                              saves the job again so attachments added through the API show
+                                                         in its diary (/api/job-kit/attach adds them)
    'list' also brings `replies`: job uuid -> their newest email in the last 14 days (null if emails can't be read).
    Times are London time, "YYYY-MM-DDTHH:MM". */
 export const maxDuration = 30;
@@ -117,6 +122,24 @@ export async function POST(req: Request) {
       if (!isUuid(job) || !e164(to)) return Response.json({ error: 'bad-mobile' }, { status: 400 });
       if (!message) return Response.json({ error: 'missing-text' }, { status: 400 });
       return Response.json(await sendJobText({ job, to, text: message, email: text(body.email, 160) }), { headers: noStore });
+    }
+    if (body.action === 'note') {
+      const job = text(body.job, 40);
+      const note = text(body.text, 8000);
+      const key = text(body.key, 80);
+      if (!isUuid(job) || !note) return Response.json({ error: 'bad' }, { status: 400 });
+      try {
+        await addJobNote(job, note, key ? stableUuid(`${job}:note:${key}`) : undefined);
+      } catch (e) {
+        if (!(e instanceof Sm8Error && e.detail.startsWith('409'))) throw e; // already there from an earlier try
+      }
+      return Response.json({ ok: true }, { headers: noStore });
+    }
+    if (body.action === 'touch') {
+      const job = text(body.job, 40);
+      if (!isUuid(job)) return Response.json({ error: 'bad' }, { status: 400 });
+      await touchJob(job);
+      return Response.json({ ok: true }, { headers: noStore });
     }
     if (body.action === 'cancel') {
       const uuid = text(body.uuid, 40);

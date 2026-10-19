@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- the pictures here are small thumbnails kept on the phone (data URLs), not site images */
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { clipInfo, shrinkPhoto } from './media';
-import { KINDS, progress, REVIEW_OPTIONS, SECTIONS, SHOW_OPTIONS, TOOLS, type Section, type SectionId, type Slot } from './plan';
+import { DESIGN_SPACE, KINDS, progress, REVIEW_OPTIONS, SECTIONS, SHOW_OPTIONS, TOOLS, type Section, type SectionId, type Slot } from './plan';
 import {
   allItems,
   allJobs,
@@ -70,6 +70,9 @@ import type { CurrentJob } from '@/lib/servicem8';
 import { StatsPageView, StatsView, statsLine } from './stats';
 import { setStatsOff } from '@/lib/site-stats';
 import { JobTimeline, TimelineMini } from './job-timeline';
+import { withoutGreeting } from '@/lib/whatsapp-chat';
+import { addSend, enquiryFromChat, WaChatView, waHomeLine, WaJobBox, WaList, waTodayLines } from './whatsapp';
+import { getWaFile as getWaFileBlob, pickedOf, pickedText, sendToJob, updateChat, useWaChats, waChat, type WaChat } from './wa-store';
 import type { Change } from '@/lib/job-timeline';
 import { ColourKey, KeyDots, secClass, secOfLine, secOfScreen, TintSwitch, useColourKey, useTint, type SecId } from './sections';
 import './job-kit.css';
@@ -84,12 +87,14 @@ type Screen =
   | { name: 'post'; slug: string }
   | { name: 'designs' }
   | { name: 'design'; id: string }
-  | { name: 'new-design'; from?: string }
+  | { name: 'new-design'; from?: string; wa?: string } // wa: started from a WhatsApp chat's photos
   | { name: 'current' }
-  | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer' | 'timeline'; client?: string }
-  | { name: 'enquiry'; client?: string; named?: string; mail?: string } // client: started from a customer's page; named: from a search that found nobody; mail: from an email in the Inbox
+  | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer' | 'timeline' | 'wa'; client?: string; chat?: string }
+  | { name: 'enquiry'; client?: string; named?: string; mail?: string; wa?: string } // client: started from a customer's page; named: from a search that found nobody; mail: from an email in the Inbox
   | { name: 'customer'; id: string; from?: 'home' } // one customer from ServiceM8 (customer-view.tsx)
   | { name: 'diary' }
+  | { name: 'whatsapp' } // WhatsApp chats brought in (whatsapp.tsx)
+  | { name: 'wa-chat'; id: string }
   | { name: 'timeline'; job?: string } // Job timeline, a Gantt chart of the jobs going ahead (job-timeline.tsx); job: open its sheet
   | { name: 'inbox' } // info@rafcarpentry.com (inbox.tsx)
   | { name: 'email'; id: string; from?: 'home' | 'job'; job?: string } // job: opened from a ServiceM8 job's 'Reply from info@'
@@ -99,7 +104,13 @@ type Screen =
 
 /* Where "‹ Back" goes when the app was reopened straight onto a screen (no history to go back through). */
 const parentOf = (s: Screen): Screen =>
-  s.name === 'stats-page'
+  s.name === 'wa-chat'
+    ? { name: 'whatsapp' }
+    : (s.name === 'enquiry' || s.name === 'new-design') && s.wa
+    ? { name: 'wa-chat', id: s.wa }
+    : s.name === 'sm8' && s.from === 'wa' && s.chat
+    ? { name: 'wa-chat', id: s.chat }
+    : s.name === 'stats-page'
     ? { name: 'stats' }
     : s.name === 'email'
     ? s.from === 'job' && s.job
@@ -130,7 +141,7 @@ const parentOf = (s: Screen): Screen =>
           : { name: 'home' };
 const backLabel = (s: Screen) => {
   const p = parentOf(s).name;
-  return p === 'stats' ? 'Stats' : p === 'designs' ? 'Designs' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'timeline' ? 'Timeline' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : p === 'inbox' ? 'Inbox' : p === 'email' ? 'Email' : 'Today';
+  return p === 'stats' ? 'Stats' : p === 'designs' ? 'Designs' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'timeline' ? 'Timeline' : p === 'whatsapp' ? 'WhatsApp' : p === 'wa-chat' ? 'Chat' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : p === 'inbox' ? 'Inbox' : p === 'email' ? 'Email' : 'Today';
 };
 
 const thisMonth = () => {
@@ -144,7 +155,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-page'].includes(s.name)) return s;
+    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-page'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -525,6 +536,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     [book, moveBooking],
   );
   const designJobs = useMemo(() => jobs.filter((j) => j.kind === 'design'), [jobs]);
+  const waChats = useWaChats();
 
   /* Off this phone only: the inbox and the website keep everything. */
   const removeJobs = useCallback(
@@ -709,6 +721,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               checkSm8();
               go({ name: 'timeline' });
             }}
+            waChats={waChats}
+            onWhatsApp={() => go({ name: 'whatsapp' })}
             onToday={(l) => {
               if (l.go === 'current') {
                 checkSm8();
@@ -719,6 +733,11 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               } else if (l.go === 'timeline') {
                 checkSm8();
                 go({ name: 'timeline' });
+              } else if (l.go === 'whatsapp') {
+                if (l.id) {
+                  checkClients();
+                  go({ name: 'wa-chat', id: l.id });
+                } else go({ name: 'whatsapp' });
               } else if (l.go === 'sm8' && l.id) go({ name: 'sm8', id: l.id, from: 'home' });
               else if (l.go === 'inbox') {
                 if (l.id) go({ name: 'email', id: l.id, from: 'home' });
@@ -779,12 +798,39 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
           <Library designs={library} models={models} kinds={kinds} hasPin={Boolean(pin)} to={sendTo ? { name: sendTo.name, first: sendTo.first, mobile: sendTo.mobile || sendTo.phone } : undefined} />
         ) : screen.name === 'new-design' ? (
           <NewDesign
-            key={screen.from ?? 'new'}
-            initial={from ? { what: whatOf(from.description), area: from.area, mobile: from.mobile, sm8: from.uuid } : undefined}
+            key={screen.wa ?? screen.from ?? 'new'}
+            initial={
+              screen.wa && waChat(screen.wa)
+                ? (() => {
+                    // From a WhatsApp chat: what from the ticked words, the area and mobile from the job or the chat.
+                    const c = waChat(screen.wa)!;
+                    const text = pickedText(c);
+                    return {
+                      what: from ? whatOf(from.description) : whatOf(withoutGreeting(text)),
+                      area: from?.area ?? '',
+                      mobile: from?.mobile || c.number || '',
+                      sm8: from?.uuid,
+                    };
+                  })()
+                : from
+                  ? { what: whatOf(from.description), area: from.area, mobile: from.mobile, sm8: from.uuid }
+                  : undefined
+            }
             onCancel={back}
             onCreate={async (j) => {
-              await putJob(j);
+              const c = screen.wa ? waChat(screen.wa) : undefined;
+              await putJob(c ? { ...j, design: { ...j.design!, brief: pickedText(c) } } : j);
               await reload();
+              if (c) {
+                // the ticked photos become the photos of the space
+                const files: File[] = [];
+                for (const name of pickedOf(c).files.filter((f) => /\.(jpe?g|png|gif|heic|heif)$/i.test(f))) {
+                  const b = await getWaFileBlob(c.id, name);
+                  if (b) files.push(new File([b], name, { type: b.type || 'image/jpeg', lastModified: Date.now() }));
+                }
+                if (files.length) await addFiles(j.id, DESIGN_SPACE, DESIGN_SPACE.slots[0], files);
+                await updateChat(c.id, (x) => ({ ...x, design: j.id }));
+              }
               wake(QUIET_START);
               go({ name: 'design', id: j.id }, false);
             }}
@@ -880,13 +926,52 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
             onProgress={(uuid, progress) => mark(uuid, { progress, progressAt: Date.now() })}
             onComplete={(uuid) => void changeStatus(uuid, 'Completed')}
           />
+        ) : screen.name === 'whatsapp' ? (
+          <WaList chats={waChats} onOpen={(id) => go({ name: 'wa-chat', id })} />
+        ) : screen.name === 'wa-chat' ? (
+          waChat(screen.id) ? (
+            <WaChatView
+              key={screen.id}
+              chat={waChat(screen.id)!}
+              clients={allClients}
+              jobs={sm8.jobs}
+              onNewJob={() => {
+                checkClients();
+                go({ name: 'enquiry', wa: screen.id });
+              }}
+              onAdded={(j) => void sendToJob(screen.id, addSend(waChat(screen.id)!, j))}
+              onDesign={() => {
+                const c = waChat(screen.id)!;
+                const job = c.sends[c.sends.length - 1]?.job;
+                go({ name: 'new-design', wa: screen.id, from: job });
+              }}
+              onOpenJob={(id) => {
+                checkSm8();
+                go({ name: 'sm8', id, from: 'wa', chat: screen.id });
+              }}
+              onCustomer={(id) => {
+                checkClients();
+                go({ name: 'customer', id });
+              }}
+              onGone={() => go({ name: 'whatsapp' }, false)}
+            />
+          ) : (
+            <p className="pt-16 text-center font-mono text-[14px] text-faint">{waChats.length ? 'That chat isn’t on this phone any more.' : 'Opening the chat…'}</p>
+          )
         ) : screen.name === 'enquiry' ? (
           <NewEnquiry
-            key={screen.client ?? screen.named ?? screen.mail ?? 'enquiry'}
+            key={screen.client ?? screen.named ?? screen.mail ?? screen.wa ?? 'enquiry'}
             clients={allClients}
             forClient={screen.client ? customerOf(screen.client) : undefined}
             named={screen.named}
-            seed={screen.mail && openedMail(screen.mail) ? enquiryFromMail(openedMail(screen.mail)!) : undefined}
+            seed={
+              screen.mail && openedMail(screen.mail)
+                ? enquiryFromMail(openedMail(screen.mail)!)
+                : screen.wa && waChat(screen.wa)
+                  ? enquiryFromChat(waChat(screen.wa)!, allClients.find((c) => c.uuid === waChat(screen.wa!)!.client))
+                  : undefined
+            }
+            seedFrom={screen.wa ? 'whatsapp' : 'email'}
             onCustomer={(id) => go({ name: 'customer', id })}
             onCancel={back}
             onCreate={async (e) => {
@@ -898,6 +983,15 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 keepSm8(next);
                 return next;
               });
+              const c = screen.wa ? waChat(screen.wa) : undefined;
+              if (c) {
+                // the ticked photos and PDFs follow the new job into its diary (wa-store.ts sends them)
+                const job = r.data.job;
+                await updateChat(c.id, (x) => ({ ...x, client: job.client ?? x.client, clientName: job.name }), true);
+                await sendToJob(c.id, { job: job.uuid, number: job.number, what: whatOf(job.description), mode: 'new', files: pickedOf(c).files });
+                go({ name: 'sm8', id: job.uuid, from: 'wa', chat: c.id }, false);
+                return '';
+              }
               go({ name: 'sm8', id: r.data.job.uuid }, false);
               return '';
             }}
@@ -926,6 +1020,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 checkSm8();
                 go({ name: 'timeline', job: cur.uuid });
               }}
+              extra={<WaJobBox chats={waChats} job={cur.uuid} onOpen={(id) => go({ name: 'wa-chat', id })} />}
               onOpenKit={(k) => go(k.kind === 'design' ? { name: 'design', id: k.id } : { name: 'job', id: k.id, tab: 'before' })}
               bookings={(sm8.bookings ?? []).filter((b) => b.jobUuid === cur.uuid)}
               staff={sm8.staff ?? []}
@@ -1136,6 +1231,8 @@ function Home({
   onCurrent,
   onDiary,
   onTimeline,
+  waChats,
+  onWhatsApp,
   onToday,
   designJobs,
   designs,
@@ -1166,6 +1263,8 @@ function Home({
   onCurrent: () => void;
   onDiary: () => void;
   onTimeline: () => void;
+  waChats: WaChat[];
+  onWhatsApp: () => void;
   onToday: (l: TodayLine) => void;
   designJobs: Job[];
   designs: DesignsReady;
@@ -1185,7 +1284,8 @@ function Home({
   // the last Website stats kept on this phone (stats.tsx), read straight from storage
   const webLine = useSyncExternalStore(noSubscribe, statsLine, () => 'Visitors, pages and heatmaps of rafcarpentry.com');
   const mailLine = inboxTodayLine(inbox, customers);
-  const lines = [...(mailLine ? [mailLine] : []), ...todayLines({ sm8, marks, kit: [...jobs, ...designJobs], designs, done, postsLeft: posts.length - postedEverywhere(posts) })];
+  const waLines: TodayLine[] = waTodayLines(waChats).map((l) => ({ text: l.text, go: 'whatsapp', id: l.id, urgent: l.urgent }));
+  const lines = [...(mailLine ? [mailLine] : []), ...waLines, ...todayLines({ sm8, marks, kit: [...jobs, ...designJobs], designs, done, postsLeft: posts.length - postedEverywhere(posts) })];
   const goingAhead = sm8.jobs.filter((j) => j.status === 'Work Order').length;
   // Finished: on the website, and nothing of it left to send.
   const finished = jobs.filter((j) => done[j.id] && !items.some((i) => i.jobId === j.id && !i.sent && !i.lost));
@@ -1283,6 +1383,12 @@ function Home({
           <HomeRow onClick={onDiary} title="Diary" line={diaryLine(sm8)} />
           <HomeRow onClick={onCurrent} title="Current jobs" line={currentLine(sm8, marks)} />
           <HomeRow onClick={onInbox} title="Inbox" line={inboxLine(inbox)} truncate last />
+        </div>
+      </HomeBand>
+
+      <HomeBand sec="whatsapp" icon="chat" label="WhatsApp" right={waChats.length ? `${waChats.length} chat${waChats.length === 1 ? '' : 's'}` : undefined}>
+        <div className="px-4">
+          <HomeRow onClick={onWhatsApp} title="WhatsApp chats" line={waHomeLine(waChats)} truncate last />
         </div>
       </HomeBand>
 
@@ -1406,7 +1512,7 @@ function currentLine(sm8: Sm8, marks: Marks) {
 }
 
 /* Each line on the Today list shows the icon of the section it opens. */
-const LINE_ICON: Record<TodayLine['go'], IconName> = { current: 'jobs', designs: 'designs', posts: 'posts', jobs: 'kit', diary: 'diary', sm8: 'diary', inbox: 'mail', timeline: 'gantt' };
+const LINE_ICON: Record<TodayLine['go'], IconName> = { current: 'jobs', designs: 'designs', posts: 'posts', jobs: 'kit', diary: 'diary', sm8: 'diary', inbox: 'mail', timeline: 'gantt', whatsapp: 'chat' };
 
 function diaryLine(sm8: Sm8) {
   if (!sm8.at || sm8.bookings === undefined) return 'Visits and work booked in ServiceM8';

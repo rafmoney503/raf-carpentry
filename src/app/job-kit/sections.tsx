@@ -11,13 +11,16 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
    ... backgrounds as well ... a switch so I can turn on and off the background in whole app if I get used to'): on by
    default, each screen washed in its section's colour, the Today boxes and each To do line too; the switch is in the
    colour key and in Settings (localStorage raf_jobkit_tint, '0' = off).
-   Job timeline (19 Oct 2026): a sixth section, olive green, for the Gantt chart of the jobs going ahead. */
+   Job timeline (19 Oct 2026): a sixth section, olive green, for the Gantt chart of the jobs going ahead.
+   WhatsApp (19 Oct 2026): a seventh, its dot and edges in WhatsApp's own bright green (--sec-mark) so it can't be
+   mistaken for the teal and olive ones, its words in a darker green that reads on white. */
 
-export type SecId = 'todo' | 'customers' | 'timeline' | 'designs' | 'website' | 'photos';
+export type SecId = 'todo' | 'customers' | 'whatsapp' | 'timeline' | 'designs' | 'website' | 'photos';
 
 export const SECTIONS: { id: SecId; name: string; what: string }[] = [
   { id: 'todo', name: 'To do', what: 'What needs doing now.' },
   { id: 'customers', name: 'Customers', what: 'Diary, Current jobs, Inbox, emails and texts.' },
+  { id: 'whatsapp', name: 'WhatsApp', what: 'Chats brought in, sent to ServiceM8 with their photos.' },
   { id: 'timeline', name: 'Job timeline', what: 'Start, finish and progress of each job.' },
   { id: 'designs', name: 'Designs in 3D', what: 'Designs for customers and the Design library.' },
   { id: 'website', name: 'Website', what: 'Website stats and page heatmaps.' },
@@ -29,6 +32,7 @@ export function secOfScreen(name: string): SecId | undefined {
   if (['diary', 'current', 'sm8', 'enquiry', 'customer', 'inbox', 'email'].includes(name)) return 'customers';
   if (['designs', 'design', 'new-design', 'library'].includes(name)) return 'designs';
   if (name === 'timeline') return 'timeline';
+  if (name === 'whatsapp' || name === 'wa-chat') return 'whatsapp';
   if (['stats', 'stats-page'].includes(name)) return 'website';
   if (['posts', 'post', 'job', 'new'].includes(name)) return 'photos';
   return undefined;
@@ -36,7 +40,7 @@ export function secOfScreen(name: string): SecId | undefined {
 
 /* Which section a Today line opens. */
 export const secOfLine = (go: string): SecId =>
-  go === 'designs' ? 'designs' : go === 'posts' || go === 'jobs' ? 'photos' : go === 'timeline' ? 'timeline' : 'customers';
+  go === 'designs' ? 'designs' : go === 'posts' || go === 'jobs' ? 'photos' : go === 'timeline' ? 'timeline' : go === 'whatsapp' ? 'whatsapp' : 'customers';
 
 export const secClass = (s?: SecId) => (s ? `jk-sec-${s}` : '');
 
@@ -135,7 +139,7 @@ export function useColourKey(ready: boolean) {
 /* The dots in the top bar, one per section: tap to see what each colour means. */
 export function KeyDots({ onClick }: { onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="flex h-9 shrink-0 items-center gap-[3px] rounded-sm border border-line-strong px-2" aria-label="What the colours mean">
+    <button type="button" onClick={onClick} className="jk-dots flex h-9 shrink-0 items-center gap-[3px] rounded-sm border border-line-strong px-2" aria-label="What the colours mean">
       {SECTIONS.map((s) => (
         <span key={s.id} aria-hidden className={`jk-dot ${secClass(s.id)}`} />
       ))}
@@ -159,8 +163,8 @@ export function ColourKey({ onClose, tint, onTint }: { onClose: () => void; tint
         <h2 id="jk-key-title" ref={title} tabIndex={-1} className="font-display text-[22px] font-[680] leading-tight tracking-[-0.02em]">
           Where things are
         </h2>
-        <p className="mt-1 text-[14.5px] leading-snug text-muted">Each part of the Job Kit has its own colour, in the line at the top of every screen.</p>
-        <ul className="mt-3 grid gap-1.5">
+        <p className="mt-1 text-[14px] leading-snug text-muted">Each part has its colour, in the line at the top of every screen. The dots up there open this again.</p>
+        <ul className="mt-2.5 grid gap-1">
           {SECTIONS.map((s) => (
             <li key={s.id} className={`jk-key-row ${secClass(s.id)}`}>
               <span className="jk-key-swatch" aria-hidden />
@@ -174,7 +178,6 @@ export function ColourKey({ onClose, tint, onTint }: { onClose: () => void; tint
         <div className="mt-3">
           <TintSwitch on={tint} onChange={onTint} compact />
         </div>
-        <p className="mt-2.5 font-mono text-[12px] leading-snug text-faint">Open this again with the coloured dots at the top.</p>
         <button type="button" onClick={onClose} className="btn btn-primary mt-3 w-full">
           Got it
         </button>

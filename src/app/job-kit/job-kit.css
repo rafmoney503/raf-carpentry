@@ -38,20 +38,26 @@
 .jk-sec-todo { --sec: var(--color-accent); --sec-soft: rgb(37 71 208 / 0.08); }
 .jk-sec-customers { --sec: #17736e; --sec-soft: rgb(23 115 110 / 0.1); }
 .jk-sec-timeline { --sec: #587a14; --sec-soft: rgb(88 122 20 / 0.1); }
+/* the dot, edge and top line: the section's own colour, unless it says otherwise (WhatsApp); set on every section
+   so a WhatsApp screen's green doesn't reach the other sections' dots */
+.jk-sec-todo, .jk-sec-customers, .jk-sec-timeline, .jk-sec-designs, .jk-sec-website, .jk-sec-photos { --sec-mark: var(--sec); }
+.jk-sec-whatsapp { --sec: #0f7b3e; --sec-soft: rgb(37 211 102 / 0.13); --sec-mark: var(--color-whatsapp); }
 .jk-sec-designs { --sec: #6a45b8; --sec-soft: rgb(106 69 184 / 0.1); }
 .jk-sec-website { --sec: #a35a00; --sec-soft: rgb(163 90 0 / 0.1); }
 .jk-sec-photos { --sec: #b0345a; --sec-soft: rgb(176 52 90 / 0.09); }
 .jk-sec-ink { color: var(--sec, var(--color-accent)); }
 
 /* the line under the top bar in the screen's section colour */
-.jk-secline { height: 3px; background: var(--sec, transparent); }
+.jk-secline { height: 3px; background: var(--sec-mark, var(--sec, transparent)); }
 
 /* a box on Today: coloured edge, washed heading, icon and arrows in its colour */
-.jk-band { border-left: 4px solid var(--sec) !important; }
+.jk-band { border-left: 4px solid var(--sec-mark, var(--sec)) !important; }
 .jk-band-head { background: var(--sec-soft); border-bottom: 1px solid color-mix(in srgb, var(--sec) 22%, transparent); }
 
-/* the colour key: dots in the top bar, and the sheet */
-.jk-dot { display: block; width: 8px; height: 8px; border-radius: 50%; background: var(--sec); }
+/* the colour key: dots in the top bar, and the sheet (seven dots: smaller on the narrowest phones so the send state
+   beside them still reads) */
+@media (max-width: 359px) { .jk-dots { gap: 2px; padding-inline: 6px; } .jk-dots .jk-dot { width: 6px; height: 6px; } }
+.jk-dot { display: block; width: 8px; height: 8px; border-radius: 50%; background: var(--sec-mark, var(--sec)); }
 .jk-key-back {
   position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end; justify-content: center;
   background: rgb(22 25 28 / 0.4); padding: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom));
@@ -66,9 +72,9 @@
 .jk-key h2:focus { outline: none; }
 .jk-key-row {
   display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 10px; align-items: start;
-  padding: 7px 12px 7px 10px; background: var(--sec-soft); border-left: 4px solid var(--sec); border-radius: 2px;
+  padding: 5px 12px 5px 10px; background: var(--sec-soft); border-left: 4px solid var(--sec-mark, var(--sec)); border-radius: 2px;
 }
-.jk-key-swatch { width: 14px; height: 14px; border-radius: 50%; background: var(--sec); margin-top: 4px; }
+.jk-key-swatch { width: 14px; height: 14px; border-radius: 50%; background: var(--sec-mark, var(--sec)); margin-top: 4px; }
 @keyframes jk-fade { from { opacity: 0; } }
 @keyframes jk-rise { from { opacity: 0; transform: translateY(16px); } }
 @media (prefers-reduced-motion: reduce) { .jk-key-back, .jk-key { animation: none; } }
@@ -89,7 +95,7 @@
 /* Coloured backgrounds (on unless switched off, sections.tsx useTint): the screen, its top bar, the Today boxes and
    each To do line washed in their section's colour; cards and boxes stay white on it */
 .jk.jk-tint { --jk-bg: var(--color-paper); background-color: var(--jk-bg); }
-.jk.jk-tint.jk-sec-customers, .jk.jk-tint.jk-sec-timeline, .jk.jk-tint.jk-sec-designs, .jk.jk-tint.jk-sec-website, .jk.jk-tint.jk-sec-photos {
+.jk.jk-tint.jk-sec-customers, .jk.jk-tint.jk-sec-whatsapp, .jk.jk-tint.jk-sec-timeline, .jk.jk-tint.jk-sec-designs, .jk.jk-tint.jk-sec-website, .jk.jk-tint.jk-sec-photos {
   --jk-bg: color-mix(in srgb, var(--sec) 11%, var(--color-paper));
 }
 .jk.jk-tint > header { background-color: var(--jk-bg); }
@@ -178,3 +184,31 @@
 .jk-mini-bar.cut-r { border-right-style: dashed; border-radius: 2px 0 0 2px; }
 .jk-mini-later { font-family: var(--font-mono); font-size: 12px; color: var(--color-muted); padding-left: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .jk-mini-later.is-warn { color: var(--color-ink); font-weight: 600; }
+
+/* WhatsApp (whatsapp.tsx, 19 Oct 2026): a chat brought in from WhatsApp's Export Chat, each message with a tick */
+.jk-wa-tick {
+  flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 2px;
+  border: 1.5px solid var(--color-line-strong); background: var(--color-mount); font-size: 15px; font-weight: 700; color: var(--color-on-accent);
+}
+.jk-wa-tick.is-on { background: var(--sec); border-color: var(--sec); }
+.jk-wa-bubble {
+  min-width: 0; max-width: min(78%, 420px); padding: 7px 10px 5px; border-radius: 2px;
+  background: var(--color-mount); border: 1px solid var(--color-line); box-shadow: 0 1px 1px rgb(22 25 28 / 0.04);
+}
+.jk-wa-bubble.is-mine { background: color-mix(in srgb, var(--color-whatsapp) 14%, var(--color-mount)); }
+.jk-wa-bubble.is-on { border-color: var(--sec); box-shadow: 0 0 0 1px var(--sec); }
+.jk-wa-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 10px 0 max(10px, env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--color-mount) 94%, transparent); border-top: 1px solid var(--color-line-strong);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.jk-wa-choice {
+  display: block; width: 100%; text-align: left; padding: 11px 13px; border-radius: 2px;
+  border: 1px solid var(--color-line-strong); background: var(--color-mount); font-size: 15px;
+}
+.jk-wa-choice.is-main { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-on-accent); }
+.jk-wa-view {
+  position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 12px;
+  background: rgb(22 25 28 / 0.92);
+}
+.jk-wa-view img { max-width: 100%; max-height: calc(100dvh - 24px); object-fit: contain; }

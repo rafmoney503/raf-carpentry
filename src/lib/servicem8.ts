@@ -543,6 +543,12 @@ export async function attachPhoto(jobUuid: string, photo: Blob, fileName: string
   return res.headers.get('x-record-uuid') || uuid;
 }
 
+/* A note on a job (its diary in ServiceM8): what came in a WhatsApp chat, for one of their open jobs. */
+export async function addJobNote(jobUuid: string, text: string, uuid: string = randomUUID()) {
+  await call('note.json', { method: 'POST', body: { uuid, related_object: 'job', related_object_uuid: jobUuid, note: tidy(text) } });
+  return uuid;
+}
+
 /* ServiceM8 has been seen not to show attachments added through the API in the job's diary until the job itself
    changes; its support suggested saving the job's status again. Best effort: nothing fails if this does. */
 export async function touchJob(uuid: string) {

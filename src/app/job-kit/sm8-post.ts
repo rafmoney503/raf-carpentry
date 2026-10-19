@@ -59,6 +59,10 @@ export function problemText(error?: string, detail?: string, at?: number) {
       return 'This one is too big to show here: open it in Outlook.';
     case 'outlook-error':
       return `Microsoft sent back an error${detail ? `: ${detail}` : '.'}${/Drafts/.test(detail ?? '') ? ' Your reply is in Drafts in Outlook.' : ''}`;
+    case 'too-big':
+      return 'Over 4 MB, too big to send from here. Add it to the job in ServiceM8 itself.';
+    case 'type':
+      return 'Only photos and PDFs go to ServiceM8 from here.';
     case 'no-pin':
       return 'Add your PIN in Settings first.';
     case 'wrong-pin':
