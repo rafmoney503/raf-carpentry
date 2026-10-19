@@ -1,7 +1,7 @@
 /* Small line icons for the Job Kit's sections, drawn like the site's sketches (round ends, one weight), so each
    card on the Today screen and each line in the Today list shows where it goes. Decorative: the text says it. */
 
-export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin';
+export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt';
 
 const PATHS: Record<IconName, React.ReactNode> = {
   // the website stats: a browser window with a bar chart in it
@@ -10,6 +10,16 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <rect x="3" y="4" width="18" height="16" rx="1.5" />
       <path d="M3 8h18" />
       <path d="M7.5 17v-3.5M11 17v-6M14.5 17v-4.5M18 17v-2" strokeWidth="2" />
+    </>
+  ),
+  // the job timeline: three bars stepping across a chart, a today line through them
+  gantt: (
+    <>
+      <path d="M3.5 4v16.5h17" />
+      <rect x="6" y="6" width="7" height="3" rx="0.6" />
+      <rect x="9.5" y="11" width="8.5" height="3" rx="0.6" />
+      <rect x="13" y="16" width="5" height="2.6" rx="0.6" />
+      <path d="M11 4.2v1.3M11 10v.6M11 15v.6" strokeWidth="1.3" />
     </>
   ),
   // a diary page with its rings and a few days marked

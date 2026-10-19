@@ -69,6 +69,8 @@ import { binOnServer, customerEmails, dropHere, EmailView, enquiryFromMail, fetc
 import type { CurrentJob } from '@/lib/servicem8';
 import { StatsPageView, StatsView, statsLine } from './stats';
 import { setStatsOff } from '@/lib/site-stats';
+import { JobTimeline, TimelineMini } from './job-timeline';
+import type { Change } from '@/lib/job-timeline';
 import { ColourKey, KeyDots, secClass, secOfLine, secOfScreen, TintSwitch, useColourKey, useTint, type SecId } from './sections';
 import './job-kit.css';
 
@@ -84,10 +86,11 @@ type Screen =
   | { name: 'design'; id: string }
   | { name: 'new-design'; from?: string }
   | { name: 'current' }
-  | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer'; client?: string }
+  | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer' | 'timeline'; client?: string }
   | { name: 'enquiry'; client?: string; named?: string; mail?: string } // client: started from a customer's page; named: from a search that found nobody; mail: from an email in the Inbox
   | { name: 'customer'; id: string; from?: 'home' } // one customer from ServiceM8 (customer-view.tsx)
   | { name: 'diary' }
+  | { name: 'timeline'; job?: string } // Job timeline, a Gantt chart of the jobs going ahead (job-timeline.tsx); job: open its sheet
   | { name: 'inbox' } // info@rafcarpentry.com (inbox.tsx)
   | { name: 'email'; id: string; from?: 'home' | 'job'; job?: string } // job: opened from a ServiceM8 job's 'Reply from info@'
   | { name: 'library'; from?: 'designs'; for?: string } // for: a current job (ServiceM8 uuid) to send to
@@ -120,12 +123,14 @@ const parentOf = (s: Screen): Screen =>
               : { name: 'current' }
             : s.name === 'sm8' && s.from === 'diary'
         ? { name: 'diary' }
+        : s.name === 'sm8' && s.from === 'timeline'
+        ? { name: 'timeline' }
         : (s.name === 'sm8' && s.from !== 'home') || s.name === 'enquiry'
           ? { name: 'current' }
           : { name: 'home' };
 const backLabel = (s: Screen) => {
   const p = parentOf(s).name;
-  return p === 'stats' ? 'Stats' : p === 'designs' ? 'Designs' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : p === 'inbox' ? 'Inbox' : p === 'email' ? 'Email' : 'Today';
+  return p === 'stats' ? 'Stats' : p === 'designs' ? 'Designs' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'timeline' ? 'Timeline' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : p === 'inbox' ? 'Inbox' : p === 'email' ? 'Email' : 'Today';
 };
 
 const thisMonth = () => {
@@ -139,7 +144,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-page'].includes(s.name)) return s;
+    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-page'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -507,6 +512,18 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     },
     [setBookings],
   );
+  /* The Job timeline's dates: each booking added or moved in turn (ServiceM8 first, then here); stops at the first
+     ServiceM8 turns down and says why. */
+  const saveTimeline = useCallback(
+    async (job: CurrentJob, changes: Change[]) => {
+      for (const c of changes) {
+        const err = c.uuid ? await moveBooking(c.uuid, c.start, c.end) : await book(job.uuid, c.start, c.end);
+        if (err) return err;
+      }
+      return '';
+    },
+    [book, moveBooking],
+  );
   const designJobs = useMemo(() => jobs.filter((j) => j.kind === 'design'), [jobs]);
 
   /* Off this phone only: the inbox and the website keep everything. */
@@ -688,6 +705,10 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               checkSm8();
               go({ name: 'diary' });
             }}
+            onTimeline={() => {
+              checkSm8();
+              go({ name: 'timeline' });
+            }}
             onToday={(l) => {
               if (l.go === 'current') {
                 checkSm8();
@@ -695,6 +716,9 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               } else if (l.go === 'diary') {
                 checkSm8();
                 go({ name: 'diary' });
+              } else if (l.go === 'timeline') {
+                checkSm8();
+                go({ name: 'timeline' });
               } else if (l.go === 'sm8' && l.id) go({ name: 'sm8', id: l.id, from: 'home' });
               else if (l.go === 'inbox') {
                 if (l.id) go({ name: 'email', id: l.id, from: 'home' });
@@ -844,6 +868,18 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
             onCancel={cancelBooking}
             onRebook={book}
           />
+        ) : screen.name === 'timeline' ? (
+          <JobTimeline
+            sm8={sm8}
+            marks={marks}
+            loading={sm8Loading}
+            focus={screen.job}
+            onRefresh={() => checkSm8(true)}
+            onOpen={(id) => go({ name: 'sm8', id, from: 'timeline' })}
+            onSave={saveTimeline}
+            onProgress={(uuid, progress) => mark(uuid, { progress, progressAt: Date.now() })}
+            onComplete={(uuid) => void changeStatus(uuid, 'Completed')}
+          />
         ) : screen.name === 'enquiry' ? (
           <NewEnquiry
             key={screen.client ?? screen.named ?? screen.mail ?? 'enquiry'}
@@ -886,6 +922,10 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 go({ name: 'library', for: cur.uuid });
               }}
               onKit={() => go({ name: 'new', from: cur.uuid })}
+              onTimeline={() => {
+                checkSm8();
+                go({ name: 'timeline', job: cur.uuid });
+              }}
               onOpenKit={(k) => go(k.kind === 'design' ? { name: 'design', id: k.id } : { name: 'job', id: k.id, tab: 'before' })}
               bookings={(sm8.bookings ?? []).filter((b) => b.jobUuid === cur.uuid)}
               staff={sm8.staff ?? []}
@@ -1095,6 +1135,7 @@ function Home({
   find,
   onCurrent,
   onDiary,
+  onTimeline,
   onToday,
   designJobs,
   designs,
@@ -1124,6 +1165,7 @@ function Home({
   find: React.ReactNode; // Find a customer (customers.tsx)
   onCurrent: () => void;
   onDiary: () => void;
+  onTimeline: () => void;
   onToday: (l: TodayLine) => void;
   designJobs: Job[];
   designs: DesignsReady;
@@ -1144,6 +1186,7 @@ function Home({
   const webLine = useSyncExternalStore(noSubscribe, statsLine, () => 'Visitors, pages and heatmaps of rafcarpentry.com');
   const mailLine = inboxTodayLine(inbox, customers);
   const lines = [...(mailLine ? [mailLine] : []), ...todayLines({ sm8, marks, kit: [...jobs, ...designJobs], designs, done, postsLeft: posts.length - postedEverywhere(posts) })];
+  const goingAhead = sm8.jobs.filter((j) => j.status === 'Work Order').length;
   // Finished: on the website, and nothing of it left to send.
   const finished = jobs.filter((j) => done[j.id] && !items.some((i) => i.jobId === j.id && !i.sent && !i.lost));
   const [sure, setSure] = useState(false);
@@ -1241,6 +1284,10 @@ function Home({
           <HomeRow onClick={onCurrent} title="Current jobs" line={currentLine(sm8, marks)} />
           <HomeRow onClick={onInbox} title="Inbox" line={inboxLine(inbox)} truncate last />
         </div>
+      </HomeBand>
+
+      <HomeBand sec="timeline" icon="gantt" label="Job timeline" right={goingAhead ? `${goingAhead} going ahead` : undefined}>
+        <TimelineMini sm8={sm8} marks={marks} onOpen={onTimeline} />
       </HomeBand>
 
       <HomeBand sec="designs" icon="designs" label="Designs in 3D" right={libraryCount ? `${libraryCount} in the library` : undefined}>
@@ -1359,7 +1406,7 @@ function currentLine(sm8: Sm8, marks: Marks) {
 }
 
 /* Each line on the Today list shows the icon of the section it opens. */
-const LINE_ICON: Record<TodayLine['go'], IconName> = { current: 'jobs', designs: 'designs', posts: 'posts', jobs: 'kit', diary: 'diary', sm8: 'diary', inbox: 'mail' };
+const LINE_ICON: Record<TodayLine['go'], IconName> = { current: 'jobs', designs: 'designs', posts: 'posts', jobs: 'kit', diary: 'diary', sm8: 'diary', inbox: 'mail', timeline: 'gantt' };
 
 function diaryLine(sm8: Sm8) {
   if (!sm8.at || sm8.bookings === undefined) return 'Visits and work booked in ServiceM8';

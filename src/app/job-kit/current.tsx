@@ -12,6 +12,7 @@ import { clock, post, problemText } from './sm8-post';
 import { EmailBox } from './mail';
 import { PropertyBox } from './property-box';
 import { CustomerSearch, indexClients, personName, SameCustomer, type Client, type Clients } from './customers';
+import { rowOf, rowWords, spanWords, timelineRows } from '@/lib/job-timeline';
 
 export { problemText };
 
@@ -21,14 +22,16 @@ export { problemText };
    too: when a quote went out by WhatsApp, and finished jobs hidden from the list. */
 
 export type { Booking, CurrentJob, Staff };
-/* bookings: ServiceM8's schedule from yesterday on (null: ServiceM8 didn't send it this time; missing in a list
-   kept from before the diary existed). */
+/* bookings: ServiceM8's schedule from two months back on (yesterday on until 19 Oct 2026, when the Job timeline needed
+   the days a job has already had; the Diary and Today still start at today) (null: ServiceM8 didn't send it this
+   time; missing in a list kept from before the diary existed). */
 /* replies: job uuid -> the customer's newest email in the last 14 days (null: ServiceM8 won't let the account read
    emails; missing in a list kept from before). */
 export type Sm8 = { jobs: CurrentJob[]; at: number; bookings?: Booking[] | null; staff?: Staff[]; replies?: Record<string, string> | null; error?: string; detail?: string };
 /* mailSeen: the newest of their messages Raf has seen in the job's Emails and texts (London time);
-   reviewAskedAt: when the review request went from the Job Kit. */
-export type Marks = Record<string, { quoteSentAt?: number; hidden?: boolean; mailSeen?: string; reviewAskedAt?: number }>;
+   reviewAskedAt: when the review request went from the Job Kit; progress: how far along a job going ahead is, 0 to 100
+   (Job timeline), and progressAt when that was set. */
+export type Marks = Record<string, { quoteSentAt?: number; hidden?: boolean; mailSeen?: string; reviewAskedAt?: number; progress?: number; progressAt?: number }>;
 
 const LIST_KEY = 'raf_jobkit_sm8';
 const MARKS_KEY = 'raf_jobkit_sm8_marks';
@@ -820,6 +823,7 @@ export function CurrentView({
   onDesign,
   onLibrary,
   onKit,
+  onTimeline,
   onOpenKit,
   bookings,
   staff,
@@ -841,6 +845,7 @@ export function CurrentView({
   onDesign: () => void;
   onLibrary: () => void;
   onKit: () => void;
+  onTimeline?: () => void; // the Job timeline, this job's sheet open
   onOpenKit: (k: Job) => void;
   bookings: Booking[];
   staff: Staff[];
@@ -938,6 +943,24 @@ export function CurrentView({
           {sure === 'Unsuccessful' ? 'Tap again: unsuccessful' : job.status === 'Unsuccessful' ? 'Unsuccessful' : 'Unsuccessful (didn’t go ahead)'}
         </button>
         <p className="mt-3 flex items-center gap-1.5 font-mono text-[13px] text-muted">{text}</p>
+        {job.status === 'Work Order' && onTimeline ? (
+          (() => {
+            // On the Job timeline: its dates and how far along, or a nudge to set them.
+            const row = rowOf(job, bookings, marks);
+            return (
+              <button type="button" onClick={onTimeline} className="jk-sec-timeline mt-2.5 flex w-full items-center gap-2.5 rounded-sm border border-line-strong bg-paper px-3 py-2.5 text-left">
+                <Icon name="gantt" className="h-5 w-5 shrink-0 jk-sec-ink" />
+                <span className="min-w-0 flex-1 text-[14.5px] leading-snug">
+                  <span className="block font-semibold">{row ? `${spanWords(row.start, row.end)}` : 'Set its start and finish'}</span>
+                  <span className="block text-muted">{row ? rowWords(row) : 'On the Job timeline, saved in ServiceM8'}</span>
+                </span>
+                <span aria-hidden className="jk-sec-ink">
+                  →
+                </span>
+              </button>
+            );
+          })()
+        ) : null}
 
         <div className="mt-4 grid gap-2">
           {st === 'new' ? (
@@ -1328,7 +1351,7 @@ export function NewEnquiry({
 
 /* ---------- the morning summary ---------- */
 
-export type TodayLine = { text: string; go: 'current' | 'designs' | 'posts' | 'jobs' | 'diary' | 'sm8' | 'inbox'; urgent?: boolean; id?: string; time?: string; icon?: IconName };
+export type TodayLine = { text: string; go: 'current' | 'designs' | 'posts' | 'jobs' | 'diary' | 'sm8' | 'inbox' | 'timeline'; urgent?: boolean; id?: string; time?: string; icon?: IconName };
 
 export function todayLines({
   sm8,
@@ -1387,7 +1410,23 @@ export function todayLines({
   const toAsk = list.filter((j) => j.status === 'Completed' && !marks[j.uuid]?.reviewAskedAt && Date.now() - (parse(j.completed) || 0) < DONE_DAYS * DAY);
   if (toAsk.length === 1) lines.push({ text: `Ask ${toAsk[0].name} for a review`, go: 'sm8', id: toAsk[0].uuid, icon: 'review' });
   else if (toAsk.length) lines.push({ text: `Ask ${toAsk.length} finished jobs for a review`, go: 'current', icon: 'review' });
-  if (going) lines.push({ text: `${n(going, 'job', 'jobs')} on Work Order`, go: 'current' });
+  // The Job timeline: past the finish date, done (move to Completed), behind, going ahead with no dates. Only when
+  // ServiceM8 sent the bookings, or every job would look undated.
+  if (Array.isArray(sm8.bookings)) {
+    const plan = timelineRows(sm8.jobs, sm8.bookings, marks, today);
+    const live = plan.rows.filter((r) => r.state !== 'completed');
+    const late = live.filter((r) => r.state === 'late');
+    if (late.length === 1) lines.push({ text: `${late[0].job.name}: past the finish date`, go: 'timeline', urgent: true });
+    else if (late.length) lines.push({ text: `${late.length} jobs past their finish date`, go: 'timeline', urgent: true });
+    const finished = live.filter((r) => r.progress === 100);
+    if (finished.length === 1) lines.push({ text: `${finished[0].job.name}: done, move it to Completed`, go: 'sm8', id: finished[0].job.uuid, icon: 'gantt' });
+    else if (finished.length) lines.push({ text: `${finished.length} jobs done: move them to Completed`, go: 'timeline' });
+    const behind = live.filter((r) => r.behind);
+    if (behind.length === 1) lines.push({ text: `${behind[0].job.name} is behind: ${behind[0].progress}% done, about ${behind[0].expected}% by now`, go: 'timeline' });
+    else if (behind.length) lines.push({ text: `${behind.length} jobs behind`, go: 'timeline' });
+    if (plan.undated.length) lines.push({ text: `${n(plan.undated.length, 'job going ahead needs', 'jobs going ahead need')} dates`, go: 'timeline', urgent: true });
+  }
+  if (going) lines.push({ text: `${n(going, 'job', 'jobs')} on Work Order`, go: 'timeline' });
   const photoJobs = kit.filter((k) => k.kind !== 'design');
   const waitingPage = photoJobs.filter((k) => k.readyAt && !done[k.id]).length;
   const open = photoJobs.filter((k) => !k.readyAt).length;

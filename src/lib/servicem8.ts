@@ -256,6 +256,9 @@ function shape(j: Row, client?: Row, contact?: Row, pays?: Row[] | null): Curren
   };
 }
 
+/* How far back the bookings go (days). */
+const BOOKINGS_BACK = 60;
+
 /* Today's date in London, moved by `days`, as "YYYY-MM-DD". */
 function londonDay(days = 0) {
   return new Date(Date.now() + days * 864e5).toLocaleDateString('sv-SE', { timeZone: 'Europe/London' });
@@ -283,12 +286,13 @@ function booking(a: Row): Booking | null {
 
 /* Open quotes, work orders, and the jobs finished or marked unsuccessful in the last 30 days, newest first,
    with the client, the best contact (the job's own contact, else the client's) and the payments taken; plus the
-   bookings from yesterday on and the jobs they belong to, and the staff (for who a booking is for). Two rounds of
+   bookings from 60 days back on (the Job timeline draws the days a job has had; until 19 Oct 2026 from yesterday on)
+   and the jobs the ones from yesterday on belong to, and the staff (for who a booking is for). Two rounds of
    requests; if ServiceM8 won't give the payments or the bookings, the jobs still come, without them. */
 export async function currentJobs(): Promise<Current> {
   const [[quotes, orders, done, lost], acts, staffRows] = await Promise.all([
     Promise.all(['Quote', 'Work Order', 'Completed', 'Unsuccessful'].map((s) => list('job.json', `active eq 1 and status eq '${s}'`))),
-    scheduled(londonDay(-1)).catch((): Row[] | null => null),
+    scheduled(londonDay(-BOOKINGS_BACK)).catch((): Row[] | null => null),
     list('staff.json', 'active eq 1').catch((): Row[] => []),
   ]);
   const cutoff = Date.now() - 30 * 864e5;
@@ -298,9 +302,11 @@ export async function currentJobs(): Promise<Current> {
   };
   const jobs = [...quotes, ...orders, ...done.filter(since('completion_date')), ...lost.filter(since('unsuccessful_date'))].filter((j) => str(j.uuid) && str(j.active) !== '0');
   const bookings = acts === null ? null : acts.map(booking).filter((b): b is Booking => b !== null);
-  // A booking on a job that isn't in the list above (finished or lost a while ago): fetch that job too.
+  // A booking from yesterday on, on a job that isn't in the list above (finished or lost a while ago): fetch that job
+  // too. Older bookings on such jobs are left out (below): the timeline only draws jobs in the list.
   const have = new Set(jobs.map((j) => str(j.uuid)));
-  const missing = [...new Set((bookings ?? []).map((b) => b.jobUuid).filter((u) => !have.has(u)))].slice(0, 20);
+  const yesterday = londonDay(-1);
+  const missing = [...new Set((bookings ?? []).filter((b) => (b.end ?? b.start).slice(0, 10) >= yesterday).map((b) => b.jobUuid).filter((u) => !have.has(u)))].slice(0, 20);
   const staff: Staff[] = staffRows
     .filter((r) => str(r.uuid) && str(r.active) !== '0')
     .map((r) => ({ uuid: str(r.uuid), name: [str(r.first), str(r.last)].filter(Boolean).join(' ') || 'Staff' }));

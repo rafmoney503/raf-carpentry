@@ -10,22 +10,25 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
    Coloured backgrounds (18 Oct 2026, Raf: 'I'd like the background to be same color as section ... in todo section
    ... backgrounds as well ... a switch so I can turn on and off the background in whole app if I get used to'): on by
    default, each screen washed in its section's colour, the Today boxes and each To do line too; the switch is in the
-   colour key and in Settings (localStorage raf_jobkit_tint, '0' = off). */
+   colour key and in Settings (localStorage raf_jobkit_tint, '0' = off).
+   Job timeline (19 Oct 2026): a sixth section, olive green, for the Gantt chart of the jobs going ahead. */
 
-export type SecId = 'todo' | 'customers' | 'designs' | 'website' | 'photos';
+export type SecId = 'todo' | 'customers' | 'timeline' | 'designs' | 'website' | 'photos';
 
 export const SECTIONS: { id: SecId; name: string; what: string }[] = [
-  { id: 'todo', name: 'To do', what: 'What needs doing now. Each line’s icon has the colour of where it takes you.' },
-  { id: 'customers', name: 'Customers', what: 'Diary, Current jobs, Inbox, a customer’s jobs, emails and texts.' },
+  { id: 'todo', name: 'To do', what: 'What needs doing now.' },
+  { id: 'customers', name: 'Customers', what: 'Diary, Current jobs, Inbox, emails and texts.' },
+  { id: 'timeline', name: 'Job timeline', what: 'Start, finish and progress of each job.' },
   { id: 'designs', name: 'Designs in 3D', what: 'Designs for customers and the Design library.' },
-  { id: 'website', name: 'Website', what: 'Website stats and the page heatmaps.' },
-  { id: 'photos', name: 'Photos and posts', what: 'Job Kit jobs (photos, clips, sizes) and posts for Instagram, TikTok and YouTube.' },
+  { id: 'website', name: 'Website', what: 'Website stats and page heatmaps.' },
+  { id: 'photos', name: 'Photos and posts', what: 'Job Kit jobs and posts for social media.' },
 ];
 
 /* Which section a screen belongs to. */
 export function secOfScreen(name: string): SecId | undefined {
   if (['diary', 'current', 'sm8', 'enquiry', 'customer', 'inbox', 'email'].includes(name)) return 'customers';
   if (['designs', 'design', 'new-design', 'library'].includes(name)) return 'designs';
+  if (name === 'timeline') return 'timeline';
   if (['stats', 'stats-page'].includes(name)) return 'website';
   if (['posts', 'post', 'job', 'new'].includes(name)) return 'photos';
   return undefined;
@@ -33,7 +36,7 @@ export function secOfScreen(name: string): SecId | undefined {
 
 /* Which section a Today line opens. */
 export const secOfLine = (go: string): SecId =>
-  go === 'designs' ? 'designs' : go === 'posts' || go === 'jobs' ? 'photos' : 'customers';
+  go === 'designs' ? 'designs' : go === 'posts' || go === 'jobs' ? 'photos' : go === 'timeline' ? 'timeline' : 'customers';
 
 export const secClass = (s?: SecId) => (s ? `jk-sec-${s}` : '');
 
@@ -129,7 +132,7 @@ export function useColourKey(ready: boolean) {
   return { open, show: () => setOpen(true), hide: () => setOpen(false) };
 }
 
-/* The five dots in the top bar: tap to see what each colour means. */
+/* The dots in the top bar, one per section: tap to see what each colour means. */
 export function KeyDots({ onClick }: { onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} className="flex h-9 shrink-0 items-center gap-[3px] rounded-sm border border-line-strong px-2" aria-label="What the colours mean">
