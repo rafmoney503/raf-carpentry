@@ -1,6 +1,8 @@
 import { readMarks, saveMarks, type Marks } from './current';
 import { allItems, allJobs, delFile, delItem, delJob, getItem, getJob, putItem, putJob, type Item, type Job } from './store';
 import { onChange, readPin, wake } from './uploader';
+import { deviceLabel } from './device';
+import { getWaThumb, onWaChange, waChatNow, waForSync, waKick, waTakeChat, waTakeThumb, type WaChat } from './wa-store';
 
 /* The phone and the computer in step (19 Oct 2026, Raf: 'Is there a possibility to create Desktop version of JobKit
    that syncs with current mobile one', stage 2). What the Job Kit keeps on one device goes through a small private
@@ -10,15 +12,19 @@ import { onChange, readPin, wake } from './uploader';
      job     a Job Kit job or a design request, without the customer's mobile (that stays on the device it was typed on)
      item    a photo or clip's details and its small thumbnail; the file itself stays on the device that took it, which
              sends it to the inbox (marked `remote` on the other one)
-   Not kept in step, on purpose: WhatsApp chats (customers' messages and numbers stay on the device they were brought
-   into), drafts, and the lists that come from ServiceM8, the inbox and the website (each device fetches its own).
+     wa      a WhatsApp chat brought in (wa-store.ts): its messages, ticks and trips to ServiceM8 (since 19 Oct 2026, Raf
+             said yes to having them on the computer too); its photos and PDFs stay on the device that brought it in,
+             which sends them to ServiceM8, even for a trip started on the other device
+     wafile  a small preview of one of a chat's photos (200 px)
+   Not kept in step: drafts, and the lists that come from ServiceM8, the inbox and the website (each device fetches
+   its own).
 
    Each round: what changed here since the last round (a hash per thing) goes up with the time it changed, the later
    change wins, and what the other device changed comes back. A change made here while a round is out, or one not
    sent yet that is newer, wins. Clearing a job deletes it on both, except on a device that still has its photos to
    send. Runs on open, when the app comes back, every 30 s while it's open, and a few seconds after a change. */
 
-export type SyncKind = 'mark' | 'posted' | 'job' | 'item';
+export type SyncKind = 'mark' | 'posted' | 'job' | 'item' | 'wa' | 'wafile';
 type Data = Record<string, unknown>;
 type Doc = { kind: SyncKind; id: string; at: number; data: Data | null };
 type Local = { kind: SyncKind; id: string; data: Data; hash: string };
@@ -67,16 +73,7 @@ export function deviceId() {
   return id;
 }
 
-/* What the other device is called in the Settings line. */
-export function deviceLabel() {
-  const ua = navigator.userAgent;
-  if (/iPhone/.test(ua)) return 'iPhone';
-  if (/iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return 'iPad';
-  if (/Android/.test(ua)) return /Mobile/.test(ua) ? 'Android phone' : 'Android tablet';
-  if (/Macintosh/.test(ua)) return 'Mac';
-  if (/Windows/.test(ua)) return 'Windows computer';
-  return 'computer';
-}
+export { deviceLabel };
 
 /* ---------- the form each thing travels in ---------- */
 
@@ -117,6 +114,11 @@ const hashData = (d: Data) => hashOf(JSON.stringify(d));
 /* A job without the customer's mobile; a photo without what only its own device needs. */
 const jobForm = (j: Job) => clean({ ...j, syncedIn: undefined, design: j.design ? { ...j.design, mobile: undefined } : undefined }) as Data;
 const itemForm = (i: Item) => clean({ ...i, parts: undefined, sentParts: undefined, sentAt: undefined, remote: undefined }) as Data;
+const waForm = (c: WaChat) => clean({ ...c, remote: undefined }) as Data;
+const thumbKey = (key: string) => {
+  const i = key.indexOf('/');
+  return { chat: key.slice(0, i), name: key.slice(i + 1) };
+};
 
 const keyOf = (kind: SyncKind, id: string) => `${kind}:${id}`;
 
@@ -136,6 +138,9 @@ async function collect(): Promise<Map<string, Local>> {
   const [jobs, items] = await Promise.all([allJobs(), allItems()]);
   for (const j of jobs) add('job', j.id, jobForm(j));
   for (const i of items) add('item', i.id, itemForm(i));
+  const wa = await waForSync();
+  for (const c of wa.chats) add('wa', c.id, waForm(c));
+  for (const t of wa.thumbs) add('wafile', t.key, { chat: t.chat, name: t.name, thumb: t.thumb });
   return out;
 }
 
@@ -147,9 +152,16 @@ async function hashNow(kind: SyncKind, id: string): Promise<string> {
   else if (kind === 'job') {
     const j = await getJob(id);
     d = j ? jobForm(j) : null;
-  } else {
+  } else if (kind === 'item') {
     const i = await getItem(id);
     d = i ? itemForm(i) : null;
+  } else if (kind === 'wa') {
+    const c = await waChatNow(id);
+    d = c ? waForm(c) : null;
+  } else {
+    const t = thumbKey(id);
+    const thumb = await getWaThumb(t.chat, t.name);
+    d = thumb ? { chat: t.chat, name: t.name, thumb } : null;
   }
   return d ? hashData(clean(d) as Data) : '';
 }
@@ -158,6 +170,11 @@ async function hashNow(kind: SyncKind, id: string): Promise<string> {
 
 /* 'kept': not applied (this device still has photos of that job to send), so this device's copy goes back up. */
 async function apply(d: Doc, gone: Set<string>): Promise<'applied' | 'kept'> {
+  if (d.kind === 'wa') return waTakeChat(d.id, d.data as unknown as WaChat | null);
+  if (d.kind === 'wafile') {
+    await waTakeThumb(d.id, typeof d.data?.thumb === 'string' ? d.data.thumb : null);
+    return 'applied';
+  }
   if (d.kind === 'mark') {
     const m = readMarks();
     if (d.data) m[d.id] = d.data as Marks[string];
@@ -236,7 +253,7 @@ export function onApplied(fn: (kinds: Set<SyncKind>) => void) {
   return () => void appliedSubs.delete(fn);
 }
 
-const ORDER: Record<SyncKind, number> = { mark: 0, posted: 1, job: 2, item: 3 };
+const ORDER: Record<SyncKind, number> = { mark: 0, posted: 1, job: 2, wa: 3, item: 4, wafile: 5 };
 
 async function round(): Promise<boolean> {
   const pin = readPin();
@@ -356,6 +373,7 @@ async function round(): Promise<boolean> {
   if (kinds.size) {
     appliedSubs.forEach((f) => f(kinds));
     if (kinds.has('job') || kinds.has('item')) wake(); // a job whose photos are now all sent can send its details
+    if (kinds.has('wa')) waKick(); // a trip started on the other device, with files that are here
   }
   return Boolean(r.more) || Object.keys(pend).some((k) => !sending.some((s) => keyOf(s.doc.kind, s.doc.id) === k));
 }
@@ -414,6 +432,7 @@ export function startSync() {
   const vis = () => syncSoon(document.visibilityState === 'visible' ? 200 : 0);
   const online = () => syncSoon(0);
   const offChange = onChange(() => syncSoon(3000));
+  const offWa = onWaChange(() => syncSoon());
   document.addEventListener('visibilitychange', vis);
   window.addEventListener('online', online);
   return () => {
@@ -421,6 +440,7 @@ export function startSync() {
     if (timer) clearTimeout(timer);
     if (retry) clearTimeout(retry);
     offChange();
+    offWa();
     document.removeEventListener('visibilitychange', vis);
     window.removeEventListener('online', online);
   };

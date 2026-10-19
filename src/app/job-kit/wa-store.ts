@@ -5,6 +5,7 @@ import { guessMe, isNumber, kindOf, lastStretch, mergeMsgs, nameFromFile, parseC
 import { shrinkPhoto } from './media';
 import { readPin } from './uploader';
 import { post } from './sm8-post';
+import { deviceLabel } from './device';
 
 /* WhatsApp chats brought into the Job Kit (whatsapp.tsx), kept on this phone in their own IndexedDB
    ('raf-job-kit-wa'): the messages, what's ticked, where they went in ServiceM8, and the photos and PDFs from the
@@ -12,7 +13,11 @@ import { post } from './sm8-post';
    job; then the ticked photos go to /api/job-kit/attach one at a time (redrawn as JPEG first, so no GPS), a note
    with the ticked messages for a job that was there already, and the job is saved once so they show in its diary.
    The sending runs here, outside the screens, so it carries on while Raf looks at the job; it's written down after
-   each file, so a reload or no signal carries on from where it stopped. */
+   each file, so a reload or no signal carries on from where it stopped.
+   Since 19 Oct 2026 (Raf, after the computer got the Job Kit: 'WhatsApp chats' not in step) each chat is kept in
+   step with the other device by sync.ts, with a small preview of each photo ('thumbs'); the photos and PDFs
+   themselves stay on the device that brought the chat in (the other one marks the chat `remote`), and a trip with
+   files started on the other device is sent from that one. */
 
 export type WaFile = { name: string; kind: WaKind; bytes: number };
 /* One trip to ServiceM8: a new job made from the chat, or ticked things added to a job they had already. */
@@ -46,6 +51,8 @@ export type WaChat = {
   picked: string[]; // message ids ticked; a message with a photo or PDF takes its file
   sends: WaSend[];
   design?: string; // a design request made from it
+  importedOn?: string; // the device it was brought into (iPhone, Mac...): it has the photos and PDFs
+  remote?: boolean; // on this device the photos and PDFs aren't here, only their previews (stays on the device)
 };
 
 /* ---------- storage ---------- */
@@ -54,11 +61,13 @@ let dbp: Promise<IDBDatabase> | null = null;
 function db(): Promise<IDBDatabase> {
   if (!dbp)
     dbp = new Promise((resolve, reject) => {
-      const req = indexedDB.open('raf-job-kit-wa', 1);
+      const req = indexedDB.open('raf-job-kit-wa', 2);
       req.onupgradeneeded = () => {
         const d = req.result;
-        d.createObjectStore('chats', { keyPath: 'id' });
-        d.createObjectStore('files');
+        if (!d.objectStoreNames.contains('chats')) d.createObjectStore('chats', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('files')) d.createObjectStore('files');
+        // small previews of the photos (data URLs), kept in step with the other device
+        if (!d.objectStoreNames.contains('thumbs')) d.createObjectStore('thumbs');
       };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => {
@@ -80,6 +89,50 @@ async function run<T>(store: string, mode: IDBTransactionMode, fn: (s: IDBObject
 }
 const fileKey = (chat: string, name: string) => `${chat}/${name}`;
 export const getWaFile = (chat: string, name: string) => run<Blob | undefined>('files', 'readonly', (s) => s.get(fileKey(chat, name)));
+export const getWaThumb = (chat: string, name: string) => run<string | undefined>('thumbs', 'readonly', (s) => s.get(fileKey(chat, name)));
+
+/* A small preview of a photo for the other device: 200 px, about 8 KB. */
+async function previewOf(blob: Blob): Promise<string | undefined> {
+  const url = URL.createObjectURL(blob);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const k = Math.min(1, 200 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(img.naturalWidth * k));
+    c.height = Math.max(1, Math.round(img.naturalHeight * k));
+    c.getContext('2d')?.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.6);
+  } catch {
+    return undefined;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+/* Previews for the photos of chats brought in here that don't have one yet (chats from before 19 Oct 2026). */
+let thumbing = false;
+async function ensureThumbs() {
+  if (thumbing || !chats) return;
+  thumbing = true;
+  try {
+    let made = false;
+    for (const c of chats.filter((x) => !x.remote)) {
+      for (const f of c.files.filter((x) => x.kind === 'photo')) {
+        if (await getWaThumb(c.id, f.name)) continue;
+        const b = await getWaFile(c.id, f.name);
+        const t = b ? await previewOf(b) : undefined;
+        if (t) {
+          await run<void>('thumbs', 'readwrite', (s) => s.put(t, fileKey(c.id, f.name)));
+          made = true;
+        }
+      }
+    }
+    if (made) changed();
+  } finally {
+    thumbing = false;
+  }
+}
 
 /* ---------- the list, shared by every screen ---------- */
 
@@ -89,6 +142,13 @@ const EMPTY: WaChat[] = [];
 function emit() {
   for (const l of listeners) l();
 }
+/* A change made here (not one taken in from the other device): sync.ts sends it. */
+const changeSubs = new Set<() => void>();
+const changed = () => changeSubs.forEach((f) => f());
+export function onWaChange(fn: () => void) {
+  changeSubs.add(fn);
+  return () => void changeSubs.delete(fn);
+}
 async function load() {
   try {
     chats = ((await run<WaChat[]>('chats', 'readonly', (s) => s.getAll())) ?? []).sort((a, b) => b.updatedAt - a.updatedAt);
@@ -97,6 +157,7 @@ async function load() {
   }
   emit();
   void kick();
+  void ensureThumbs();
 }
 function subscribe(l: () => void) {
   listeners.add(l);
@@ -108,10 +169,11 @@ export function useWaChats(): WaChat[] {
 }
 export const waChat = (id: string) => (chats ?? []).find((c) => c.id === id);
 
-async function save(c: WaChat) {
+async function save(c: WaChat, quiet = false) {
   await run<void>('chats', 'readwrite', (s) => s.put(c));
   chats = [c, ...(chats ?? []).filter((x) => x.id !== c.id)].sort((a, b) => b.updatedAt - a.updatedAt);
   emit();
+  if (!quiet) changed();
 }
 /* A change to one chat (ticks, the customer picked); the latest copy is always the one changed. */
 export async function updateChat(id: string, change: (c: WaChat) => WaChat, touch = false) {
@@ -119,11 +181,13 @@ export async function updateChat(id: string, change: (c: WaChat) => WaChat, touc
   if (!c) return;
   await save({ ...change(c), ...(touch ? { updatedAt: Date.now() } : {}) });
 }
-export async function removeChat(id: string) {
+export async function removeChat(id: string, quiet = false) {
   await run<void>('chats', 'readwrite', (s) => s.delete(id));
-  await run<void>('files', 'readwrite', (s) => s.delete(IDBKeyRange.bound(`${id}/`, `${id}/￿`)));
+  await run<void>('files', 'readwrite', (s) => s.delete(IDBKeyRange.bound(`${id}/`, `${id}/\uffff`)));
+  await run<void>('thumbs', 'readwrite', (s) => s.delete(IDBKeyRange.bound(`${id}/`, `${id}/\uffff`)));
   chats = (chats ?? []).filter((c) => c.id !== id);
   emit();
+  if (!quiet) changed();
 }
 
 /* ---------- bringing a chat in ---------- */
@@ -199,7 +263,8 @@ export async function bringIn(file: File): Promise<{ id: string; added: number; 
     const freshPicks = defaultPicks(fresh, me).filter((id) => fresh.some((m) => m.id === id));
     const picked = old.sends.length ? (freshPicks.length ? freshPicks : old.picked) : [...new Set([...old.picked, ...freshPicks])];
     const files = [...old.files, ...keep.filter((f) => !old.files.some((x) => x.name === f.name)).map((f) => ({ name: f.name, kind: f.kind, bytes: f.blob.size }))];
-    chat = { ...old, msgs: merged.msgs, people: [...new Set([...old.people, ...people])], me, files, picked, updatedAt: now, added };
+    // brought in here: this device has the photos and PDFs now
+    chat = { ...old, msgs: merged.msgs, people: [...new Set([...old.people, ...people])], me, files, picked, updatedAt: now, added, remote: undefined, importedOn: keep.length ? deviceLabel() : old.importedOn };
   } else {
     const me = guessMe(people, name);
     chat = {
@@ -214,10 +279,15 @@ export async function bringIn(file: File): Promise<{ id: string; added: number; 
       updatedAt: now,
       picked: defaultPicks(msgs, me),
       sends: [],
+      importedOn: deviceLabel(),
     };
     added = msgs.length;
   }
-  for (const f of keep) await run<void>('files', 'readwrite', (s) => s.put(f.blob, fileKey(chat.id, f.name)));
+  for (const f of keep) {
+    await run<void>('files', 'readwrite', (s) => s.put(f.blob, fileKey(chat.id, f.name)));
+    const t = f.kind === 'photo' ? await previewOf(f.blob) : undefined;
+    if (t) await run<void>('thumbs', 'readwrite', (s) => s.put(t, fileKey(chat.id, f.name)));
+  }
   await save(chat);
   return { id: chat.id, added, isNew: !old };
 }
@@ -299,6 +369,8 @@ export async function kick() {
   try {
     for (const c0 of [...chats]) {
       for (const s0 of c0.sends) {
+        // the photos and PDFs are on the other device: it sends this trip (and its note)
+        if (c0.remote && s0.files.length) continue;
         let s = s0;
         const mark = async (patch: Partial<WaSend>) => {
           s = { ...s, ...patch };
@@ -337,3 +409,69 @@ if (typeof window !== 'undefined') {
     if (document.visibilityState === 'visible') void kick();
   });
 }
+
+/* ---------- kept in step with the other device (sync.ts) ---------- */
+
+export type WaThumb = { key: string; chat: string; name: string; thumb: string };
+export async function waForSync(): Promise<{ chats: WaChat[]; thumbs: WaThumb[] }> {
+  const list = chats ?? (await run<WaChat[]>('chats', 'readonly', (s) => s.getAll())) ?? [];
+  const d = await db();
+  const thumbs = await new Promise<WaThumb[]>((resolve, reject) => {
+    const out: WaThumb[] = [];
+    const req = d.transaction('thumbs', 'readonly').objectStore('thumbs').openCursor();
+    req.onsuccess = () => {
+      const cur = req.result;
+      if (!cur) return resolve(out);
+      const key = String(cur.key);
+      const i = key.indexOf('/');
+      out.push({ key, chat: key.slice(0, i), name: key.slice(i + 1), thumb: String(cur.value) });
+      cur.continue();
+    };
+    req.onerror = () => reject(req.error);
+  });
+  return { chats: list, thumbs };
+}
+export async function waChatNow(id: string) {
+  return run<WaChat | undefined>('chats', 'readonly', (s) => s.get(id));
+}
+
+/* Two copies of a chat put together: every message either has, every file, every trip with whatever either has
+   sent; the ticks, the customer and the design from the newer copy (`theirs` won by time). */
+function mergeChat(mine: WaChat, theirs: WaChat): WaChat {
+  const msgs = mergeMsgs(mine.msgs, theirs.msgs).msgs;
+  const files = [...theirs.files, ...mine.files.filter((f) => !theirs.files.some((x) => x.name === f.name))];
+  const sends = [...theirs.sends];
+  for (const m of mine.sends) {
+    const i = sends.findIndex((x) => x.at === m.at);
+    if (i < 0) sends.push(m);
+    else {
+      const t = sends[i];
+      const sent = [...new Set([...t.sent, ...m.sent])];
+      sends[i] = { ...t, sent, failed: [...new Set([...t.failed, ...m.failed])].filter((f) => !sent.includes(f)), noteDone: t.noteDone || m.noteDone, touched: t.touched || m.touched };
+    }
+  }
+  sends.sort((a, b) => a.at - b.at);
+  return { ...theirs, msgs, files, sends, people: [...new Set([...theirs.people, ...mine.people])], importedOn: theirs.importedOn ?? mine.importedOn, remote: mine.remote };
+}
+
+/* A chat from the other device ('kept': not taken off here while this device still has its files to send). */
+export async function waTakeChat(id: string, data: WaChat | null): Promise<'applied' | 'kept'> {
+  if (chats === null) await load();
+  const mine = await waChatNow(id);
+  if (!data) {
+    if (!mine) return 'applied';
+    if (!mine.remote && mine.sends.some((x) => pending(x).length)) return 'kept';
+    await removeChat(id, true);
+    return 'applied';
+  }
+  const theirs = { ...data, id } as WaChat;
+  await save(mine ? mergeChat(mine, theirs) : { ...theirs, remote: true }, true);
+  return 'applied';
+}
+export async function waTakeThumb(key: string, thumb: string | null) {
+  if (thumb) await run<void>('thumbs', 'readwrite', (s) => s.put(thumb, key));
+  else await run<void>('thumbs', 'readwrite', (s) => s.delete(key));
+  emit();
+}
+/* After chats came in: a trip started on the other device for files that are here goes now. */
+export const waKick = () => void kick();

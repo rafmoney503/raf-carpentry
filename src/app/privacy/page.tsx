@@ -10,7 +10,7 @@ export const metadata = pageMeta({
   path: '/privacy',
 });
 
-const UPDATED = '18 October 2026';
+const UPDATED = '19 October 2026';
 
 function H({ id, children }: { id?: string; children: React.ReactNode }) {
   return (
@@ -49,6 +49,10 @@ export default function Privacy() {
               <b>Microsoft 365</b> (the {EMAIL} mailbox) and, for a wardrobe planner design, <b>CabinetOS</b> (the app I draw and cut wardrobes with).
             </li>
             <li>WhatsApp messages and calls stay on my phone, in WhatsApp and my call history.</li>
+            <li>
+              My own job app keeps my notes on the job, and any WhatsApp chat about it that I bring in (its messages and small previews of its photos), in a
+              private database in the EU (<b>Supabase</b>, Frankfurt), so my phone and computer show the same.
+            </li>
             <li>If you leave an email address, you get one automatic email back with a few designs like yours. No newsletters, and I never sell or share your details for marketing.</li>
             <li>
               I keep job details for as long as the job and its paperwork need: invoices and accounts for six years, as the tax rules require. Ask me and I’ll
@@ -87,7 +91,7 @@ export default function Privacy() {
 
           <H>Who else handles the details</H>
           <p>
-            Only the companies that run the tools above, under their own data protection terms: Vercel (hosting the website), Supabase (the visit counts),
+            Only the companies that run the tools above, under their own data protection terms: Vercel (hosting the website), Supabase (the visit counts and my job app),
             ServiceM8, Microsoft and CabinetOS. Some of them may store data outside the UK, with the safeguards UK law requires.
           </p>
 

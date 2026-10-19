@@ -7,7 +7,7 @@ import { SyncError, syncRpc, syncSetUp, type SyncDoc } from '@/lib/job-kit-sync-
 export const maxDuration = 30;
 
 const noStore = { 'Cache-Control': 'no-store' };
-const KINDS = new Set(['mark', 'posted', 'job', 'item']);
+const KINDS = new Set(['mark', 'posted', 'job', 'item', 'wa', 'wafile']);
 const MAX_BODY = 4_200_000;
 
 function docsOf(v: unknown): SyncDoc[] | null {

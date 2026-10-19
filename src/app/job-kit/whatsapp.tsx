@@ -13,6 +13,7 @@ import {
   fileOf,
   firstName,
   getWaFile,
+  getWaThumb,
   noteText,
   pending,
   pickedOf,
@@ -47,11 +48,15 @@ const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? on
 const dayLine = (at: string) => new Date(`${at.slice(0, 10)}T12:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).replace(/^(\w+),/, '$1');
 const filesWords = (photos: number, pdfs: number) => [photos ? count(photos, 'photo') : '', pdfs ? count(pdfs, 'PDF') : ''].filter(Boolean).join(' and ');
 
+/* The device that has a chat's photos and PDFs, for one on the other device ('your iPhone'). */
+export const holder = (c: WaChat) => (c.remote ? `your ${c.importedOn || 'phone'}` : '');
+
 /* One line for a chat: where it went, or that it hasn't yet. */
 export function chatStatus(c: WaChat): { text: string; tone: 'todo' | 'busy' | 'done' | 'warn' } {
   const last = c.sends[c.sends.length - 1];
   if (!last) return { text: 'Not in ServiceM8 yet', tone: 'todo' };
   const where = last.mode === 'new' ? `New job${last.number ? ` #${last.number}` : ''}` : `Added to #${last.number ?? 'a job'}`;
+  if (pending(last).length && c.remote) return { text: `${where}: ${count(pending(last).length, 'file')} to go from ${holder(c)}`, tone: 'busy' };
   if (pending(last).length) return { text: `${where}: sending ${last.sent.length + 1} of ${last.files.length}`, tone: 'busy' };
   if (last.failed.length) return { text: `${where}: ${count(last.failed.length, 'file')} didn’t go`, tone: 'warn' };
   return { text: `${where} in ServiceM8`, tone: 'done' };
@@ -186,14 +191,20 @@ export function WaList({ chats, onOpen }: { chats: WaChat[]; onOpen: (id: string
 
 /* ---------- one chat ---------- */
 
+/* The photo from this device's storage, or (a chat brought in on the other device) its small preview. */
 function useBlobUrl(chat: string, name: string | undefined) {
   const [url, setUrl] = useState('');
   useEffect(() => {
     if (!name) return;
     let gone = false;
     let made = '';
-    void getWaFile(chat, name).then((b) => {
-      if (gone || !b) return;
+    void getWaFile(chat, name).then(async (b) => {
+      if (gone) return;
+      if (!b) {
+        const t = await getWaThumb(chat, name).catch(() => undefined);
+        if (!gone && t) setUrl(t);
+        return;
+      }
       made = URL.createObjectURL(b);
       setUrl(made);
     });
@@ -344,7 +355,11 @@ export function WaChatView({
       <p className="mt-2 font-mono text-[12.5px] leading-relaxed text-faint">
         {count(chat.msgs.filter((m) => !m.system).length, 'message')}
         {chat.files.length ? ` · ${filesWords(chat.files.filter((f) => f.kind === 'photo').length, chat.files.filter((f) => f.kind === 'pdf').length)}` : ''} · brought in {ago(chat.updatedAt)}
+        {chat.remote ? ` on ${holder(chat)}` : ''}
       </p>
+      {chat.remote && chat.files.length ? (
+        <p className="mt-1 text-[14px] leading-snug text-muted">The photos show as small previews here. The full ones are on {holder(chat)} and go into ServiceM8 from there, even when you send from here.</p>
+      ) : null}
       <input
         ref={input}
         type="file"
@@ -370,10 +385,13 @@ export function WaChatView({
           <h2 className={label}>In ServiceM8</h2>
           <ul className="mt-2 grid gap-2.5">
             {chat.sends.map((s) => (
-              <SendRow key={s.at} s={s} onOpen={() => onOpenJob(s.job)} onRetry={() => void retrySend(chat.id, s.at)} />
+              <SendRow key={s.at} s={s} there={holder(chat)} onOpen={() => onOpenJob(s.job)} onRetry={() => void retrySend(chat.id, s.at)} />
             ))}
           </ul>
           {chat.design ? <p className="mt-2 text-[14.5px]">A 3D design request was started from these photos (Designs).</p> : null}
+          {chat.remote && chat.sends.some((x) => pending(x).length) ? (
+            <p className="mt-2 font-mono text-[12.5px] leading-snug text-faint">The photos and PDFs are on {holder(chat)}: they go into ServiceM8 from there when the Job Kit is open on it.</p>
+          ) : null}
         </section>
       ) : null}
 
@@ -539,9 +557,9 @@ export function WaChatView({
 
       <div className="mt-10 border-t border-line pt-4">
         <button type="button" className={`h-10 text-[14px] underline ${sure ? 'font-semibold text-ink' : 'text-muted'}`} onClick={remove}>
-          {sure ? 'Tap again to take it off this phone' : 'Take this chat off this phone'}
+          {sure ? 'Tap again to take it off your phone and computer' : 'Take this chat off the Job Kit'}
         </button>
-        <p className="font-mono text-[12px] leading-snug text-faint">WhatsApp and ServiceM8 keep everything; only this phone’s copy goes.</p>
+        <p className="font-mono text-[12px] leading-snug text-faint">WhatsApp and ServiceM8 keep everything; only the Job Kit’s copy goes, on your phone and computer.</p>
       </div>
 
       {/* what's ticked, and where it can go */}
@@ -592,7 +610,7 @@ export function WaChatView({
   );
 }
 
-function SendRow({ s, onOpen, onRetry }: { s: WaSend; onOpen: () => void; onRetry: () => void }) {
+function SendRow({ s, there, onOpen, onRetry }: { s: WaSend; there?: string; onOpen: () => void; onRetry: () => void }) {
   const left = pending(s).length;
   const busy = sendBusy(s) && !s.failed.length;
   const where = s.mode === 'new' ? `New job${s.number ? ` #${s.number}` : ''}` : `Added to #${s.number ?? 'a job'}`;
@@ -603,7 +621,7 @@ function SendRow({ s, onOpen, onRetry }: { s: WaSend; onOpen: () => void; onRetr
         {s.what ? `: ${s.what}` : ''}
       </p>
       <p className={`font-mono text-[12.5px] ${s.failed.length ? 'font-semibold text-ink' : 'text-muted'}`}>
-        {s.files.length ? (left ? `Sending ${s.sent.length + 1} of ${s.files.length}…` : `${s.sent.length} of ${count(s.files.length, 'file')} in the job’s diary`) : 'No files'}
+        {s.files.length ? (left ? (there ? `${count(left, 'file')} to go from ${there}` : `Sending ${s.sent.length + 1} of ${s.files.length}…`) : `${s.sent.length} of ${count(s.files.length, 'file')} in the job’s diary`) : 'No files'}
         {s.note ? (s.noteDone ? ' · messages added as a note' : ' · note to add') : ''}
         {s.failed.length ? ` · ${s.failed.length} didn’t go${s.error ? ` (${problemText(s.error)})` : ''}` : busy && s.error ? ` · waiting: ${problemText(s.error)}` : ''}
       </p>
@@ -675,11 +693,15 @@ function SendSheet({
               </span>
             </button>
           ))}
-          {sel.photos ? (
+          {sel.photos && !chat.remote ? (
             <button type="button" className="jk-wa-choice" onClick={onDesign}>
               <span className="block font-semibold">A 3D design request from the photos</span>
               <span className="block text-[13.5px] leading-snug text-muted">The {count(sel.photos, 'photo')} as the space, the messages as the brief.</span>
             </button>
+          ) : sel.photos ? (
+            <p className="rounded-sm border border-dashed border-line-strong px-3.5 py-3 text-[13.5px] leading-snug text-muted">
+              A 3D design request from the photos: start it on {holder(chat)}, where the full photos are.
+            </p>
           ) : null}
         </div>
         {!client ? <p className="mt-3 font-mono text-[12px] leading-snug text-faint">Pick who it is above to add to one of their open jobs.</p> : null}

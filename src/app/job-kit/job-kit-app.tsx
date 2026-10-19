@@ -81,6 +81,7 @@ import type { Change } from '@/lib/job-timeline';
 import { ColourKey, KeyDots, secClass, secOfLine, secOfScreen, TintSwitch, useColourKey, useTint, type SecId } from './sections';
 import { LIST_SCREENS, PickNote, Sidebar, sideOf, useWide, type SideId } from './desktop';
 import { onApplied, onSync, startSync, syncNow, syncSoon, syncWords, type SyncState } from './sync';
+import { reloadFor, safeToReload, watchVersion } from './update';
 import './job-kit.css';
 
 type Tab = SectionId | 'notes' | 'send';
@@ -234,6 +235,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   const [status, setStatus] = useState<Status>({ state: 'idle' });
   const [sync, setSync] = useState<SyncState>({ state: 'idle', at: 0, others: [], waiting: 0 });
   const [, setSyncTick] = useState(0); // posted ticks from the other device: Today's Posts line reads them
+  const [update, setUpdate] = useState(''); // the newer version of the Job Kit that's live (update.ts)
   const [screen, setScreenState] = useState<Screen>({ name: 'home' });
   const screenNow = useRef(screen);
   useEffect(() => {
@@ -484,6 +486,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     wake();
     // in step with the other device (phone or computer): see sync.ts
     const stopSync = startSync();
+    const offVersion = watchVersion(setUpdate);
     const offSync = onSync(setSync);
     const offApplied = onApplied((kinds) => {
       if (kinds.has('job') || kinds.has('item')) void reload(true);
@@ -497,6 +500,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
       offStatus();
       offChange();
       stopSync();
+      offVersion();
       offSync();
       offApplied();
       window.removeEventListener('online', online);
@@ -505,6 +509,30 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
       window.removeEventListener('pageshow', shown);
     };
   }, [reload, checkDesigns, checkSm8, checkClients, checkInbox]);
+  /* A newer version is live: load it on Today with nothing being typed, or when the app comes back after 30 s away
+     (where a sheet or a box being typed in isn't open); the Update button does it at once. */
+  useEffect(() => {
+    if (!update) return;
+    const now = () => {
+      if (screenNow.current.name === 'home' && safeToReload()) reloadFor(update, true);
+    };
+    now();
+    let hiddenAt = 0;
+    const vis = () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenAt = Date.now();
+        return;
+      }
+      if (hiddenAt && Date.now() - hiddenAt > 30_000 && safeToReload()) reloadFor(update, true);
+      else now();
+    };
+    document.addEventListener('visibilitychange', vis);
+    const tick = setInterval(now, 10_000);
+    return () => {
+      document.removeEventListener('visibilitychange', vis);
+      clearInterval(tick);
+    };
+  }, [update]);
   // once the screens are drawn (they wait for the phone's storage), start at the top of the one the app opened on
   useEffect(() => {
     if (ready) window.scrollTo({ top: 0, behavior: 'instant' });
@@ -1277,6 +1305,16 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
             <span>{problem}</span>
             <button type="button" className="font-mono text-[13px] text-accent" onClick={() => setProblem('')}>
               OK
+            </button>
+          </p>
+        </div>
+      ) : null}
+      {update ? (
+        <div className="jk-wrap px-4 pt-3">
+          <p role="status" className="flex items-center justify-between gap-3 rounded-sm border border-accent bg-accent-soft px-3 py-2 text-[14.5px]">
+            <span>A new version of the Job Kit is ready.</span>
+            <button type="button" className="h-9 shrink-0 font-semibold text-accent underline" onClick={() => reloadFor(update, false)}>
+              Update
             </button>
           </p>
         </div>
@@ -2239,7 +2277,7 @@ function Settings({ pin, status, sync, onPin, tint, onTint }: { pin: string; sta
         {sync.waiting && sync.state !== 'syncing' ? ` ${sync.waiting} change${sync.waiting === 1 ? '' : 's'} still to go.` : ''}
       </p>
       <p className="mt-2 text-[14.5px] leading-relaxed text-muted">
-        Kept in step: your Job Kit jobs and design requests with their notes and photo thumbnails, how far along each job is, quotes sent, visits done, reviews asked, hidden jobs and posted ticks. Each photo is sent to your inbox from the device that took it. Stay where they are: WhatsApp chats, a customer’s mobile on a design request, and anything you’re still writing.
+        Kept in step: your Job Kit jobs and design requests with their notes and photo thumbnails, WhatsApp chats with small previews of their photos, how far along each job is, quotes sent, visits done, reviews asked, hidden jobs and posted ticks. Each photo goes to your inbox or ServiceM8 from the device that has it. Stay where they are: a customer’s mobile on a design request, and anything you’re still writing.
       </p>
       <button type="button" className="btn btn-ghost btn-sm mt-3" disabled={sync.state === 'syncing' || !pin} onClick={() => syncNow()}>
         {sync.state === 'syncing' ? 'Bringing them into step…' : 'Bring them into step now'}

@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /* Which build this is: the Job Kit compares it with the live one (/api/job-kit/version) and loads a new version by
+     itself (src/app/job-kit/update.ts). Vercel's commit id, else the time of the build. */
+  env: {
+    JK_BUILD: process.env.VERCEL_GIT_COMMIT_SHA || process.env.JK_BUILD || String(Date.now()),
+  },
   /* The photos, videos and 3D models in public/ are served straight from Vercel's CDN, never by a server
      function. A few pages and sharing pictures check or read public/ files with fs while the site is being
      built, so Next.js traced the whole folder (over 200 MB) into every server function, and with the blog

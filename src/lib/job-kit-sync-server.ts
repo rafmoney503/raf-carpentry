@@ -14,7 +14,7 @@ export class SyncError extends Error {
   }
 }
 
-export type SyncDoc = { kind: 'mark' | 'posted' | 'job' | 'item'; id: string; at: number; data: Record<string, unknown> | null };
+export type SyncDoc = { kind: 'mark' | 'posted' | 'job' | 'item' | 'wa' | 'wafile'; id: string; at: number; data: Record<string, unknown> | null };
 
 export async function syncRpc(args: { device: string; label: string; since: number; docs: SyncDoc[] }, timeoutMs = 20000): Promise<unknown> {
   const res = await fetch(`${url().replace(/\/$/, '')}/rest/v1/rpc/jobkit_sync`, {

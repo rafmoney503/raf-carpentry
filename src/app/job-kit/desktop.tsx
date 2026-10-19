@@ -128,7 +128,7 @@ export function Sidebar({ active, counts, onGo }: { active?: SideId; counts: Par
         >
           Settings
         </button>
-        <p className="px-2 pt-2 font-mono text-[11.5px] leading-snug text-faint">The same app as on your phone, kept in step with it. WhatsApp chats stay on the device they came into.</p>
+        <p className="px-2 pt-2 font-mono text-[11.5px] leading-snug text-faint">The same app as on your phone, kept in step with it, WhatsApp chats included.</p>
       </div>
     </aside>
   );
@@ -140,7 +140,7 @@ const PICK: Record<string, { icon: IconName; text: string }> = {
   diary: { icon: 'diary', text: 'Pick a booking on the left to open its job here.' },
   inbox: { icon: 'mail', text: 'Pick an email on the left. Opening one marks it read in Outlook, as on the phone.' },
   designs: { icon: 'designs', text: 'Pick a design request on the left, or start a New design.' },
-  whatsapp: { icon: 'chat', text: 'Pick a chat on the left, or bring one in from WhatsApp’s Export Chat.' },
+  whatsapp: { icon: 'chat', text: 'Pick a chat on the left. Chats brought in on your phone show here too, their photos as small previews.' },
   posts: { icon: 'posts', text: 'Pick a post on the left. Sharing to Instagram and TikTok works best from the phone.' },
   kit: { icon: 'kit', text: 'Pick a job on the left. Photos and clips are best taken on the phone; notes and sizes type easily here.' },
 };
