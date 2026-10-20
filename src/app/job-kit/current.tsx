@@ -246,6 +246,28 @@ export function cancelText(j: CurrentJob, b: Booking) {
     : `Hi ${j.first}, sorry, I can't make it ${when}. I'll be in touch to rearrange.\nRaf`;
 }
 const maps = (address: string) => `https://maps.apple.com/?daddr=${encodeURIComponent(address.replace(/\s*\n\s*/g, ', '))}`;
+/* Waze (20 Oct 2026, Raf: 'if there is a visit booked and there is an address present add ... button ... waze to open
+   directly in waze to navigate'). On a phone waze:// opens the Waze app straight away, already driving there (Waze's
+   https link would go through an in-app browser from the home-screen app first); on a computer Waze's web link shows
+   the route on its live map in a new tab. Waze searches the address and drives to the first result, so the postcode
+   in the job's address matters. */
+const onPhone = () =>
+  typeof navigator !== 'undefined' && (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+export const waze = (address: string, phone = onPhone()) => {
+  const q = encodeURIComponent(address.replace(/\s*\n\s*/g, ', ').trim());
+  return phone ? `waze://?q=${q}&navigate=yes` : `https://www.waze.com/ul?q=${q}&navigate=yes`;
+};
+export function WazeLink({ address }: { address: string }) {
+  const phone = onPhone();
+  return (
+    <a href={waze(address, phone)} className="flex h-10 items-center gap-1.5 font-semibold text-accent underline" {...(phone ? {} : { target: '_blank', rel: 'noopener' })}>
+      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" className="shrink-0">
+        <path d="M20.5 3.5 3.5 10.6l7.1 2.8 2.8 7.1z" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinejoin="round" />
+      </svg>
+      Waze
+    </a>
+  );
+}
 /* A booking's end for putting it back (ServiceM8 can send one with no end: an hour). */
 const endOf = (b: Booking) => {
   if (b.end && b.end > b.start) return b.end;
@@ -453,9 +475,10 @@ export function Diary({
                         </div>
                       ) : null}
                       <div className="flex flex-wrap items-center gap-x-4 border-t border-line px-3.5 py-0.5 text-[14.5px]">
+                        {j?.address && endOf(b) > now ? <WazeLink address={j.address} /> : null}
                         {isToday && j?.address ? (
                           <a href={maps(j.address)} className="flex h-10 items-center text-accent underline" target="_blank" rel="noopener">
-                            Directions
+                            Maps
                           </a>
                         ) : null}
                         {isToday && j?.mobile ? (
@@ -623,6 +646,7 @@ function BookingsBox({
                 {spanText(b, b.start.slice(0, 10))} · {kind}
               </p>
               <div className="mt-1.5 flex flex-wrap gap-x-4 text-[14.5px]">
+                {job.address && endOf(b) > now ? <WazeLink address={job.address} /> : null}
                 {job.mobile ? (
                   <a href={wa(job.mobile, confirmText(job, b))} className="flex h-10 items-center text-accent underline" target="_blank" rel="noopener">
                     Confirm on WhatsApp
