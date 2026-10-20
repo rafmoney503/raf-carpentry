@@ -82,6 +82,7 @@ import { ColourKey, KeyDots, secClass, secOfLine, secOfScreen, TintSwitch, useCo
 import { LIST_SCREENS, PickNote, Sidebar, sideOf, useWide, type SideId } from './desktop';
 import { onApplied, onSync, startSync, syncNow, syncSoon, syncWords, type SyncState } from './sync';
 import { reloadFor, safeToReload, watchVersion } from './update';
+import { fetchSocial, newComments, savedSocial, SOCIAL_FRESH, socialLine, socialProblem, socialTodayLine, SocialView, type Social } from './social';
 import './job-kit.css';
 
 type Tab = SectionId | 'notes' | 'send';
@@ -108,6 +109,7 @@ type Screen =
   | { name: 'email'; id: string; from?: 'home' | 'job'; job?: string } // job: opened from a ServiceM8 job's 'Reply from info@'
   | { name: 'library'; from?: 'designs'; for?: string } // for: a current job (ServiceM8 uuid) to send to
   | { name: 'stats' } // Website stats (stats.tsx)
+  | { name: 'social' } // Instagram and Facebook: followers, posts, comments (social.tsx)
   | { name: 'stats-page'; path: string }; // one page of the website: its heatmap
 
 /* On a computer (desktop.tsx), the list drawn beside a screen: the one it's opened from. */
@@ -138,7 +140,7 @@ function listFor(s: Screen): Screen | null {
   }
 }
 /* Screens that get the whole width on a computer. */
-const ROOMY = ['home', 'timeline', 'library', 'stats', 'stats-page'];
+const ROOMY = ['home', 'timeline', 'library', 'stats', 'stats-page', 'social'];
 
 /* Where "‹ Back" goes when the app was reopened straight onto a screen (no history to go back through). */
 const parentOf = (s: Screen): Screen =>
@@ -195,7 +197,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-page', 'kit'].includes(s.name)) return s;
+    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-page', 'kit', 'social'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -347,6 +349,23 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
       checkInbox(true);
     });
   }, [binned, checkInbox]);
+  /* Instagram and Facebook (social.tsx): the last overview kept here, then a fresh one (at most every 10 minutes). */
+  const [social, setSocial] = useState<Social>({ data: null, at: 0 });
+  const [socialLoading, setSocialLoading] = useState(false);
+  const lastSocial = useRef(0);
+  const checkSocial = useCallback((force = false) => {
+    const pin = readPin();
+    if (!pin || (!force && Date.now() - lastSocial.current < SOCIAL_FRESH)) return;
+    lastSocial.current = Date.now();
+    setSocialLoading(true);
+    void fetchSocial(pin, savedSocial()).then((r) => {
+      setSocial(r);
+      setSocialLoading(false);
+      if (r.error) lastSocial.current = 0;
+    });
+  }, []);
+  // Back from Facebook's login (/api/job-kit/social/meta/callback): how it went, shown on the Social screen.
+  const [socialBack, setSocialBack] = useState('');
   const [customerJobs, setCustomerJobs] = useState<CurrentJob[]>([]);
   const customerLoaded = useCallback((d: CustomerDetail) => {
     setCustomerJobs((list) => [...d.jobs, ...list.filter((j) => !d.jobs.some((x) => x.uuid === j.uuid))]);
@@ -424,10 +443,24 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     const keptInbox = savedInbox();
     setInbox(keptInbox);
     checkInbox();
+    setSocial(savedSocial());
     if (readPin()) checkClients(); // so the first search is instant
-    const first = loadScreen();
+    // Back from connecting Instagram and Facebook: open Social with how it went, and take the ?social= off the address.
+    const fromLogin = new URLSearchParams(window.location.search).get('social');
+    const first: Screen = fromLogin ? { name: 'social' } : loadScreen();
+    if (fromLogin) {
+      keepScreen(first);
+      setSocialBack(
+        fromLogin === 'ok'
+          ? `Connected: Instagram and Facebook show here now.${readPin() ? '' : ' If this opened in a browser window, close it and go back to the Job Kit app: it’s connected there too.'}`
+          : fromLogin === 'pick'
+            ? 'Connected. Facebook shared more than one Page: pick Raf Carpentry below.'
+            : socialProblem(fromLogin),
+      );
+    }
+    checkSocial(Boolean(fromLogin));
     setScreenState(first);
-    history.replaceState({ ...history.state, jk: first }, '');
+    history.replaceState({ ...history.state, jk: first }, '', fromLogin ? window.location.pathname : undefined);
     /* Opening the app starts at the top (18 Oct 2026, Raf: 'when I open jobkit ... first thing it does goes to search
        bar in customers, I'd like it to be at the top of the app'): the phone mustn't put back an old scroll position,
        and a search box that had the keyboard when the app went into the background is let go, so coming back doesn't
@@ -464,6 +497,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         checkDesigns();
         checkSm8();
         checkInbox();
+        checkSocial();
         if (readPin()) checkClients();
       }
     };
@@ -508,7 +542,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
       window.removeEventListener('popstate', back);
       window.removeEventListener('pageshow', shown);
     };
-  }, [reload, checkDesigns, checkSm8, checkClients, checkInbox]);
+  }, [reload, checkDesigns, checkSm8, checkClients, checkInbox, checkSocial]);
   /* A newer version is live: load it on Today with nothing being typed, or when the app comes back after 30 s away
      (where a sheet or a box being typed in isn't open); the Update button does it at once. */
   useEffect(() => {
@@ -805,6 +839,11 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 }}
                 waChats={waChats}
                 onWhatsApp={() => go({ name: 'whatsapp' })}
+                social={social}
+                onSocial={() => {
+                  checkSocial();
+                  go({ name: 'social' });
+                }}
                 onToday={(l) => {
                   if (l.go === 'current') {
                     checkSm8();
@@ -830,7 +869,10 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                   }
                   else if (l.go === 'designs') go(l.id ? { name: 'design', id: l.id } : { name: 'designs' });
                   else if (l.go === 'posts') go({ name: 'posts' });
-                  else document.getElementById('kit-jobs')?.scrollIntoView({ behavior: 'instant', block: 'start' });
+                  else if (l.go === 'social') {
+                    checkSocial();
+                    go({ name: 'social' });
+                  } else document.getElementById('kit-jobs')?.scrollIntoView({ behavior: 'instant', block: 'start' });
                 }}
                 designJobs={designJobs}
                 designs={designs}
@@ -1184,6 +1226,26 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               <PostsList packs={posts} onOpen={(slug) => go({ name: 'post', slug })} />
             ) : screen.name === 'post' ? (
               posts.find((p) => p.slug === screen.slug) ? <PostView pack={posts.find((p) => p.slug === screen.slug)!} /> : <PostsList packs={posts} onOpen={(slug) => go({ name: 'post', slug })} />
+            ) : screen.name === 'social' ? (
+              <>
+                {socialBack ? (
+                  <p role="status" className="mt-5 flex items-start justify-between gap-3 rounded-sm border border-accent bg-accent-soft px-3.5 py-3 text-[15px] leading-relaxed">
+                    <span>{socialBack}</span>
+                    <button type="button" className="font-mono text-[13px] text-accent" onClick={() => setSocialBack('')}>
+                      OK
+                    </button>
+                  </p>
+                ) : null}
+                <SocialView
+                  key={social.data ? (social.data.connected ? `c-${social.data.page?.id ?? ''}` : 'n') : 'none'}
+                  social={social}
+                  loading={socialLoading}
+                  onRefresh={() => checkSocial(true)}
+                  onChange={setSocial}
+                  wide={wide}
+                  pinned={standaloneApp()}
+                />
+              </>
             ) : screen.name === 'stats' ? (
               <StatsView onPage={(path) => go({ name: 'stats-page', path })} />
             ) : screen.name === 'stats-page' ? (
@@ -1263,16 +1325,19 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     if (id === 'current' || id === 'diary' || id === 'timeline') checkSm8();
     if (id === 'inbox') checkInbox();
     if (id === 'designs' || id === 'library') checkDesigns();
+    if (id === 'social') checkSocial();
     go(id === 'kit' ? { name: 'kit' } : id === 'stats' ? { name: 'stats' } : ({ name: id } as Screen));
   };
   const sideCounts: Partial<Record<SideId, number>> = wide
     ? {
         home:
           (inboxTodayLine(inbox, customers) ? 1 : 0) +
+          (socialTodayLine(social) ? 1 : 0) +
           waTodayLines(waChats).length +
           todayLines({ sm8: diarySm8, marks, kit: jobs, designs, done, postsLeft: posts.length - postedEverywhere(posts) }).length,
         inbox: freshUnread(inbox).length,
         whatsapp: waChats.filter((c) => !c.sends.length).length,
+        social: newComments(social).length,
       }
     : {};
   return (
@@ -1427,6 +1492,12 @@ function TopBar({
 
 /* ---------- home ---------- */
 
+/* The app opened from the home screen (an iPhone's opens Facebook's login in a browser window). */
+function standaloneApp() {
+  const nav = navigator as Navigator & { standalone?: boolean };
+  return window.matchMedia('(display-mode: standalone)').matches || nav.standalone === true;
+}
+
 /* Home only renders once the app has opened in the browser, so reading the window here is safe. */
 function useStandalone() {
   const [standalone] = useState(() => {
@@ -1455,6 +1526,8 @@ function Home({
   onTimeline,
   waChats,
   onWhatsApp,
+  social,
+  onSocial,
   onToday,
   designJobs,
   designs,
@@ -1488,6 +1561,8 @@ function Home({
   onTimeline: () => void;
   waChats: WaChat[];
   onWhatsApp: () => void;
+  social: Social;
+  onSocial: () => void;
   onToday: (l: TodayLine) => void;
   designJobs: Job[];
   designs: DesignsReady;
@@ -1510,7 +1585,8 @@ function Home({
   const webLine = useSyncExternalStore(noSubscribe, statsLine, () => 'Visitors, pages and heatmaps of rafcarpentry.com');
   const mailLine = inboxTodayLine(inbox, customers);
   const waLines: TodayLine[] = waTodayLines(waChats).map((l) => ({ text: l.text, go: 'whatsapp', id: l.id, urgent: l.urgent }));
-  const lines = [...(mailLine ? [mailLine] : []), ...waLines, ...todayLines({ sm8, marks, kit: [...jobs, ...designJobs], designs, done, postsLeft: posts.length - postedEverywhere(posts) })];
+  const socialNew = socialTodayLine(social);
+  const lines = [...(mailLine ? [mailLine] : []), ...waLines, ...(socialNew ? [socialNew] : []), ...todayLines({ sm8, marks, kit: [...jobs, ...designJobs], designs, done, postsLeft: posts.length - postedEverywhere(posts) })];
   const goingAhead = sm8.jobs.filter((j) => j.status === 'Work Order').length;
   const [install, setInstall] = useState<(Event & { prompt: () => Promise<void> }) | null>(null);
   useEffect(() => {
@@ -1624,6 +1700,7 @@ function Home({
       <HomeBand sec="photos" id="kit-jobs" icon="kit" label="Photos and posts">
         <div className="px-4 pb-4">
           {posts.length ? <HomeRow onClick={onPosts} title="Posts for Instagram, TikTok and YouTube" line={postsLine(posts)} /> : null}
+          <HomeRow onClick={onSocial} title="Instagram and Facebook" line={socialLine(social)} truncate />
           <KitJobs heading jobs={jobs} items={items} done={done} onClear={onClear} onNew={onNew} onOpen={onOpen} />
         </div>
       </HomeBand>
@@ -1749,7 +1826,7 @@ function currentLine(sm8: Sm8, marks: Marks) {
 }
 
 /* Each line on the Today list shows the icon of the section it opens. */
-const LINE_ICON: Record<TodayLine['go'], IconName> = { current: 'jobs', designs: 'designs', posts: 'posts', jobs: 'kit', diary: 'diary', sm8: 'diary', inbox: 'mail', timeline: 'gantt', whatsapp: 'chat' };
+const LINE_ICON: Record<TodayLine['go'], IconName> = { current: 'jobs', designs: 'designs', posts: 'posts', jobs: 'kit', diary: 'diary', sm8: 'diary', inbox: 'mail', timeline: 'gantt', whatsapp: 'chat', social: 'social' };
 
 function diaryLine(sm8: Sm8) {
   if (!sm8.at || sm8.bookings === undefined) return 'Visits and work booked in ServiceM8';

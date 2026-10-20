@@ -24,7 +24,7 @@ export const SECTIONS: { id: SecId; name: string; what: string }[] = [
   { id: 'timeline', name: 'Job timeline', what: 'Start, finish and progress of each job.' },
   { id: 'designs', name: 'Designs in 3D', what: 'Designs for customers and the Design library.' },
   { id: 'website', name: 'Website', what: 'Website stats and page heatmaps.' },
-  { id: 'photos', name: 'Photos and posts', what: 'Job Kit jobs and posts for social media.' },
+  { id: 'photos', name: 'Photos and posts', what: 'Job Kit jobs, posts, Instagram and Facebook.' },
 ];
 
 /* Which section a screen belongs to. */
@@ -34,13 +34,13 @@ export function secOfScreen(name: string): SecId | undefined {
   if (name === 'timeline') return 'timeline';
   if (name === 'whatsapp' || name === 'wa-chat') return 'whatsapp';
   if (['stats', 'stats-page'].includes(name)) return 'website';
-  if (['posts', 'post', 'job', 'new', 'kit'].includes(name)) return 'photos';
+  if (['posts', 'post', 'job', 'new', 'kit', 'social'].includes(name)) return 'photos';
   return undefined;
 }
 
 /* Which section a Today line opens. */
 export const secOfLine = (go: string): SecId =>
-  go === 'designs' ? 'designs' : go === 'posts' || go === 'jobs' ? 'photos' : go === 'timeline' ? 'timeline' : go === 'whatsapp' ? 'whatsapp' : 'customers';
+  go === 'designs' ? 'designs' : go === 'posts' || go === 'jobs' || go === 'social' ? 'photos' : go === 'timeline' ? 'timeline' : go === 'whatsapp' ? 'whatsapp' : 'customers';
 
 export const secClass = (s?: SecId) => (s ? `jk-sec-${s}` : '');
 

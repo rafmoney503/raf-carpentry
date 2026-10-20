@@ -25,7 +25,7 @@ export const useWide = () =>
   );
 
 /* The places in the sidebar, in their sections. */
-export type SideId = 'home' | 'diary' | 'current' | 'inbox' | 'whatsapp' | 'timeline' | 'designs' | 'library' | 'stats' | 'kit' | 'posts' | 'settings';
+export type SideId = 'home' | 'diary' | 'current' | 'inbox' | 'whatsapp' | 'timeline' | 'designs' | 'library' | 'stats' | 'kit' | 'posts' | 'social' | 'settings';
 const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string; icon?: IconName }[] }[] = [
   { sec: 'todo', items: [{ id: 'home', title: 'Today' }] },
   {
@@ -54,6 +54,7 @@ const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string;
     items: [
       { id: 'kit', title: 'Job Kit jobs', icon: 'kit' },
       { id: 'posts', title: 'Posts', icon: 'posts' },
+      { id: 'social', title: 'Instagram and Facebook', icon: 'social' },
     ],
   },
 ];
@@ -71,6 +72,7 @@ export function sideOf(name: string, from?: string): SideId | undefined {
   if (name === 'stats' || name === 'stats-page') return 'stats';
   if (['kit', 'job', 'new'].includes(name)) return 'kit';
   if (name === 'posts' || name === 'post') return 'posts';
+  if (name === 'social') return 'social';
   if (name === 'settings') return 'settings';
   return undefined;
 }

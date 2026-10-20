@@ -1,9 +1,16 @@
 /* Small line icons for the Job Kit's sections, drawn like the site's sketches (round ends, one weight), so each
    card on the Today screen and each line in the Today list shows where it goes. Decorative: the text says it. */
 
-export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat';
+export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social';
 
 const PATHS: Record<IconName, React.ReactNode> = {
+  // a heart in a speech bubble: Instagram and Facebook, their followers and comments
+  social: (
+    <>
+      <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H11l-4.2 3.6V16H5.5A1.5 1.5 0 0 1 4 14.5z" />
+      <path d="M12 13.2s-3.3-1.9-3.3-4.1a1.75 1.75 0 0 1 3.3-.8 1.75 1.75 0 0 1 3.3.8c0 2.2-3.3 4.1-3.3 4.1z" />
+    </>
+  ),
   // the website stats: a browser window with a bar chart in it
   stats: (
     <>
