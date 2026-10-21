@@ -82,7 +82,7 @@ import { ColourKey, KeyDots, secClass, secOfLine, secOfScreen, TintSwitch, useCo
 import { LIST_SCREENS, PickNote, Sidebar, sideOf, useWide, type SideId } from './desktop';
 import { onApplied, onSync, startSync, syncNow, syncSoon, syncWords, type SyncState } from './sync';
 import { reloadFor, safeToReload, watchVersion } from './update';
-import { fetchSocial, newComments, savedSocial, SOCIAL_FRESH, socialLine, socialProblem, socialTodayLine, SocialView, type Social } from './social';
+import { fetchSocial, newComments, savedSocial, SOCIAL_FRESH, socialKey, socialLine, socialProblem, socialTodayLine, SocialView, type Social } from './social';
 import './job-kit.css';
 
 type Tab = SectionId | 'notes' | 'send';
@@ -109,7 +109,7 @@ type Screen =
   | { name: 'email'; id: string; from?: 'home' | 'job'; job?: string } // job: opened from a ServiceM8 job's 'Reply from info@'
   | { name: 'library'; from?: 'designs'; for?: string } // for: a current job (ServiceM8 uuid) to send to
   | { name: 'stats' } // Website stats (stats.tsx)
-  | { name: 'social' } // Instagram and Facebook: followers, posts, comments (social.tsx)
+  | { name: 'social' } // Instagram, Facebook and Threads: followers, posts, comments (social.tsx)
   | { name: 'stats-page'; path: string }; // one page of the website: its heatmap
 
 /* On a computer (desktop.tsx), the list drawn beside a screen: the one it's opened from. */
@@ -349,7 +349,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
       checkInbox(true);
     });
   }, [binned, checkInbox]);
-  /* Instagram and Facebook (social.tsx): the last overview kept here, then a fresh one (at most every 10 minutes). */
+  /* Instagram, Facebook and Threads (social.tsx): the last overview kept here, then a fresh one (at most every 10 minutes). */
   const [social, setSocial] = useState<Social>({ data: null, at: 0 });
   const [socialLoading, setSocialLoading] = useState(false);
   const lastSocial = useRef(0);
@@ -364,7 +364,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
       if (r.error) lastSocial.current = 0;
     });
   }, []);
-  // Back from Facebook's login (/api/job-kit/social/meta/callback): how it went, shown on the Social screen.
+  // Back from Facebook's or Threads' login (/api/job-kit/social/<meta|threads>/callback): how it went, shown on the Social screen.
   const [socialBack, setSocialBack] = useState('');
   const [customerJobs, setCustomerJobs] = useState<CurrentJob[]>([]);
   const customerLoaded = useCallback((d: CustomerDetail) => {
@@ -445,14 +445,14 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     checkInbox();
     setSocial(savedSocial());
     if (readPin()) checkClients(); // so the first search is instant
-    // Back from connecting Instagram and Facebook: open Social with how it went, and take the ?social= off the address.
+    // Back from connecting Instagram and Facebook or Threads: open Social with how it went, and take the ?social= off the address.
     const fromLogin = new URLSearchParams(window.location.search).get('social');
     const first: Screen = fromLogin ? { name: 'social' } : loadScreen();
     if (fromLogin) {
       keepScreen(first);
       setSocialBack(
-        fromLogin === 'ok'
-          ? `Connected: Instagram and Facebook show here now.${readPin() ? '' : ' If this opened in a browser window, close it and go back to the Job Kit app: it’s connected there too.'}`
+        fromLogin === 'ok' || fromLogin === 'threads-ok'
+          ? `Connected: ${fromLogin === 'ok' ? 'Instagram and Facebook show' : 'Threads shows'} here now.${readPin() ? '' : ' If this opened in a browser window, close it and go back to the Job Kit app: it’s connected there too.'}`
           : fromLogin === 'pick'
             ? 'Connected. Facebook shared more than one Page: pick Raf Carpentry below.'
             : socialProblem(fromLogin),
@@ -1237,7 +1237,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                   </p>
                 ) : null}
                 <SocialView
-                  key={social.data ? (social.data.connected ? `c-${social.data.page?.id ?? ''}` : 'n') : 'none'}
+                  key={socialKey(social)}
                   social={social}
                   loading={socialLoading}
                   onRefresh={() => checkSocial(true)}
@@ -1700,7 +1700,7 @@ function Home({
       <HomeBand sec="photos" id="kit-jobs" icon="kit" label="Photos and posts">
         <div className="px-4 pb-4">
           {posts.length ? <HomeRow onClick={onPosts} title="Posts for Instagram, TikTok and YouTube" line={postsLine(posts)} /> : null}
-          <HomeRow onClick={onSocial} title="Instagram and Facebook" line={socialLine(social)} truncate />
+          <HomeRow onClick={onSocial} title="Social media" line={socialLine(social)} truncate />
           <KitJobs heading jobs={jobs} items={items} done={done} onClear={onClear} onNew={onNew} onOpen={onOpen} />
         </div>
       </HomeBand>

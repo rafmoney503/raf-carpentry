@@ -24,7 +24,7 @@ export const SECTIONS: { id: SecId; name: string; what: string }[] = [
   { id: 'timeline', name: 'Job timeline', what: 'Start, finish and progress of each job.' },
   { id: 'designs', name: 'Designs in 3D', what: 'Designs for customers and the Design library.' },
   { id: 'website', name: 'Website', what: 'Website stats and page heatmaps.' },
-  { id: 'photos', name: 'Photos and posts', what: 'Job Kit jobs, posts, Instagram and Facebook.' },
+  { id: 'photos', name: 'Photos and posts', what: 'Job Kit jobs, posts and social media.' },
 ];
 
 /* Which section a screen belongs to. */

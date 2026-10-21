@@ -1,20 +1,21 @@
 'use client';
-/* eslint-disable @next/next/no-img-element -- pictures from Instagram's and Facebook's own servers, shown as they come */
+/* eslint-disable @next/next/no-img-element -- pictures from Instagram's, Facebook's and Threads' own servers, shown as they come */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { post } from './sm8-post';
 import { readPin } from './uploader';
 import { Icon } from './icons';
 import { field } from './parts';
 import type { TodayLine } from './current';
-import type { Platform, SocialComment, SocialDay, SocialOverview, SocialPost, SocialProfile } from '@/lib/meta-social';
+import type { Platform, SocialAccount, SocialComment, SocialDay, SocialOverview, SocialPost, SocialProfile } from '@/lib/social-types';
 
-/* The Job Kit's Social screen (20 Oct 2026, Raf: 'is there a way to see in job kit social media profiles with followers
-   and comments as a separate section', then 'start with instagram and facebook'): Raf Carpentry's Instagram and Facebook
-   Page through /api/job-kit/social (src/lib/meta-social.ts). Followers and how they've moved (counted each day the
-   overview is fetched), the latest posts, and the comments on them with the replies, newest first; a reply goes from
-   here only when Raf presses Send reply. The last overview is kept on this device (raf_jobkit_social) so Today can say
-   what's new; which comments he has seen is kept on the server (and on the device at once), so the phone and the
-   computer agree. YouTube and TikTok come later. */
+/* The Job Kit's Social screen: Raf Carpentry's Instagram and Facebook Page (20 Oct 2026, Raf: 'is there a way to see in
+   job kit social media profiles with followers and comments as a separate section', then 'start with instagram and
+   facebook') and Threads (21 Oct 2026, Raf: 'Let's go with threads'), through /api/job-kit/social (src/lib/social.ts).
+   Followers and how they've moved (counted each day the overview is fetched), the latest posts, and the comments on
+   them (on Threads, the replies people left) with what was said back, newest first; a reply goes from here only when
+   Raf presses Send reply. The last overview is kept on this device (raf_jobkit_social) so Today can say what's new,
+   and so a platform that doesn't answer this time still shows its last numbers; which comments he has seen is kept on
+   the server (and on the device at once), so the phone and the computer agree. YouTube and TikTok come later. */
 
 const API = '/api/job-kit/social';
 const KEY = 'raf_jobkit_social';
@@ -27,12 +28,37 @@ export type Social = {
   error?: string;
   detail?: string;
 };
-type Connected = Extract<SocialOverview, { connected: true }>;
+
+const ORDER: Platform[] = ['ig', 'fb', 'th'];
+const metaOf = (p: Platform) => p === 'ig' || p === 'fb';
+const NOT_SET_UP: SocialAccount = { setUp: false, missing: [], connected: false };
+
+/* An overview kept from before 21 Oct 2026 (Instagram and Facebook only) in today's shape. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toV2(d: any): SocialOverview | null {
+  if (!d || typeof d !== 'object') return null;
+  if (d.v === 2) return d as SocialOverview;
+  const empty = { profiles: [], posts: [], comments: [], seenAt: 0, problems: [], at: 0 };
+  if (d.connected === false) return { v: 2, meta: { setUp: Boolean(d.setUp), missing: d.missing ?? [], connected: false }, threads: NOT_SET_UP, ...empty };
+  if (d.connected === true)
+    return {
+      v: 2,
+      meta: { setUp: true, missing: [], connected: true, who: d.user, connectedAt: d.connectedAt, pages: d.pages ?? [], page: d.page, notGranted: d.notGranted ?? [] },
+      threads: NOT_SET_UP,
+      ...empty,
+      profiles: d.profiles ?? [],
+      posts: d.posts ?? [],
+      comments: d.comments ?? [],
+      seenAt: d.seenAt ?? 0,
+      problems: d.problems ?? [],
+    };
+  return null;
+}
 
 export function savedSocial(): Social {
   try {
     const s = JSON.parse(localStorage.getItem(KEY) || 'null') as Social | null;
-    if (s && typeof s.at === 'number') return s;
+    if (s && typeof s.at === 'number') return { ...s, data: toV2(s.data) };
   } catch {
     /* none kept */
   }
@@ -53,12 +79,42 @@ const localSeen = () => {
   }
 };
 
+/* A platform that didn't come this time (its login stopped working, or it was busy) keeps what this device had last,
+   with the problem said beside it. */
+function carry(next: SocialOverview, prev: SocialOverview | null): SocialOverview {
+  if (!prev) return next;
+  const failed = ORDER.filter((p) => {
+    if (next.profiles.some((x) => x.platform === p)) return false;
+    const acc = metaOf(p) ? next.meta : next.threads;
+    return acc.connected && (Boolean(acc.error) || next.problems.some((x) => x.platform === p));
+  });
+  const take = failed.filter((p) => prev.profiles.some((x) => x.platform === p));
+  if (!take.length) return next;
+  const has = (x: { platform: Platform }) => take.includes(x.platform);
+  return {
+    ...next,
+    profiles: [...next.profiles, ...prev.profiles.filter(has)].sort((a, b) => ORDER.indexOf(a.platform) - ORDER.indexOf(b.platform)),
+    posts: [...next.posts, ...prev.posts.filter(has)].sort((a, b) => b.at - a.at),
+    comments: [...next.comments, ...prev.comments.filter(has)].sort((a, b) => (b.activeAt ?? b.at) - (a.activeAt ?? a.at)),
+  };
+}
+
 /* A fresh overview; on a problem the last one stays, with the problem beside it. */
 export async function fetchSocial(pin: string, prev: Social): Promise<Social> {
   const r = await post<SocialOverview>(pin, { action: 'overview' }, API);
-  const next: Social = r.ok ? { data: r.data, at: Date.now() } : { ...prev, error: r.error, detail: r.detail };
-  if (r.ok) keep(next);
+  if (!r.ok) return { ...prev, error: r.error, detail: r.detail };
+  const data = toV2(r.data);
+  if (!data) return { ...prev, error: 'social-error' };
+  const next: Social = { data: carry(data, prev.data), at: Date.now() };
+  keep(next);
   return next;
+}
+
+/* What the screen is drawn from scratch on (job-kit-app.tsx key): which accounts are connected, and the Page. */
+export function socialKey(s: Social) {
+  const d = s.data;
+  if (!d) return 'none';
+  return `${d.meta.connected ? `m-${d.meta.page?.id ?? ''}` : 'm0'}|${d.threads.connected ? 't' : 't0'}`;
 }
 
 export function socialProblem(error?: string, detail?: string) {
@@ -81,11 +137,25 @@ export function socialProblem(error?: string, detail?: string) {
     case 'meta-no-ig':
       return 'No Instagram account is linked to this Facebook Page. In the Instagram app: Settings, Account type and tools (or Business tools), Connect or change Facebook Page, then Connect again here.';
     case 'meta-store':
+    case 'threads-store':
+    case 'social-store':
       return 'The Job Kit’s own store didn’t answer. Try again in a minute.';
     case 'meta-not-connected':
       return 'Instagram and Facebook aren’t connected. Tap Connect.';
+    case 'threads-not-set-up':
+      return `Threads isn’t set up yet${detail ? `: ${detail} ${detail.includes(',') ? 'are' : 'is'} missing in Vercel` : ''}.`;
+    case 'threads-expired':
+      return 'Threads wants you to connect again (a changed password, the app removed, or two months without opening this screen). Tap Connect Threads again.';
+    case 'threads-permission':
+      return `Threads says the Job Kit isn’t allowed to do that${detail ? ` (${detail})` : ''}. Tap Connect Threads again and allow everything it asks.`;
+    case 'threads-busy':
+      return 'Threads is busy or didn’t answer. Try again in a minute.';
+    case 'threads-gone':
+      return 'That isn’t on Threads any more (deleted or hidden). Refresh.';
+    case 'threads-not-connected':
+      return 'Threads isn’t connected. Tap Connect Threads.';
     case 'cancelled':
-      return 'Not connected: Facebook’s login was closed or Not now was pressed.';
+      return 'Not connected: the login was closed, or Not now or Cancel was pressed.';
     case 'expired':
       return 'That login took too long, or was started somewhere else. Tap Connect again.';
     case 'missing-text':
@@ -97,39 +167,40 @@ export function socialProblem(error?: string, detail?: string) {
     case 'offline':
       return 'No signal. Showing what this device had last.';
     default:
-      return `Facebook sent back an error${detail ? `: ${detail}` : '.'}`;
+      return `${/^threads/.test(error) ? 'Threads' : /^meta/.test(error) ? 'Facebook' : 'The Job Kit'} sent back an error${detail ? `: ${detail}` : '.'}`;
   }
 }
 
 /* ---------- what's new ---------- */
 
-const seenOf = (s: Social) => Math.max(s.data?.connected ? s.data.seenAt : 0, localSeen());
+const seenOf = (s: Social) => Math.max(s.data?.seenAt ?? 0, localSeen());
+const lastWord = (c: SocialComment) => c.activeAt ?? c.at;
 const DAY = 864e5;
-/* Comments Raf hasn't had in front of him yet (the last 30 days). */
+/* Comments Raf hasn't had in front of him yet (the last 30 days), or that someone wrote under again after his reply. */
 export function newComments(s: Social): SocialComment[] {
-  if (!s.data?.connected) return [];
+  if (!s.data) return [];
   const seen = seenOf(s);
-  return s.data.comments.filter((c) => c.at > seen && c.at > Date.now() - 30 * DAY && !c.answered);
+  return s.data.comments.filter((c) => lastWord(c) > seen && lastWord(c) > Date.now() - 30 * DAY && !c.answered);
 }
 const asks = (t: string) => /\?|how much|price|cost|quote|available|do you (do|cover|work)|interested|contact/i.test(t);
-const platformName = (p: Platform) => (p === 'ig' ? 'Instagram' : 'Facebook');
+export const platformName = (p: Platform) => (p === 'ig' ? 'Instagram' : p === 'fb' ? 'Facebook' : 'Threads');
 
 export function socialTodayLine(s: Social): TodayLine | null {
   const list = newComments(s);
   if (!list.length) return null;
   if (list.length === 1) {
     const c = list[0];
+    const q = asks(c.text) || Boolean(c.activeAt && c.replies.length && asks(c.replies[c.replies.length - 1].text));
     return {
-      text: `${asks(c.text) ? 'Question' : 'Comment'} from ${c.who} on ${platformName(c.platform)}`,
+      text: `${c.activeAt ? `${c.who} wrote again` : `${asks(c.text) ? 'Question' : 'Comment'} from ${c.who}`} on ${platformName(c.platform)}`,
       go: 'social',
-      urgent: asks(c.text),
+      urgent: q,
       icon: 'social',
     };
   }
-  const ig = list.filter((c) => c.platform === 'ig').length;
-  const fb = list.length - ig;
+  const by = ORDER.map((p) => [p, list.filter((c) => c.platform === p).length] as const).filter(([, k]) => k);
   return {
-    text: `${list.length} new comments${ig && fb ? `: ${ig} on Instagram, ${fb} on Facebook` : ig ? ' on Instagram' : ' on Facebook'}`,
+    text: `${list.length} new comments${by.length > 1 ? `: ${by.map(([p, k]) => `${k} on ${platformName(p)}`).join(', ')}` : ` on ${platformName(by[0][0])}`}`,
     go: 'social',
     urgent: list.some((c) => asks(c.text)),
     icon: 'social',
@@ -138,16 +209,16 @@ export function socialTodayLine(s: Social): TodayLine | null {
 
 const n = (v: number | null | undefined) => (typeof v === 'number' ? v.toLocaleString('en-GB') : '–');
 
-/* The line under Social on Today. */
+/* The line under Social media on Today. */
 export function socialLine(s: Social) {
   const d = s.data;
-  if (!d) return s.error === 'meta-not-set-up' ? 'Instagram and Facebook: not set up yet' : 'Followers and comments on Instagram and Facebook';
-  if (!d.connected) return d.setUp ? 'Connect Instagram and Facebook' : 'Instagram and Facebook: not set up yet';
-  if (!d.page) return 'Connected: pick which Page';
+  if (!d) return /not-set-up/.test(s.error ?? '') ? 'Social media: not set up yet' : 'Followers and comments on Instagram, Facebook and Threads';
+  if (!d.meta.connected && !d.threads.connected) return d.meta.setUp || d.threads.setUp ? 'Connect Instagram, Facebook and Threads' : 'Social media: not set up yet';
   const parts = d.profiles.map((p) => {
     const w = change(p.history, 7);
     return `${platformName(p.platform)} ${n(p.followers)}${w && w.n ? ` (${w.n > 0 ? '+' : '−'}${Math.abs(w.n)})` : ''}`;
   });
+  if (d.meta.connected && !d.meta.page) parts.unshift('Pick which Facebook Page');
   const fresh = newComments(s).length;
   return [parts.join(' · '), fresh ? `${fresh} new comment${fresh === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ') || 'Followers and comments';
 }
@@ -155,20 +226,12 @@ export function socialLine(s: Social) {
 /* ---------- followers over time ---------- */
 
 const addDays = (day: string, k: number) => new Date(Date.parse(`${day}T12:00:00Z`) + k * DAY).toISOString().slice(0, 10);
-const dayWords = (day: string) =>
-  new Date(`${day}T12:00`).toLocaleDateString('en-GB', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  });
+const dayWords = (day: string) => new Date(`${day}T12:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 
 /* How far the followers moved over the last `days`: from the count on or before that day, or from the first count
    when the history is shorter (then `since` says from when). */
 export function change(h: SocialDay[], days: number): { n: number; since?: string } | null {
-  const pts = h.filter((x) => typeof x.followers === 'number') as {
-    day: string;
-    followers: number;
-  }[];
+  const pts = h.filter((x) => typeof x.followers === 'number') as { day: string; followers: number }[];
   if (pts.length < 2) return null;
   const last = pts[pts.length - 1];
   const target = addDays(last.day, -days);
@@ -178,10 +241,7 @@ export function change(h: SocialDay[], days: number): { n: number; since?: strin
 }
 
 function Spark({ h }: { h: SocialDay[] }) {
-  const pts = h.filter((x) => typeof x.followers === 'number').slice(-90) as {
-    day: string;
-    followers: number;
-  }[];
+  const pts = h.filter((x) => typeof x.followers === 'number').slice(-90) as { day: string; followers: number }[];
   if (pts.length < 2) return null;
   const t0 = Date.parse(pts[0].day);
   const span = Math.max(1, Date.parse(pts[pts.length - 1].day) - t0);
@@ -204,16 +264,13 @@ function moved(c: { n: number; since?: string } | null, words: string) {
 
 /* ---------- small pieces ---------- */
 
+const BADGE: Record<Platform, [string, string]> = {
+  ig: ['Insta', 'bg-ink text-paper'],
+  fb: ['Facebook', 'border border-ink text-ink'],
+  th: ['Threads', 'border border-line-strong bg-raised text-ink'],
+};
 function Badge({ p }: { p: Platform }) {
-  return (
-    <span
-      className={`inline-flex h-[22px] shrink-0 items-center rounded-sm px-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.06em] ${
-        p === 'ig' ? 'bg-ink text-paper' : 'border border-ink text-ink'
-      }`}
-    >
-      {p === 'ig' ? 'Insta' : 'Facebook'}
-    </span>
-  );
+  return <span className={`inline-flex h-[22px] shrink-0 items-center rounded-sm px-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.06em] ${BADGE[p][1]}`}>{BADGE[p][0]}</span>;
 }
 
 function Pic({ src, className, round }: { src?: string; className: string; round?: boolean }) {
@@ -228,20 +285,11 @@ function ago(t: number) {
   if (s < 3600) return `${Math.round(s / 60)} min ago`;
   if (s < 86400) return `${Math.round(s / 3600)} h ago`;
   if (s < 7 * 86400) return `${Math.round(s / 86400)} day${Math.round(s / 86400) === 1 ? '' : 's'} ago`;
-  return new Date(t).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    ...(Date.now() - t > 300 * DAY ? { year: 'numeric' } : {}),
-  });
+  return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', ...(Date.now() - t > 300 * DAY ? { year: 'numeric' } : {}) });
 }
+const onDay = (t?: number) => (t ? new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '');
 
-const KIND: Record<SocialPost['kind'], string> = {
-  reel: 'Reel',
-  video: 'Video',
-  photo: 'Photo',
-  carousel: 'Photos',
-  post: 'Post',
-};
+const KIND: Record<SocialPost['kind'], string> = { reel: 'Reel', video: 'Video', photo: 'Photo', carousel: 'Photos', post: 'Post', thread: 'Thread' };
 
 function ProfileCard({ p }: { p: SocialProfile }) {
   const week = moved(change(p.history, 7), 'this week');
@@ -253,7 +301,7 @@ function ProfileCard({ p }: { p: SocialProfile }) {
         <Pic src={p.picture} round className="h-11 w-11 shrink-0" />
         <span className="min-w-0 flex-1">
           <span className="block font-semibold leading-tight">{platformName(p.platform)}</span>
-          <span className="block truncate text-[14.5px] text-muted">{p.platform === 'ig' ? `@${p.handle ?? ''}` : p.name}</span>
+          <span className="block truncate text-[14.5px] text-muted">{p.platform === 'fb' ? p.name : `@${p.handle ?? ''}`}</span>
         </span>
         <a href={p.link} target="_blank" rel="noopener noreferrer" className="shrink-0 font-mono text-[13px] font-semibold underline jk-sec-ink">
           Open ↗
@@ -261,7 +309,9 @@ function ProfileCard({ p }: { p: SocialProfile }) {
       </div>
       <p className="mt-4 font-display text-[36px] font-[680] leading-none tracking-[-0.02em]">{n(p.followers)}</p>
       <p className="mt-1 text-[14.5px] text-muted">followers</p>
-      <p className="mt-2 font-mono text-[13px] font-semibold jk-sec-ink">{week ?? 'Counting from today: the change shows from tomorrow.'}</p>
+      <p className="mt-2 font-mono text-[13px] font-semibold jk-sec-ink">
+        {p.followers === null ? `${platformName(p.platform)} didn’t give the count this time.` : week ?? 'Counting from today: the change shows from tomorrow.'}
+      </p>
       {monthWords ? <p className="mt-0.5 font-mono text-[12.5px] text-muted">{monthWords}</p> : null}
       <Spark h={p.history} />
       {p.platform === 'ig' ? (
@@ -273,17 +323,53 @@ function ProfileCard({ p }: { p: SocialProfile }) {
   );
 }
 
+/* A platform not connected yet: in the row of profiles, where its numbers will be. */
+function ConnectCard({ platform, acc, starting, pinned, onConnect }: { platform: 'meta' | 'threads'; acc: SocialAccount; starting: boolean; pinned: boolean; onConnect: () => void }) {
+  const meta = platform === 'meta';
+  const title = meta ? 'Instagram and Facebook' : 'Threads';
+  return (
+    <div className="rounded-sm border border-dashed border-line-strong bg-mount p-4">
+      <p className="font-semibold leading-tight">{title}</p>
+      <p className="mt-1.5 text-[14.5px] leading-relaxed text-muted">
+        {meta ? 'Followers, your latest posts and every comment on them, with a Reply box.' : 'Followers, your latest threads and the replies people leave under them, with a Reply box.'}
+      </p>
+      {acc.setUp ? (
+        <>
+          <button type="button" onClick={onConnect} disabled={starting} className="btn btn-primary btn-sm mt-3.5 w-full disabled:opacity-60">
+            {starting ? `Opening ${meta ? 'Facebook' : 'Threads'}…` : `Connect ${title}`}
+          </button>
+          <p className="mt-2.5 text-[13.5px] leading-relaxed text-muted">
+            {meta
+              ? 'Facebook asks you to log in, then which Pages and Instagram accounts to share: tick Raf Carpentry and @rafcarpentry and leave every permission on.'
+              : 'Threads asks you to log in as @rafcarpentry and allow the Job Kit: tap Allow.'}
+            {pinned ? ' On the iPhone it opens in a browser window: when that says Connected, close it and come back here. It’s easiest from the computer.' : ''}
+          </p>
+        </>
+      ) : (
+        <p className="mt-3 rounded-sm border border-line bg-paper px-3 py-2.5 text-[13.5px] leading-relaxed">
+          Not set up yet{acc.missing.length ? `: ${acc.missing.join(', ')} ${acc.missing.length === 1 ? 'is' : 'are'} missing in Vercel` : ''}. These come from the {meta ? 'Meta' : 'Threads'} app made
+          for the Job Kit; ask Claude to walk you through it.
+        </p>
+      )}
+    </div>
+  );
+}
+
 /* ---------- a comment ---------- */
+
+const MAX: Record<Platform, number> = { ig: 2000, fb: 2000, th: 500 };
 
 function CommentCard({
   c,
   postOf,
   isNew,
+  from,
   onReply,
 }: {
   c: SocialComment;
   postOf: (id: string) => SocialPost | undefined;
   isNew: boolean;
+  from: string; // who the reply goes from
   onReply: (c: SocialComment, text: string) => Promise<string>;
 }) {
   const p = postOf(c.post);
@@ -307,6 +393,8 @@ function CommentCard({
       setOpen(false);
     }
   };
+  const max = MAX[c.platform];
+  const left = max - text.length;
   return (
     <li data-jk-id={c.id} className={`rounded-sm border bg-mount p-3.5 ${isNew ? 'border-ink' : 'border-line-strong'}`}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -318,8 +406,8 @@ function CommentCard({
       <p className="mt-2 whitespace-pre-wrap break-words text-[16px] leading-relaxed">{c.text || <span className="text-faint">(a sticker or a photo)</span>}</p>
       {p ? (
         <a href={p.link} target="_blank" rel="noopener noreferrer" className="mt-2.5 flex items-center gap-2.5 rounded-sm border border-line bg-paper p-1.5 pr-2.5">
-          <Pic src={p.thumb} className="h-10 w-10 shrink-0" />
-          <span className="min-w-0 flex-1 truncate text-[13.5px] text-muted">
+          {p.thumb ? <Pic src={p.thumb} className="h-10 w-10 shrink-0" /> : null}
+          <span className={`min-w-0 flex-1 truncate text-[13.5px] text-muted ${p.thumb ? '' : 'py-1 pl-1'}`}>
             On your {KIND[p.kind].toLowerCase()}
             {p.text ? `: ${p.text}` : ''}
           </span>
@@ -336,14 +424,14 @@ function CommentCard({
         </ul>
       ) : null}
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <span className={`font-mono text-[12.5px] ${c.answered ? 'text-muted' : 'font-semibold text-ink'}`}>{c.answered ? '✓ You replied' : 'Not answered yet'}</span>
+        <span className={`font-mono text-[12.5px] ${c.answered ? 'text-muted' : 'font-semibold text-ink'}`}>{c.answered ? '✓ You replied' : c.activeAt ? 'They wrote again' : 'Not answered yet'}</span>
         <span className="ml-auto flex items-center gap-4">
           {!open ? (
             <button type="button" onClick={() => setOpen(true)} className="h-9 font-semibold underline jk-sec-ink">
               Reply
             </button>
           ) : null}
-          <a href={c.link} target="_blank" rel="noopener noreferrer" className="h-9 leading-9 font-mono text-[13px] text-muted underline">
+          <a href={c.link} target="_blank" rel="noopener noreferrer" className="h-9 font-mono text-[13px] leading-9 text-muted underline">
             Open in {platformName(c.platform)} ↗
           </a>
         </span>
@@ -357,10 +445,11 @@ function CommentCard({
             onChange={(e) => setText(e.target.value)}
             placeholder={`Reply to ${c.who}`}
             autoCapitalize="sentences"
-            maxLength={2000}
+            maxLength={max}
           />
           <p className="mt-1 text-[13px] text-faint">
-            Goes under their comment on {platformName(c.platform)}, from {c.platform === 'ig' ? 'your Instagram' : 'the Page'}, as soon as you press Send.
+            Goes under their {c.platform === 'th' ? 'reply' : 'comment'} on {platformName(c.platform)}, from {from}, as soon as you press Send.
+            {c.platform === 'th' && text.length > 400 ? ` ${left} characters left.` : ''}
           </p>
           {err ? (
             <p role="alert" className="mt-2 text-[14.5px] font-semibold">
@@ -383,7 +472,7 @@ function CommentCard({
 
 /* ---------- the screen ---------- */
 
-type Filter = 'open' | 'all' | 'ig' | 'fb';
+type Filter = 'open' | 'all' | Platform;
 
 export function SocialView({
   social,
@@ -401,35 +490,35 @@ export function SocialView({
   pinned: boolean; // the app's on the home screen (iPhone): the login opens in a browser window
 }) {
   const d = social.data;
-  const c = d?.connected ? (d as Connected) : null;
   const [problem, setProblem] = useState('');
-  const [starting, setStarting] = useState(false);
+  const [starting, setStarting] = useState<'meta' | 'threads' | null>(null);
   const [filter, setFilter] = useState<Filter | null>(null);
   const [more, setMore] = useState(false);
-  const [sure, setSure] = useState(false);
+  const [morePosts, setMorePosts] = useState(false);
+  const [sure, setSure] = useState<'meta' | 'threads' | null>(null);
   const disarm = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // What was new when the screen opened stays marked New while it's open; the server then hears it's been seen.
   // (The screen is drawn again from scratch once the first overview arrives: key in job-kit-app.tsx.)
   const [newIds] = useState(() => new Set(newComments(social).map((x) => x.id)));
-  const seenNewest = c?.comments.length ? Math.max(...c.comments.map((x) => x.at)) : 0;
+  const seenNewest = d?.comments.length ? Math.max(...d.comments.map(lastWord)) : 0;
   useEffect(() => {
     if (!seenNewest) return;
-    if (seenNewest <= localSeen() && seenNewest <= (c?.seenAt ?? 0)) return;
+    if (seenNewest <= localSeen() && seenNewest <= (d?.seenAt ?? 0)) return;
     try {
       localStorage.setItem(SEEN_KEY, String(Math.max(seenNewest, localSeen())));
     } catch {
       /* no storage */
     }
     void post(readPin(), { action: 'seen', at: seenNewest }, API);
-  }, [seenNewest, c?.seenAt]);
+  }, [seenNewest, d?.seenAt]);
 
-  const connect = async (again = false) => {
-    setStarting(true);
+  const connect = async (platform: 'meta' | 'threads', again = false) => {
+    setStarting(platform);
     setProblem('');
-    const r = await post<{ url: string }>(readPin(), { action: 'start', again }, API);
+    const r = await post<{ url: string }>(readPin(), { action: 'start', platform, again }, API);
     if (!r.ok) {
-      setStarting(false);
+      setStarting(null);
       setProblem(socialProblem(r.error, r.detail));
       return;
     }
@@ -443,57 +532,56 @@ export function SocialView({
     else onRefresh();
   };
 
-  const disconnect = async () => {
+  const disconnect = async (platform: 'meta' | 'threads') => {
     if (disarm.current) clearTimeout(disarm.current);
-    if (!sure) {
-      setSure(true);
-      disarm.current = setTimeout(() => setSure(false), 5000);
+    if (sure !== platform) {
+      setSure(platform);
+      disarm.current = setTimeout(() => setSure(null), 5000);
       return;
     }
-    setSure(false);
-    const r = await post(readPin(), { action: 'disconnect' }, API);
+    setSure(null);
+    const r = await post(readPin(), { action: 'disconnect', platform }, API);
     if (!r.ok) return setProblem(socialProblem(r.error, r.detail));
-    onChange({
-      data: { connected: false, setUp: true, missing: [] },
-      at: Date.now(),
-    });
+    if (!d) return;
+    const gone = (x: { platform: Platform }) => (platform === 'meta' ? metaOf(x.platform) : x.platform === 'th');
+    const off: SocialAccount = { setUp: true, missing: [], connected: false };
+    const next: Social = {
+      ...social,
+      data: {
+        ...d,
+        ...(platform === 'meta' ? { meta: off } : { threads: off }),
+        profiles: d.profiles.filter((x) => !gone(x)),
+        posts: d.posts.filter((x) => !gone(x)),
+        comments: d.comments.filter((x) => !gone(x)),
+        problems: d.problems.filter((x) => !gone(x)),
+      },
+    };
+    keep(next);
+    onChange(next);
   };
 
   // answered while the screen is open: kept in 'Not answered' until the screen is left, so the reply can be seen
   const [justAnswered, setJustAnswered] = useState<Set<string>>(() => new Set());
   const reply = async (cm: SocialComment, text: string) => {
-    const r = await post<{ id: string }>(readPin(), { action: 'reply', platform: cm.platform, id: cm.id, text }, API);
+    // on Threads the reply goes under their newest word in the thread (a follow-up to Raf's answer), so it reads in order
+    const to = cm.platform === 'th' ? [...cm.replies].reverse().find((x) => !x.mine)?.id ?? cm.id : cm.id;
+    const r = await post<{ id: string }>(readPin(), { action: 'reply', platform: cm.platform, id: to, text }, API);
     if (!r.ok) return socialProblem(r.error, r.detail);
     setJustAnswered((s) => new Set(s).add(cm.id));
-    if (c) {
-      const comments = c.comments.map((x) =>
-        x.id === cm.id
-          ? {
-              ...x,
-              answered: true,
-              replies: [
-                ...x.replies,
-                {
-                  id: r.data.id || `new-${Date.now()}`,
-                  who: 'You',
-                  text,
-                  at: Date.now(),
-                  mine: true,
-                },
-              ],
-            }
-          : x
+    if (d) {
+      const comments = d.comments.map((x) =>
+        x.id === cm.id ? { ...x, answered: true, replies: [...x.replies, { id: r.data.id || `new-${Date.now()}`, who: 'You', text, at: Date.now(), mine: true }] } : x
       );
-      const next: Social = { ...social, data: { ...c, comments } };
+      const next: Social = { ...social, data: { ...d, comments } };
       keep(next);
       onChange(next);
     }
     return '';
   };
 
-  const posts = c?.posts ?? [];
+  const posts = d?.posts ?? [];
   const postOf = (id: string) => posts.find((p) => p.id === id);
-  const all = useMemo(() => c?.comments ?? [], [c]);
+  const all = useMemo(() => d?.comments ?? [], [d]);
   const open = all.filter((x) => !x.answered);
   const f: Filter = filter ?? (open.length || justAnswered.size ? 'open' : 'all');
   const shownList = useMemo(() => (f === 'open' ? all.filter((x) => !x.answered || justAnswered.has(x.id)) : f === 'all' ? all : all.filter((x) => x.platform === f)), [all, f, justAnswered]);
@@ -502,14 +590,14 @@ export function SocialView({
 
   const head = (
     <>
-      <p className="kicker">Instagram and Facebook</p>
+      <p className="kicker">Instagram, Facebook and Threads</p>
       <h1 className="mt-1 flex items-center gap-3 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">
         <Icon name="social" className="h-[32px] w-[32px] shrink-0 jk-sec-ink" />
-        Social
+        Social media
       </h1>
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[12.5px] text-faint">
         <span>{loading ? 'Getting the latest…' : social.at ? `Updated ${ago(social.at)}` : ''}</span>
-        {c || social.error ? (
+        {d || social.error ? (
           <button type="button" onClick={onRefresh} disabled={loading} className="h-8 underline disabled:opacity-50">
             Refresh
           </button>
@@ -527,76 +615,39 @@ export function SocialView({
     return (
       <div className="pt-7">
         {head}
-        {!social.error ? <p className="mt-10 text-center font-mono text-[14px] text-faint">{loading ? 'Asking Facebook…' : 'Nothing here yet.'}</p> : null}
+        {!social.error ? <p className="mt-10 text-center font-mono text-[14px] text-faint">{loading ? 'Asking Instagram, Facebook and Threads…' : 'Nothing here yet.'}</p> : null}
       </div>
     );
   }
 
-  if (!d.connected) {
-    return (
-      <div className="pt-7">
-        {head}
-        <div className="mt-6 rounded-sm border border-line-strong bg-mount p-4">
-          <p className="text-[17px] font-semibold">See your Instagram and Facebook here</p>
-          <p className="mt-1.5 text-[15px] leading-relaxed text-muted">
-            Followers and how they move, your latest posts, and every comment on them with a Reply box. Nothing is posted by itself: a reply only goes when you press Send reply.
-          </p>
-          {d.setUp ? (
-            <>
-              <button type="button" onClick={() => void connect()} disabled={starting} className="btn btn-primary mt-4 w-full disabled:opacity-60">
-                {starting ? 'Opening Facebook…' : 'Connect Instagram and Facebook'}
-              </button>
-              <p className="mt-3 text-[14px] leading-relaxed text-muted">
-                Facebook asks you to log in, then which Pages and Instagram accounts to share: tick Raf Carpentry and @rafcarpentry and leave every permission on.
-                {pinned ? ' On the iPhone it opens in a browser window: when that says Connected, close it and come back here. It’s easiest from the computer.' : ''}
-              </p>
-            </>
-          ) : (
-            <p className="mt-4 rounded-sm border border-line bg-paper px-3.5 py-3 text-[14.5px] leading-relaxed">
-              Not set up yet: {d.missing.join(', ')} {d.missing.length === 1 ? 'is' : 'are'} missing in Vercel. These come from the Meta app made for the Job Kit; ask Claude to walk you through it.
-            </p>
-          )}
-        </div>
-      </div>
-    );
-  }
+  const meta = d.meta;
+  const th = d.threads;
+  const needsPage = meta.connected && !meta.page && !meta.error;
+  const replyMissing = (meta.notGranted ?? []).filter((s) => s === 'instagram_manage_comments' || s === 'pages_manage_engagement' || s === 'pages_read_user_content');
+  const thHandle = d.profiles.find((p) => p.platform === 'th')?.handle;
+  const fromOf = (p: Platform) => (p === 'ig' ? 'your Instagram' : p === 'fb' ? 'the Page' : thHandle ? `@${thHandle}` : 'your Threads');
+  const cards = [
+    ...d.profiles.map((p) => <ProfileCard key={p.platform} p={p} />),
+    ...(!meta.connected ? [<ConnectCard key="meta" platform="meta" acc={meta} starting={starting === 'meta'} pinned={pinned} onConnect={() => void connect('meta')} />] : []),
+    ...(!th.connected ? [<ConnectCard key="threads" platform="threads" acc={th} starting={starting === 'threads'} pinned={pinned} onConnect={() => void connect('threads')} />] : []),
+  ];
+  const nothing = !meta.connected && !th.connected;
+  const chips: [Filter, string][] = [
+    ['open', `Not answered (${open.length})`],
+    ['all', `All (${all.length})`],
+    ...ORDER.filter((p) => all.some((x) => x.platform === p) || d.profiles.some((x) => x.platform === p)).map((p) => [p, platformName(p)] as [Filter, string]),
+  ];
 
-  if (!c!.page) {
-    return (
-      <div className="pt-7">
-        {head}
-        <div className="mt-6 rounded-sm border border-line-strong bg-mount p-4">
-          <p className="text-[17px] font-semibold">Which Page is Raf Carpentry?</p>
-          <p className="mt-1.5 text-[15px] text-muted">Facebook shared {c!.pages.length} Pages. Pick the one whose Instagram you want here.</p>
-          <ul className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-2">
-            {c!.pages.map((p) => (
-              <li key={p.id}>
-                <button
-                  type="button"
-                  onClick={() => void pick(p.id)}
-                  className="flex min-h-12 w-full items-center justify-between gap-3 rounded-sm border border-line-strong bg-paper px-3.5 py-2.5 text-left hover:border-ink"
-                >
-                  <span>
-                    <span className="block font-semibold">{p.name}</span>
-                    <span className="block font-mono text-[12.5px] text-faint">{p.ig ? `Instagram @${p.ig}` : 'No Instagram linked'}</span>
-                  </span>
-                  <span aria-hidden className="jk-sec-ink">
-                    →
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    );
-  }
+  const notice = (text: string, again: () => void, label: string) => (
+    <div className="mt-4 rounded-sm border border-ink bg-mount px-4 py-3 text-[14.5px] leading-relaxed">
+      {text}{' '}
+      <button type="button" onClick={again} className="font-semibold underline jk-sec-ink">
+        {label}
+      </button>
+    </div>
+  );
 
-  const igProblem = c!.problems.find((p) => p.platform === 'ig');
-  const fbProblem = c!.problems.find((p) => p.platform === 'fb');
-  const replyMissing = c!.notGranted.filter((s) => s === 'instagram_manage_comments' || s === 'pages_manage_engagement' || s === 'pages_read_user_content');
-
-  const comments = (
+  const comments = nothing ? null : (
     <section aria-labelledby="social-comments" className={wide ? '' : 'mt-7'}>
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="social-comments" className="font-display text-[24px] font-[680] tracking-[-0.02em]">
@@ -605,14 +656,7 @@ export function SocialView({
         <span className="font-mono text-[12.5px] text-faint">on your latest posts</span>
       </div>
       <div role="group" aria-label="Show" className="mt-3 flex flex-wrap gap-1.5">
-        {(
-          [
-            ['open', `Not answered (${open.length})`],
-            ['all', `All (${all.length})`],
-            ['ig', 'Instagram'],
-            ['fb', 'Facebook'],
-          ] as [Filter, string][]
-        ).map(([v, t]) => (
+        {chips.map(([v, t]) => (
           <button
             key={v}
             type="button"
@@ -630,7 +674,7 @@ export function SocialView({
       {list.length ? (
         <ul className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3">
           {list.map((x) => (
-            <CommentCard key={x.id} c={x} postOf={postOf} isNew={newIds.has(x.id)} onReply={reply} />
+            <CommentCard key={`${x.platform}-${x.id}`} c={x} postOf={postOf} isNew={newIds.has(x.id)} from={fromOf(x.platform)} onReply={reply} />
           ))}
         </ul>
       ) : (
@@ -646,24 +690,32 @@ export function SocialView({
     </section>
   );
 
+  const POSTS = 12;
   const latest = posts.length ? (
     <section aria-labelledby="social-posts" className={wide ? '' : 'mt-8'}>
       <h2 id="social-posts" className="font-display text-[24px] font-[680] tracking-[-0.02em]">
         Latest posts
       </h2>
       <ul className="mt-3 grid grid-cols-3 gap-2">
-        {posts.slice(0, 12).map((p) => (
-          <li key={`${p.platform}-${p.id}`}>
+        {(morePosts ? posts : posts.slice(0, POSTS)).map((p) => (
+          <li key={`${p.platform}-${p.id}`} className="min-w-0">
             <a href={p.link} target="_blank" rel="noopener noreferrer" className="block">
               <span className="relative block">
-                <Pic src={p.thumb} className="aspect-square w-full" />
+                {p.thumb || !p.text ? (
+                  <Pic src={p.thumb} className="aspect-square w-full" />
+                ) : (
+                  // a thread or post with words only: its first words in the square
+                  <span className="block aspect-square w-full overflow-hidden rounded-sm border border-line bg-paper px-2 pb-2 pt-8 text-[12.5px] leading-snug text-ink [overflow-wrap:anywhere]">
+                    {p.text.slice(0, 160)}
+                  </span>
+                )}
                 <span className="absolute left-1 top-1">
                   <Badge p={p.platform} />
                 </span>
               </span>
               <span className="mt-1 block font-mono text-[11.5px] leading-snug text-muted">
                 {p.likes !== null ? `${n(p.likes)} ♥ · ` : ''}
-                {n(p.comments)} comment{p.comments === 1 ? '' : 's'}
+                {n(p.comments)} {p.platform === 'th' ? `repl${p.comments === 1 ? 'y' : 'ies'}` : `comment${p.comments === 1 ? '' : 's'}`}
               </span>
               <span className="block font-mono text-[11px] text-faint">
                 {KIND[p.kind]} · {ago(p.at)}
@@ -672,31 +724,72 @@ export function SocialView({
           </li>
         ))}
       </ul>
+      {posts.length > POSTS && !morePosts ? (
+        <button type="button" onClick={() => setMorePosts(true)} className="btn btn-ghost btn-sm mt-3 w-full">
+          Show {posts.length - POSTS} more
+        </button>
+      ) : null}
     </section>
   ) : null;
+
+  const problemsFor = (p: Platform) => d.problems.filter((x) => x.platform === p);
 
   return (
     <div className="pt-7">
       {head}
-      {replyMissing.length ? (
+      {nothing ? (
+        <p className="mt-5 text-[15px] leading-relaxed text-muted">
+          See your Instagram, Facebook and Threads here: followers and how they move, your latest posts, and every comment on them with a Reply box. Nothing is posted by itself: a reply only goes when
+          you press Send reply.
+        </p>
+      ) : null}
+      {meta.error === 'meta-expired' ? notice(socialProblem('meta-expired'), () => void connect('meta', true), 'Connect again') : null}
+      {th.error === 'threads-expired' ? notice(socialProblem('threads-expired'), () => void connect('threads'), 'Connect Threads again') : null}
+      {meta.connected && replyMissing.length && !meta.error ? (
         <div className="mt-4 rounded-sm border border-line-strong bg-mount px-4 py-3 text-[14.5px] leading-relaxed">
           Facebook wasn’t given every permission, so {replyMissing.includes('pages_read_user_content') ? 'Facebook names and ' : ''}
           some replies won’t work.{' '}
-          <button type="button" onClick={() => void connect(true)} className="font-semibold underline jk-sec-ink">
+          <button type="button" onClick={() => void connect('meta', true)} className="font-semibold underline jk-sec-ink">
             Connect again
           </button>{' '}
           and leave every box ticked.
         </div>
       ) : null}
-      {/* the two profiles side by side, then the comments (beside the posts on a computer) */}
-      <div className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
-        {c!.profiles.map((p) => (
-          <ProfileCard key={p.platform} p={p} />
-        ))}
-      </div>
-      {igProblem ? <p className="mt-3 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-[14.5px] leading-relaxed">Instagram: {socialProblem(igProblem.error, igProblem.detail)}</p> : null}
-      {fbProblem ? <p className="mt-3 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-[14.5px] leading-relaxed">Facebook: {socialProblem(fbProblem.error, fbProblem.detail)}</p> : null}
-      {wide ? (
+      {needsPage ? (
+        <div className="mt-6 rounded-sm border border-line-strong bg-mount p-4">
+          <p className="text-[17px] font-semibold">Which Page is Raf Carpentry?</p>
+          <p className="mt-1.5 text-[15px] text-muted">Facebook shared {meta.pages?.length ?? 0} Pages. Pick the one whose Instagram you want here.</p>
+          <ul className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-2">
+            {(meta.pages ?? []).map((p) => (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  onClick={() => void pick(p.id)}
+                  className="flex min-h-12 w-full items-center justify-between gap-3 rounded-sm border border-line-strong bg-paper px-3.5 py-2.5 text-left hover:border-ink"
+                >
+                  <span className="min-w-0">
+                    <span className="block font-semibold">{p.name}</span>
+                    <span className="block font-mono text-[12.5px] text-faint">{p.ig ? `Instagram @${p.ig}` : 'No Instagram linked'}</span>
+                  </span>
+                  <span aria-hidden className="jk-sec-ink">
+                    →
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {/* the profiles side by side (and a Connect card where one isn't connected), then the comments (beside the posts on a computer) */}
+      {cards.length ? <div className={`mt-6 grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 ${cards.length >= 3 ? 'lg:grid-cols-3' : ''}`}>{cards}</div> : null}
+      {ORDER.flatMap((p) =>
+        problemsFor(p).map((x, i) => (
+          <p key={`${p}-${i}`} className="mt-3 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-[14.5px] leading-relaxed">
+            {platformName(p)}: {socialProblem(x.error, x.detail)}
+          </p>
+        ))
+      )}
+      {wide && comments ? (
         <div className="mt-8 grid grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-start gap-8">
           <div>{latest}</div>
           {comments}
@@ -708,30 +801,48 @@ export function SocialView({
         </>
       )}
 
-      <div className="mt-8 border-t border-line pt-4 font-mono text-[12.5px] leading-relaxed text-faint">
-        <p>
-          Connected by {c!.user || 'you'} on{' '}
-          {new Date(c!.connectedAt).toLocaleDateString('en-GB', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-          })}
-          , Page {c!.page.name}. Comments from the latest 12 Instagram posts and 10 Facebook posts.
-        </p>
-        <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1">
-          {c!.pages.length > 1 ? (
-            <button type="button" onClick={() => onChange({ ...social, data: { ...c!, page: undefined } })} className="h-9 underline">
-              Change Page
-            </button>
+      {meta.connected || th.connected ? (
+        <div className="mt-8 grid gap-4 border-t border-line pt-4 font-mono text-[12.5px] leading-relaxed text-faint">
+          {meta.connected ? (
+            <div>
+              <p>
+                Instagram and Facebook: connected by {meta.who || 'you'}
+                {meta.connectedAt ? ` on ${onDay(meta.connectedAt)}` : ''}
+                {meta.page ? `, Page ${meta.page.name}` : ''}. Comments from the latest 12 Instagram posts and 10 Facebook posts.
+              </p>
+              <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1">
+                {(meta.pages?.length ?? 0) > 1 && meta.page ? (
+                  <button type="button" onClick={() => onChange({ ...social, data: { ...d, meta: { ...meta, page: undefined } } })} className="h-9 underline">
+                    Change Page
+                  </button>
+                ) : null}
+                <button type="button" onClick={() => void connect('meta', true)} className="h-9 underline">
+                  Connect again
+                </button>
+                <button type="button" onClick={() => void disconnect('meta')} className={`h-9 underline ${sure === 'meta' ? 'font-semibold text-ink' : ''}`}>
+                  {sure === 'meta' ? 'Tap again to disconnect' : 'Disconnect'}
+                </button>
+              </div>
+            </div>
           ) : null}
-          <button type="button" onClick={() => void connect(true)} className="h-9 underline">
-            Connect again
-          </button>
-          <button type="button" onClick={() => void disconnect()} className={`h-9 underline ${sure ? 'font-semibold text-ink' : ''}`}>
-            {sure ? 'Tap again to disconnect' : 'Disconnect'}
-          </button>
+          {th.connected ? (
+            <div>
+              <p>
+                Threads: connected as {th.who || 'you'}
+                {th.connectedAt ? ` on ${onDay(th.connectedAt)}` : ''}. Replies on your latest 8 threads.
+              </p>
+              <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1">
+                <button type="button" onClick={() => void connect('threads')} className="h-9 underline">
+                  Connect again
+                </button>
+                <button type="button" onClick={() => void disconnect('threads')} className={`h-9 underline ${sure === 'threads' ? 'font-semibold text-ink' : ''}`}>
+                  {sure === 'threads' ? 'Tap again to disconnect' : 'Disconnect'}
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

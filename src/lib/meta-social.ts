@@ -1,5 +1,7 @@
-import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from 'crypto';
-import { jobkitRpc, syncSetUp } from './job-kit-sync-server';
+import { createHmac } from 'crypto';
+import { syncSetUp } from './job-kit-sync-server';
+import { forget, keep, kept, newState, seal, stateOk, StoreError, unseal } from './social-store';
+import { answeredOf, clip, ms, type MetaAccount, type Platform, type SocialComment, type SocialPart, type SocialPost, type SocialProblem, type SocialProfile } from './social-types';
 
 /* The Job Kit's Social screen, part 1: Raf's Instagram and Facebook (20 Oct 2026, Raf: 'is there a way to see in job kit
    social media profiles with followers and comments as a separate section', then 'start with instagram and facebook').
@@ -9,11 +11,8 @@ import { jobkitRpc, syncSetUp } from './job-kit-sync-server';
    account linked to that Page. Page tokens made from a long-lived user token don't run out; they stop working if
    Raf changes his Facebook password, removes the app, or loses his role on the Page (then: Connect again).
 
-   Kept in Supabase (cabinetos project, schema jobkit, through public.jobkit_social, the same secret as the sync):
-   jobkit.social 'meta' = who connected, the Pages with their tokens SEALED (AES-256-GCM, a key made from
-   JOBKIT_SYNC_SECRET), which Page, the permissions given, and the newest comment Raf has seen; jobkit.social_counts =
-   followers per account per London day, written whenever the overview is fetched, so the screen can say '+12 this
-   week'. Comments, posts and pictures are never kept on the server: they go Meta -> server -> the device that asked.
+   Kept (src/lib/social-store.ts): jobkit.social 'meta' = who connected, the Pages with their tokens sealed, which
+   Page and the permissions given. The overview of all the platforms is put together in src/lib/social.ts.
 
    Vercel: META_APP_ID, META_APP_SECRET (sensitive). Optional: META_LOGIN_CONFIG_ID (a Facebook Login for Business
    configuration; without it the login asks for SCOPES), META_SCOPES (comma list, replaces SCOPES), META_API_VERSION
@@ -30,75 +29,30 @@ const APP_SECRET = () => process.env.META_APP_SECRET || '';
    content), the Instagram profile and media (instagram_basic), Instagram comments (instagram_manage_comments, which
    is also what replying needs). Replying on Facebook: pages_manage_engagement. business_management: Pages kept in a
    Meta business portfolio only show up with it. */
-export const SCOPES = [
-  'pages_show_list',
-  'pages_read_engagement',
-  'pages_read_user_content',
-  'pages_manage_engagement',
-  'instagram_basic',
-  'instagram_manage_comments',
-  'business_management',
-];
-const scopes = () => (process.env.META_SCOPES ? process.env.META_SCOPES.split(',').map((s) => s.trim()).filter(Boolean) : SCOPES);
+export const SCOPES = ['pages_show_list', 'pages_read_engagement', 'pages_read_user_content', 'pages_manage_engagement', 'instagram_basic', 'instagram_manage_comments', 'business_management'];
+const scopes = () =>
+  process.env.META_SCOPES
+    ? process.env.META_SCOPES.split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : SCOPES;
 
-export const metaMissing = () =>
-  [!APP_ID() && 'META_APP_ID', !APP_SECRET() && 'META_APP_SECRET', !syncSetUp() && 'JOBKIT_SYNC_SECRET'].filter(Boolean) as string[];
+export const metaMissing = () => [!APP_ID() && 'META_APP_ID', !APP_SECRET() && 'META_APP_SECRET', !syncSetUp() && 'JOBKIT_SYNC_SECRET'].filter(Boolean) as string[];
 export const metaSetUp = () => metaMissing().length === 0;
 
 export class MetaError extends Error {
-  constructor(
-    public code: 'meta-expired' | 'meta-permission' | 'meta-busy' | 'meta-gone' | 'meta-error' | 'meta-store' | 'meta-no-page' | 'meta-no-ig' | 'meta-not-connected',
-    public detail = '',
-  ) {
+  constructor(public code: 'meta-expired' | 'meta-permission' | 'meta-busy' | 'meta-gone' | 'meta-error' | 'meta-store' | 'meta-no-page' | 'meta-no-ig' | 'meta-not-connected', public detail = '') {
     super(code);
   }
 }
 
-/* ---------- sealing the tokens ---------- */
-
-const sealKey = () => createHash('sha256').update(`raf-job-kit social|${process.env.JOBKIT_SYNC_SECRET ?? ''}`).digest();
-export function seal(s: string) {
-  const iv = randomBytes(12);
-  const c = createCipheriv('aes-256-gcm', sealKey(), iv);
-  const out = Buffer.concat([c.update(s, 'utf8'), c.final()]);
-  return `v1.${iv.toString('base64url')}.${out.toString('base64url')}.${c.getAuthTag().toString('base64url')}`;
-}
-export function unseal(s: string) {
-  const [v, iv, body, tag] = s.split('.');
-  if (v !== 'v1' || !iv || !body || !tag) throw new MetaError('meta-store', 'token');
-  try {
-    const d = createDecipheriv('aes-256-gcm', sealKey(), Buffer.from(iv, 'base64url'));
-    d.setAuthTag(Buffer.from(tag, 'base64url'));
-    return Buffer.concat([d.update(Buffer.from(body, 'base64url')), d.final()]).toString('utf8');
-  } catch {
-    // the sync secret changed since: the tokens can't be read, so connect again
-    throw new MetaError('meta-expired', 'sealed with an older secret');
-  }
-}
-
-/* ---------- the login's state: proves the login was started from the Job Kit (behind the PIN) ---------- */
-
-const stateMac = (s: string) => createHmac('sha256', `${APP_SECRET()}|job-kit-social-state`).update(s).digest('base64url');
-export function newState() {
-  const s = `${Date.now()}.${randomBytes(9).toString('base64url')}`;
-  return `${s}.${stateMac(s)}`;
-}
-export function stateOk(state: string | null) {
-  if (!state) return false;
-  const i = state.lastIndexOf('.');
-  if (i < 0) return false;
-  const s = state.slice(0, i);
-  const a = Buffer.from(state.slice(i + 1));
-  const b = Buffer.from(stateMac(s));
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return false;
-  const t = Number(s.split('.')[0]);
-  return Number.isFinite(t) && Date.now() - t < 30 * 60_000 && t < Date.now() + 60_000;
-}
+const STATE_TAG = 'job-kit-social-state';
+export const metaStateOk = (state: string | null) => stateOk(state, APP_SECRET(), STATE_TAG);
 
 export const redirectUri = (origin: string) => process.env.META_REDIRECT_URI || `${origin.replace(/\/$/, '')}/api/job-kit/social/meta/callback`;
 
-export function loginUrl(origin: string, again = false) {
-  const p = new URLSearchParams({ client_id: APP_ID(), redirect_uri: redirectUri(origin), state: newState(), response_type: 'code' });
+export function metaLoginUrl(origin: string, again = false) {
+  const p = new URLSearchParams({ client_id: APP_ID(), redirect_uri: redirectUri(origin), state: newState(APP_SECRET(), STATE_TAG), response_type: 'code' });
   if (process.env.META_LOGIN_CONFIG_ID) p.set('config_id', process.env.META_LOGIN_CONFIG_ID);
   else p.set('scope', scopes().join(','));
   if (again) p.set('auth_type', 'rerequest'); // asks again for what was turned down last time
@@ -153,30 +107,38 @@ type Kept = {
   perms: string[];
   declined: string[];
   connectedAt: number;
-  seenAt?: number; // the newest comment Raf has had in front of him
+  seenAt?: number; // until 21 Oct 2026; now kept as 'seen' (src/lib/social.ts)
 };
 
 async function load(): Promise<Kept | null> {
   try {
-    const r = (await jobkitRpc('jobkit_social', { p_action: 'get', p: { key: 'meta' } })) as { data?: Kept | null };
-    return r?.data && r.data.v === 1 ? r.data : null;
+    const k = await kept<Kept>('meta');
+    return k && k.v === 1 && Array.isArray(k.pages) ? k : null;
   } catch {
     throw new MetaError('meta-store');
   }
 }
 async function save(k: Kept) {
   try {
-    await jobkitRpc('jobkit_social', { p_action: 'put', p: { key: 'meta', data: k } });
+    await keep('meta', k);
   } catch {
     throw new MetaError('meta-store');
   }
 }
+const open = (s: string) => {
+  try {
+    return unseal(s);
+  } catch {
+    // the sync secret changed since: the tokens can't be read, so connect again
+    throw new MetaError('meta-expired', 'sealed with an older secret');
+  }
+};
 
 /* ---------- connecting (the callback) ---------- */
 
 /* The code from Facebook's login -> a long-lived user token -> the Pages with their own tokens and linked Instagram.
    Answers whether a Page is picked (several Pages and no clear one: Raf picks in the app). */
-export async function connect(code: string, origin: string): Promise<{ picked: boolean }> {
+export async function connectMeta(code: string, origin: string): Promise<{ picked: boolean }> {
   const short = await graph<{ access_token: string }>('/oauth/access_token', null, {
     client_id: APP_ID(),
     client_secret: APP_SECRET(),
@@ -217,12 +179,12 @@ export async function connect(code: string, origin: string): Promise<{ picked: b
     before?.pick && pages.some((p) => p.id === before.pick)
       ? before.pick
       : pages.length === 1
-        ? pages[0].id
-        : withIg.length === 1
-          ? withIg[0].id
-          : pages.filter((p) => /raf/i.test(p.name)).length === 1
-            ? pages.find((p) => /raf/i.test(p.name))!.id
-            : undefined;
+      ? pages[0].id
+      : withIg.length === 1
+      ? withIg[0].id
+      : pages.filter((p) => /raf/i.test(p.name)).length === 1
+      ? pages.find((p) => /raf/i.test(p.name))!.id
+      : undefined;
   const list = perms.data ?? [];
   await save({
     v: 1,
@@ -246,82 +208,15 @@ export async function pickPage(id: string) {
   await save({ ...k, pick: id });
 }
 
-export async function disconnect() {
+export async function disconnectMeta() {
   try {
-    await jobkitRpc('jobkit_social', { p_action: 'del', p: { key: 'meta' } });
-  } catch {
-    throw new MetaError('meta-store');
-  }
-}
-
-export async function markSeen(at: number) {
-  const k = await load();
-  if (!k) return;
-  if ((k.seenAt ?? 0) >= at) return;
-  try {
-    await jobkitRpc('jobkit_social', { p_action: 'patch', p: { key: 'meta', data: { seenAt: Math.min(at, Date.now() + 60_000) } } });
+    await forget('meta');
   } catch {
     throw new MetaError('meta-store');
   }
 }
 
 /* ---------- the overview ---------- */
-
-export type Platform = 'ig' | 'fb';
-export type SocialDay = { day: string; followers: number | null };
-export type SocialProfile = {
-  platform: Platform;
-  id: string;
-  name: string;
-  handle?: string;
-  link: string;
-  picture?: string;
-  followers: number | null;
-  following?: number | null;
-  posts?: number | null;
-  history: SocialDay[];
-};
-export type SocialReply = { id: string; who: string; text: string; at: number; mine: boolean };
-export type SocialComment = {
-  id: string;
-  platform: Platform;
-  post: string; // the post's id
-  who: string;
-  text: string;
-  at: number;
-  likes: number;
-  link: string; // where Open goes: the comment (Facebook) or the post (Instagram)
-  replies: SocialReply[];
-  answered: boolean; // Raf has replied under it
-};
-export type SocialPost = {
-  id: string;
-  platform: Platform;
-  text: string;
-  at: number;
-  link: string;
-  thumb?: string;
-  kind: 'reel' | 'video' | 'photo' | 'carousel' | 'post';
-  likes: number | null;
-  comments: number;
-};
-export type SocialProblem = { platform: Platform; error: string; detail?: string };
-export type SocialOverview =
-  | { connected: false; setUp: boolean; missing: string[] }
-  | {
-      connected: true;
-      user: string;
-      connectedAt: number;
-      pages: { id: string; name: string; ig?: string }[];
-      page?: { id: string; name: string }; // none: several Pages, Raf picks one
-      profiles: SocialProfile[];
-      posts: SocialPost[];
-      comments: SocialComment[];
-      seenAt: number;
-      notGranted: string[]; // permissions it asked for that weren't given
-      problems: SocialProblem[];
-      at: number;
-    };
 
 type FbComment = { id: string; message?: string; created_time?: string; from?: { id: string; name?: string }; permalink_url?: string; like_count?: number; comments?: { data?: FbComment[] } };
 type FbPost = {
@@ -349,12 +244,6 @@ type IgMedia = {
   comments_count?: number;
   comments?: { data?: IgComment[] };
 };
-
-const ms = (t?: string) => {
-  const n = t ? Date.parse(t.replace(/([+-]\d{2})(\d{2})$/, '$1:$2')) : NaN;
-  return Number.isFinite(n) ? n : 0;
-};
-const clip = (s: string | undefined, n: number) => (s ?? '').trim().slice(0, n);
 
 async function facebook(page: Page, token: string) {
   const [info, feed] = await Promise.all([
@@ -395,18 +284,25 @@ async function facebook(page: Page, token: string) {
     });
     for (const c of p.comments?.data ?? []) {
       if (c.from?.id === page.id) continue; // the Page's own comment
-      const replies = (c.comments?.data ?? []).map((r) => ({ id: r.id, who: r.from?.name || 'Someone on Facebook', text: clip(r.message, 2000), at: ms(r.created_time), mine: r.from?.id === page.id }));
+      const replies = (c.comments?.data ?? []).map((r) => ({
+        id: r.id,
+        who: r.from?.name || 'Someone on Facebook',
+        text: clip(r.message, 2000),
+        at: ms(r.created_time),
+        mine: r.from?.id === page.id,
+      }));
+      const at = ms(c.created_time);
       comments.push({
         id: c.id,
         platform: 'fb',
         post: p.id,
         who: c.from?.name || 'Someone on Facebook',
         text: clip(c.message, 2000),
-        at: ms(c.created_time),
+        at,
         likes: c.like_count ?? 0,
         link: c.permalink_url || link,
         replies: replies.sort((a, b) => a.at - b.at),
-        answered: replies.some((r) => r.mine),
+        ...answeredOf(replies, at),
       });
     }
   }
@@ -456,18 +352,25 @@ async function instagram(ig: { id: string; username?: string }, token: string) {
     });
     for (const c of m.comments?.data ?? []) {
       if (me && c.username?.toLowerCase() === me) continue; // Raf's own comment under his post
-      const replies = (c.replies?.data ?? []).map((r) => ({ id: r.id, who: r.username ? `@${r.username}` : 'Someone on Instagram', text: clip(r.text, 2000), at: ms(r.timestamp), mine: Boolean(me && r.username?.toLowerCase() === me) }));
+      const replies = (c.replies?.data ?? []).map((r) => ({
+        id: r.id,
+        who: r.username ? `@${r.username}` : 'Someone on Instagram',
+        text: clip(r.text, 2000),
+        at: ms(r.timestamp),
+        mine: Boolean(me && r.username?.toLowerCase() === me),
+      }));
+      const at = ms(c.timestamp);
       comments.push({
         id: c.id,
         platform: 'ig',
         post: m.id,
         who: c.username ? `@${c.username}` : 'Someone on Instagram',
         text: clip(c.text, 2000),
-        at: ms(c.timestamp),
+        at,
         likes: c.like_count ?? 0,
         link,
         replies: replies.sort((a, b) => a.at - b.at),
-        answered: replies.some((r) => r.mine),
+        ...answeredOf(replies, at),
       });
     }
   }
@@ -475,28 +378,49 @@ async function instagram(ig: { id: string; username?: string }, token: string) {
 }
 
 const problemOf = (platform: Platform, e: unknown): SocialProblem =>
-  e instanceof MetaError ? { platform, error: e.code, detail: e.detail || undefined } : { platform, error: 'meta-error', detail: e instanceof Error ? e.message.slice(0, 200) : undefined };
+  e instanceof MetaError
+    ? { platform, error: e.code, detail: e.detail || undefined }
+    : e instanceof StoreError
+    ? { platform, error: 'meta-store' }
+    : { platform, error: 'meta-error', detail: e instanceof Error ? e.message.slice(0, 200) : undefined };
 
-export async function overview(): Promise<SocialOverview> {
-  if (!metaSetUp()) return { connected: false, setUp: false, missing: metaMissing() };
-  const k = await load();
-  if (!k) return { connected: false, setUp: true, missing: [] };
+const EMPTY: SocialPart = { profiles: [], posts: [], comments: [], problems: [] };
+
+/* Instagram and Facebook for the overview (src/lib/social.ts): the account's state and what it shows. Never throws:
+   a login that stopped working, or a store that's down, is said in account.error. */
+export async function metaPart(): Promise<{ account: MetaAccount; part: SocialPart }> {
+  if (!metaSetUp()) return { account: { setUp: false, missing: metaMissing(), connected: false }, part: EMPTY };
+  let k: Kept | null;
+  try {
+    k = await load();
+  } catch (e) {
+    const p = problemOf('fb', e);
+    return { account: { setUp: true, missing: [], connected: false, error: p.error, detail: p.detail }, part: EMPTY };
+  }
+  if (!k) return { account: { setUp: true, missing: [], connected: false }, part: EMPTY };
   const page = k.pages.find((p) => p.id === k.pick);
   const asked = process.env.META_LOGIN_CONFIG_ID ? [] : scopes();
-  const base = {
-    connected: true as const,
-    user: k.user.name,
+  const account: MetaAccount = {
+    setUp: true,
+    missing: [],
+    connected: true,
+    who: k.user.name,
     connectedAt: k.connectedAt,
     pages: k.pages.map((p) => ({ id: p.id, name: p.name, ig: p.ig?.username })),
-    seenAt: k.seenAt ?? 0,
+    page: page ? { id: page.id, name: page.name } : undefined,
     notGranted: asked.filter((s) => !k.perms.includes(s)),
-    at: Date.now(),
   };
-  if (!page) return { ...base, profiles: [], posts: [], comments: [], problems: [] };
-  const token = unseal(page.token);
+  if (!page) return { account, part: EMPTY };
+  let token: string;
+  try {
+    token = open(page.token);
+  } catch (e) {
+    const p = problemOf('fb', e);
+    return { account: { ...account, error: p.error, detail: p.detail }, part: EMPTY };
+  }
   const userToken = (() => {
     try {
-      return unseal(k.userToken);
+      return open(k.userToken);
     } catch {
       return '';
     }
@@ -517,39 +441,22 @@ export async function overview(): Promise<SocialOverview> {
   else problems.push(problemOf('ig', ig.reason));
   if (fb.status === 'fulfilled') parts.push(fb.value);
   else problems.push(problemOf('fb', fb.reason));
-  // the login stopped working everywhere: connect again
-  if (!parts.length && problems.every((p) => p.error === 'meta-expired')) throw new MetaError('meta-expired', problems[0]?.detail);
-
-  const profiles = parts.map((p) => p.profile);
-  // today's followers, then their history (a store that's down doesn't stop the rest)
-  try {
-    const rows = profiles.map((p) => ({ platform: p.platform, account: p.id, followers: p.followers, posts: p.posts ?? null }));
-    const r = (await jobkitRpc('jobkit_social', { p_action: 'counts', p: { rows } })) as { history?: { platform: Platform; account: string; day: string; followers: number | null }[] };
-    for (const p of profiles) p.history = (r.history ?? []).filter((h) => h.platform === p.platform && h.account === p.id).map((h) => ({ day: h.day, followers: h.followers }));
-  } catch {
-    /* no history this time */
-  }
+  // the login stopped working everywhere: connect again (the device keeps its last numbers)
+  if (!parts.length && problems.every((p) => p.error === 'meta-expired')) return { account: { ...account, error: 'meta-expired', detail: problems[0]?.detail }, part: EMPTY };
   return {
-    ...base,
-    page: { id: page.id, name: page.name },
-    profiles,
-    posts: parts.flatMap((p) => p.posts).sort((a, b) => b.at - a.at),
-    comments: parts
-      .flatMap((p) => p.comments)
-      .sort((a, b) => b.at - a.at)
-      .slice(0, 80),
-    problems,
+    account,
+    part: { profiles: parts.map((p) => p.profile), posts: parts.flatMap((p) => p.posts), comments: parts.flatMap((p) => p.comments), problems },
   };
 }
 
 /* ---------- replying (only ever because Raf pressed Send reply) ---------- */
 
-export async function replyTo(platform: Platform, commentId: string, text: string): Promise<{ id: string }> {
+export async function replyMeta(platform: Platform, commentId: string, text: string): Promise<{ id: string }> {
   const k = await load();
   if (!k) throw new MetaError('meta-not-connected');
   const page = k.pages.find((p) => p.id === k.pick);
   if (!page) throw new MetaError('meta-no-page');
-  const token = unseal(page.token);
+  const token = open(page.token);
   // Instagram: a reply under the comment; Facebook: a comment on the comment, as the Page
   const r = await graph<{ id?: string }>(platform === 'ig' ? `/${commentId}/replies` : `/${commentId}/comments`, token, { message: text }, 'POST');
   return { id: r.id || '' };

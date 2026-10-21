@@ -54,7 +54,7 @@ const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string;
     items: [
       { id: 'kit', title: 'Job Kit jobs', icon: 'kit' },
       { id: 'posts', title: 'Posts', icon: 'posts' },
-      { id: 'social', title: 'Instagram and Facebook', icon: 'social' },
+      { id: 'social', title: 'Social media', icon: 'social' },
     ],
   },
 ];
