@@ -18,7 +18,7 @@ export class StatsError extends Error {
   }
 }
 
-export async function statsRpc<T>(fn: 'rafsite_hit' | 'rafsite_report' | 'rafsite_page', args: Record<string, unknown>, timeoutMs = 8000): Promise<T> {
+export async function statsRpc<T>(fn: 'rafsite_hit' | 'rafsite_report' | 'rafsite_page' | 'rafsite_indexnow', args: Record<string, unknown>, timeoutMs = 8000): Promise<T> {
   const url = `${process.env.RAFSTATS_URL!.replace(/\/$/, '')}/rest/v1/rpc/${fn}`;
   const res = await fetch(url, {
     method: 'POST',
