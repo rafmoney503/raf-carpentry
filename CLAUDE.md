@@ -169,7 +169,7 @@ Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrob
 - [ ] Add SketchUp 3D model screenshots alongside real build photos
 - [x] SEO: meta tags, Open Graph images for social sharing (3 Oct 2026)
 - [x] Visitor stats: Vercel Web Analytics added (3 Oct 2026; Raf to enable it in Vercel)
-- [ ] Bing Webmaster Tools (21 Oct 2026): Raf to import rafcarpentry.com from Google Search Console; IndexNow runs daily (see 'Bing, ChatGPT and IndexNow').
+- [x] Bing Webmaster Tools (21 Oct 2026): Raf verified rafcarpentry.com through GoDaddy's Domain Connect (DNS) rather than the Search Console import, so the sitemap has to be submitted by hand there (Sitemaps: https://www.rafcarpentry.com/sitemap.xml); IndexNow runs daily (see 'Bing, ChatGPT and IndexNow').
 - [x] Google Search Console (13 Oct 2026): Raf added rafcarpentry.com as a Domain property (verified owner) and submitted https://www.rafcarpentry.com/sitemap.xml (a Domain property needs the full address; 'sitemap.xml' alone gives 'Invalid sitemap address'). Next: Request indexing for /areas and the four area pages; check Performance after about 3 weeks.
 - [ ] Add blog images for cut-list and outdoor-gym posts
 - [ ] About page: add real photo of Raf
