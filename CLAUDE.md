@@ -6,6 +6,7 @@ Rafal Janczy — carpenter based in London, UK. Builds bespoke kitchens, wardrob
 
 ## Project
 - **Site**: https://www.rafcarpentry.com (main address). DNS at GoDaddy points to Vercel; rafcarpentry.com and raf-carpentry.vercel.app redirect to www (set in Vercel > Domains, not in code)
+- **rafcarpentry.co.uk (21 Oct 2026)**: bought by Raf at Cloudflare Registrar (about £4 a year, nameservers elijah / kinsley.ns.cloudflare.com) only to send people to the .com, never a second copy of the site. In Vercel (raf-carpentry project, added with the connector) rafcarpentry.co.uk and www.rafcarpentry.co.uk both redirect 308 to www.rafcarpentry.com; in Cloudflare DNS: A @ 76.76.21.21 and CNAME www cname.vercel-dns.com, both DNS only (grey cloud) so Vercel issues the certificate.
 - **Vercel address**: https://raf-carpentry.vercel.app
 - **GitHub**: https://github.com/rafmoney503/raf-carpentry
 - **Stack**: Next.js 16 + Tailwind CSS v4 + TypeScript + TinaCMS
