@@ -58,6 +58,8 @@ export function boardStage(j: CurrentJob, m: BoardMarks, bookings: Booking[]): B
     const { paid } = money(j);
     return paid > 0 || j.paid ? 'deposit' : 'accepted';
   }
+  // A deposit taken while the job is still a Quote in ServiceM8: they've said yes (the card says to move it on).
+  if (money(j).paid > 0) return 'deposit';
   if (quoteSentOf(j, m)) return 'sent';
   const booked = bookings.some((b) => b.jobUuid === j.uuid) || Boolean(m[j.uuid]?.visitsDone?.length);
   return booked || (j.total ?? 0) > 0 ? 'quote' : 'enquiry';
@@ -104,6 +106,10 @@ export function cardOf(j: CurrentJob, stage: BoardStage, m: BoardMarks, bookings
     const t = quoteSentOf(j, m)!;
     const d = days(t, now);
     return { ...base, words: `Quote sent ${agoWords(t, now)}`, money: total ? `Quote ${gbp(total)}` : '', flag: d >= FOLLOW_UP_DAYS ? 'Follow up' : undefined };
+  }
+  if (stage === 'deposit' && j.status === 'Quote') {
+    const line = total === null ? `Paid ${gbp(paid)}` : left === 0 ? `${gbp(total)}, paid in full` : `Paid ${gbp(paid)} · ${gbp(left!)} left`;
+    return { ...base, words: 'Deposit paid · still a Quote in ServiceM8', money: line, flag: 'Move to Work Order' };
   }
   if (stage === 'accepted' || stage === 'deposit') {
     const row = rowOf(j, bookings, m, today);

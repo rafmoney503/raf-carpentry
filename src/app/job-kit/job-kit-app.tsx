@@ -75,6 +75,7 @@ import { StatsPageView, StatsView, statsLine } from './stats';
 import { setStatsOff } from '@/lib/site-stats';
 import { JobTimeline, TimelineMini } from './job-timeline';
 import { ClientBoard } from './client-board';
+import { methodsFrom, sendPayment, type NewPayment } from './payments';
 import { boardLine, buildBoard } from '@/lib/client-board';
 import { withoutGreeting } from '@/lib/whatsapp-chat';
 import { addSend, enquiryFromChat, WaChatView, waHomeLine, WaJobBox, WaList, waTodayLines } from './whatsapp';
@@ -660,6 +661,26 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     },
     [setBookings],
   );
+  /* A payment (payments.tsx): into ServiceM8 first, then onto the job here, on the board and on Today; the list is
+     fetched again a moment later so ServiceM8's own sums (paid in full) come through. */
+  const pay = useCallback(
+    async (jobUuid: string, p: NewPayment) => {
+      const r = await sendPayment(readPin(), jobUuid, p);
+      if (!r.ok) return problemText(r.error, r.detail);
+      const add = (j: CurrentJob): CurrentJob =>
+        j.uuid !== jobUuid || j.payments === null ? j : { ...j, payments: [...(j.payments ?? []).filter((x) => x.uuid !== p.uuid), r.data.payment].sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '')) };
+      setSm8((s) => {
+        const next = { ...s, jobs: s.jobs.map(add) };
+        keepSm8(next);
+        return next;
+      });
+      setCustomerJobs((list) => list.map(add));
+      setTimeout(() => checkSm8(true), 1500);
+      return '';
+    },
+    [checkSm8],
+  );
+  const payMethods = useMemo(() => methodsFrom([...sm8.jobs, ...customerJobs]), [sm8.jobs, customerJobs]);
   /* The Job timeline's dates: each booking added or moved in turn (ServiceM8 first, then here); stops at the first
      ServiceM8 turns down and says why. */
   const saveTimeline = useCallback(
@@ -1107,6 +1128,9 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 onOpen={(id) => go({ name: 'sm8', id, from: 'board' })}
                 onClose={(uuid, closed) => mark(uuid, { hidden: closed })}
                 onGantt={() => go({ name: 'timeline' })}
+                methods={payMethods}
+                onPay={pay}
+                onWorkOrder={(uuid) => void changeStatus(uuid, 'Work Order')}
               />
             ) : screen.name === 'whatsapp' ? (
               <WaList chats={waChats} onOpen={(id) => go({ name: 'wa-chat', id })} />
@@ -1210,6 +1234,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                   onBook={(start, end, staff) => book(cur.uuid, start, end, staff)}
                   onMove={moveBooking}
                   onCancel={cancelBooking}
+                  methods={payMethods}
+                  onPay={(p) => pay(cur.uuid, p)}
                   replyAt={sm8.replies?.[cur.uuid] ?? undefined}
                   info={(() => {
                     // Their latest email to info@ (or Raf's latest to them): reply from info@ in the Inbox.

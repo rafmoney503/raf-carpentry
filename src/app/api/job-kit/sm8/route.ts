@@ -1,5 +1,5 @@
 import { guard } from '@/lib/job-kit-server';
-import { addBooking, addJobNote, allClients, cancelBooking, clientJobs, createEnquiry, currentJobs, moveBooking, setStatus, sm8SetUp, Sm8Error, STATUSES, touchJob, type Status } from '@/lib/servicem8';
+import { addBooking, addJobNote, addPayment, allClients, cancelBooking, clientJobs, createEnquiry, currentJobs, moveBooking, setStatus, sm8SetUp, Sm8Error, STATUSES, touchJob, type Status } from '@/lib/servicem8';
 import { stableUuid } from '@/lib/brief-token';
 import { jobMail, recentReplies, sendJobEmail, sendJobText } from '@/lib/servicem8-mail';
 import { e164 } from '@/lib/mail-text';
@@ -27,6 +27,9 @@ import { lookupProperty } from '@/lib/property';
                                                          note isn't added twice when sent again)
    { action: 'touch', job }                              saves the job again so attachments added through the API show
                                                          in its diary (/api/job-kit/attach adds them)
+   { action: 'pay', job, uuid, amount, date, method, deposit, note? }   records a payment on the job (amount in pounds,
+                                                         date "YYYY-MM-DD", not after today; uuid made on the phone, so
+                                                         a second try doesn't add it twice)
    'list' also brings `replies`: job uuid -> their newest email in the last 14 days (null if emails can't be read).
    Times are London time, "YYYY-MM-DDTHH:MM". */
 export const maxDuration = 30;
@@ -140,6 +143,20 @@ export async function POST(req: Request) {
       if (!isUuid(job)) return Response.json({ error: 'bad' }, { status: 400 });
       await touchJob(job);
       return Response.json({ ok: true }, { headers: noStore });
+    }
+    if (body.action === 'pay') {
+      const job = text(body.job, 40);
+      const uuid = text(body.uuid, 40);
+      const amount = typeof body.amount === 'number' ? Math.round(body.amount * 100) / 100 : NaN;
+      const date = text(body.date, 10);
+      const method = text(body.method, 40);
+      const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/London' });
+      if (!isUuid(job) || !isUuid(uuid)) return Response.json({ error: 'bad' }, { status: 400 });
+      if (!Number.isFinite(amount) || amount <= 0 || amount > 1_000_000) return Response.json({ error: 'bad-amount' }, { status: 400 });
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(date)) || date > today || date < '2015-01-01') return Response.json({ error: 'bad-date' }, { status: 400 });
+      if (!method) return Response.json({ error: 'missing-method' }, { status: 400 });
+      const payment = await addPayment({ uuid, jobUuid: job, amount, date, method, deposit: body.deposit === true, note: text(body.note, 300) });
+      return Response.json({ payment }, { headers: noStore });
     }
     if (body.action === 'cancel') {
       const uuid = text(body.uuid, 40);

@@ -4,6 +4,7 @@ import { BOARD_STAGES, buildBoard, gbp, stageIndex, type BoardCard, type BoardSt
 import { problemText, whatOf, type Marks, type Sm8 } from './current';
 import { clock } from './sm8-post';
 import { Icon } from './icons';
+import { PaySheet, type NewPayment } from './payments';
 
 /* The Clients board (22 Oct 2026, Raf: 'in section timeline i'd like to have a separate summary for current clients
    showing name, job required, status ... completed (where we can close the client off the board)'). Beside the Gantt
@@ -71,10 +72,12 @@ function CloseButton({ card, onClose }: { card: BoardCard; onClose: () => void }
   );
 }
 
-function Card({ c, onOpen, onClose }: { c: BoardCard; onOpen: (uuid: string) => void; onClose: (uuid: string) => void }) {
+function Card({ c, onOpen, onClose, onPay }: { c: BoardCard; onOpen: (uuid: string) => void; onClose: (uuid: string) => void; onPay: (uuid: string) => void }) {
   const j = c.job;
   const what = j.description ? whatOf(j.description) : '';
   const owed = c.stage === 'completed' && (c.left ?? 0) > 0;
+  // Money comes in from a quote sent on (a deposit) until a finished job is paid in full.
+  const canPay = c.stage === 'sent' || c.stage === 'accepted' || (c.stage === 'deposit' && c.left !== 0) || (c.stage === 'completed' && c.left !== 0 && !j.paid);
   return (
     <li className="min-w-0 rounded-sm border border-line-strong bg-mount" data-jk-id={j.uuid}>
       <button type="button" onClick={() => onOpen(j.uuid)} className="block w-full px-3.5 pb-3 pt-2.5 text-left">
@@ -89,9 +92,14 @@ function Card({ c, onOpen, onClose }: { c: BoardCard; onOpen: (uuid: string) => 
         {c.money ? <span className={`mt-0.5 block font-mono text-[12.5px] leading-snug ${owed ? 'font-semibold text-ink' : 'text-muted'}`}>{c.money}</span> : null}
         {c.flag ? <span className={`mt-2 inline-block rounded-sm border px-1.5 py-0.5 font-mono text-[11.5px] ${owed ? 'border-ink text-ink' : 'border-accent text-accent'}`}>{c.flag}</span> : null}
       </button>
-      {c.stage === 'completed' ? (
-        <div className="border-t border-line px-3.5">
-          <CloseButton card={c} onClose={() => onClose(j.uuid)} />
+      {canPay || c.stage === 'completed' ? (
+        <div className="divide-y divide-line border-t border-line px-3.5">
+          {canPay ? (
+            <button type="button" onClick={() => onPay(j.uuid)} className="h-10 w-full font-mono text-[13px] text-accent underline">
+              {c.stage === 'sent' ? 'Add a deposit' : 'Add a payment'}
+            </button>
+          ) : null}
+          {c.stage === 'completed' ? <CloseButton card={c} onClose={() => onClose(j.uuid)} /> : null}
         </div>
       ) : null}
     </li>
@@ -115,6 +123,9 @@ export function ClientBoard({
   onOpen,
   onClose,
   onGantt,
+  methods,
+  onPay,
+  onWorkOrder,
 }: {
   sm8: Sm8;
   marks: Marks;
@@ -124,11 +135,16 @@ export function ClientBoard({
   onOpen: (uuid: string) => void;
   onClose: (uuid: string, closed: boolean) => void;
   onGantt: () => void;
+  methods: string[]; // how payments come in (payments.tsx methodsFrom)
+  onPay: (uuid: string, p: NewPayment) => Promise<string>;
+  onWorkOrder: (uuid: string) => void;
 }) {
   const board = useMemo(() => buildBoard(sm8.jobs, sm8.bookings, marks), [sm8.jobs, sm8.bookings, marks]);
   const [pick, setPick] = useState<BoardStage | 'all'>('all');
   const [showClosed, setShowClosed] = useState(false);
   const [closedNow, setClosedNow] = useState<{ uuid: string; name: string } | null>(null);
+  const [payFor, setPayFor] = useState<string | null>(null);
+  const payJob = payFor ? sm8.jobs.find((j) => j.uuid === payFor) : undefined;
   const problem = problemText(sm8.error, sm8.detail, sm8.at);
   const close = (uuid: string) => {
     onClose(uuid, true);
@@ -189,6 +205,17 @@ export function ClientBoard({
 
       {!sm8.at && !problem ? <p className="mt-7 font-mono text-[13.5px] text-faint">{loading ? 'Getting your clients from ServiceM8…' : 'Nothing yet.'}</p> : null}
 
+      {payJob ? (
+        <PaySheet
+          job={payJob}
+          what={payJob.description ? whatOf(payJob.description) : ''}
+          methods={methods}
+          onPay={(p) => onPay(payJob.uuid, p)}
+          onWorkOrder={() => onWorkOrder(payJob.uuid)}
+          onClose={() => setPayFor(null)}
+        />
+      ) : null}
+
       {sm8.at ? (
         <>
           <div className="mt-5 grid grid-cols-3 gap-2">
@@ -235,7 +262,7 @@ export function ClientBoard({
                       {c.cards.length ? (
                         <ul className="grid grid-cols-[minmax(0,1fr)] gap-2.5">
                           {c.cards.map((card) => (
-                            <Card key={card.job.uuid} c={card} onOpen={onOpen} onClose={close} />
+                            <Card key={card.job.uuid} c={card} onOpen={onOpen} onClose={close} onPay={setPayFor} />
                           ))}
                         </ul>
                       ) : (
@@ -263,7 +290,7 @@ export function ClientBoard({
                   {c.cards.length ? (
                     <ul className="mt-2.5 grid grid-cols-[minmax(0,1fr)] gap-2.5">
                       {c.cards.map((card) => (
-                        <Card key={card.job.uuid} c={card} onOpen={onOpen} onClose={close} />
+                        <Card key={card.job.uuid} c={card} onOpen={onOpen} onClose={close} onPay={setPayFor} />
                       ))}
                     </ul>
                   ) : (

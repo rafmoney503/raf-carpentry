@@ -11,6 +11,7 @@ import type { Job } from './store';
 import { clock, post, problemText } from './sm8-post';
 import { EmailBox } from './mail';
 import { PropertyBox } from './property-box';
+import { methodsFrom, PaidNote, PaymentForm, type NewPayment } from './payments';
 import { CustomerSearch, indexClients, personName, SameCustomer, type Client, type Clients } from './customers';
 import { daysBetween, rowOf, rowWords, spanWords, timelineRows, todayKey } from '@/lib/job-timeline';
 
@@ -962,6 +963,8 @@ export function CurrentView({
   replyAt,
   onCustomer,
   info,
+  methods,
+  onPay,
 }: {
   job: CurrentJob;
   marks: Marks;
@@ -985,6 +988,8 @@ export function CurrentView({
   replyAt?: string; // their newest email, from the list
   onCustomer?: () => void; // everything for this customer in ServiceM8
   info?: { line: string; subject: string; open: () => void }; // their latest email in the info@ Inbox
+  methods?: string[]; // how payments come in, for Add a payment (payments.tsx methodsFrom)
+  onPay?: (p: NewPayment) => Promise<string>;
 }) {
   const st = stage(job, marks);
   const [text] = stageText(job, marks);
@@ -1174,7 +1179,7 @@ export function CurrentView({
         info={info}
       />
 
-      <MoneyBox job={job} />
+      <MoneyBox job={job} methods={methods?.length ? methods : methodsFrom([])} onPay={onPay} onWorkOrder={() => move('Work Order', false)} />
 
       {/* Long labels wrap instead of pushing a 320 px screen sideways. */}
       <section className="mt-6 grid gap-3 [&_.btn]:h-auto [&_.btn]:min-h-[52px] [&_.btn]:whitespace-normal [&_.btn]:py-3 [&_.btn]:text-center [&_.btn]:leading-snug">
@@ -1210,42 +1215,50 @@ export function CurrentView({
   );
 }
 
-/* What the job is worth and what has come in, as ServiceM8 has it. */
-function MoneyBox({ job }: { job: CurrentJob }) {
+/* What the job is worth and what has come in, as ServiceM8 has it; and a payment added (payments.tsx). */
+function MoneyBox({ job, methods, onPay, onWorkOrder }: { job: CurrentJob; methods: string[]; onPay?: (p: NewPayment) => Promise<string>; onWorkOrder: () => void }) {
   const { total, paid, left, payments } = moneyOf(job);
-  const quote = job.status === 'Quote' || job.status === 'Unsuccessful';
-  if (total === null && !payments?.length) return null;
+  const quote = (job.status === 'Quote' || job.status === 'Unsuccessful') && !payments?.length;
+  const [adding, setAdding] = useState(false);
+  const [saved, setSaved] = useState<NewPayment | null>(null);
+  const canAdd = Boolean(onPay) && job.status !== 'Unsuccessful';
+  if (total === null && !payments?.length && !canAdd) return null;
   return (
-    <section className="mt-6 rounded-sm border border-line-strong bg-mount p-4">
+    <section id="money" className="mt-6 scroll-mt-[calc(env(safe-area-inset-top)-20px)] rounded-sm border border-line-strong bg-mount p-4">
       <h2 className="text-[19px] font-[650]">Money</h2>
-      <dl className="mt-3 grid grid-cols-3 gap-2">
-        <div>
-          <dt className={label}>{quote ? 'Quote' : 'Total'}</dt>
-          <dd className="mt-0.5 font-mono text-[17px]">{total === null ? '?' : gbp(total)}</dd>
-        </div>
-        {!quote ? (
-          <>
-            <div>
-              <dt className={label}>Paid</dt>
-              <dd className="mt-0.5 font-mono text-[17px]">{payments === null && !job.paid ? '?' : gbp(job.paid && total !== null ? Math.max(paid, total) : paid)}</dd>
-            </div>
-            <div>
-              <dt className={label}>Left</dt>
-              <dd className={`mt-0.5 font-mono text-[17px] ${left ? 'font-semibold' : ''}`}>{left === null || (payments === null && !job.paid) ? '?' : gbp(left)}</dd>
-            </div>
-          </>
-        ) : null}
-      </dl>
+      {total !== null || payments?.length ? (
+        <dl className="mt-3 grid grid-cols-3 gap-2">
+          <div>
+            <dt className={label}>{quote ? 'Quote' : 'Total'}</dt>
+            <dd className="mt-0.5 font-mono text-[17px]">{total === null ? '?' : gbp(total)}</dd>
+          </div>
+          {!quote ? (
+            <>
+              <div>
+                <dt className={label}>Paid</dt>
+                <dd className="mt-0.5 font-mono text-[17px]">{payments === null && !job.paid ? '?' : gbp(job.paid && total !== null ? Math.max(paid, total) : paid)}</dd>
+              </div>
+              <div>
+                <dt className={label}>Left</dt>
+                <dd className={`mt-0.5 font-mono text-[17px] ${left ? 'font-semibold' : ''}`}>{left === null || (payments === null && !job.paid) ? '?' : gbp(left)}</dd>
+              </div>
+            </>
+          ) : null}
+        </dl>
+      ) : (
+        <p className="mt-2 text-[14.5px] text-muted">No total or payments in ServiceM8 yet.</p>
+      )}
       {payments?.length ? (
         <ul className="mt-3 grid gap-1 border-t border-line pt-3 font-mono text-[13px] text-muted">
           {payments.map((p, i) => (
-            <li key={i} className="flex justify-between gap-3">
-              <span>
+            <li key={p.uuid ?? i} className="flex justify-between gap-3">
+              <span className="min-w-0">
                 {p.date ? day(parse(p.date)) : 'Payment'}
                 {p.method ? ` · ${p.method}` : ''}
                 {p.deposit ? ' · deposit' : ''}
+                {p.note ? <span className="block truncate text-faint">{p.note}</span> : null}
               </span>
-              <span className="text-ink">{gbp(p.amount)}</span>
+              <span className="shrink-0 text-ink">{gbp(p.amount)}</span>
             </li>
           ))}
         </ul>
@@ -1257,8 +1270,42 @@ function MoneyBox({ job }: { job: CurrentJob }) {
             ? 'ServiceM8 has it as paid in full.'
             : quote
               ? 'The quote total as ServiceM8 has it.'
-              : `As ServiceM8 has it${job.invoiceSent ? ', invoice sent' : ''}. Payments are added in ServiceM8.`}
+              : `As ServiceM8 has it${job.invoiceSent ? ', invoice sent' : ''}.`}
       </p>
+      {saved && !adding ? (
+        <div className="mt-3">
+          <PaidNote p={saved} job={job} onWorkOrder={onWorkOrder} onHide={() => setSaved(null)} />
+        </div>
+      ) : null}
+      {canAdd ? (
+        adding ? (
+          <div className="mt-4 border-t border-line pt-4">
+            <h3 className="mb-3 text-[16px] font-semibold">Add a payment</h3>
+            <PaymentForm
+              job={job}
+              methods={methods}
+              onPay={onPay!}
+              focus
+              onSaved={(p) => {
+                setSaved(p);
+                setAdding(false);
+              }}
+              onCancel={() => setAdding(false)}
+            />
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm mt-3 w-full"
+            onClick={() => {
+              setSaved(null);
+              setAdding(true);
+            }}
+          >
+            Add a payment
+          </button>
+        )
+      ) : null}
     </section>
   );
 }

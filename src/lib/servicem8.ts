@@ -42,7 +42,7 @@ export type CurrentJob = {
   total: number | null; // the job's total in ServiceM8 (the quote, then the invoice), as ServiceM8 shows it
   payments: Payment[] | null; // null: ServiceM8 wouldn't give them this time
 };
-export type Payment = { amount: number; date: string | null; method: string; deposit: boolean };
+export type Payment = { amount: number; date: string | null; method: string; deposit: boolean; note?: string; uuid?: string };
 /* A booking in ServiceM8's schedule: a site visit on a Quote job, work on a Work Order job. Times are
    ServiceM8's local time, "YYYY-MM-DDTHH:MM". */
 export type Booking = { uuid: string; jobUuid: string; start: string; end: string | null; staffUuid: string };
@@ -250,7 +250,7 @@ function shape(j: Row, client?: Row, contact?: Row, pays?: Row[] | null): Curren
       pays === null
         ? null
         : (pays ?? [])
-            .map((p) => ({ amount: money(p.amount), date: when(p.timestamp), method: str(p.method), deposit: on(p.is_deposit) }))
+            .map((p) => ({ amount: money(p.amount), date: when(p.timestamp), method: str(p.method), deposit: on(p.is_deposit), note: str(p.note) || undefined, uuid: str(p.uuid) || undefined }))
             .filter((p) => p.amount !== 0)
             .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? '')),
   };
@@ -508,6 +508,38 @@ export async function moveBooking(uuid: string, start: string, end: string) {
 /* ServiceM8 archives it (active 0): gone from the schedule, restorable there. */
 export async function cancelBooking(uuid: string) {
   await call(`jobactivity/${uuid}.json`, { method: 'DELETE' });
+}
+
+/* ---------- payments ---------- */
+
+/* A payment taken on a job, as ServiceM8's own Record Payment (22 Oct 2026, Raf: 'add option for payments ... deposit
+   ... with various methods and date to choose'): amount, the day, the method, deposit or not, a note. The uuid comes
+   from the phone, so a second try of the same payment can't add it twice: if ServiceM8 turns the POST down but has
+   the record, it went in the first time. Today's payment gets the time now; an earlier day's, midday. Payments are
+   only added from the Job Kit: changing or removing one is done in ServiceM8. */
+export async function addPayment(p: { uuid: string; jobUuid: string; amount: number; date: string; method: string; deposit: boolean; note?: string }): Promise<Payment> {
+  const now = new Date().toLocaleString('sv-SE', { timeZone: 'Europe/London' }); // "2026-10-22 09:14:05"
+  const time = p.date === now.slice(0, 10) ? now.slice(11, 19) : '12:00:00';
+  const staff = str((await list('staff.json', 'active eq 1').catch((): Row[] => []))[0]?.uuid);
+  try {
+    await call('jobpayment.json', {
+      method: 'POST',
+      body: {
+        uuid: p.uuid,
+        job_uuid: p.jobUuid,
+        amount: p.amount.toFixed(2),
+        timestamp: `${p.date} ${time}`,
+        method: p.method,
+        is_deposit: p.deposit ? '1' : '0',
+        note: p.note || undefined,
+        actioned_by_uuid: staff || undefined,
+      },
+    });
+  } catch (e) {
+    if (!(e instanceof Sm8Error) || e.code !== 'sm8-error') throw e;
+    if (!(await getOne(`jobpayment/${p.uuid}.json`))) throw e;
+  }
+  return { uuid: p.uuid, amount: p.amount, date: `${p.date}T${time.slice(0, 5)}`, method: p.method, deposit: p.deposit, note: p.note || undefined };
 }
 
 /* ---------- briefs sent straight from the website (Plan your project, "Send to Raf") ---------- */
