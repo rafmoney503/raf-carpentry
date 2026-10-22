@@ -129,7 +129,7 @@
   "finishesHeading": "Finishes and details",
   "finishes": [
     {
-      "title": "Painted",
+      "title": "Bare MDF",
       "description": "Left ready for your decorator, who can paint it any colour along with the walls."
     },
     {
@@ -185,12 +185,10 @@
     "Moisture-resistant MDF",
     "Birch ply",
     "Walnut or oak",
-    "IKEA PAX built in",
     "Not sure, advise me"
   ],
   "briefFinish": [
-    "Ready for my decorator to paint",
-    "MDF only, no paint",
+    "Bare MDF, for my decorator",
     "Natural wood",
     "Not sure"
   ],
@@ -201,11 +199,12 @@
     "Just planning"
   ],
   "briefBudget": [
-    "Under £2,000",
-    "£2,000 to £4,000",
-    "£4,000 to £8,000",
-    "Over £8,000",
-    "Not sure yet"
+    "Under £1,000",
+    "£1,000 to £2,000",
+    "£2,000 to £3,000",
+    "£3,000 to £5,000",
+    "£5,000 to £8,000",
+    "Over £8,000"
   ],
   "briefParking": [
     "Easy to park",

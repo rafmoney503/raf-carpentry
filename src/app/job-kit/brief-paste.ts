@@ -15,7 +15,7 @@ export type PastedBrief = {
 };
 
 /* The brief's labels, in the order the website writes them. */
-const LABELS = ['Something like your job', 'What', 'Rooms', 'Room', 'For', 'Material', 'Finish', 'Rough size', 'When', 'Budget', 'Mobile', 'Email', 'Address', 'Parking', 'Parking and access'];
+const LABELS = ['Something like your job', 'What', 'Wardrobe', 'Rooms', 'Room', 'For', 'Material', 'Finish', 'Rough size', 'When', 'Budget', 'Mobile', 'Email', 'Address', 'Parking', 'Parking and access'];
 const SKIP = /^(i will send photos of the space next\.?|photos of the space attached\.?)$/i;
 const URL_LINE = /^https?:\/\/\S+$/i;
 
@@ -99,7 +99,7 @@ export function parseBrief(raw: string): PastedBrief {
   let description: string;
   if (fromBrief) {
     const first = fields.What || 'Enquiry';
-    const rest = ['Rooms', 'For', 'Rough size', 'Material', 'Finish', 'When', 'Budget', 'Parking', 'Parking and access', 'Something like your job', 'Liked']
+    const rest = ['Wardrobe', 'Rooms', 'For', 'Rough size', 'Material', 'Finish', 'When', 'Budget', 'Parking', 'Parking and access', 'Something like your job', 'Liked']
       .filter((k) => fields[k])
       .map((k) => `${k === 'Rooms' && !fields.Rooms.includes('+') ? 'Room' : k}: ${fields[k]}`);
     description = [first, ...rest, ...(notes.length ? ['', ...notes] : []), '', 'From the website brief.'].join('\n');

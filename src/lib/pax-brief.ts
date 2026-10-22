@@ -3,16 +3,19 @@
    (src/lib/wardrobe.ts): frames sold as 100, 75 and 50 cm are really 998, 748 and 498 wide; 2010 high with an
    MDF top box above, or 2364 high; under 300 mm above the frames is an infill strip; what's left of the wall
    is filler, split between the two ends (at least 20 a side for scribing). IKEA sells no hinged doors for the
-   75 frame (it's meant for sliding doors), so a 75 unit always gets MDF doors. */
+   75 frame (it's meant for sliding doors), so a 75 unit always gets MDF doors. The insides and their suggestion from
+   "What is it for?" are shared with made to measure (./wardrobe-brief.ts). */
+import { INSIDE_CHOICES, insideWords, suggestInsides, type InsideKey } from './wardrobe-brief';
 
 export type Frame = 1000 | 750 | 500;
-export type Inside = 'long' | 'double' | 'short' | 'drawers' | 'baskets' | 'shelves' | 'unsure';
+export type Inside = InsideKey;
 export type PaxPlan = {
   height: 'short' | 'tall';
   units: Frame[];
   inside: Inside[];
   doors: 'ikea' | 'mdf';
   auto: boolean; // units follow the wall width until they're changed by hand
+  picked?: boolean; // insides chosen by the customer (else they follow "What is it for?")
 };
 
 export const PAX = {
@@ -30,15 +33,7 @@ export const PAX = {
   maxUnits: 9,
 };
 
-export const INSIDES: { key: Inside; label: string; words: string }[] = [
-  { key: 'long', label: 'Long hanging', words: 'long hanging' },
-  { key: 'double', label: 'Two rails', words: 'two hanging rails' },
-  { key: 'short', label: 'Short hanging + shelves', words: 'short hanging + shelves' },
-  { key: 'drawers', label: 'Drawers + short hanging', words: 'drawers + short hanging' },
-  { key: 'baskets', label: 'Baskets, drawer + hanging', words: 'baskets, a drawer + short hanging' },
-  { key: 'shelves', label: 'Shelves all the way', words: 'shelves all the way' },
-  { key: 'unsure', label: 'Not sure yet', words: 'not sure yet' },
-];
+export const INSIDES = INSIDE_CHOICES.filter((x) => x.pax);
 
 export const frameName = (f: Frame) => `PAX ${f / 10}`;
 /* Where each unit starts, in mm from the left wall. */
@@ -56,7 +51,7 @@ export function spaceProblem(wall: number, ceiling: number): string {
   if (wall < PAX.minWall) return `A wall under ${PAX.minWall} mm is too narrow for a PAX frame.`;
   if (wall > PAX.maxWall) return `Over ${PAX.maxWall / 1000} metres? Check the width, or tell me about it in the message.`;
   if (ceiling > PAX.maxCeiling) return 'Check the ceiling height: it should be in millimetres, like 2400.';
-  if (ceiling < PAX.lowest) return `At ${ceiling} the ceiling is lower than a PAX frame (2010). I’d make it in MDF instead: tick MDF above.`;
+  if (ceiling < PAX.lowest) return `At ${ceiling} the ceiling is lower than a PAX frame (2010). I’d make it to measure instead: pick Made to measure at the top.`;
   return '';
 }
 
@@ -83,18 +78,17 @@ export function fillWall(wall: number): Frame[] {
   return [...Array(best.a).fill(1000), ...Array(best.b).fill(750), ...Array(best.c).fill(500)] as Frame[];
 }
 
-export const startInside = (i: number): Inside => (['long', 'short', 'drawers'] as Inside[])[i % 3];
-
 export function newPlan(wall: number): PaxPlan {
   const units = fillWall(wall);
-  return { height: 'short', units, inside: units.map((_, i) => startInside(i)), doors: 'ikea', auto: true };
+  return { height: 'short', units, inside: [], doors: 'ikea', auto: true, picked: false };
 }
 
 /* While the units are on auto they follow the wall: worked out here rather than stored, so changing the width
    anywhere (the window or the brief's Rough size) moves them. Insides stay with their place in the row. */
-export function resolved(plan: PaxPlan, wall: number): PaxPlan {
+export function resolved(plan: PaxPlan, wall: number, uses: string[] = []): PaxPlan {
   const units = plan.auto ? fillWall(wall) : plan.units;
-  return { ...plan, units, inside: units.map((_, i) => plan.inside[i] ?? startInside(i)) };
+  const sug = suggestInsides(uses, units.map((f) => PAX.real[f]));
+  return { ...plan, units, inside: units.map((_, i) => (plan.picked ? plan.inside[i] ?? sug[i] : sug[i])) };
 }
 
 export type PaxLayout = {
@@ -144,7 +138,7 @@ export function paxLines(plan: PaxPlan, wall: number, ceiling: number): string[]
   const doors =
     (anyIkea ? `IKEA below (I’ll buy them)${made ? `, made to measure on ${made}` : ''}` : `made to measure below${box ? ' and on the top boxes' : ''}`) +
     (anyMdf || box ? '. MDF, ready for my decorator' : '');
-  const inside = plan.units.map((_, i) => `${i + 1} ${INSIDES.find((x) => x.key === plan.inside[i])?.words ?? 'not sure yet'}`).join(', ');
+  const inside = plan.units.map((_, i) => `${i + 1}: ${insideWords(plan.inside[i])}`).join('; ');
   return [
     'My IKEA PAX plan:',
     `Space: ${wall} wide, ${ceiling} to the ceiling`,

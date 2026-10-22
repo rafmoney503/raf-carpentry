@@ -11,8 +11,10 @@ import { Heart } from '@/components/SaveButton';
 import WhatHappensNext, { type Direct } from './what-happens-next';
 import { shrinkPhoto } from '@/app/job-kit/media';
 import { closestDesigns, type MatchItem } from '@/lib/design-match';
-import { paxLines, resolved, spaceProblem, type PaxPlan } from '@/lib/pax-brief';
-import { PaxCard, PaxWindow } from './pax-planner';
+import { paxLines } from '@/lib/pax-brief';
+import { mtoLines, usesFor, type InsideKey } from '@/lib/wardrobe-brief';
+import { WardrobeCard, WardrobeWindow, wardrobeNow, withPlan, type Build, type WardrobeBrief } from './wardrobe-window';
+import { whatIcon } from './what-icons';
 
 export type BriefOptions = {
   what: string[];
@@ -28,9 +30,9 @@ export type BriefOptions = {
 
 /* A customer ticks what fits; the answers become a ready-written WhatsApp message or email to Raf. */
 
-function Chips({ options, value, onPick, multi = false, label }: { options: string[]; value: string | string[]; onPick: (v: string) => void; multi?: boolean; label: string }) {
+function Chips({ options, value, onPick, multi = false, label, icon }: { options: string[]; value: string | string[]; onPick: (v: string) => void; multi?: boolean; label: string; icon?: (o: string) => React.ReactNode }) {
   return (
-    <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label={label}>
+    <div className={icon ? 'mt-3 grid grid-cols-2 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(170px,1fr))]' : 'mt-3 flex flex-wrap gap-2'} role="group" aria-label={label}>
       {options.map((o) => {
         const on = multi ? (value as string[]).includes(o) : value === o;
         return (
@@ -39,9 +41,10 @@ function Chips({ options, value, onPick, multi = false, label }: { options: stri
             type="button"
             aria-pressed={on}
             onClick={() => onPick(o)}
-            className="min-h-10 rounded-sm border border-line-strong bg-mount px-3.5 py-2 text-left text-[14.5px] font-medium leading-snug text-ink transition-colors hover:border-ink aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent"
+            className={`min-h-10 rounded-sm border border-line-strong bg-mount py-2 text-left text-[14.5px] font-medium leading-snug text-ink transition-colors hover:border-ink aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent ${icon ? 'flex min-w-0 items-center gap-2.5 px-2.5' : 'px-3.5'}`}
           >
-            {o}
+            {icon ? <span className="flex-none" aria-hidden="true">{icon(o)}</span> : null}
+            {icon ? <span className="min-w-0">{o}</span> : o}
           </button>
         );
       })}
@@ -107,14 +110,14 @@ export default function BriefBuilder({
   const [material, setMaterial] = useState<string[]>([]);
   const [finish, setFinish] = useState<string[]>([]);
   const [size, setSize] = useState({ w: '', h: '', d: '' });
-  // IKEA PAX: ticking it opens "Plan your PAX" once (pax-planner.tsx); the plan goes into the message.
-  const [pax, setPax] = useState<PaxPlan | null>(null);
-  const [paxOpen, setPaxOpen] = useState(false);
-  const paxAsked = useRef(false);
+  // Fitted wardrobe: how it's built (made to measure, IKEA PAX, not sure) and the plan (wardrobe-window.tsx).
+  const [wb, setWb] = useState<WardrobeBrief>({ build: null, pax: null, mto: null });
+  const [wbOpen, setWbOpen] = useState(false);
+  const wbAsked = useRef(false);
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
-  const [needContact, setNeedContact] = useState(false);
+  const [need, setNeed] = useState<'' | 'name' | 'mobile' | 'email'>('');
   const mobileRef = useRef<HTMLInputElement>(null);
   // Photos for "Send to Raf": made smaller on the phone (no GPS or other hidden data), kept only in this page.
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -133,8 +136,8 @@ export default function BriefBuilder({
   const [addr, setAddr] = useState<Address>({ line1: '', area: '', postcode: '' });
   const [parking, setParking] = useState<string[]>([]);
   const [access, setAccess] = useState('');
-  const [needName, setNeedName] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
   const [timing, setTiming] = useState('');
   const [budget, setBudget] = useState('');
   const [notes, setNotes] = useState('');
@@ -168,22 +171,36 @@ export default function BriefBuilder({
   const toggle = (set: React.Dispatch<React.SetStateAction<string[]>>) => (v: string) =>
     set((list) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]));
   const hasSize = Boolean(size.w || size.h || size.d);
-  const paxLabel = options.material.find((m) => /\bpax\b/i.test(m)) ?? '';
-  const paxOn = Boolean(paxLabel && material.includes(paxLabel));
-  const pickMaterial = (v: string) => {
-    const ticking = !material.includes(v);
-    toggle(setMaterial)(v);
-    if (ticking && v === paxLabel && !paxAsked.current) {
-      paxAsked.current = true;
-      setPaxOpen(true);
+  const wardrobeLabel = options.what.find((w) => /wardrobe/i.test(w)) ?? '';
+  const wardrobeOn = Boolean(wardrobeLabel && what.includes(wardrobeLabel));
+  const openPlanner = () => {
+    const b: 'mto' | 'pax' = wb.build === 'pax' ? 'pax' : 'mto';
+    setWb((w) => withPlan({ ...w, build: b }, b, size));
+    setWbOpen(true);
+  };
+  // Picking Made to measure or IKEA PAX the first time opens the planner; Not sure yet doesn't.
+  const pickBuild = (b: Build) => {
+    setWb((w) => (b === 'unsure' ? { ...w, build: b } : withPlan({ ...w, build: b }, b, size)));
+    if (b !== 'unsure' && !wbAsked.current) {
+      wbAsked.current = true;
+      setWbOpen(true);
     }
   };
-  const paxWall = parseInt(size.w || '0', 10) || 0;
-  const paxCeiling = parseInt(size.h || '0', 10) || 0;
-  const paxText = useMemo(
-    () => (paxOn && pax && !spaceProblem(paxWall, paxCeiling) ? paxLines(resolved(pax, paxWall), paxWall, paxCeiling) : []),
-    [paxOn, pax, paxWall, paxCeiling],
-  );
+  // An inside picked in the planner ticks what it's for in 03 (hanging clothes, folded clothes, shoes).
+  const insidePicked = (k: InsideKey) => {
+    const add = usesFor(k).flatMap((re) => options.uses.filter((u) => re.test(u)).slice(0, 1));
+    if (add.length) setUses((cur) => [...cur, ...add.filter((a) => !cur.includes(a))]);
+  };
+  const wbNow = useMemo(() => wardrobeNow(wb, size, uses), [wb, size, uses]);
+  const buildWords = wb.build === 'pax' ? 'IKEA PAX built in' : wb.build === 'mto' ? 'Made to measure' : wb.build === 'unsure' ? 'not sure yet, advise me' : '';
+  const planText = useMemo(() => {
+    if (!wardrobeOn) return [];
+    if (wb.build === 'pax' && wbNow.pax) return paxLines(wbNow.pax, wbNow.wall, wbNow.ceiling);
+    if (wb.build === 'mto' && wbNow.mto) return mtoLines(wbNow.mto, wbNow.wall, wbNow.ceiling);
+    return [];
+  }, [wardrobeOn, wb.build, wbNow]);
+  // For "Designs like yours": an IKEA PAX wardrobe counts as that material, as when it was a Material chip.
+  const materialFor = useMemo(() => (wardrobeOn && wb.build === 'pax' ? [...material, 'IKEA PAX built in'] : material), [wardrobeOn, wb.build, material]);
 
   const filled = [what.length, room.length, uses.length, material.length, finish.length, hasSize, name.trim(), timing, budget].filter(Boolean).length;
 
@@ -196,8 +213,8 @@ export default function BriefBuilder({
   // works out the same three for the thank-you email. Saved ones and the job they came from count, but aren't shown.
   const likedHrefs = useMemo(() => [...liked.map((x) => x.href), ...(job ? [`/portfolio/${job.slug}`] : [])], [liked, job]);
   const picks = useMemo(
-    () => (sent ? closestDesigns(designs, { what, room, uses, material, liked: likedHrefs, address: addressText }) : null),
-    [sent, designs, what, room, uses, material, likedHrefs, addressText],
+    () => (sent ? closestDesigns(designs, { what, room, uses, material: materialFor, liked: likedHrefs, address: addressText }) : null),
+    [sent, designs, what, room, uses, materialFor, likedHrefs, addressText],
   );
 
   const message = useMemo(() => {
@@ -205,6 +222,7 @@ export default function BriefBuilder({
     if (job) lines.push(`Something like your job: ${job.title}, ${job.area}`, jobUrl(job.slug), '');
     if (liked.length) lines.push('Things I liked:', ...liked.flatMap((s) => [s.area ? `${s.title}, ${s.area}` : s.title, savedUrl(s)]), '');
     if (what.length) lines.push(`What: ${join(what)}`);
+    if (wardrobeOn && buildWords) lines.push(`Wardrobe: ${buildWords}`);
     if (room.length) lines.push(`${room.length > 1 ? 'Rooms' : 'Room'}: ${join(room)}`);
     if (uses.length) lines.push(`For: ${join(uses)}`);
     if (hasSize) lines.push(`Rough size: ${size.w || '?'} wide x ${size.h || '?'} high x ${size.d || '?'} deep (mm)`);
@@ -212,7 +230,7 @@ export default function BriefBuilder({
     if (finish.length) lines.push(`Finish: ${join(finish)}`);
     if (timing) lines.push(`When: ${timing}`);
     if (budget) lines.push(`Budget: ${budget}`);
-    if (paxText.length) lines.push('', ...paxText);
+    if (planText.length) lines.push('', ...planText);
     const where = [
       mobile.trim() ? `Mobile: ${mobile.trim()}` : '',
       email.trim() ? `Email: ${email.trim()}` : '',
@@ -224,17 +242,22 @@ export default function BriefBuilder({
     if (notes.trim()) lines.push('', notes.trim());
     lines.push('', 'I will send photos of the space next.');
     return lines.join('\n').replace(/\n{3,}/g, '\n\n'); // never two empty lines in a row
-  }, [job, liked, what, room, uses, material, finish, hasSize, size, paxText, name, mobile, email, addressText, parking, access, timing, budget, notes]);
+  }, [job, liked, what, wardrobeOn, buildWords, room, uses, material, finish, hasSize, size, planText, name, mobile, email, addressText, parking, access, timing, budget, notes]);
 
   const mailto = `mailto:${EMAIL}?subject=${encodeURIComponent(`My project brief${what.length ? `: ${what.join(' + ')}` : ''}`.slice(0, 120))}&body=${encodeURIComponent(message.replace('I will send photos of the space next.', 'Photos of the space attached.'))}`;
 
   // Raf needs at least a name: stop the send and point at the box instead.
+  // Name, mobile and email are all needed (Raf, 22 Oct 2026): stop the send and point at the first one missing.
+  const goodMobile = mobile.replace(/\D/g, '').length >= 10;
+  const goodEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
+  const missing: '' | 'name' | 'mobile' | 'email' = !name.trim() ? 'name' : !goodMobile ? 'mobile' : !goodEmail ? 'email' : '';
   const gate = (e?: { preventDefault: () => void }) => {
-    if (name.trim()) return true;
+    if (!missing) return true;
     e?.preventDefault();
-    setNeedName(true);
-    nameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    nameRef.current?.focus({ preventScroll: true });
+    setNeed(missing);
+    const ref = missing === 'name' ? nameRef : missing === 'mobile' ? mobileRef : emailRef;
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    ref.current?.focus({ preventScroll: true });
     return false;
   };
 
@@ -275,14 +298,6 @@ export default function BriefBuilder({
   // Send to Raf: the brief goes into ServiceM8 as a Quote job, then each photo onto that job.
   const sendDirect = async () => {
     if (sending || !gate()) return;
-    const goodMobile = mobile.replace(/\D/g, '').length >= 10;
-    const goodEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
-    if (!goodMobile && !goodEmail) {
-      setNeedContact(true);
-      mobileRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      mobileRef.current?.focus({ preventScroll: true });
-      return;
-    }
     setSendError('');
     setSending({ step: 'brief' });
     try {
@@ -294,7 +309,7 @@ export default function BriefBuilder({
           email,
           address: addressText,
           message,
-          choices: { what, room, uses, material },
+          choices: { what, room, uses, material: materialFor },
           liked: likedHrefs,
           photos: photos.length,
           company: trap.current?.value ?? '',
@@ -339,9 +354,10 @@ export default function BriefBuilder({
 
   const reset = () => {
     setWhat([]); setRoom([]); setUses([]); setMaterial([]); setFinish([]);
-    setSize({ w: '', h: '', d: '' }); setPax(null); paxAsked.current = false; setName(''); setAddr({ line1: '', area: '', postcode: '' }); setParking([]); setAccess('');
-    setTiming(''); setBudget(''); setNotes(''); setNeedName(false); setSent(null);
-    setMobile(''); setEmail(''); setNeedContact(false); setPhotos([]); setPhotoNote(''); setSendError(''); setDirect(null);
+    setSize({ w: '', h: '', d: '' }); setName(''); setAddr({ line1: '', area: '', postcode: '' }); setParking([]); setAccess('');
+    setTiming(''); setBudget(''); setNotes(''); setNeed(''); setSent(null);
+    setWb({ build: null, pax: null, mto: null }); wbAsked.current = false;
+    setMobile(''); setEmail(''); setPhotos([]); setPhotoNote(''); setSendError(''); setDirect(null);
   };
 
   return (
@@ -392,7 +408,8 @@ export default function BriefBuilder({
           </section>
         ) : null}
         <Field n={1} title="What is it?" hint="pick any">
-          <Chips label="What is it?" options={options.what} value={what} onPick={toggle(setWhat)} multi />
+          <Chips label="What is it?" options={options.what} value={what} onPick={toggle(setWhat)} multi icon={whatIcon} />
+          {wardrobeOn ? <WardrobeCard wb={wb} size={size} uses={uses} onBuild={pickBuild} onOpen={openPlanner} /> : null}
           {/* A nudge to the Designs in 3D page for what they picked; opens in a new tab so the brief stays filled in. */}
           {(() => {
             const slugs = new Set(what.flatMap((w) => kindsIn(w).map((k) => k.slug)));
@@ -434,25 +451,27 @@ export default function BriefBuilder({
           </div>
         </Field>
         <Field n={5} title="Material" hint="pick any">
-          <Chips label="Material" options={options.material} value={material} onPick={pickMaterial} multi />
-          {paxOn ? <PaxCard plan={pax} size={size} onOpen={() => setPaxOpen(true)} /> : null}
+          {wardrobeOn && wb.build === 'pax' ? (
+            <p className="mt-2 text-[13.5px] leading-snug text-muted" data-pax-material-note>Your PAX frames come from IKEA. Pick the material for what I make: the top boxes, fillers and any made-to-measure doors.</p>
+          ) : null}
+          <Chips label="Material" options={options.material} value={material} onPick={toggle(setMaterial)} multi />
         </Field>
         <Field n={6} title="Finish" hint="pick any">
           <Chips label="Finish" options={options.finish} value={finish} onPick={toggle(setFinish)} multi />
         </Field>
-        <Field n={7} title="Your details and parking" hint="name needed">
+        <Field n={7} title="Your details and parking" hint="name, mobile and email needed">
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="font-mono text-[12px] text-faint">Name</span>
               <input
                 ref={nameRef}
-                className={`${input} mt-1 ${needName && !name.trim() ? 'border-accent ring-2 ring-accent/20' : ''}`}
+                className={`${input} mt-1 ${need === 'name' && !name.trim() ? 'border-accent ring-2 ring-accent/20' : ''}`}
                 placeholder="Your name"
                 value={name}
-                onChange={(e) => { setName(e.target.value.slice(0, 80)); setNeedName(false); }}
+                onChange={(e) => { setName(e.target.value.slice(0, 80)); setNeed(''); }}
                 autoComplete="name"
                 aria-required="true"
-                aria-invalid={needName && !name.trim() ? true : undefined}
+                aria-invalid={need === 'name' && !name.trim() ? true : undefined}
                 aria-describedby="brief-name-note"
               />
             </label>
@@ -460,36 +479,45 @@ export default function BriefBuilder({
               <span className="font-mono text-[12px] text-faint">Mobile</span>
               <input
                 ref={mobileRef}
-                className={`${input} mt-1 ${needContact && !mobile.trim() && !email.trim() ? 'border-accent ring-2 ring-accent/20' : ''}`}
+                className={`${input} mt-1 ${need === 'mobile' && !goodMobile ? 'border-accent ring-2 ring-accent/20' : ''}`}
                 type="tel"
                 inputMode="tel"
                 placeholder="So I can call you back"
                 value={mobile}
-                onChange={(e) => { setMobile(e.target.value.replace(/[^\d+ ()-]/g, '').slice(0, 20)); setNeedContact(false); }}
+                onChange={(e) => { setMobile(e.target.value.replace(/[^\d+ ()-]/g, '').slice(0, 20)); setNeed(''); }}
                 autoComplete="tel"
+                aria-required="true"
+                aria-invalid={need === 'mobile' && !goodMobile ? true : undefined}
+                aria-describedby="brief-name-note"
               />
             </label>
             <label className="block sm:col-span-2">
-              <span className="font-mono text-[12px] text-faint">Email (optional)</span>
+              <span className="font-mono text-[12px] text-faint">Email</span>
               <input
-                className={`${input} mt-1`}
+                ref={emailRef}
+                className={`${input} mt-1 ${need === 'email' && !goodEmail ? 'border-accent ring-2 ring-accent/20' : ''}`}
                 type="email"
                 inputMode="email"
-                placeholder="If you'd rather I email"
+                placeholder="For your quote and the 3D drawing"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value.replace(/\s/g, '').slice(0, 120)); setNeedContact(false); }}
+                onChange={(e) => { setEmail(e.target.value.replace(/\s/g, '').slice(0, 120)); setNeed(''); }}
                 autoComplete="email"
+                aria-required="true"
+                aria-invalid={need === 'email' && !goodEmail ? true : undefined}
+                aria-describedby="brief-name-note"
               />
             </label>
           </div>
           {/* People never see this box; bots fill it in, and their brief goes nowhere. */}
           <input ref={trap} type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute -left-[9999px] h-px w-px opacity-0" />
-          <p id="brief-name-note" className={`mt-2 text-[13px] leading-snug ${(needName && !name.trim()) || needContact ? 'font-medium text-accent' : 'text-faint'}`}>
-            {needName && !name.trim()
+          <p id="brief-name-note" className={`mt-2 text-[13px] leading-snug ${need && missing ? 'font-medium text-accent' : 'text-faint'}`} data-need={need && missing ? missing : undefined}>
+            {need && missing === 'name'
               ? 'Add your name, then send.'
-              : needContact
-                ? 'Add your mobile or email so I can reply.'
-                : 'Only sent to me. Nothing is kept on this website.'}
+              : need && missing === 'mobile'
+                ? 'Add your mobile (10 digits or more), then send.'
+                : need && missing === 'email'
+                  ? 'Add your email, then send.'
+                  : 'All three needed, so I can reply the way that suits you. Only sent to me; nothing is kept on this website.'}
           </p>
           <div className="mt-4">
             <AddressFinder value={addr} onChange={setAddr} inputClass={input} />
@@ -579,7 +607,7 @@ export default function BriefBuilder({
           </label>
         </Field>
       </form>
-      <PaxWindow open={paxOpen} onClose={() => setPaxOpen(false)} plan={pax} setPlan={setPax} size={size} setSize={setSize} />
+      <WardrobeWindow open={wbOpen} onClose={() => setWbOpen(false)} wb={wb} setWb={setWb} size={size} setSize={setSize} uses={uses} onInsidePicked={insidePicked} />
 
       {/* The message as it will arrive */}
       <aside className="md:col-span-5" aria-label="Your message">
@@ -616,7 +644,7 @@ export default function BriefBuilder({
                     : 'Send to Raf'}
               </button>
               <p id="send-direct-note" className="-mt-1 text-center text-[13px] leading-snug text-faint">
-                Straight to me, photos and all. Needs your mobile or email.
+                Straight to me, photos and all.
               </p>
               {sendError ? <p className="text-[14px] font-medium text-accent" role="alert">{sendError}</p> : null}
               <a href={whatsappUrl(message)} target="_blank" rel="noopener" onClick={(e) => gate(e) && markSent('whatsapp')} className="btn btn-whatsapp w-full gap-2.5">
@@ -635,8 +663,8 @@ export default function BriefBuilder({
               <a href={BOOKING_URL} target="_blank" rel="noopener" className="font-medium text-accent hover:underline">Book online</a>.
             </p>
           )}
-          {needName && !name.trim() ? (
-            <p className="mt-3 text-sm font-medium text-accent" role="alert">Add your name in step 07 first.</p>
+          {need && missing ? (
+            <p className="mt-3 text-sm font-medium text-accent" role="alert">Add your {missing} in step 07 first.</p>
           ) : null}
           {filled > 0 || notes ? (
             <button type="button" onClick={reset} className="mt-3 font-mono text-[12px] text-faint transition-colors hover:text-ink">
