@@ -35,7 +35,14 @@ const CFG={
   // Inside each unit: hanging lengths, shelf spacing and drawer heights are PLAN in src/lib/cabinetos-wardrobe.ts
   styles:{slab:'Flat slab',shaker:'Shaker',mirror:'Mirror'},   // flat is the default (Raf, 17 Oct 2026)
   shakerFrame:70,                                       // shaker door frame width, mm (classic shaker: one panel)
-  handles:{brass:'Brass bar',black:'Black bar',knob:'Brass knob',push:'Push to open'},
+  handles:{brass:'Brass bar',black:'Black bar',knob:'Brass knob',edge:'Edge pull',edgeb:'Black edge pull',push:'Push to open'},
+  // Edge pulls (Raf, 22 Oct 2026: on mirror doors a pull 'fitted on the edge of the door and screwed to the board, not
+  // through the mirror, like IKEA'): on hinged doors a small metal pull screwed to the back of the door that wraps
+  // round its opening edge (len mm long; on a pair one sits `stagger` mm above the other so they don't rub in the
+  // 4 mm gap where the doors meet); on drawer fronts the same on the top edge; on sliding doors a slim profile on
+  // the edge they're pulled by (`slideLen` long). Bars and knobs bolt through the door, so a mirror door can't have them.
+  edgePull:{len:100,stagger:110,slideLen:600},
+  throughDoor:['brass','black','knob'],
   colours:[
     {k:'chalk',n:'Chalk',c:'#E6E0D3'},{k:'white',n:'Soft white',c:'#F1F0EA'},{k:'sage',n:'Sage',c:'#8C9C82'},
     {k:'pebble',n:'Pebble grey',c:'#A5A59D'},{k:'ink',n:'Inky blue',c:'#34465E'},{k:'green',n:'Deep green',c:'#3F5546'},
@@ -53,7 +60,7 @@ let uid=1;
 function setPreset(m,key){if(key==='pair'&&canSplit(m.w)){m.split=[{...PAIR[0]},{...PAIR[1]}];m.edit=m.edit||0;}else{m.split=null;m.inside={...presetInside(key==='pair'?'drawers':key)};}}
 const mk=(w,preset)=>{const m={id:'m'+(uid++),w,custom:!CFG.standardWidths.includes(w),inside:presetInside('shelves'),split:null,edit:0};setPreset(m,preset);return m;};
 const S={unitMode:'standard',perDoor:[],side:{mode:'auto',l:50,r:50},wall:2800,ceiling:2400,fit:'wall',plinth:100,plinthCustom:false,infill:50,infillCustom:false,freeH:CFG.freeHeight,depthMode:'std',depthCustom:600,height:'full',doors:'hinged',style:'slab',handle:'brass',colour:'sage',
-  modules:[mk(900,'double'),mk(900,'pair'),mk(900,'short')],sel:0,step:0,view:'3d',open:false,sent:false,drawInside:false,cut:{email:'',sent:'',mailed:false,parts:0,boards:0},
+  modules:[mk(900,'double'),mk(900,'pair'),mk(900,'short')],sel:0,step:0,view:'3d',open:false,sent:false,doorsOff:false,cut:{email:'',sent:'',mailed:false,parts:0,boards:0},
   contact:{name:'',email:'',phone:'',postcode:'',when:'',notes:'',company:''}};
 const colour=()=>CFG.colours.find(c=>c.k===S.colour)||CFG.colours[0];
 function depth(){if(S.depthMode==='custom')return clamp(S.depthCustom,CFG.depth.min,CFG.depth.max);if(S.depthMode==='shallow'&&S.doors==='hinged')return CFG.depth.shallow;return S.doors==='sliding'?CFG.depth.sliding:CFG.depth.hinged;}
@@ -212,27 +219,51 @@ function faceMat(wm,hm){
     g.strokeStyle=shade(c,-0.22);g.lineWidth=2;g.strokeRect(1,1,W-2,H-2);});
   const m=new THREE.MeshStandardMaterial({map:t,roughness:0.55});matCache.set(key,m);return m;
 }
-const fin=()=>std(colour().c,0.58),inner=()=>std('#ECE9E2',0.7),brass=()=>std('#B8924F',0.32,0.85),black=()=>std('#222426',0.4,0.5),alu=()=>std('#B8BCBE',0.35,0.75);
+const fin=()=>std(colour().c,0.58),inner=()=>std('#ECE9E2',0.7),brass=()=>std('#B8924F',0.32,0.85),black=()=>std('#222426',0.4,0.5),alu=()=>std('#B8BCBE',0.35,0.75),chrome=()=>std('#B9BFC4',0.24,0.7);
 const GAR=['#5B6E82','#C9B79A','#33404D','#9C5546','#E4DED2','#56634F','#7F6A8C','#C78F4A'];
 function box(p,x0,y0,z0,x1,y1,z1,m){const w=Math.abs(x1-x0),h=Math.abs(y1-y0),d=Math.abs(z1-z0);if(w<0.0005||h<0.0005||d<0.0005)return null;const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);o.castShadow=o.receiveShadow=true;p.add(o);return o;}
 function cyl(p,x,y,z,r,len,m,ax){const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,len,10),m);if(ax==='x')o.rotation.z=Math.PI/2;if(ax==='z')o.rotation.x=Math.PI/2;o.position.set(x,y,z);o.castShadow=true;p.add(o);return o;}
 const ease=t=>t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
 const doorState=new Map();const rec=k=>{if(!doorState.has(k))doorState.set(k,{p:0,t:0});return doorState.get(k);};
 function applyDoor(o){const e=ease(o.st.p);if(o.kind==='h')o.pivot.rotation.y=o.sign*1.72*e;else o.pivot.position.x=o.x0+o.dir*o.dist*e;}
+const isEdge=()=>S.handle==='edge'||S.handle==='edgeb';
+const pullMat=()=>S.handle==='black'||S.handle==='edgeb'?black():S.handle==='edge'?chrome():brass();
+/* An edge pull on a hinged door's opening edge at x = ex (side +1: the door's right-hand edge, -1 its left), centred
+   at cy, on 18 mm board whose front face is at zf: a leg screwed to the back of the board, a strip round the edge and
+   a lip standing off the front to pull by. Nothing goes through the front, so a mirror stays whole. */
+function edgePull(par,ex,cy,zf,side,len,m){const zb=zf-0.018,y0=cy-len/2,y1=cy+len/2;
+  box(par,ex,y0,zb-0.004,ex-side*0.026,y1,zb,m);
+  box(par,ex,y0,zb-0.004,ex+side*0.0025,y1,zf+0.011,m);
+  box(par,ex+side*0.0025,y0,zf+0.0085,ex-side*0.009,y1,zf+0.011,m);}
+/* The same on a drawer front's top edge (ey), centred on cx. */
+function topPull(par,cx,ey,zf,len,m){const zb=zf-0.018,x0=cx-len/2,x1=cx+len/2;
+  box(par,x0,ey-0.026,zb-0.004,x1,ey,zb,m);box(par,x0,ey,zb-0.004,x1,ey+0.0025,zf+0.011,m);box(par,x0,ey-0.009,zf+0.0085,x1,ey+0.0025,zf+0.011,m);}
+/* Where a door's pull goes, mm up from the door's bottom (low = the door's bottom above the floor): grip height on a
+   tall door, near the bottom of a top cupboard's door, near the top of a low one. An edge pull on a door that meets
+   another (off +1 the left one, -1 the right one) moves up or down so the two don't rub in the gap. */
+function pullUp(d,low,off){const h=d.y1-d.y0,tall=h>1000;let y=tall?clamp(1050-low,300,h-300):(low>1500?80:h-80);
+  if(isEdge()){const L=CFG.edgePull.len;if(!tall)y=low>1500?L/2+30:h-L/2-30;y=clamp(y+off*CFG.edgePull.stagger/2,L/2+10,h-L/2-10);}return y;}
+/* Doors whose opening edges meet (a pair, the two halves of hanging beside drawers, two single doors side by side):
+   unit:half:door -> +1 for the left one, -1 for the right one. */
+function meetOffsets(PCS){const all=[];PCS.forEach(p=>p.layout.doors.forEach((d,i)=>all.push({k:p.section+':'+(p.part||'')+':'+i,x0:p.x+d.x0,x1:p.x+d.x1,y0:d.y0,y1:d.y1,hl:d.hingeLeft})));
+  const off=new Map();all.forEach(a=>{if(!a.hl)return;const b=all.find(q=>!q.hl&&Math.abs(q.x0-a.x1)<12&&Math.abs(q.y0-a.y0)<6&&Math.abs(q.y1-a.y1)<6);if(b){off.set(a.k,1);off.set(b.k,-1);}});return off;}
 function handle(par,x,y,z,tall){
-  if(S.handle==='push')return;const m=S.handle==='black'?black():brass();
+  if(S.handle==='push')return;const m=pullMat();
   if(S.handle==='knob'){const k=new THREE.Mesh(new THREE.SphereGeometry(0.017,12,10),m);k.position.set(x,y,z+0.02);par.add(k);return k;}
   const h=cyl(par,x,y,z+0.03,0.0065,tall?0.28:0.14,m,tall?null:'x');[-1,1].forEach(s=>{const p=new THREE.Mesh(new THREE.BoxGeometry(0.008,0.008,0.024),m);p.position.set(tall?x:x+s*0.06,tall?y+s*0.12:y,z+0.015);par.add(p);});return h;}
 /* Hinged doors where CabinetOS puts them (layout.doors: 2 mm in at the outside edges, 4 between a pair, 3 short at
    the top; mm from the unit's left and the carcass bottom). */
-function hinged(par,key,list,a,P,z){
+function hinged(par,key,list,a,P,z,offOf){
   const f=fin();
   list.forEach((d,i)=>{const x0=a+d.x0*MM,x1=a+d.x1*MM,y0=P+d.y0*MM,ww=x1-x0,dh=(d.y1-d.y0)*MM;if(ww<0.05||dh<0.05)return;const left=d.hingeLeft,face=faceMat(ww,dh);
     const pv=new THREE.Group();pv.position.set(left?x0:x1,y0,z);par.add(pv);
     const m=new THREE.Mesh(new THREE.BoxGeometry(ww,dh,0.018),[f,f,f,f,face,f]);m.position.set(left?ww/2:-ww/2,dh/2,0.009);m.castShadow=m.receiveShadow=true;pv.add(m);
-    const tall=dh>1.0,hy=tall?clamp(1.05-y0,0.3,dh-0.3):(y0>1.5?0.08:dh-0.08);
-    const h=handle(pv,left?ww-0.045:-ww+0.045,hy,0.018,tall);
-    const o={pivot:pv,kind:'h',sign:left?-1:1,st:rec(key+':'+i)};applyDoor(o);doors.push(o);m.userData.door=o;if(h)h.userData.door=o;picks.push(m);});
+    const tall=dh>1.0,hy=pullUp(d,y0/MM,offOf?offOf(i):0)*MM;
+    if(isEdge())edgePull(pv,left?ww:-ww,hy,0.018,left?1:-1,CFG.edgePull.len*MM,pullMat());
+    if(!isEdge())handle(pv,left?ww-0.045:-ww+0.045,hy,0.018,tall);
+    const o={pivot:pv,kind:'h',sign:left?-1:1,st:rec(key+':'+i)};applyDoor(o);doors.push(o);
+    // the door and its handle are one thing to tap (and are hidden together when the doors are off)
+    pv.traverse(x=>{if(x.isMesh){x.userData.door=o;picks.push(x);}});});
 }
 /* Sliding doors as CabinetOS sizes them (slidingDoorsFor): from the span's left end `sx`, `y0` above the floor; the
    outer doors on the back track, the next ones in front. Each slides towards the neighbour on the other track. */
@@ -241,8 +272,11 @@ function sliding(par,SD,sx,y0,zb){
   for(let i=0;i<n;i++){const d=SD.doors[i],z=zb+(d.back?0.006:0.038),x=sx+d.x0*MM,dir=i>0&&SD.doors[i-1].back!==d.back?-1:1;
     const pv=new THREE.Group();pv.position.set(x,y0,z);par.add(pv);
     const m=new THREE.Mesh(new THREE.BoxGeometry(dw,dh,0.022),[alu(),alu(),alu(),alu(),face,f]);m.position.set(dw/2,dh/2,0.011);m.castShadow=m.receiveShadow=true;pv.add(m);
-    if(S.handle!=='push'){const hm=S.handle==='black'?black():brass();box(pv,dir>0?0.03:dw-0.042,clamp(1.05-y0,0.4,dh-0.4)-0.25,0.022,dir>0?0.042:dw-0.03,clamp(1.05-y0,0.4,dh-0.4)+0.25,0.032,hm);}
-    const o={pivot:pv,kind:'s',x0:x,dir,dist:dw-ov,st:rec('s'+n+':'+i)};applyDoor(o);doors.push(o);m.userData.door=o;picks.push(m);}
+    const gy=clamp(1.05-y0,0.4,dh-0.4);
+    // an edge pull on a sliding door is a slim profile on the edge it's pulled by, standing 4 mm proud, so it clears the doors on the other track
+    if(isEdge()){const ex=dir>0?0:dw,sd=dir>0?-1:1,L=CFG.edgePull.slideLen*MM,hm=pullMat();box(pv,ex,gy-L/2,0,ex+sd*0.003,gy+L/2,0.026,hm);box(pv,ex+sd*0.003,gy-L/2,0.022,ex-sd*0.007,gy+L/2,0.026,hm);}
+    else if(S.handle!=='push'){const hm=pullMat();box(pv,dir>0?0.03:dw-0.042,gy-0.25,0.022,dir>0?0.042:dw-0.03,gy+0.25,0.032,hm);}
+    const o={pivot:pv,kind:'s',x0:x,dir,dist:dw-ov,st:rec('s'+n+':'+i)};applyDoor(o);doors.push(o);pv.traverse(x=>{if(x.isMesh){x.userData.door=o;picks.push(x);}});}
 }
 /* Clothes on a rail: a run of hangers, or facing the front on a pull-out rail when the unit is shallow. */
 function hangAt(par,y,a,b,len,z0,z1){
@@ -260,7 +294,7 @@ function interior(par,L,a,P,zi){
   L.rails.forEach(y=>{const h=L.hangs.find(v=>Math.abs(v.y-y)<1),room=y-floorOf(y)-40;if(room>120)hangAt(par,Y(y),x0,x1,Math.min(h?h.length:900,room)*MM,z0,zi-0.01);});
   const front=std('#DEDAD2',0.6);
   L.drawers.forEach(d=>{const a0=a+d.x0*MM,a1=a+d.x1*MM,y0=Y(d.y0)+0.002,y1=Y(d.y1)-0.002;
-    if(L.drawersBelow){box(par,a0+0.001,y0,zi,a1-0.001,y1,zi+0.018,fin());box(par,x0+0.01,y0+0.02,z0+0.02,x1-0.01,y1-0.04,zi-0.002,im);handle(par,(a0+a1)/2,y1-Math.min(0.06,(y1-y0)*0.35),zi+0.018,false);}
+    if(L.drawersBelow){box(par,a0+0.001,y0,zi,a1-0.001,y1,zi+0.018,fin());box(par,x0+0.01,y0+0.02,z0+0.02,x1-0.01,y1-0.04,zi-0.002,im);if(isEdge())topPull(par,(a0+a1)/2,y1,zi+0.018,CFG.edgePull.len*MM,pullMat());else handle(par,(a0+a1)/2,y1-Math.min(0.06,(y1-y0)*0.35),zi+0.018,false);}
     else{const zf=zi-0.08;box(par,a0+0.004,y0,z0+0.02,a1-0.004,y1-0.04,zf-0.018,im);box(par,a0,y0,zf-0.018,a1,y1,zf,front);cyl(par,(a0+a1)/2,y1-0.05,zf+0.004,0.005,Math.min(0.12,(a1-a0)*0.4),brass(),'x');}});
 }
 function carcass(par,x0,x1,h0,h1,d,zi){
@@ -314,7 +348,7 @@ function build(){
     if(fr){box(root,X(c.x0)-0.018,0,0,X(c.x0),TY,D+0.002,f);box(root,X(c.x1),0,0,X(c.x1)+0.018,TY,D+0.002,f);}
     else if(infill()>0){const L=S.fit==='openL'?X(c.x0)-0.018:-W/2,R=S.fit==='openR'?X(c.x1)+0.018:W/2;box(root,L,TY,0,R,H,D+0.003,f);}
     if(P>0.002)box(root,X(c.x0),0,0,X(c.x1),P,zi-0.05,std(shade(colour().c,-0.3),0.7));}
-  const RB=runBox(),PCS=pieces();
+  const RB=runBox(),PCS=pieces(),meet=meetOffsets(PCS);
   S.modules.forEach((m,i)=>{
     const g=new THREE.Group();root.add(g);modGroups.push(g);const two=!!(m.split&&canSplit(m.w));
     PCS.filter(p=>p.section===i).forEach((p,h)=>{
@@ -322,7 +356,7 @@ function build(){
       carcass(pg,a,b,P,P+L.boxH*MM,D,zi);
       if(RB.topH)carcass(pg,a,b,P+L.boxH*MM,P+(L.boxH+RB.topH)*MM,D,zi);
       interior(pg,L,a,P,zi);
-      const d0=doors.length;hinged(pg,m.id+p.part,L.doors,a,P,zi);for(let k=d0;k<doors.length;k++)doors[k].mod=i;
+      const d0=doors.length;hinged(pg,m.id+p.part,L.doors,a,P,zi,k=>meet.get(p.section+':'+(p.part||'')+':'+k)||0);for(let k=d0;k<doors.length;k++)doors[k].mod=i;
       pg.traverse(o=>{if(o.isMesh){o.userData.mod=i;o.userData.half=two?h:null;if(!o.userData.door)picks.push(o);}});
     });
   });
@@ -331,7 +365,7 @@ function build(){
   applyOff();frameCam(false);highlight();needs=true;
 }
 function tap(e){if(!renderer)return;const r=renderer.domElement.getBoundingClientRect(),v=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1),ray=new THREE.Raycaster();ray.setFromCamera(v,cam);
-  const h=ray.intersectObjects(picks,false).find(x=>!(doorsOff&&x.object.userData.door&&x.object.userData.door.kind==='s')),u=h?h.object.userData:{},mod=u.mod!=null?u.mod:null;
+  const h=ray.intersectObjects(picks,false).find(x=>!(S.doorsOff&&x.object.userData.door)),u=h?h.object.userData:{},mod=u.mod!=null?u.mod:null;
   const flip=o=>{stopPlay();const opening=o.st.t<0.5;if(opening&&o.kind==='s')doors.forEach(d=>{if(d!==o&&d.kind==='s')d.st.t=0;});o.st.t=opening?1:0;openLabel();};
   // On the Units step: a tap on another unit picks it, on the picked unit's door opens or closes it, anywhere else picks none.
   if(S.step===1){
@@ -359,8 +393,7 @@ let last=performance.now();
 function loop(now){raf=requestAnimationFrame(loop);const dt=Math.min(0.05,(now-last)/1000);last=now;let act=ctl.update();
   for(const o of doors){const s=o.st;if(s.p!==s.t){s.p=s.t>s.p?Math.min(s.t,s.p+dt*2.2):Math.max(s.t,s.p-dt*2.2);applyDoor(o);act=true;}}
   if((act||needs)&&S.view==='3d'){renderer.render(scene,cam);needs=false;}}
-/* The button under the view: in 3D it opens and closes the doors (on the Units step, the picked unit's), in the
-   drawing it takes the doors off. */
+/* The button under the 3D view opens and closes the doors (on the Units step, the picked unit's). */
 let btn3d='Open doors';
 const unitDoors=()=>S.step===1&&S.sel>=0&&S.modules.length>1?doors.filter(o=>o.mod===S.sel&&o.kind==='h'):null;
 /* Sliding doors: the play button slides each door open in turn, holds it so you can see behind it, and slides it back
@@ -376,24 +409,25 @@ function startPlay(){if(!doors.some(o=>o.kind==='s'))return;doors.forEach(o=>{if
     openLabel();};
   play.t=setTimeout(tick,250);}
 offs.push(()=>stopPlay());
-/* Doors off (Raf, 17 Oct 2026: 'when sliding door selected add extra button door off to see all units inside fully'):
-   with sliding doors the 3D view can take them off, so every unit behind them shows at once; tracks stay, taps go
-   through to the units, and the door and play buttons hide until they're back on. */
-let doorsOff=false;
-function applyOff(){doors.forEach(o=>{if(o.kind==='s')o.pivot.visible=!doorsOff;});}
-function toggleOff(){doorsOff=!doorsOff;stopPlay();if(doorsOff){doors.forEach(o=>{if(o.kind==='s'){o.st.t=0;o.st.p=0;applyDoor(o);}});btn3d='Open doors';}applyOff();needs=true;openLabel();}
+/* Doors off (Raf, 17 Oct 2026, for sliding doors: 'add extra button door off to see all units inside fully'; 22 Oct
+   2026, for every door: 'another button door off next to 3d button fitted smartly'): the switch beside 3D | Drawing
+   takes every door off (hinged, sliding, top cupboards) so the inside shows. In 3D the doors and their handles are
+   hidden (tracks and drawer fronts stay) and taps go through to the units; the drawing shows the inside. Changing a
+   door setting puts them back on so the change shows. */
+function applyOff(){doors.forEach(o=>{o.pivot.visible=!S.doorsOff;});}
+function setOff(v){if(S.doorsOff===v)return;S.doorsOff=v;stopPlay();doors.forEach(o=>{o.st.t=0;o.st.p=0;applyDoor(o);});btn3d='Open doors';applyOff();needs=true;if(S.view==='draw')drawPlan();openLabel();}
+function toggleOff(){setOff(!S.doorsOff);}
 function openLabel(){const b=$('#openBtn');if(!b)return;
-  const sl=doors.some(o=>o.kind==='s'),off=sl&&doorsOff;
-  const ob=$('#offBtn');if(ob){ob.hidden=!(S.view==='3d'&&sl);ob.textContent=off?'Doors on':'Doors off';ob.setAttribute('aria-pressed',off?'true':'false');}
+  const sl=doors.some(o=>o.kind==='s'),off=S.doorsOff;
+  const ob=$('#offBtn');if(ob){ob.setAttribute('aria-pressed',off?'true':'false');ob.title=off?'Put the doors back on':'Take the doors off to see inside';}
   const pb=$('#playBtn');if(pb){const show=S.view==='3d'&&sl&&!off;pb.hidden=!show;if(!show&&play)stopPlay();}
-  b.hidden=false;
-  if(S.view==='draw'){b.textContent=S.drawInside?'Show the doors':'Show the inside';return;}
+  b.hidden=S.view==='draw'||off||!doors.length;if(b.hidden)return;
   const ud=unitDoors();
   if(ud&&ud.length){b.textContent=`${ud.some(o=>o.st.t<0.5)?'Open':'Close'} unit ${S.sel+1}`;return;}
-  if(sl){if(off){b.hidden=true;return;}b.textContent=btn3d;return;}
-  b.textContent=doors.length&&!doors.some(o=>o.st.t<0.5)?'Close doors':'Open doors';}
+  if(sl){b.textContent=btn3d;return;}
+  b.textContent=!doors.some(o=>o.st.t<0.5)?'Close doors':'Open doors';}
 function toggleDoors(){
-  if(S.view==='draw'){S.drawInside=!S.drawInside;drawPlan();openLabel();return;}
+  if(S.view==='draw'||S.doorsOff)return;
   stopPlay();
   const ud=unitDoors(),ss=doors.filter(o=>o.kind==='s');
   if(ud&&ud.length){const open=ud.some(o=>o.st.t<0.5);ud.forEach(o=>o.st.t=open?1:0);}
@@ -436,12 +470,14 @@ function drawPlan(){
   const tri=(x0,y0,x1,y1,hingeLeft)=>{const xh=hingeLeft?x0:x1,xo=hingeLeft?x1:x0;ln(xo,y0+3,xh+2,(y0+y1)/2,'stroke-dasharray="5 4"',0.9,M);ln(xo,y1-3,xh+2,(y0+y1)/2,'stroke-dasharray="5 4"',0.9,M);};
   const knob=(hx,hy,tall)=>{if(S.handle==='push')return;S.handle==='knob'?o.push(`<circle cx="${f1(hx)}" cy="${f1(hy)}" r="2.5" fill="${I}"/>`):(tall?ln(hx,hy-12,hx,hy+12,'',2.2):ln(hx-8,hy,hx+8,hy,'',2.2));};
   // Every CabinetOS unit (a pair is two), from the same layout as the 3D view and the sizes (cabinetos-wardrobe.ts).
-  const RB=runBox(),PCS=pieces(),T=COS.board;
+  const RB=runBox(),PCS=pieces(),T=COS.board,EL=CFG.edgePull.len,meet=meetOffsets(PCS);
+  // an edge pull is a heavy line on the edge it's fitted to
+  const edgeV=(ex,y0,y1)=>ln(ex,y0,ex,y1,'',3),edgeH=(cx,y)=>ln(cx-EL*s/2,y,cx+EL*s/2,y,'',3);
   drawHits=PCS.map(p=>({x0:X(c.x0+p.x),x1:X(c.x0+p.x+p.w),y0:Y(P+p.layout.boxH+(RB.topH||0)),y1:Y(P),section:p.section,half:p.part?(p.part==='a'?0:1):null}));
   PCS.forEach(p=>{const L=p.layout,ux=c.x0+p.x,x0=X(ux),x1=X(ux+p.w),U=v=>X(ux+v),V=v=>Y(P+v),sel=p.section===S.sel&&S.step===1;
     rc(x0,V(L.boxH),x1-x0,L.boxH*s,sel?'#e9edfb':'#FFFFFF','',1.4);
     if(RB.topH)rc(x0,V(L.boxH+RB.topH),x1-x0,RB.topH*s,'#FFFFFF','',1.4);
-    if(S.drawInside){
+    if(S.doorsOff){
       // doors off: the clear space, shelves, rails with clothes, drawers
       rc(U(T),V(L.boxH-T),(p.w-2*T)*s,(L.boxH-2*T)*s,'none','',0.6,M);
       if(RB.topH)rc(U(T),V(L.boxH+RB.topH-T),(p.w-2*T)*s,(RB.topH-2*T)*s,'none','',0.6,M);
@@ -453,13 +489,14 @@ function drawPlan(){
       if(!L.drawersBelow)L.drawers.forEach(d=>{rc(U(d.x0),V(d.y1),(d.x1-d.x0)*s,(d.y1-d.y0)*s,'#FFFFFF','',0.9);ln(U((d.x0+d.x1)/2)-8,V(d.y1-40),U((d.x0+d.x1)/2)+8,V(d.y1-40),'',1.6);});
     }
     // drawers below the doors are on the front either way
-    if(L.drawersBelow)L.drawers.forEach(d=>{rc(U(d.x0)+1,V(d.y1),(d.x1-d.x0)*s-2,(d.y1-d.y0)*s,'#FFFFFF','',0.9);knob(U(p.w/2),V(d.y1-Math.min(60,(d.y1-d.y0)*0.35)),false);});
-    if(!S.drawInside)L.doors.forEach(d=>{const dx0=U(d.x0),dx1=U(d.x1),yT=V(d.y1),yB=V(d.y0),tall=d.y1-d.y0>1000;rc(dx0,yT,dx1-dx0,yB-yT,'none','',0.9);tri(dx0,yT,dx1,yB,d.hingeLeft);
-      if(yB-yT>12)knob(d.hingeLeft?dx1-6:dx0+6,tall?Math.min(yB-14,Math.max(yT+14,Y(1050))):(P+d.y0>1500?yB-8:yT+8),tall);});
+    if(L.drawersBelow)L.drawers.forEach(d=>{rc(U(d.x0)+1,V(d.y1),(d.x1-d.x0)*s-2,(d.y1-d.y0)*s,'#FFFFFF','',0.9);if(isEdge())edgeH(U((d.x0+d.x1)/2),V(d.y1)+1.6);else knob(U(p.w/2),V(d.y1-Math.min(60,(d.y1-d.y0)*0.35)),false);});
+    if(!S.doorsOff)L.doors.forEach((d,i)=>{const dx0=U(d.x0),dx1=U(d.x1),yT=V(d.y1),yB=V(d.y0),tall=d.y1-d.y0>1000;rc(dx0,yT,dx1-dx0,yB-yT,'none','',0.9);tri(dx0,yT,dx1,yB,d.hingeLeft);
+      if(yB-yT>12){if(isEdge()){const cy=d.y0+pullUp(d,P+d.y0,meet.get(p.section+':'+(p.part||'')+':'+i)||0);edgeV(d.hingeLeft?dx1-1.6:dx0+1.6,V(cy-EL/2),V(cy+EL/2));}
+        else knob(d.hingeLeft?dx1-6:dx0+6,tall?Math.min(yB-14,Math.max(yT+14,Y(1050))):(P+d.y0>1500?yB-8:yT+8),tall);}});
     tx((x0+x1)/2,Y(0)+12,p.label.replace('Unit ',''),'middle',sel?B:M,10);
   });
   // sliding doors as CabinetOS sizes them: back-track doors first, the front ones over them, overlaps shaded
-  if(S.doors==='sliding'&&has&&!S.drawInside){const SD=slideDoors(),sl=spanLeft(c),yT=Y(20+SD.h),yB=Y(20),yc=(yT+yB)/2;
+  if(S.doors==='sliding'&&has&&!S.doorsOff){const SD=slideDoors(),sl=spanLeft(c),yT=Y(20+SD.h),yB=Y(20),yc=(yT+yB)/2;
     [...SD.doors.filter(d=>d.back),...SD.doors.filter(d=>!d.back)].forEach(d=>{const a=X(sl+d.x0),w=(d.x1-d.x0)*s;rc(a,yT,w,yB-yT,'#FFFFFF','',1.1);
       ln(a+w*0.3,yc,a+w*0.7,yc,'',1,M);[[0.3,1],[0.7,-1]].forEach(([p,k])=>{ln(a+w*p,yc,a+w*p+6*k,yc-4,'',1,M);ln(a+w*p,yc,a+w*p+6*k,yc+4,'',1,M);});});
     for(let i=1;i<SD.n;i++){const a=SD.doors[i-1],b=SD.doors[i];if(a.back!==b.back&&a.x1-b.x0>0.2)rc(X(sl+b.x0),yT,(a.x1-b.x0)*s,yB-yT,'rgba(37,71,208,0.18)','',0,'none');}
@@ -477,8 +514,8 @@ function drawPlan(){
   dimV(0,S.ceiling,X(0)-(leftWall?32:18),`${S.ceiling}`,true);
   if(fr&&has)dimV(0,ty,X(S.wall)+56,`${ty}`);
   // inside: where the shelf over the hanging sits (the rail hangs just under it)
-  else if(has&&S.drawInside&&pieces().some(p=>p.layout.hat!=null))dimV(0,PLAN.hatShelf,X(S.wall)+56,`${PLAN.hatShelf}`);
-  tx(X(S.wall/2),Y(0)+28,`${S.drawInside?'INSIDE, DOORS OFF':'FRONT VIEW'} · DEPTH ${depth()} · PLINTH ${P} · ALL SIZES MM`,'middle',M,10);
+  else if(has&&S.doorsOff&&pieces().some(p=>p.layout.hat!=null))dimV(0,PLAN.hatShelf,X(S.wall)+56,`${PLAN.hatShelf}`);
+  tx(X(S.wall/2),Y(0)+28,`${S.doorsOff?'INSIDE, DOORS OFF':'FRONT VIEW'} · DEPTH ${depth()} · PLINTH ${P} · ALL SIZES MM`,'middle',M,10);
   el.innerHTML=`<svg viewBox="0 0 ${BW} ${BH}" role="img" aria-label="Front elevation drawing with dimensions">${o.join('')}</svg>`;
 }
 
@@ -572,8 +609,16 @@ function stepDoors(){
   ${S.doors==='sliding'?(lined()?`<p class="note">The units behind line up with the doors, ${perText()}, so every drawer can open. Change it in Units.</p>`:`<button type="button" class="wbtn ghost wide" data-act="umode" data-v="doors" ${lineUpFor(1)?'':'disabled'}>Line the units up with the doors</button>`):''}
   ${(()=>{const cg=caughtLabels();return cg.size?`<p class="hint">${esc([...cg].join(', '))}: two sliding doors meet in front of the drawers, so they can't open fully. See Units.</p>`:'';})()}
   <div class="grp"><h3>Style</h3><div class="chips">${Object.keys(CFG.styles).map(k=>chip('style',k,CFG.styles[k],S.style===k)).join('')}</div></div>
-  <div class="grp"><h3>${S.doors==='sliding'?'Pulls':'Handles'}</h3><div class="chips">${Object.keys(CFG.handles).map(k=>chip('handle',k,CFG.handles[k],S.handle===k)).join('')}</div></div>
+  <div class="grp"><h3>${S.doors==='sliding'?'Pulls':'Handles'}</h3><div class="chips">${Object.keys(CFG.handles).filter(k=>!(S.style==='mirror'&&CFG.throughDoor.includes(k))).map(k=>chip('handle',k,CFG.handles[k],S.handle===k)).join('')}</div>${pullNote()}</div>
   <div class="grp"><h3>Height</h3><div class="chips">${chip('height','full',`<span>${free()?'Full-height doors':'One tall door'}<small>${free()?`To ${topY()} mm`:infill()?`Up to the ${infill()} mm infill`:'To the ceiling'}</small></span>`,S.height==='full'||!topOk())}${chip('height','top',`<span>With top cupboards<small>${topOk()?`Main doors ${CFG.topSplit}, top ${topY()-CFG.topSplit}`:`Needs ${CFG.topSplit+CFG.topMin} mm to the top`}</small></span>`,S.height==='top'&&topOk(),!topOk())}</div></div>`;}
+/* What an edge pull is, under the handle chips (and why a mirror door only gets edge pulls or push to open). */
+function pullNote(){const e=isEdge(),mir=S.style==='mirror',sl=S.doors==='sliding';if(!e&&!mir)return'';
+  let t=mir?(sl?'Mirror doors get a slim pull screwed into the edge of the board behind the mirror, so nothing is drilled through the glass. Or push to open, with no pull at all.'
+    :'Mirror doors get an edge pull: a small metal pull screwed to the back of the board behind the mirror, wrapping round the edge you open the door by. Nothing is drilled through the glass. Or push to open, with no handle at all.')
+    :(sl?'A slim profile screwed into the edge you pull each door by, so it slides past the doors on the other track.'
+    :'A small metal pull screwed to the back of the door, wrapping round the edge you open it by. Nothing goes through the front.');
+  if(e&&!sl&&meetOffsets(pieces()).size)t+=' Where two doors meet, one pull sits just above the other so they don\'t rub in the gap.';
+  return `<p class="note">${esc(t)}</p>`;}
 function stepColour(){return `<div><h2>Colour</h2><p class="lede">Built in MDF and left ready for your decorator to paint. Pick a colour to see how it will look. Want birch ply or oak instead? Say so in the last step.</p></div>
   <div class="colours" role="group" aria-label="Colour">${CFG.colours.map(k=>chip('colour',k.k,`<span class="sw" style="background:${k.c}"></span><span>${esc(k.n)}</span>`,S.colour===k.k)).join('')}</div>`;}
 function specRows(){const c=calc(),d=depth();return[
@@ -672,7 +717,7 @@ function render(){
   // the unit being changed stands out on the Units step only
   if(shownStep!==S.step){shownStep=S.step;highlight();if(S.view==='draw')drawPlan();}
 }
-function chips(){const c=calc();$('#fitText').textContent=c.t;$('#fitChip').className='fit'+(c.lv==='ok'?'':' '+c.lv);$('#dimsChip').textContent=`${S.wall} × ${S.ceiling} · ${S.modules.length} unit${S.modules.length===1?'':'s'}`;}
+function chips(){const c=calc();$('#fitText').textContent=c.t;$('#fitChip').className='fit'+(c.lv==='ok'?'':' '+c.lv);$('#dimsChip').innerHTML=`${S.wall} × ${S.ceiling}<span class="dn"> · ${S.modules.length} unit${S.modules.length===1?'':'s'}</span>`;}
 function changed(rebuildPanel=true,keepCam=true){S.example=false;S.sent=false;S.cut.sent='';if(S.unitMode==='equal'&&S.modules.length)equalise(S.modules.length);if(lined())lineUp();normalise();build();if(S.view==='draw')drawPlan();if(rebuildPanel)render();else chips();}
 function numVal(id){return id==='sidel'?S.side.l:id==='sider'?S.side.r:id==='wall'?S.wall:id==='ceiling'?S.ceiling:id==='depthc'?S.depthCustom:id==='plinthc'?S.plinth:id==='infillc'?S.infill:id==='freeh'?S.freeH:(S.modules[Number(id.slice(2))]||{}).w;}
 function setNum(id,v){v=Number(v);if(!isFinite(v))return;
@@ -743,16 +788,17 @@ on(host,'click',e=>{
       const c=calc(),room=c.fixed?Math.round(c.left):S.wall-c.run-(S.fit==='wall'?2:1)*CFG.scribe.min;
       const w=S.unitMode==='custom'?clamp(Math.min(900,room),CFG.customMin,CFG.customMax):[...CFG.standardWidths].reverse().find(x=>x<=room)||600;
       const m=mk(w,layoutFor(w,S.modules.length));if(S.unitMode==='custom')m.custom=true;S.modules.push(m);S.sel=S.modules.length-1;normalise();fitInside(S.sel);changed();break;}
-    case'doors':{const was=S.doors;S.doors=v;doorsOff=false;if(v==='sliding'&&S.depthMode==='shallow')S.depthMode='std';doorState.clear();btn3d='Open doors';openLabel();
+    case'doors':{const was=S.doors;S.doors=v;S.doorsOff=false;if(v==='sliding'&&S.depthMode==='shallow')S.depthMode='std';doorState.clear();btn3d='Open doors';openLabel();
       // drawers on the front can't sit under sliding doors: they go behind them
       if(v==='sliding')S.modules.forEach(m=>[m.inside,...(m.split||[])].forEach(x=>{if(x)x.below=false;}));
       // sliding doors decide the units behind them: one behind each door (Units can change it); back to hinged keeps the widths
       let msg='';if(v==='sliding'&&was!=='sliding'&&S.unitMode!=='doors'&&S.modules.length&&lineUpFor(1)){S.unitMode='doors';lineUp();msg=`Units lined up with the doors: ${S.modules.length} × ${widthsText()} mm`;}
       if(v==='hinged'&&S.unitMode==='doors')S.unitMode='custom';
       changed();if(msg)flash(msg);break;}
-    case'style':S.style=v;changed();break;
-    case'handle':S.handle=v;changed();break;
-    case'height':S.height=v;changed();break;
+    // a mirror door can't have a bar or knob (they bolt through the door), so it gets an edge pull instead
+    case'style':{S.style=v;S.doorsOff=false;let msg='';if(v==='mirror'&&CFG.throughDoor.includes(S.handle)){S.handle=S.handle==='black'?'edgeb':'edge';msg='Edge pull: nothing drilled through the mirror';}changed();if(msg)flash(msg);break;}
+    case'handle':if(S.style==='mirror'&&CFG.throughDoor.includes(v))break;S.handle=v;S.doorsOff=false;changed();break;
+    case'height':S.height=v;S.doorsOff=false;changed();break;
     case'colour':S.colour=v;changed();break;
     case'again':S.sent=false;S.step=1;render();break;
     case'cutlist':cutSubmit();break;

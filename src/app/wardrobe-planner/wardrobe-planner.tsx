@@ -82,15 +82,22 @@ const PlannerFrame = memo(function PlannerFrame() {
         <div id="drawing" hidden />
         <div className="vtop">
           <div className="dims" id="dimsChip">2800 × 2400</div>
-          <div className="seg" role="group" aria-label="View">
-            <button type="button" data-view="3d" aria-pressed="true">3D</button>
-            <button type="button" data-view="draw" aria-pressed="false">Drawing</button>
+          <div className="vtools">
+            {/* Doors off: every door taken off, in 3D and in the drawing (planner-engine.ts setOff) */}
+            <button type="button" className="vtog" id="offBtn" aria-pressed="false" aria-label="Doors off" title="Take the doors off to see inside">
+              <svg className="i-on" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="1.75" width="9" height="12.5" rx="0.6" /><circle cx="10.1" cy="8.3" r="0.95" /></svg>
+              <svg className="i-off" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="1.75" width="9" height="12.5" rx="0.6" strokeDasharray="2 1.7" /><path d="M5.4 5.4h5.2M5.4 8.6h5.2M5.4 11.8h5.2" /></svg>
+              <span>Doors off</span>
+            </button>
+            <div className="seg" role="group" aria-label="View">
+              <button type="button" data-view="3d" aria-pressed="true">3D</button>
+              <button type="button" data-view="draw" aria-pressed="false">Drawing</button>
+            </div>
           </div>
         </div>
         <div className="vbot">
           <div className="fit" id="fitChip"><span id="fitText">Fits</span></div>
           <div className="vbtns">
-            <button type="button" className="vbtn tog" id="offBtn" hidden aria-pressed="false">Doors off</button>
             <button type="button" className="vbtn ic" id="playBtn" hidden aria-pressed="false" aria-label="Watch each door slide" title="Watch each door slide">
               <svg className="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7.5-4.5z" /></svg>
               <svg className="i-stop" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 4.5h7v7h-7z" /></svg>
