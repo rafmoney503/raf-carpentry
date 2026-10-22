@@ -370,11 +370,11 @@ function Suggestions({ pathname, onPick }: { pathname: string; onPick: () => voi
   const others = (recent ?? []).filter((r) => r.slug !== here).slice(0, 5);
 
   return (
-    <div className="mt-7 grid gap-7">
+    <div className="mt-7 grid grid-cols-[minmax(0,1fr)] gap-7">
       {seen.length ? (
         <section>
           <Heading>Jump back in</Heading>
-          <ul className="grid gap-1">
+          <ul className="space-y-1">
             {seen.map((s) => {
               const e = byHref.get(s.p);
               return (
