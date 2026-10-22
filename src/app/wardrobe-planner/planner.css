@@ -61,8 +61,20 @@
 .wp .vbtn.ic .i-stop, .wp .vbtn.ic[aria-pressed="true"] .i-play { display: none; }
 .wp .vbtn.ic[aria-pressed="true"] .i-stop { display: block; }
 .wp .vbtn.ic[aria-pressed="true"] { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-on-accent); }
-/* Doors off: pressed while the sliding doors are taken off */
-.wp .vbtn.tog[aria-pressed="true"] { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-on-accent); }
+/* Doors off, beside 3D | Drawing: the same height as the switch, blue while the doors are off; a door icon, the
+   inside (shelves, dashed outline) while pressed. Narrow views drop the unit count, then the button's words. */
+.wp .view { container: wpview / inline-size; }
+.wp .vtools { display: flex; gap: 6px; align-items: stretch; flex: 0 0 auto; }
+.wp .vtog { display: flex; align-items: center; gap: 6px; border: 1px solid var(--color-line-strong); background: var(--color-mount); border-radius: var(--radius); padding: 0 11px 0 9px; font-weight: 600; font-size: 13px; color: var(--color-ink); white-space: nowrap; }
+.wp .vtog svg { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; }
+.wp .vtog .i-on circle { fill: currentColor; stroke: none; }
+.wp .vtog .i-off, .wp .vtog[aria-pressed="true"] .i-on { display: none; }
+.wp .vtog[aria-pressed="true"] .i-off { display: block; }
+.wp .vtog[aria-pressed="true"] { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-on-accent); }
+.wp .vtog:focus-visible, .wp .seg button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+@media (hover: hover) { .wp .vtog:not([aria-pressed="true"]):hover { border-color: var(--color-accent); color: var(--color-accent); } }
+@container wpview (max-width: 519px) { .wp .dims .dn { display: none; } }
+@container wpview (max-width: 369px) { .wp .vtog { padding: 0 9px; } .wp .vtog span { display: none; } }
 .wp .vbtn { border: 1px solid var(--color-line-strong); background: var(--color-mount); border-radius: var(--radius); padding: 7px 12px; font-weight: 600; font-size: 13px; white-space: nowrap; }
 .wp .dims { font-family: var(--font-mono); font-size: 12px; color: var(--color-muted); background: var(--color-mount); border: 1px solid var(--color-line-strong); border-radius: var(--radius); padding: 5px 9px; white-space: nowrap; }
 .wp .nogl { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--color-muted); background: var(--color-paper); }
