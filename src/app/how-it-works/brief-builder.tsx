@@ -11,6 +11,8 @@ import { Heart } from '@/components/SaveButton';
 import WhatHappensNext, { type Direct } from './what-happens-next';
 import { shrinkPhoto } from '@/app/job-kit/media';
 import { closestDesigns, type MatchItem } from '@/lib/design-match';
+import { paxLines, resolved, spaceProblem, type PaxPlan } from '@/lib/pax-brief';
+import { PaxCard, PaxWindow } from './pax-planner';
 
 export type BriefOptions = {
   what: string[];
@@ -105,6 +107,10 @@ export default function BriefBuilder({
   const [material, setMaterial] = useState<string[]>([]);
   const [finish, setFinish] = useState<string[]>([]);
   const [size, setSize] = useState({ w: '', h: '', d: '' });
+  // IKEA PAX: ticking it opens "Plan your PAX" once (pax-planner.tsx); the plan goes into the message.
+  const [pax, setPax] = useState<PaxPlan | null>(null);
+  const [paxOpen, setPaxOpen] = useState(false);
+  const paxAsked = useRef(false);
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
@@ -162,6 +168,22 @@ export default function BriefBuilder({
   const toggle = (set: React.Dispatch<React.SetStateAction<string[]>>) => (v: string) =>
     set((list) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]));
   const hasSize = Boolean(size.w || size.h || size.d);
+  const paxLabel = options.material.find((m) => /\bpax\b/i.test(m)) ?? '';
+  const paxOn = Boolean(paxLabel && material.includes(paxLabel));
+  const pickMaterial = (v: string) => {
+    const ticking = !material.includes(v);
+    toggle(setMaterial)(v);
+    if (ticking && v === paxLabel && !paxAsked.current) {
+      paxAsked.current = true;
+      setPaxOpen(true);
+    }
+  };
+  const paxWall = parseInt(size.w || '0', 10) || 0;
+  const paxCeiling = parseInt(size.h || '0', 10) || 0;
+  const paxText = useMemo(
+    () => (paxOn && pax && !spaceProblem(paxWall, paxCeiling) ? paxLines(resolved(pax, paxWall), paxWall, paxCeiling) : []),
+    [paxOn, pax, paxWall, paxCeiling],
+  );
 
   const filled = [what.length, room.length, uses.length, material.length, finish.length, hasSize, name.trim(), timing, budget].filter(Boolean).length;
 
@@ -185,11 +207,12 @@ export default function BriefBuilder({
     if (what.length) lines.push(`What: ${join(what)}`);
     if (room.length) lines.push(`${room.length > 1 ? 'Rooms' : 'Room'}: ${join(room)}`);
     if (uses.length) lines.push(`For: ${join(uses)}`);
+    if (hasSize) lines.push(`Rough size: ${size.w || '?'} wide x ${size.h || '?'} high x ${size.d || '?'} deep (mm)`);
     if (material.length) lines.push(`Material: ${join(material)}`);
     if (finish.length) lines.push(`Finish: ${join(finish)}`);
-    if (hasSize) lines.push(`Rough size: ${size.w || '?'} wide x ${size.h || '?'} high x ${size.d || '?'} deep (mm)`);
     if (timing) lines.push(`When: ${timing}`);
     if (budget) lines.push(`Budget: ${budget}`);
+    if (paxText.length) lines.push('', ...paxText);
     const where = [
       mobile.trim() ? `Mobile: ${mobile.trim()}` : '',
       email.trim() ? `Email: ${email.trim()}` : '',
@@ -201,7 +224,7 @@ export default function BriefBuilder({
     if (notes.trim()) lines.push('', notes.trim());
     lines.push('', 'I will send photos of the space next.');
     return lines.join('\n').replace(/\n{3,}/g, '\n\n'); // never two empty lines in a row
-  }, [job, liked, what, room, uses, material, finish, hasSize, size, name, mobile, email, addressText, parking, access, timing, budget, notes]);
+  }, [job, liked, what, room, uses, material, finish, hasSize, size, paxText, name, mobile, email, addressText, parking, access, timing, budget, notes]);
 
   const mailto = `mailto:${EMAIL}?subject=${encodeURIComponent(`My project brief${what.length ? `: ${what.join(' + ')}` : ''}`.slice(0, 120))}&body=${encodeURIComponent(message.replace('I will send photos of the space next.', 'Photos of the space attached.'))}`;
 
@@ -316,7 +339,7 @@ export default function BriefBuilder({
 
   const reset = () => {
     setWhat([]); setRoom([]); setUses([]); setMaterial([]); setFinish([]);
-    setSize({ w: '', h: '', d: '' }); setName(''); setAddr({ line1: '', area: '', postcode: '' }); setParking([]); setAccess('');
+    setSize({ w: '', h: '', d: '' }); setPax(null); paxAsked.current = false; setName(''); setAddr({ line1: '', area: '', postcode: '' }); setParking([]); setAccess('');
     setTiming(''); setBudget(''); setNotes(''); setNeedName(false); setSent(null);
     setMobile(''); setEmail(''); setNeedContact(false); setPhotos([]); setPhotoNote(''); setSendError(''); setDirect(null);
   };
@@ -394,13 +417,7 @@ export default function BriefBuilder({
         <Field n={3} title="What is it for?" hint="pick any">
           <Chips label="What is it for?" options={options.uses} value={uses} onPick={toggle(setUses)} multi />
         </Field>
-        <Field n={4} title="Material" hint="pick any">
-          <Chips label="Material" options={options.material} value={material} onPick={toggle(setMaterial)} multi />
-        </Field>
-        <Field n={5} title="Finish" hint="pick any">
-          <Chips label="Finish" options={options.finish} value={finish} onPick={toggle(setFinish)} multi />
-        </Field>
-        <Field n={6} title="Rough size" hint="mm, if you have it">
+        <Field n={4} title="Rough size" hint="mm, if you have it">
           <div className="mt-3 grid grid-cols-3 gap-2">
             {(['w', 'h', 'd'] as const).map((k) => (
               <label key={k} className="block">
@@ -415,6 +432,13 @@ export default function BriefBuilder({
               </label>
             ))}
           </div>
+        </Field>
+        <Field n={5} title="Material" hint="pick any">
+          <Chips label="Material" options={options.material} value={material} onPick={pickMaterial} multi />
+          {paxOn ? <PaxCard plan={pax} size={size} onOpen={() => setPaxOpen(true)} /> : null}
+        </Field>
+        <Field n={6} title="Finish" hint="pick any">
+          <Chips label="Finish" options={options.finish} value={finish} onPick={toggle(setFinish)} multi />
         </Field>
         <Field n={7} title="Your details and parking" hint="name needed">
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -555,6 +579,7 @@ export default function BriefBuilder({
           </label>
         </Field>
       </form>
+      <PaxWindow open={paxOpen} onClose={() => setPaxOpen(false)} plan={pax} setPlan={setPax} size={size} setSize={setSize} />
 
       {/* The message as it will arrive */}
       <aside className="md:col-span-5" aria-label="Your message">

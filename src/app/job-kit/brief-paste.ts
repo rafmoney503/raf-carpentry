@@ -99,7 +99,7 @@ export function parseBrief(raw: string): PastedBrief {
   let description: string;
   if (fromBrief) {
     const first = fields.What || 'Enquiry';
-    const rest = ['Rooms', 'For', 'Material', 'Finish', 'Rough size', 'When', 'Budget', 'Parking', 'Parking and access', 'Something like your job', 'Liked']
+    const rest = ['Rooms', 'For', 'Rough size', 'Material', 'Finish', 'When', 'Budget', 'Parking', 'Parking and access', 'Something like your job', 'Liked']
       .filter((k) => fields[k])
       .map((k) => `${k === 'Rooms' && !fields.Rooms.includes('+') ? 'Room' : k}: ${fields[k]}`);
     description = [first, ...rest, ...(notes.length ? ['', ...notes] : []), '', 'From the website brief.'].join('\n');
