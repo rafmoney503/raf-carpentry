@@ -25,6 +25,7 @@ import {
 import { hm, problemText, whatOf, type Marks, type Sm8 } from './current';
 import { clock } from './sm8-post';
 import { Icon } from './icons';
+import { TimelineTabs } from './client-board';
 import { field, label } from './parts';
 
 /* Job timeline (19 Oct 2026, Raf: 'add Gant chart to jobkit as a separate section where we decide on job start and
@@ -79,6 +80,7 @@ export function JobTimeline({
   focus,
   onRefresh,
   onOpen,
+  onBoard,
   onSave,
   onProgress,
   onComplete,
@@ -89,6 +91,7 @@ export function JobTimeline({
   focus?: string; // a job uuid: open its sheet (from the job screen)
   onRefresh: () => void;
   onOpen: (uuid: string) => void;
+  onBoard: () => void;
   onSave: (job: CurrentJob, changes: Change[]) => Promise<string>;
   onProgress: (uuid: string, progress: number) => void;
   onComplete: (uuid: string) => void;
@@ -125,6 +128,7 @@ export function JobTimeline({
           {loading ? 'Checking…' : 'Refresh'}
         </button>
       </p>
+      <TimelineTabs on="gantt" onGantt={() => {}} onBoard={onBoard} />
       {problem ? (
         <p role="alert" className="mt-3 rounded-sm border border-ink bg-mount px-3 py-2.5 text-[14.5px] leading-relaxed">
           {problem}

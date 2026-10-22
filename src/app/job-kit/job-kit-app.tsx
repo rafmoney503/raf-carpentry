@@ -74,6 +74,8 @@ import type { CurrentJob } from '@/lib/servicem8';
 import { StatsPageView, StatsView, statsLine } from './stats';
 import { setStatsOff } from '@/lib/site-stats';
 import { JobTimeline, TimelineMini } from './job-timeline';
+import { ClientBoard } from './client-board';
+import { boardLine, buildBoard } from '@/lib/client-board';
 import { withoutGreeting } from '@/lib/whatsapp-chat';
 import { addSend, enquiryFromChat, WaChatView, waHomeLine, WaJobBox, WaList, waTodayLines } from './whatsapp';
 import { getWaFile as getWaFileBlob, pickedOf, pickedText, sendToJob, updateChat, useWaChats, waChat, type WaChat } from './wa-store';
@@ -98,13 +100,14 @@ type Screen =
   | { name: 'design'; id: string }
   | { name: 'new-design'; from?: string; wa?: string } // wa: started from a WhatsApp chat's photos
   | { name: 'current' }
-  | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer' | 'timeline' | 'wa' | 'design'; client?: string; chat?: string; design?: string }
+  | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer' | 'timeline' | 'board' | 'wa' | 'design'; client?: string; chat?: string; design?: string }
   | { name: 'enquiry'; client?: string; named?: string; mail?: string; wa?: string } // client: started from a customer's page; named: from a search that found nobody; mail: from an email in the Inbox
   | { name: 'customer'; id: string; from?: 'home' } // one customer from ServiceM8 (customer-view.tsx)
   | { name: 'diary' }
   | { name: 'whatsapp' } // WhatsApp chats brought in (whatsapp.tsx)
   | { name: 'wa-chat'; id: string }
   | { name: 'timeline'; job?: string } // Job timeline, a Gantt chart of the jobs going ahead (job-timeline.tsx); job: open its sheet
+  | { name: 'board' } // the Clients board beside it: every client in the step it has reached (client-board.tsx)
   | { name: 'inbox' } // info@rafcarpentry.com (inbox.tsx)
   | { name: 'email'; id: string; from?: 'home' | 'job'; job?: string } // job: opened from a ServiceM8 job's 'Reply from info@'
   | { name: 'library'; from?: 'designs'; for?: string } // for: a current job (ServiceM8 uuid) to send to
@@ -116,7 +119,7 @@ type Screen =
 function listFor(s: Screen): Screen | null {
   switch (s.name) {
     case 'sm8':
-      return s.from === 'diary' ? { name: 'diary' } : s.from === 'customer' && s.client ? { name: 'customer', id: s.client } : s.from === 'wa' ? { name: 'whatsapp' } : s.from === 'design' ? { name: 'designs' } : { name: 'current' };
+      return s.from === 'diary' ? { name: 'diary' } : s.from === 'board' ? { name: 'board' } : s.from === 'customer' && s.client ? { name: 'customer', id: s.client } : s.from === 'wa' ? { name: 'whatsapp' } : s.from === 'design' ? { name: 'designs' } : { name: 'current' };
     case 'customer':
       return { name: 'current' };
     case 'enquiry':
@@ -140,7 +143,7 @@ function listFor(s: Screen): Screen | null {
   }
 }
 /* Screens that get the whole width on a computer. */
-const ROOMY = ['home', 'timeline', 'library', 'stats', 'stats-page', 'social'];
+const ROOMY = ['home', 'timeline', 'board', 'library', 'stats', 'stats-page', 'social'];
 
 /* Where "‹ Back" goes when the app was reopened straight onto a screen (no history to go back through). */
 const parentOf = (s: Screen): Screen =>
@@ -178,12 +181,14 @@ const parentOf = (s: Screen): Screen =>
         ? { name: 'diary' }
         : s.name === 'sm8' && s.from === 'timeline'
         ? { name: 'timeline' }
+        : s.name === 'sm8' && s.from === 'board'
+        ? { name: 'board' }
         : (s.name === 'sm8' && s.from !== 'home') || s.name === 'enquiry'
           ? { name: 'current' }
           : { name: 'home' };
 const backLabel = (s: Screen) => {
   const p = parentOf(s).name;
-  return p === 'stats' ? 'Stats' : p === 'designs' ? 'Designs' : p === 'design' ? 'Design' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'timeline' ? 'Timeline' : p === 'whatsapp' ? 'WhatsApp' : p === 'wa-chat' ? 'Chat' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : p === 'inbox' ? 'Inbox' : p === 'email' ? 'Email' : 'Today';
+  return p === 'stats' ? 'Stats' : p === 'designs' ? 'Designs' : p === 'design' ? 'Design' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'timeline' ? 'Timeline' : p === 'board' ? 'Board' : p === 'whatsapp' ? 'WhatsApp' : p === 'wa-chat' ? 'Chat' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : p === 'inbox' ? 'Inbox' : p === 'email' ? 'Email' : 'Today';
 };
 
 const thisMonth = () => {
@@ -197,7 +202,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-page', 'kit', 'social'].includes(s.name)) return s;
+    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-page', 'kit', 'social'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -791,7 +796,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
 
   /* Any screen, drawn from its own Screen (the param shadows the current one), so on a computer the list can sit beside
      the screen opened from it (desktop.tsx). */
-  const renderScreen = (screen: Screen): React.ReactNode => {
+  const renderScreen = (screen: Screen, inPane = false): React.ReactNode => {
     const job = screen.name === 'job' || screen.name === 'design' ? jobs.find((j) => j.id === screen.id) : undefined;
     const cur = screen.name === 'sm8' ? findJob(screen.id) : undefined;
     const sendTo = screen.name === 'library' && screen.for ? findJob(screen.for) : undefined;
@@ -836,6 +841,10 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 onTimeline={() => {
                   checkSm8();
                   go({ name: 'timeline' });
+                }}
+                onBoard={() => {
+                  checkSm8();
+                  go({ name: 'board' });
                 }}
                 waChats={waChats}
                 onWhatsApp={() => go({ name: 'whatsapp' })}
@@ -1083,9 +1092,21 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 focus={screen.job}
                 onRefresh={() => checkSm8(true)}
                 onOpen={(id) => go({ name: 'sm8', id, from: 'timeline' })}
+                onBoard={() => go({ name: 'board' })}
                 onSave={saveTimeline}
                 onProgress={(uuid, progress) => mark(uuid, { progress, progressAt: Date.now() })}
                 onComplete={(uuid) => void changeStatus(uuid, 'Completed')}
+              />
+            ) : screen.name === 'board' ? (
+              <ClientBoard
+                sm8={sm8}
+                marks={marks}
+                loading={sm8Loading}
+                wide={wide && !inPane}
+                onRefresh={() => checkSm8(true)}
+                onOpen={(id) => go({ name: 'sm8', id, from: 'board' })}
+                onClose={(uuid, closed) => mark(uuid, { hidden: closed })}
+                onGantt={() => go({ name: 'timeline' })}
               />
             ) : screen.name === 'whatsapp' ? (
               <WaList chats={waChats} onOpen={(id) => go({ name: 'wa-chat', id })} />
@@ -1322,7 +1343,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   const picked = 'id' in screen ? screen.id : 'slug' in screen ? screen.slug : '';
   const roomy = wide && ROOMY.includes(screen.name);
   const sideGo = (id: SideId) => {
-    if (id === 'current' || id === 'diary' || id === 'timeline') checkSm8();
+    if (id === 'current' || id === 'diary' || id === 'timeline' || id === 'board') checkSm8();
     if (id === 'inbox') checkInbox();
     if (id === 'designs' || id === 'library') checkDesigns();
     if (id === 'social') checkSocial();
@@ -1347,7 +1368,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
       {wide ? <Sidebar active={sideOf(screen.name, 'from' in screen ? screen.from : undefined)} counts={sideCounts} onGo={sideGo} /> : null}
       {wide && left ? (
         <section className="jk-listpane" aria-label="List">
-          {ready ? renderScreen(left) : null}
+          {ready ? renderScreen(left, true) : null}
           {/* the one open beside it, picked out in the list */}
           {picked ? <style>{`.jk-listpane [data-jk-id=${JSON.stringify(picked)}]{box-shadow:inset 4px 0 0 var(--sec-mark,var(--sec));background-color:color-mix(in srgb,var(--sec) 12%,var(--color-mount))!important;border-color:var(--sec)!important}`}</style> : null}
         </section>
@@ -1524,6 +1545,7 @@ function Home({
   onCurrent,
   onDiary,
   onTimeline,
+  onBoard,
   waChats,
   onWhatsApp,
   social,
@@ -1559,6 +1581,7 @@ function Home({
   onCurrent: () => void;
   onDiary: () => void;
   onTimeline: () => void;
+  onBoard: () => void;
   waChats: WaChat[];
   onWhatsApp: () => void;
   social: Social;
@@ -1682,6 +1705,9 @@ function Home({
 
       <HomeBand sec="timeline" icon="gantt" label="Job timeline" right={goingAhead ? `${goingAhead} going ahead` : undefined}>
         <TimelineMini sm8={sm8} marks={marks} onOpen={onTimeline} />
+        <div className="border-t border-line px-4">
+          <HomeRow onClick={onBoard} title="Clients board" line={sm8.at ? boardLine(buildBoard(sm8.jobs, sm8.bookings, marks)) : 'Every client from ServiceM8, step by step'} truncate last />
+        </div>
       </HomeBand>
 
       <HomeBand sec="designs" icon="designs" label="Designs in 3D" right={libraryCount ? `${libraryCount} in the library` : undefined}>

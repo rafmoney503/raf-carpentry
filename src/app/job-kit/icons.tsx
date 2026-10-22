@@ -1,7 +1,7 @@
 /* Small line icons for the Job Kit's sections, drawn like the site's sketches (round ends, one weight), so each
    card on the Today screen and each line in the Today list shows where it goes. Decorative: the text says it. */
 
-export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social';
+export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board';
 
 const PATHS: Record<IconName, React.ReactNode> = {
   // a heart in a speech bubble: Instagram and Facebook, their followers and comments
@@ -25,6 +25,19 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M3.5 6.5A1.5 1.5 0 0 1 5 5h10a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 15 14H9l-3.6 3v-3H5a1.5 1.5 0 0 1-1.5-1.5z" />
       <path d="M16.5 9H19a1.5 1.5 0 0 1 1.5 1.5v6A1.5 1.5 0 0 1 19 18h-.4v3L15 18h-3.5a1.5 1.5 0 0 1-1.5-1.5V14" />
       <path d="M7 8.5h6M7 11h4" />
+    </>
+  ),
+  // the clients board: three columns with cards in them, fewer as they move right
+  board: (
+    <>
+      <rect x="3" y="4" width="18" height="16.5" rx="1.5" />
+      <path d="M9 4v16.5M15 4v16.5" />
+      <rect x="4.6" y="6.3" width="2.8" height="2.6" rx="0.4" />
+      <rect x="4.6" y="10.4" width="2.8" height="2.6" rx="0.4" />
+      <rect x="4.6" y="14.5" width="2.8" height="2.6" rx="0.4" />
+      <rect x="10.6" y="6.3" width="2.8" height="2.6" rx="0.4" />
+      <rect x="10.6" y="10.4" width="2.8" height="2.6" rx="0.4" />
+      <rect x="16.6" y="6.3" width="2.8" height="2.6" rx="0.4" />
     </>
   ),
   // the job timeline: three bars stepping across a chart, a today line through them

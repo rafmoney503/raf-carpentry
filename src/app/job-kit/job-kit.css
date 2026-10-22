@@ -173,6 +173,19 @@
 .jk-step:disabled { opacity: 0.55; }
 
 /* Today: two weeks of the timeline in a grid, a column per day */
+/* Clients board (client-board.tsx): six steps per card, and on a computer the steps as columns side by side. */
+.jk-steps { display: flex; gap: 3px; }
+.jk-steps > span { flex: 1; height: 5px; border-radius: 1px; background: var(--color-line-strong); }
+.jk-steps > span.on { background: var(--sec-mark, var(--sec)); }
+/* The Clients board's six steps: one row of six where there's room, else two rows of three (getting the job,
+   then going ahead), so nothing hides off the side. */
+.jk-board-wrap { container-type: inline-size; }
+.jk-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px 12px; align-items: start; }
+@container (min-width: 1060px) {
+  .jk-board { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+.jk-board-col { min-width: 0; }
+.jk-board-head { border-top: 3px solid var(--sec-mark, var(--sec)); padding: 8px 2px 10px; }
 .jk-mini { display: grid; grid-template-columns: minmax(58px, 26%) repeat(14, minmax(0, 1fr)); row-gap: 5px; align-items: center; }
 .jk-mini-wk { font-family: var(--font-mono); font-size: 10.5px; color: var(--color-faint); border-left: 1px solid var(--color-line-strong); padding-left: 4px; line-height: 1.2; }
 .jk-mini-d { font-family: var(--font-mono); font-size: 10.5px; line-height: 18px; text-align: center; color: var(--color-faint); }

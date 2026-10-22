@@ -25,7 +25,7 @@ export const useWide = () =>
   );
 
 /* The places in the sidebar, in their sections. */
-export type SideId = 'home' | 'diary' | 'current' | 'inbox' | 'whatsapp' | 'timeline' | 'designs' | 'library' | 'stats' | 'kit' | 'posts' | 'social' | 'settings';
+export type SideId = 'home' | 'diary' | 'current' | 'inbox' | 'whatsapp' | 'timeline' | 'board' | 'designs' | 'library' | 'stats' | 'kit' | 'posts' | 'social' | 'settings';
 const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string; icon?: IconName }[] }[] = [
   { sec: 'todo', items: [{ id: 'home', title: 'Today' }] },
   {
@@ -38,7 +38,14 @@ const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string;
     ],
   },
   { sec: 'whatsapp', label: 'WhatsApp', items: [{ id: 'whatsapp', title: 'WhatsApp chats', icon: 'chat' }] },
-  { sec: 'timeline', label: 'Job timeline', items: [{ id: 'timeline', title: 'Timeline', icon: 'gantt' }] },
+  {
+    sec: 'timeline',
+    label: 'Job timeline',
+    items: [
+      { id: 'timeline', title: 'Gantt chart', icon: 'gantt' },
+      { id: 'board', title: 'Clients board', icon: 'board' },
+    ],
+  },
   {
     sec: 'designs',
     label: 'Designs in 3D',
@@ -63,6 +70,7 @@ const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string;
 export function sideOf(name: string, from?: string): SideId | undefined {
   if (name === 'home') return 'home';
   if (name === 'diary' || (name === 'sm8' && from === 'diary')) return 'diary';
+  if (name === 'board' || (name === 'sm8' && from === 'board')) return 'board';
   if (['current', 'sm8', 'customer', 'enquiry'].includes(name)) return 'current';
   if (name === 'inbox' || name === 'email') return 'inbox';
   if (name === 'whatsapp' || name === 'wa-chat') return 'whatsapp';

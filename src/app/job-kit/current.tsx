@@ -12,7 +12,7 @@ import { clock, post, problemText } from './sm8-post';
 import { EmailBox } from './mail';
 import { PropertyBox } from './property-box';
 import { CustomerSearch, indexClients, personName, SameCustomer, type Client, type Clients } from './customers';
-import { rowOf, rowWords, spanWords, timelineRows } from '@/lib/job-timeline';
+import { daysBetween, rowOf, rowWords, spanWords, timelineRows, todayKey } from '@/lib/job-timeline';
 
 export { problemText };
 
@@ -106,8 +106,10 @@ export const sendCancel = (pin: string, uuid: string) => post<{ ok: true }>(pin,
 const parse = (s: string | null) => (s ? Date.parse(s) : NaN);
 const DAY = 864e5;
 const day = (t: number) => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+/* Calendar days since, as Raf counts them (and as the Clients board does): sent on the 15th is 7 days ago on the 22nd. */
+const daysSince = (t: number) => Math.max(0, daysBetween(new Date(t).toLocaleDateString('sv-SE'), todayKey()));
 const ago = (t: number) => {
-  const d = Math.floor((Date.now() - t) / DAY);
+  const d = daysSince(t);
   return d <= 0 ? 'today' : d === 1 ? 'yesterday' : `${d} days ago`;
 };
 
@@ -137,7 +139,7 @@ export function stage(j: CurrentJob, m: Marks): Stage {
   if (j.status === 'Unsuccessful') return 'lost';
   const sent = quoteSentAt(j, m);
   if (!sent) return 'new';
-  return Date.now() - sent >= FOLLOW_UP_DAYS * DAY ? 'follow' : 'sent';
+  return daysSince(sent) >= FOLLOW_UP_DAYS ? 'follow' : 'sent';
 }
 /* Unsuccessful in the last 30 days, kept apart (folded away) so one can be brought back. */
 const lostAt = (j: CurrentJob) => parse(j.lost);

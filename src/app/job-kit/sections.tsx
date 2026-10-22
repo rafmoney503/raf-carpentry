@@ -21,7 +21,7 @@ export const SECTIONS: { id: SecId; name: string; what: string }[] = [
   { id: 'todo', name: 'To do', what: 'What needs doing now.' },
   { id: 'customers', name: 'Customers', what: 'Diary, Current jobs, Inbox, emails and texts.' },
   { id: 'whatsapp', name: 'WhatsApp', what: 'Chats brought in, sent to ServiceM8 with their photos.' },
-  { id: 'timeline', name: 'Job timeline', what: 'Start, finish and progress of each job.' },
+  { id: 'timeline', name: 'Job timeline', what: 'Gantt chart and the clients board.' },
   { id: 'designs', name: 'Designs in 3D', what: 'Designs for customers and the Design library.' },
   { id: 'website', name: 'Website', what: 'Website stats and page heatmaps.' },
   { id: 'photos', name: 'Photos and posts', what: 'Job Kit jobs, posts and social media.' },
@@ -31,7 +31,7 @@ export const SECTIONS: { id: SecId; name: string; what: string }[] = [
 export function secOfScreen(name: string): SecId | undefined {
   if (['diary', 'current', 'sm8', 'enquiry', 'customer', 'inbox', 'email'].includes(name)) return 'customers';
   if (['designs', 'design', 'new-design', 'library'].includes(name)) return 'designs';
-  if (name === 'timeline') return 'timeline';
+  if (name === 'timeline' || name === 'board') return 'timeline';
   if (name === 'whatsapp' || name === 'wa-chat') return 'whatsapp';
   if (['stats', 'stats-page'].includes(name)) return 'website';
   if (['posts', 'post', 'job', 'new', 'kit', 'social'].includes(name)) return 'photos';
