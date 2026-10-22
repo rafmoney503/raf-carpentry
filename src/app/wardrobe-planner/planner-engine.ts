@@ -47,7 +47,11 @@ const CFG={
     {k:'chalk',n:'Chalk',c:'#E6E0D3'},{k:'white',n:'Soft white',c:'#F1F0EA'},{k:'sage',n:'Sage',c:'#8C9C82'},
     {k:'pebble',n:'Pebble grey',c:'#A5A59D'},{k:'ink',n:'Inky blue',c:'#34465E'},{k:'green',n:'Deep green',c:'#3F5546'},
     {k:'clay',n:'Clay pink',c:'#C9A497'},{k:'charcoal',n:'Charcoal',c:'#3A3B3C'},{k:'mdf',n:'Unpainted MDF',c:'#B89C79'}],
-  phone:'07792 860221', email:'info@rafcarpentry.com'
+  phone:'07792 860221', email:'info@rafcarpentry.com',
+  // 'Get the cut list' on the Send step is switched off for customers while Raf tests it (22 Oct 2026, Raf: 'make it
+  // in progress now and disable until we do all the test'). It still shows on previews and locally, and on the live
+  // site with ?cutlist=test (remembered for the visit). true = everyone sees it again.
+  cutlistLive:false
 };
 /* ========================================================== */
 
@@ -660,7 +664,13 @@ function stepSend(){
    their email and the design and has CabinetOS email the cut list straight away (parts, edge banding, boards,
    hardware, the spreadsheet, a link to open it in CabinetOS); the tap is counted in the website stats (goal
    'cutlist', by the button's words). */
-function cutBox(){const K=S.cut;
+const cutTest=(()=>{let on=location.hostname!=='www.rafcarpentry.com';
+  try{if(/[?&]cutlist=test\b/.test(location.search))sessionStorage.setItem('raf_wp_cutlist_test','1');if(sessionStorage.getItem('raf_wp_cutlist_test')==='1')on=true;}catch(_){if(/[?&]cutlist=test\b/.test(location.search))on=true;}
+  return on;})();
+function cutBox(){const K=S.cut;if(!CFG.cutlistLive&&!cutTest)return'';
+  const flag=CFG.cutlistLive?'':'<p class="priv cuttest">Testing: customers don\'t see this box yet.</p>';
+  return cutBoxInner(K).replace('<h3>Building it yourself?</h3>','<h3>Building it yourself?</h3>'+flag);}
+function cutBoxInner(K){
   if(K.sent){const what=K.mailed?`Sent to ${esc(K.sent)}${K.parts?`: ${K.parts} parts on ${K.boards} ${K.boards===1?'board':'boards'}`:''}.`:`Thanks. I'll email the cut list for this design to ${esc(K.sent)} shortly.`;
     const more=K.mailed?'It should be in your inbox in a minute (check the junk folder too), with a spreadsheet for your cutting company. Change the design and ask again any time.':'Change the design and ask again any time.';
     return `<div class="cutbox" id="cutBox"><h3>Building it yourself?</h3><p class="okline">${TICK}${what}</p><p class="priv">${more}</p></div>`;}
