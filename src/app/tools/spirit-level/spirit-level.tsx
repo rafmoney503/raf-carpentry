@@ -1,16 +1,21 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   bubbleReach,
+  closeness,
   edgeTilt,
-  edgeWords,
   flatTilt,
-  flatWords,
   fmtDeg,
   isLevel,
+  LEN_MAX,
+  LEN_MIN,
+  levelWords,
   nearestAxis,
   norm,
+  readLength,
   screenAxis,
+  toneGap,
   toScreen,
   upFromAngles,
   wrap180,
@@ -18,6 +23,7 @@ import {
   type Mode,
   type Vec,
 } from '@/lib/level-math';
+import { addReading, lastPlace, placesOf, setLastPlace, updateReading, useReadings, type Reading as Saved } from '@/lib/readings';
 import './spirit-level.css';
 
 /* The phone spirit level (Raf, 17 Oct 2026: 'phones have different buttons it is difficult to make it level so ...
@@ -25,26 +31,36 @@ import './spirit-level.css';
    Start asks for the motion sensor (iPhone asks on a tap), then the level fills the screen. It works out by itself
    whether the phone is on its edge or lying flat. Set zero: read from this surface from now on. Flip check: two
    readings, end for end, give the phone's own error on that edge, taken off every reading and remembered on this
-   phone. Hold freezes the reading, Beep sounds once each time it comes level. The sums are in src/lib/level-math.ts. */
+   phone. Hold freezes the reading. The sums are in src/lib/level-math.ts.
+   Version 2 (22 Oct 2026, from the 'Digital tools for the Tools page' canvas, Version 2 page): the reading sits on a
+   dark instrument panel; Tone beeps faster as it nears level and chirps at level; Speak says the mm out loud once the
+   reading settles; Big numbers drops the vial for a reading you can see from a step away; a fifth length chip takes
+   your own length; Save keeps the reading (from just before the tap, so the tap's wobble isn't in it) in Your readings
+   (src/lib/readings.ts, /tools/readings), with a name and a place. */
 
 type Phase = 'idle' | 'asking' | 'running' | 'denied' | 'nosensor';
 type Tare = { mode: 'edge'; axis: Axis; t0: number } | { mode: 'flat'; x0: number; y0: number };
 type Bias = { edge: Partial<Record<Axis, number>>; flat: { x: number; y: number } | null };
 type Shown = {
   mode: Mode;
-  deg: number; // the big number: edge tilt, or lying flat the tilt either way
+  deg: number; // the big number: edge tilt (signed), or lying flat the tilt either way
   x: number; // lying flat, on the screen: right side up positive
   y: number; // lying flat, on the screen: far end up positive
   turned: boolean; // on an edge the screen hasn't turned with the phone (rotation lock)
   faceDown: boolean;
+  axis: Axis; // on an edge, which edge is down (for the flip check line)
 };
 type Flip = { mode: 'edge'; axis: Axis; first: number } | { mode: 'flat'; first: { x: number; y: number } };
 
 const LENGTHS = [600, 900, 1200, 2400];
 const BIAS_KEY = 'raf_level_bias';
-const BEEP_KEY = 'raf_level_beep';
+const TONE_KEY = 'raf_level_beep'; // was Beep (once at level); Tone keeps the same on / off
+const SPEAK_KEY = 'raf_level_speak';
+const BIG_KEY = 'raf_level_big';
 const LEN_KEY = 'raf_level_len';
+const OWN_KEY = 'raf_level_own';
 const TAU = 0.18; // seconds, smoothing
+const SAVE_BACK = 250; // ms: Save keeps the reading from just before the tap
 
 function readStore<T>(key: string, fallback: T): T {
   try {
@@ -71,6 +87,12 @@ function screenAngle() {
 
 const EDGE_NAME: Record<Axis, string> = { 'y+': 'bottom edge', 'y-': 'top edge', 'x+': 'left edge', 'x-': 'right edge' };
 
+const levelOf = (s: Shown) => !s.faceDown && (s.mode === 'edge' ? isLevel(s.deg) : isLevel(s.x) && isLevel(s.y));
+const offOf = (s: Shown) => Math.abs(s.deg);
+// On screen a number keeps its mm on the same line.
+const keep = (t: string) => t.replace(/(\d) (mm|m)\b/g, '$1\u00a0$2');
+const wordsOf = (s: Shown, len: number, tare: Tare | null) => levelWords(s.mode, s.mode === 'edge' ? s.deg : s.x, s.y, len, !!tare && tare.mode === s.mode);
+
 export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [shown, setShown] = useState<Shown | null>(null);
@@ -78,11 +100,17 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
   const [tare, setTare] = useState<Tare | null>(null);
   const [bias, setBias] = useState<Bias>({ edge: {}, flat: null });
   const [len, setLen] = useState(600);
-  const [beep, setBeep] = useState(true);
+  const [own, setOwn] = useState<number | null>(null);
+  const [tone, setTone] = useState(true);
+  const [speak, setSpeak] = useState(false);
+  const [canSpeak, setCanSpeak] = useState(false);
+  const [big, setBig] = useState(false);
+  const [said, setSaid] = useState('');
   const [busy, setBusy] = useState<'zero' | 'flip' | null>(null);
   const [flip, setFlip] = useState<Flip | null>(null);
   const [note, setNote] = useState('');
   const [computer, setComputer] = useState(false);
+  const [justSaved, setJustSaved] = useState<Saved | null>(null);
 
   const raw = useRef<Vec | null>(null);
   const filt = useRef<Vec | null>(null);
@@ -92,18 +120,48 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
   const axisRef = useRef<Axis>('y+');
   const audio = useRef<AudioContext | null>(null);
   const armed = useRef(true);
+  const lastTick = useRef(0);
+  const sayCand = useRef({ text: '', since: 0 });
+  const spoke = useRef({ text: '', at: 0 });
+  const voice = useRef<SpeechSynthesisVoice | null>(null);
+  const recent = useRef<{ t: number; s: Shown }[]>([]);
   const wake = useRef<{ release: () => Promise<void> } | null>(null);
-  const live = useRef({ tare, bias, beep, held, busy });
-  live.current = { tare, bias, beep, held, busy };
+  const live = useRef({ tare, bias, tone, speak, len, held, busy });
+  useEffect(() => {
+    live.current = { tare, bias, tone, speak, len, held, busy };
+  });
 
   // Settings kept on this phone
   useEffect(() => {
     setBias(readStore<Bias>(BIAS_KEY, { edge: {}, flat: null }));
-    setBeep(readStore<boolean>(BEEP_KEY, true));
+    setTone(readStore<boolean>(TONE_KEY, true));
+    setBig(readStore<boolean>(BIG_KEY, false));
+    const o = readStore<number | null>(OWN_KEY, null);
+    const okLen = (v: unknown): v is number => typeof v === 'number' && v >= LEN_MIN && v <= LEN_MAX;
+    const ownLen = okLen(o) ? o : null;
     const l = readStore<number>(LEN_KEY, 600);
-    if (LENGTHS.includes(l)) setLen(l);
+    if (LENGTHS.includes(l) || l === ownLen) setLen(l);
+    else if (okLen(l)) {
+      setLen(l);
+      setOwn(l);
+    }
+    if (ownLen) setOwn(ownLen);
+    const speech = typeof window.speechSynthesis !== 'undefined' && typeof window.SpeechSynthesisUtterance !== 'undefined';
+    setCanSpeak(speech);
+    setSpeak(speech && readStore<boolean>(SPEAK_KEY, false));
     // A computer: no touch screen, or a mouse as the main pointer. Phones and tablets get no QR code.
     setComputer(navigator.maxTouchPoints === 0 || window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+    if (!speech) return;
+    const pick = () => {
+      const vs = window.speechSynthesis.getVoices();
+      voice.current = vs.find((v) => v.lang === 'en-GB' && v.localService) ?? vs.find((v) => v.lang?.startsWith('en-GB')) ?? null;
+    };
+    pick();
+    window.speechSynthesis.addEventListener?.('voiceschanged', pick);
+    return () => {
+      window.speechSynthesis.removeEventListener?.('voiceschanged', pick);
+      window.speechSynthesis.cancel();
+    };
   }, []);
 
   const onOrient = useCallback((e: DeviceOrientationEvent) => {
@@ -122,7 +180,73 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
     samples.current?.push(u);
   }, []);
 
-  // Works out what to show from the smoothed reading, once a frame.
+  const tick = useCallback(() => {
+    const ctx = audio.current;
+    if (!ctx) return;
+    try {
+      if (ctx.state === 'suspended') ctx.resume();
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = 880;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.16, t + 0.006);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.045);
+      o.connect(g).connect(ctx.destination);
+      o.start(t);
+      o.stop(t + 0.05);
+    } catch {
+      /* no sound */
+    }
+  }, []);
+
+  const chirp = useCallback(() => {
+    const ctx = audio.current;
+    try {
+      (navigator as Navigator & { vibrate?: (p: number) => boolean }).vibrate?.(25);
+    } catch {
+      /* no vibration */
+    }
+    if (!ctx) return;
+    try {
+      if (ctx.state === 'suspended') ctx.resume();
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = 1320;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.25, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+      o.connect(g).connect(ctx.destination);
+      o.start(t);
+      o.stop(t + 0.15);
+    } catch {
+      /* no sound */
+    }
+  }, []);
+
+  const sayNow = useCallback((text: string, quiet = false) => {
+    try {
+      const synth = window.speechSynthesis;
+      synth.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-GB';
+      u.rate = 1.05;
+      if (quiet) u.volume = 0;
+      if (voice.current) u.voice = voice.current;
+      synth.speak(u);
+      if (!quiet) {
+        spoke.current = { text, at: performance.now() };
+        setSaid(text);
+      }
+    } catch {
+      /* no voice */
+    }
+  }, []);
+
+  // Works out what to show from the smoothed reading, once a frame; Tone and Speak follow it.
   useEffect(() => {
     if (phase !== 'running') return;
     let raf = 0;
@@ -130,7 +254,7 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
       raf = requestAnimationFrame(frame);
       const u = filt.current;
       if (!u) return;
-      const { tare: tr, bias: bs, beep: bp, held: hd, busy: by } = live.current;
+      const { tare: tr, bias: bs, tone: tn, speak: sp, len: ln, held: hd, busy: by } = live.current;
       const az = Math.abs(u.z);
       if (modeRef.current === 'edge' && az > 0.77) modeRef.current = 'flat';
       else if (modeRef.current === 'flat' && az < 0.64) modeRef.current = 'edge';
@@ -142,26 +266,44 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
         axisRef.current = axis;
         const t = edgeTilt(u, axis);
         const deg = tr?.mode === 'edge' ? wrap180(t - tr.t0) : t - (bs.edge[axis] ?? 0);
-        s = { mode, deg, x: 0, y: 0, turned: axis !== screenAxis(angle), faceDown: false };
+        s = { mode, deg, x: 0, y: 0, turned: axis !== screenAxis(angle), faceDown: false, axis };
       } else {
         const f = flatTilt(u);
         const b = tr?.mode === 'flat' ? { x: tr.x0, y: tr.y0 } : bs.flat ?? { x: 0, y: 0 };
         const p = toScreen(f.x - b.x, f.y - b.y, angle);
-        s = { mode, deg: Math.hypot(p.x, p.y), x: p.x, y: p.y, turned: false, faceDown: u.z < 0 };
+        s = { mode, deg: Math.hypot(p.x, p.y), x: p.x, y: p.y, turned: false, faceDown: u.z < 0, axis: axisRef.current };
       }
       setShown(s);
-      // Beep once each time it comes level; ready again once it has moved 0.15 off.
-      if (!hd && !by && !s.faceDown) {
-        const lv = mode === 'edge' ? isLevel(s.deg) : isLevel(s.x) && isLevel(s.y);
-        if (lv && armed.current) {
-          armed.current = false;
-          if (bp) chirp();
-        } else if (!lv && s.deg > 0.15) armed.current = true;
+      const now = performance.now();
+      const rec = recent.current;
+      rec.push({ t: now, s });
+      while (rec.length && now - rec[0].t > 1500) rec.shift();
+      if (hd || by || s.faceDown) return;
+      // Tone: a chirp each time it comes level, ready again once it has moved 0.15 off; quicker beeps on the way in.
+      const lv = levelOf(s);
+      const off = offOf(s);
+      if (lv && armed.current) {
+        armed.current = false;
+        if (tn) chirp();
+      } else if (!lv && off > 0.15) armed.current = true;
+      if (tn && !lv && armed.current) {
+        const gap = toneGap(off);
+        if (gap !== null && now - lastTick.current >= gap) {
+          lastTick.current = now;
+          tick();
+        }
+      }
+      // Speak: once the words have stayed the same for a moment, and not the same words twice running.
+      if (sp) {
+        const say = wordsOf(s, ln, tr).say;
+        const c = sayCand.current;
+        if (c.text !== say) sayCand.current = { text: say, since: now };
+        else if (now - c.since > 650 && say !== spoke.current.text && now - spoke.current.at > 1400) sayNow(say);
       }
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [phase]);
+  }, [phase, chirp, tick, sayNow]);
 
   // Keep the screen on while the level is open
   useEffect(() => {
@@ -192,34 +334,8 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
 
   useEffect(() => () => window.removeEventListener('deviceorientation', onOrient), [onOrient]);
 
-  function chirp() {
-    const ctx = audio.current;
-    try {
-      (navigator as Navigator & { vibrate?: (p: number) => boolean }).vibrate?.(25);
-    } catch {
-      /* no vibration */
-    }
-    if (!ctx) return;
-    try {
-      if (ctx.state === 'suspended') ctx.resume();
-      const t = ctx.currentTime;
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = 'sine';
-      o.frequency.value = 1320;
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.25, t + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
-      o.connect(g).connect(ctx.destination);
-      o.start(t);
-      o.stop(t + 0.15);
-    } catch {
-      /* no sound */
-    }
-  }
-
   async function start() {
-    // The sound and the motion permission both have to start inside the tap.
+    // The sound, the voice and the motion permission all have to start inside the tap.
     try {
       const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (AC && !audio.current) audio.current = new AC();
@@ -227,6 +343,7 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
     } catch {
       /* no sound */
     }
+    if (speak) sayNow(' ', true);
     const DOE = typeof window !== 'undefined' ? (window as unknown as { DeviceOrientationEvent?: { requestPermission?: () => Promise<string> } }).DeviceOrientationEvent : undefined;
     if (!DOE) {
       setPhase('nosensor');
@@ -247,6 +364,8 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
     }
     filt.current = null;
     raw.current = null;
+    recent.current = [];
+    spoke.current = { text: '', at: 0 };
     window.addEventListener('deviceorientation', onOrient);
     setPhase('running');
     setNote('');
@@ -261,11 +380,18 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
 
   function close() {
     window.removeEventListener('deviceorientation', onOrient);
+    try {
+      window.speechSynthesis?.cancel();
+    } catch {
+      /* no voice */
+    }
     setPhase('idle');
     setShown(null);
     setHeld(null);
     setFlip(null);
     setBusy(null);
+    setJustSaved(null);
+    setSaid('');
   }
 
   // Waits for the tap's wobble to pass, then averages the phone for a moment.
@@ -360,11 +486,68 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
     setLen(l);
     writeStore(LEN_KEY, l);
   };
-  const toggleBeep = () => {
-    setBeep(!beep);
-    writeStore(BEEP_KEY, !beep);
-    audio.current?.resume().catch(() => {});
+  const chooseOwn = (l: number) => {
+    setOwn(l);
+    writeStore(OWN_KEY, l);
+    pickLen(l);
   };
+  const toggleTone = () => {
+    setTone(!tone);
+    writeStore(TONE_KEY, !tone);
+    audio.current?.resume().catch(() => {});
+    if (!tone) armed.current = true;
+  };
+  const toggleSpeak = () => {
+    const on = !speak;
+    setSpeak(on);
+    writeStore(SPEAK_KEY, on);
+    if (on) {
+      // Said inside the tap, which is what lets an iPhone talk from then on.
+      sayNow('Speaking the readings');
+      sayCand.current = { text: '', since: 0 };
+    } else {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        /* no voice */
+      }
+      setSaid('');
+    }
+  };
+  const toggleBig = () => {
+    setBig(!big);
+    writeStore(BIG_KEY, !big);
+  };
+
+  function save() {
+    // The held reading, or the one from just before the tap.
+    let snap = held;
+    if (!snap) {
+      const rec = recent.current;
+      const target = performance.now() - SAVE_BACK;
+      snap = rec.length ? rec[rec.length - 1].s : shown;
+      for (let i = rec.length - 1; i >= 0; i--) {
+        if (rec[i].t <= target) {
+          snap = rec[i].s;
+          break;
+        }
+      }
+    }
+    if (!snap || snap.faceDown) return;
+    const w = wordsOf(snap, len, tare);
+    const r = addReading({
+      tool: 'level',
+      value: fmtDeg(snap.deg),
+      detail: w.detail,
+      label: '',
+      place: lastPlace(),
+      mode: snap.mode,
+      deg: Math.round(snap.deg * 100) / 100,
+      len,
+    });
+    setJustSaved(r);
+  }
+  const closeSaved = useCallback(() => setJustSaved(null), []);
 
   const s = held ?? shown;
   const open = phase === 'running';
@@ -376,7 +559,7 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
         <div className="lv-app" role="dialog" aria-modal="true" aria-label="Spirit level">
           <div className="lv-top">
             <p className="lv-title">Spirit level</p>
-            <p className="lv-mode">{s ? (s.mode === 'edge' ? 'On its edge' : 'Lying flat') : 'Starting'}</p>
+            <ReadingsLink />
             <button type="button" className="lv-done" onClick={close}>
               Done
             </button>
@@ -385,15 +568,20 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
             <Reading
               s={s}
               len={len}
+              own={own}
               tare={tare}
               bias={bias}
-              axis={axisRef.current}
               held={!!held}
               busy={busy}
               flip={flip}
               note={note}
-              beep={beep}
+              tone={tone}
+              speak={speak}
+              canSpeak={canSpeak}
+              big={big}
+              said={said}
               onLen={pickLen}
+              onOwn={chooseOwn}
               onZero={setZero}
               onClearZero={() => setTare(null)}
               onClearBias={clearBias}
@@ -403,54 +591,101 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
                 setFlip(null);
                 setNote('');
               }}
-              onBeep={toggleBeep}
+              onTone={toggleTone}
+              onSpeak={toggleSpeak}
+              onBig={toggleBig}
+              onSave={save}
             />
           ) : (
             <p className="lv-wait">Getting the first reading...</p>
           )}
+          {justSaved ? <SaveSheet key={justSaved.id} r={justSaved} onDone={closeSaved} /> : null}
         </div>
       ) : null}
     </>
   );
 }
 
+function ReadingsLink() {
+  const list = useReadings();
+  return (
+    <Link href="/tools/readings" className="lv-saved" aria-label={`Your readings: ${list.length} saved`}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M6 3h12v18l-6-4-6 4z" />
+      </svg>
+      <span>{list.length}</span>
+    </Link>
+  );
+}
+
+const ICONS = {
+  level: 'M5 12.5l4.5 4.5L19 7',
+  up: 'M12 19V5M6 11l6-6 6 6',
+  angle: 'M4 20h16M4 20L18 6M11 20a7 7 0 0 0-2-5',
+};
+
 function Reading(p: {
   s: Shown;
   len: number;
+  own: number | null;
   tare: Tare | null;
   bias: Bias;
-  axis: Axis;
   held: boolean;
   busy: 'zero' | 'flip' | null;
   flip: Flip | null;
   note: string;
-  beep: boolean;
+  tone: boolean;
+  speak: boolean;
+  canSpeak: boolean;
+  big: boolean;
+  said: string;
   onLen: (l: number) => void;
+  onOwn: (l: number) => void;
   onZero: () => void;
   onClearZero: () => void;
   onClearBias: () => void;
   onHold: () => void;
   onFlip: () => void;
   onCancelFlip: () => void;
-  onBeep: () => void;
+  onTone: () => void;
+  onSpeak: () => void;
+  onBig: () => void;
+  onSave: () => void;
 }) {
   const { s, len, tare } = p;
   const fromZero = !!tare && tare.mode === s.mode;
-  const words = s.mode === 'edge' ? edgeWords(s.deg, len, fromZero) : flatWords(s.x, s.y, len, fromZero);
-  const level = !s.faceDown && (s.mode === 'edge' ? isLevel(s.deg) : isLevel(s.x) && isLevel(s.y));
-  const biasNow = s.mode === 'edge' ? p.bias.edge[p.axis] : p.bias.flat ? Math.hypot(p.bias.flat.x, p.bias.flat.y) : undefined;
+  const words = wordsOf(s, len, tare);
+  const level = levelOf(s);
+  const biasNow = s.mode === 'edge' ? p.bias.edge[s.axis] : p.bias.flat ? Math.hypot(p.bias.flat.x, p.bias.flat.y) : undefined;
+  const [editLen, setEditLen] = useState(false);
 
   let status: { text: string; clear?: () => void; tone: 'zero' | 'bias' | 'plain' };
   if (fromZero) status = { text: 'Reading from your zero', clear: p.onClearZero, tone: 'zero' };
   else if (biasNow !== undefined) status = { text: `Flip checked: ${Math.abs(biasNow).toFixed(1)}° phone error taken off`, clear: p.onClearBias, tone: 'bias' };
   else status = { text: 'Straight from the phone. Phones are often a little out: Set zero or Flip check.', tone: 'plain' };
 
+  const lit = !p.tone ? 0 : level ? 5 : Math.max(1, Math.round(closeness(offOf(s)) * 5));
   const flipping = !!p.flip;
+  const ownOn = p.own !== null && p.len === p.own;
   return (
     <div className="lv-body">
-      <div className="lv-view">
-        {s.mode === 'edge' ? <EdgeVial deg={s.deg} /> : <FlatVial x={s.x} y={s.y} />}
-        <p className={`lv-read${level && !s.faceDown ? ' on' : ''}`} aria-live="off">
+      <section className={`lv-panel${p.big ? ' lv-big' : ''}${s.mode === 'flat' ? ' lv-flat' : ''}`} aria-label="The reading">
+        <span className="lv-corner tl" aria-hidden="true" />
+        <span className="lv-corner tr" aria-hidden="true" />
+        <span className="lv-corner bl" aria-hidden="true" />
+        <span className="lv-corner br" aria-hidden="true" />
+        <div className="lv-ph">
+          <span>
+            {s.mode === 'edge' ? 'On its edge' : 'Lying flat'}
+            {fromZero ? ' · from your zero' : ''}
+          </span>
+          <span className={`lv-live${p.held ? ' held' : ''}`}>
+            <span className="lv-dot" aria-hidden="true" />
+            {p.held ? 'Held' : 'Live'}
+          </span>
+        </div>
+        {p.big ? null : s.mode === 'edge' ? <EdgeVial deg={s.deg} /> : <FlatVial x={s.x} y={s.y} />}
+        <p className={`lv-read${level ? ' on' : ''}`} aria-live="off">
           <span className="lv-num">{s.faceDown ? '–' : fmtDeg(s.deg)}</span>
           <span className={`lv-tick${level ? ' on' : ''}`} aria-hidden="true">
             <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -458,20 +693,83 @@ function Reading(p: {
             </svg>
           </span>
         </p>
-        <p className={`lv-dir${level ? ' on' : ''}`}>{s.faceDown ? 'Turn the phone face up' : words.dir}</p>
-        <p className="lv-fix">{(!s.faceDown && words.fix) || ' '}</p>
+        <p className={`lv-dir${level ? ' on' : ''}`}>
+          {s.faceDown ? null : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d={ICONS[words.icon]} />
+            </svg>
+          )}
+          <span>{s.faceDown ? 'Turn the phone face up' : keep(words.main)}</span>
+        </p>
+        <p className="lv-fix">{(!s.faceDown && keep(words.sub)) || ' '}</p>
+        {p.speak && p.said ? (
+          <p className="lv-said">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 9v6h4l5 4V5L8 9z" />
+              <path d="M16.5 8.5a5 5 0 0 1 0 7" />
+            </svg>
+            Saying: {p.said}
+          </p>
+        ) : null}
         {s.turned && !fromZero ? <p className="lv-warn">The screen hasn&apos;t turned with the phone, so left and right are swapped round. Turn off rotation lock.</p> : null}
         {p.held ? <p className="lv-held">Held. Tap Hold again to go live.</p> : null}
-      </div>
+      </section>
 
       <div className="lv-side">
-        <div className="lv-lens" role="group" aria-label="Length of what you are levelling, in mm">
-          <span className="lv-lab">Over</span>
-          {LENGTHS.map((l) => (
-            <button key={l} type="button" aria-pressed={p.len === l} className={`lv-chip${p.len === l ? ' on' : ''}`} onClick={() => p.onLen(l)}>
-              {l}
+        {editLen ? (
+          <LengthForm
+            start={p.own ?? p.len}
+            onUse={(l) => {
+              p.onOwn(l);
+              setEditLen(false);
+            }}
+            onCancel={() => setEditLen(false)}
+          />
+        ) : (
+          <div className="lv-lens" role="group" aria-label="Length of what you are levelling, in mm">
+            <span className="lv-lab">Over</span>
+            {LENGTHS.map((l) => (
+              <button key={l} type="button" aria-pressed={p.len === l} className={`lv-chip${p.len === l ? ' on' : ''}`} onClick={() => p.onLen(l)}>
+                {l}
+              </button>
+            ))}
+            <button
+              type="button"
+              aria-pressed={ownOn}
+              aria-label={p.own === null ? 'Type your own length' : ownOn ? `${p.own} mm, your own length. Tap to change it` : `${p.own} mm, your own length`}
+              className={`lv-chip lv-own${ownOn ? ' on' : ''}${p.own === null ? ' empty' : ''}`}
+              onClick={() => (p.own !== null && !ownOn ? p.onLen(p.own) : setEditLen(true))}
+            >
+              {p.own !== null ? <span>{p.own}</span> : null}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 20h4L19 9l-4-4L4 16z" />
+              </svg>
             </button>
-          ))}
+          </div>
+        )}
+
+        <div className="lv-hands" role="group" aria-label="Hands free">
+          <button type="button" className={`lv-tile${p.tone ? ' on' : ''}`} aria-pressed={p.tone} onClick={p.onTone}>
+            <span className={`lv-bars${level ? ' ok' : ''}`} aria-hidden="true">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <span key={i} className={i < lit ? 'lit' : ''} />
+              ))}
+            </span>
+            <span className="lv-tile-t">Tone {p.tone ? 'on' : 'off'}</span>
+          </button>
+          <button type="button" className={`lv-tile${p.speak ? ' on' : ''}`} aria-pressed={p.speak} onClick={p.onSpeak} disabled={!p.canSpeak} title={p.canSpeak ? undefined : 'This browser can’t speak'}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 9v6h4l5 4V5L8 9z" />
+              <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" />
+            </svg>
+            <span className="lv-tile-t">{p.canSpeak ? `Speak ${p.speak ? 'on' : 'off'}` : 'No voice'}</span>
+          </button>
+          <button type="button" className={`lv-tile${p.big ? ' on' : ''}`} aria-pressed={p.big} onClick={p.onBig}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+            </svg>
+            <span className="lv-tile-t">Big numbers</span>
+          </button>
         </div>
 
         <div className={`lv-status ${status.tone}`}>
@@ -499,22 +797,186 @@ function Reading(p: {
         ) : null}
         {p.note ? <p className="lv-note">{p.note}</p> : null}
 
-        <button type="button" className="lv-zero" onClick={p.onZero} disabled={!!p.busy || flipping}>
-          {p.busy === 'zero' ? 'Hold still...' : 'Set zero here'}
-        </button>
-        <div className="lv-row">
-          <button type="button" className={`lv-btn${p.held ? ' on' : ''}`} aria-pressed={p.held} onClick={p.onHold} disabled={!!p.busy}>
-            Hold
+        <div className="lv-dock">
+          <button type="button" className="lv-zero" onClick={p.onZero} disabled={!!p.busy || flipping}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="8" />
+              <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+            </svg>
+            {p.busy === 'zero' ? 'Hold still...' : 'Set zero here'}
           </button>
-          <button type="button" className={`lv-btn${flipping ? ' go' : ''}`} onClick={p.onFlip} disabled={!!p.busy}>
-            {p.busy === 'flip' ? 'Hold still...' : flipping ? 'Second reading' : 'Flip check'}
-          </button>
-          <button type="button" className="lv-btn" aria-pressed={p.beep} onClick={p.onBeep}>
-            {p.beep ? 'Beep on' : 'Beep off'}
-          </button>
+          <div className="lv-row">
+            <button type="button" className={`lv-btn${p.held ? ' on' : ''}`} aria-pressed={p.held} onClick={p.onHold} disabled={!!p.busy}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <rect x="6" y="5" width="4" height="14" rx="1" />
+                <rect x="14" y="5" width="4" height="14" rx="1" />
+              </svg>
+              {p.held ? 'Held' : 'Hold'}
+            </button>
+            <button type="button" className={`lv-btn${flipping ? ' go' : ''}`} onClick={p.onFlip} disabled={!!p.busy}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 9h13l-3-3M20 15H7l3 3" />
+              </svg>
+              {p.busy === 'flip' ? 'Hold still...' : flipping ? 'Second reading' : 'Flip check'}
+            </button>
+            <button type="button" className="lv-btn" onClick={p.onSave} disabled={!!p.busy || s.faceDown}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M6 3h12v18l-6-4-6 4z" />
+              </svg>
+              Save
+            </button>
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function LengthForm({ start, onUse, onCancel }: { start: number; onUse: (l: number) => void; onCancel: () => void }) {
+  const [text, setText] = useState(String(start));
+  const [bad, setBad] = useState(false);
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    const l = readLength(text);
+    if (l === null) {
+      setBad(true);
+      return;
+    }
+    onUse(l);
+  };
+  return (
+    <form className="lv-lenform" onSubmit={submit}>
+      <label className="lv-lenbox">
+        <span className="lv-lab">Your length</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          enterKeyHint="done"
+          autoFocus
+          value={text}
+          aria-invalid={bad}
+          aria-describedby="lv-len-help"
+          onChange={(e) => {
+            setText(e.target.value);
+            setBad(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') onCancel();
+          }}
+        />
+        <span className="lv-mm">mm</span>
+      </label>
+      <button type="submit" className="lv-use">
+        Use
+      </button>
+      <button type="button" className="lv-link" onClick={onCancel}>
+        Cancel
+      </button>
+      <p id="lv-len-help" className={`lv-lenhelp${bad ? ' bad' : ''}`}>
+        {bad ? `A length in mm, ${LEN_MIN} to ${LEN_MAX}.` : 'The mm to pack are worked out over this length.'}
+      </p>
+    </form>
+  );
+}
+
+/* After Save: the reading went into Your readings straight away. A name and a place can be added here; the place is
+   used for the next Save too. Goes by itself after 6 s unless it's being used. */
+function SaveSheet({ r, onDone }: { r: Saved; onDone: () => void }) {
+  const list = useReadings();
+  const cur = list.find((x) => x.id === r.id) ?? r;
+  const [label, setLabel] = useState(r.label);
+  const [adding, setAdding] = useState(false);
+  const [newPlace, setNewPlace] = useState('');
+  const touched = useRef(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      if (!touched.current) onDone();
+    }, 6000);
+    return () => window.clearTimeout(t);
+  }, [onDone]);
+  const places = placesOf(list).slice(0, 5);
+  if (cur.place && !places.includes(cur.place)) places.unshift(cur.place);
+  const pickPlace = (place: string) => {
+    updateReading(r.id, { place });
+    setLastPlace(place);
+    setAdding(false);
+    setNewPlace('');
+  };
+  const addPlace = (e: FormEvent) => {
+    e.preventDefault();
+    const pl = newPlace.trim();
+    if (pl) pickPlace(pl);
+  };
+  return (
+    <section
+      className="lv-sheet"
+      aria-label="Saved reading"
+      onPointerDown={() => (touched.current = true)}
+      onFocusCapture={() => (touched.current = true)}
+    >
+      <p className="lv-sheet-head" role="status">
+        <span className="lv-sheet-tick" aria-hidden="true">
+          <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 5.2l2 2 4-4.4" />
+          </svg>
+        </span>
+        <span>
+          <b>Saved {cur.value}</b>, {cur.detail}
+        </span>
+      </p>
+      <label className="lv-sheet-field">
+        <span>What is it? (optional)</span>
+        <input
+          type="text"
+          value={label}
+          maxLength={80}
+          placeholder="e.g. Worktop, left run"
+          enterKeyHint="done"
+          onChange={(e) => {
+            setLabel(e.target.value);
+            updateReading(r.id, { label: e.target.value });
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+          }}
+        />
+      </label>
+      <div className="lv-sheet-places" role="group" aria-label="Place">
+        <span className="lv-sheet-lab">Place</span>
+        <div className="lv-sheet-chips">
+          {places.map((pl) => (
+            <button key={pl} type="button" aria-pressed={cur.place === pl} className={`lv-pchip${cur.place === pl ? ' on' : ''}`} onClick={() => pickPlace(pl)}>
+              {pl}
+            </button>
+          ))}
+          <button type="button" aria-pressed={!cur.place} className={`lv-pchip${!cur.place ? ' on' : ''}`} onClick={() => pickPlace('')}>
+            No place
+          </button>
+          {adding ? null : (
+            <button type="button" className="lv-pchip add" onClick={() => setAdding(true)}>
+              + New place
+            </button>
+          )}
+        </div>
+        {adding ? (
+          <form className="lv-sheet-new" onSubmit={addPlace}>
+            <input type="text" value={newPlace} maxLength={60} autoFocus placeholder="e.g. Kitchen, Crouch End" enterKeyHint="done" aria-label="New place" onChange={(e) => setNewPlace(e.target.value)} />
+            <button type="submit" className="lv-use" disabled={!newPlace.trim()}>
+              Add
+            </button>
+          </form>
+        ) : null}
+      </div>
+      <div className="lv-sheet-foot">
+        <Link href="/tools/readings" className="lv-link">
+          All readings ({list.length})
+        </Link>
+        <button type="button" className="lv-use" onClick={onDone}>
+          Done
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -548,6 +1010,7 @@ function FlatVial({ x, y }: { x: number; y: number }) {
 
 function StartCard({ phase, onStart, computer, qrSvg }: { phase: Phase; onStart: () => void; computer: boolean; qrSvg: string }) {
   const noSensor = phase === 'nosensor';
+  const saved = useReadings();
   return (
     <div className="lv-start">
       <div className="lv-start-main">
@@ -574,6 +1037,11 @@ function StartCard({ phase, onStart, computer, qrSvg }: { phase: Phase; onStart:
         ) : (
           <p className="lv-hint">Your phone may ask to use motion. Tap Allow: nothing leaves your phone.</p>
         )}
+        {saved.length ? (
+          <Link href="/tools/readings" className="link-more lv-startsaved">
+            Your saved readings ({saved.length}) <span aria-hidden="true">→</span>
+          </Link>
+        ) : null}
       </div>
       {computer || noSensor ? (
         <div className="lv-qr">

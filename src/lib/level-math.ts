@@ -9,7 +9,8 @@
    - Lying flat: the tilt each way, as angles. Positive x = the right side higher, positive y = the far end higher.
    The phone's own error (buttons, case, camera bump) is different for each edge and for lying flat, so a flip
    check result is kept per edge. Set zero is kept with the edge it was set on, so a reading from your zero still
-   works when the phone is turned well past 45 degrees to find an angle. */
+   works when the phone is turned well past 45 degrees to find an angle.
+   Also here: the words under the reading (levelWords, also what Speak says and what Save keeps), and the Tone sums. */
 
 export type Vec = { x: number; y: number; z: number };
 /** Which way the phone's own up points when that edge is down: x+ means the left long edge is down (x points up). */
@@ -103,33 +104,101 @@ export function fmtMm(v: number) {
   return `${(v / 1000).toFixed(1)} m`;
 }
 
-/** The two lines under the reading, on an edge. `fromZero` = reading from a zero the user set. */
-export function edgeWords(d: number, len: number, fromZero: boolean) {
-  if (isLevel(d)) return { dir: fromZero ? 'Level with your zero' : 'Level', fix: '' };
-  const high = d > 0 ? 'right' : 'left';
-  const low = d > 0 ? 'left' : 'right';
-  const mm = fmtMm(mmOver(len, d));
-  if (fromZero) return { dir: `${cap(high)} end up from your zero`, fix: Math.abs(d) <= 20 ? `${mm} higher at the ${high} over ${len}` : `Rises ${mm} over ${len}` };
-  return { dir: `${cap(high)} end high`, fix: Math.abs(d) <= 20 ? `Raise the ${low} end ${mm} over ${len}` : `Rises ${mm} over ${len}` };
+/** mm for the voice: one decimal under 3 mm (where it matters), whole mm above, so a wobble doesn't keep changing the words. */
+export function sayMm(v: number) {
+  if (v < 3) return String(Number(v.toFixed(1)));
+  return String(Math.round(v));
 }
 
-/** The two lines under the reading, lying flat. x, y on the screen: x positive = right side up, y positive = far end up. */
-export function flatWords(x: number, y: number, len: number, fromZero: boolean) {
+export type LevelWords = {
+  /** The big line under the reading: what to do. */
+  main: string;
+  /** The small line under it. */
+  sub: string;
+  icon: 'level' | 'up' | 'angle';
+  /** For a saved reading: what the line says, in lower case, with the length. */
+  detail: string;
+  /** For Speak: short, so it can be said again as the reading changes. */
+  say: string;
+};
+
+/** The words under the reading. On an edge `a` is the tilt (positive = right end high); lying flat `a` and `b` are the
+ *  tilts on the screen (a positive = right side up, b positive = far end up). `fromZero` = reading from a zero the user set. */
+export function levelWords(mode: Mode, a: number, b: number, len: number, fromZero: boolean): LevelWords {
+  const within = `under ${mmOver(len, LEVEL).toFixed(1)} mm out over ${len}`;
+  if (mode === 'edge') {
+    const d = a;
+    if (isLevel(d)) {
+      const main = fromZero ? 'Level with your zero' : 'Level';
+      return { main, sub: within, icon: 'level', detail: `${fromZero ? 'level with the zero' : 'level'} over ${len}`, say: main };
+    }
+    const high = d > 0 ? 'right' : 'left';
+    const low = d > 0 ? 'left' : 'right';
+    const mmv = mmOver(len, d);
+    const mm = fmtMm(mmv);
+    const perM = `${fmtMm(mmOver(1000, d))} per metre`;
+    if (Math.abs(d) > 20) {
+      const main = fromZero ? `${cap(high)} end up from your zero` : `${cap(high)} end high`;
+      return { main, sub: `Rises ${mm} over ${len}`, icon: 'angle', detail: `${fromZero ? 'from the zero, ' : ''}${high} end up, rises ${mm} over ${len}`, say: `${Math.abs(d).toFixed(1)} degrees` };
+    }
+    if (fromZero) {
+      return { main: `${mm} higher at the ${high} end`, sub: `over ${len} · ${perM}`, icon: 'up', detail: `from the zero, ${mm} higher at the ${high} end over ${len}`, say: `${cap(high)} end up, ${sayMm(mmv)} mil` };
+    }
+    return { main: `Raise the ${low} end ${mm}`, sub: `over ${len} · ${perM}`, icon: 'up', detail: `raise the ${low} end ${mm} over ${len}`, say: `Raise the ${low} end, ${sayMm(mmv)} mil` };
+  }
+  const x = a;
+  const y = b;
   const lx = isLevel(x);
   const ly = isLevel(y);
-  if (lx && ly) return { dir: fromZero ? 'Level with your zero' : 'Level both ways', fix: '' };
-  const highs: string[] = [];
+  const lead = fromZero ? 'lying flat, from the zero' : 'lying flat';
+  if (lx && ly) {
+    const main = fromZero ? 'Level with your zero' : 'Level both ways';
+    return { main, sub: within, icon: 'level', detail: `${lead}, level both ways over ${len}`, say: main };
+  }
   const fixes: string[] = [];
+  const said: string[] = [];
   if (!lx) {
-    highs.push(x > 0 ? 'right side high' : 'left side high');
-    fixes.push(`the ${x > 0 ? 'left side' : 'right side'} ${fmtMm(mmOver(len, x))}`);
+    const v = mmOver(len, x);
+    const side = x > 0 ? 'left side' : 'right side';
+    fixes.push(`the ${side} ${fmtMm(v)}`);
+    said.push(`the ${side} ${sayMm(v)} mil`);
   }
   if (!ly) {
-    highs.push(y > 0 ? 'far end high' : 'near end high');
-    fixes.push(`the ${y > 0 ? 'near end' : 'far end'} ${fmtMm(mmOver(len, y))}`);
+    const v = mmOver(len, y);
+    const end = y > 0 ? 'near end' : 'far end';
+    fixes.push(`the ${end} ${fmtMm(v)}`);
+    said.push(`the ${end} ${sayMm(v)} mil`);
   }
-  const dir = cap(highs.join(', ')) + (fromZero ? ' from your zero' : '');
-  return { dir, fix: `Raise ${fixes.join(' and ')} over ${len}` };
+  const main = `Raise ${fixes.join(' and ')}`;
+  return { main, sub: `over ${len}`, icon: 'up', detail: `${lead}, raise ${fixes.join(' and ')} over ${len}`, say: `Raise ${said.join(', and ')}` };
+}
+
+/* Tone: beeps start within TONE_RANGE degrees of level and come faster as it gets nearer, like a parking sensor;
+   at level one higher chirp (as Beep did), then quiet until it has moved 0.15 off. */
+export const TONE_RANGE = 2;
+
+/** 0 far off to 1 at level, for the five bars on the Tone button. */
+export function closeness(d: number, range = TONE_RANGE) {
+  return Math.max(0, Math.min(1, 1 - Math.abs(d) / range));
+}
+
+/** Milliseconds between beeps at `d` degrees off, or null when it's too far off to beep. */
+export function toneGap(d: number) {
+  const a = Math.abs(d);
+  if (a >= TONE_RANGE || isLevel(a)) return null;
+  return Math.round(110 + 590 * Math.sqrt(a / TONE_RANGE));
+}
+
+/* Your own length (the pencil chip): 50 mm to 10 m. */
+export const LEN_MIN = 50;
+export const LEN_MAX = 10000;
+
+/** A typed length in mm ('1830', '1,830', '1830 mm'), or null when it isn't one between LEN_MIN and LEN_MAX. */
+export function readLength(text: string): number | null {
+  const t = text.trim().toLowerCase().replace(/,/g, '').replace(/\s*mm$/, '');
+  if (!/^\d+(\.\d+)?$/.test(t)) return null;
+  const v = Math.round(Number(t));
+  return v >= LEN_MIN && v <= LEN_MAX ? v : null;
 }
 
 function cap(s: string) {

@@ -6,11 +6,12 @@ import SpiritLevel from './spirit-level';
 
 /* The phone spirit level (17 Oct 2026). Linked from a card on the Tools page, the Tools menu, search and the
    sitemap. The level itself opens full screen on the phone; on a computer the page shows a code to scan.
+   Saved readings go to /tools/readings (22 Oct 2026).
    No floating buttons here (LayoutShell). */
 
 export const metadata = pageMeta({
   title: 'Spirit level on your phone | Free tool from Raf Carpentry',
-  description: 'A free spirit level for your phone. Set zero on any surface, flip check for true level, and see how many mm to pack up the low end.',
+  description: 'A free spirit level for your phone. Set zero on any surface, flip check for true level, see how many mm to pack up the low end, and save the readings to send on.',
   path: '/tools/spirit-level',
   ownImage: true,
 });
@@ -34,11 +35,15 @@ const STEPS = [
   },
   {
     title: 'How much to pack',
-    text: 'Pick the length of what you are levelling: 600, 900, 1200 or 2400 mm. It says which end to raise and by how many mm.',
+    text: 'Pick the length of what you are levelling: 600, 900, 1200 or 2400 mm, or tap the pencil and type your own. It says which end to raise and by how many mm.',
   },
   {
-    title: 'Hold and Beep',
-    text: 'Hold freezes the reading for when you can’t see the screen. Beep sounds each time it comes level (on an iPhone the ring switch has to be on).',
+    title: 'Hands free',
+    text: 'Tone beeps faster as it gets near level and chirps when it gets there (on an iPhone the ring switch has to be on). Speak says the mm out loud once the reading settles. Big numbers gives you a reading you can see from a step away.',
+  },
+  {
+    title: 'Hold and Save',
+    text: 'Hold freezes the reading for when you can’t see the screen. Save keeps it, with a name and a place, in Your readings, where you can send them all on WhatsApp in one go. They stay on your phone.',
   },
 ];
 
