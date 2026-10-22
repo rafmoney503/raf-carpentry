@@ -18,7 +18,14 @@ const KEY = 'raf_jobkit_stats';
 const DAYS = [7, 30, 90] as const;
 
 /** Who asked for the wardrobe planner's cut list (/api/cutlist-request; rafsite_cutlist 'list'). */
-type CutlistInfo = { days: number; total: number; all: number; recent: { id: number; at: string; email: string; summary: string; country: string | null; host: string | null; sent_at: string | null }[] };
+type CutlistInfo = {
+  days: number;
+  total: number;
+  all: number;
+  /** Emailed by CabinetOS in the days asked for (since 22 Oct 2026; older reports don't have it). */
+  sent?: number;
+  recent: { id: number; at: string; email: string; summary: string; country: string | null; host: string | null; sent_at: string | null; parts?: number | null; boards?: number | null }[];
+};
 type Saved = { days: number; report: StatsReport | null; at: number; cutlist?: CutlistInfo | null };
 
 export function savedStats(): Saved {
@@ -126,7 +133,7 @@ function CutlistBand({ info, days }: { info: CutlistInfo | null; days: number })
   const list = all ? info.recent : info.recent.slice(0, 5);
   const line = (summary: string, key: string) => (summary.split('\n').find((l) => l.startsWith(`${key}:`)) ?? '').slice(key.length + 1).trim();
   return (
-    <Band label="Cut list button (planner)" right={`${info.total} in ${days} days`}>
+    <Band label="Cut list button (planner)" right={`${info.total} in ${days} days${typeof info.sent === 'number' ? `, ${info.sent} emailed` : ''}`}>
       {info.recent.length ? (
         <ul className="divide-y divide-line" data-cutlist-list>
           {list.map((c) => {
@@ -147,6 +154,11 @@ function CutlistBand({ info, days }: { info: CutlistInfo | null; days: number })
                   {[line(c.summary, 'Space'), line(c.summary, 'Doors')].filter(Boolean).join(' · ')}
                   {preview ? <span className="ml-1 font-mono text-[12px] text-faint">(from a preview)</span> : null}
                 </p>
+                <p className={`mt-0.5 text-[13px] font-semibold ${c.sent_at ? 'text-[#15803d]' : 'text-[#a35a00]'}`} data-cutlist-sent={c.sent_at ? '1' : '0'}>
+                  {c.sent_at
+                    ? `Emailed${c.parts ? `: ${c.parts} parts, ${c.boards} ${c.boards === 1 ? 'board' : 'boards'}` : ''}`
+                    : 'Not emailed: send it yourself'}
+                </p>
               </li>
             );
           })}
@@ -160,8 +172,9 @@ function CutlistBand({ info, days }: { info: CutlistInfo | null; days: number })
         </button>
       ) : null}
       <p className="mt-2 text-[13px] leading-relaxed text-faint">
-        They designed a wardrobe in the planner, tapped Get the cut list and left their email. The cut list isn&apos;t for sale yet, so
-        nobody has been charged; email them when it is. {info.all} asked in all.
+        They designed a wardrobe in the planner and tapped Get the cut list. CabinetOS emails it straight away with the spreadsheet
+        and a link to open it in CabinetOS; nothing is charged. One that says Not emailed didn&apos;t go (CabinetOS was down or
+        it was asked before 22 Oct): tap the email to send it yourself. {info.all} asked in all.
       </p>
     </Band>
   );

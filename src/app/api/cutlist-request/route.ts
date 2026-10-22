@@ -1,10 +1,12 @@
 import { StatsError, statsRpc, statsSetUp } from '@/lib/site-stats-server';
+import { plannerDesign, requestCutlistFromCabinetOS } from '@/lib/cabinetos-inbound';
 
-/* The wardrobe planner's 'Get the cut list for this design' (planner-engine.ts, Send step). The cut list isn't sold
-   yet: this keeps the email and the design (rafsite.cutlist_requests through public.rafsite_cutlist, the visit
-   counter's secret) so Raf can send it when it's ready, and so the Job Kit's Website stats can count who asked.
-   Answers 204 when kept; the same email and design twice in a day is kept once. */
-export const maxDuration = 15;
+/* The wardrobe planner's 'Get the cut list for this design' (planner-engine.ts, Send step). Keeps the email and the
+   design (rafsite.cutlist_requests through public.rafsite_cutlist, the visit counter's secret) for the Job Kit's
+   Website stats, then asks CabinetOS to work the cut list out and email it (requestCutlistFromCabinetOS); a sent
+   one is marked sent with its parts and boards. Answers { sent, parts, boards } (sent false = kept, not emailed:
+   Raf sees it in the Job Kit). The same email and design twice in a day isn't emailed twice. */
+export const maxDuration = 40;
 
 const recent = new Map<string, number[]>();
 function tooMany(ip: string): boolean {
@@ -35,8 +37,9 @@ export async function POST(req: Request) {
   const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown';
   if (tooMany(ip)) return Response.json({ error: 'busy' }, { status: 429 });
   if (!statsSetUp()) return Response.json({ error: 'not-set-up' }, { status: 503 });
+  let id: number | null = null;
   try {
-    await statsRpc('rafsite_cutlist', {
+    const added = await statsRpc<{ id?: number; again?: boolean; sent?: boolean; parts?: number | null; boards?: number | null }>('rafsite_cutlist', {
       p_action: 'add',
       p: {
         email,
@@ -46,8 +49,20 @@ export async function POST(req: Request) {
         host: (req.headers.get('host') || '').slice(0, 120),
       },
     });
-    return new Response(null, { status: 204 });
+    if (added?.again && added.sent) return Response.json({ sent: true, again: true, parts: added.parts ?? null, boards: added.boards ?? null });
+    id = typeof added?.id === 'number' ? added.id : null;
   } catch (e) {
     return Response.json({ error: e instanceof StatsError ? e.code : 'stats-down' }, { status: 502 });
   }
+  const forCabinetOS = plannerDesign(design);
+  if (!forCabinetOS) return Response.json({ sent: false });
+  const cut = await requestCutlistFromCabinetOS(forCabinetOS, email, (req.headers.get('host') || '').slice(0, 120));
+  if (!cut.ok || !cut.sent) {
+    if (!cut.ok) console.error('[cutlist] CabinetOS', cut.reason);
+    return Response.json({ sent: false });
+  }
+  if (id !== null) {
+    await statsRpc('rafsite_cutlist', { p_action: 'sent', p: { id, parts: cut.parts, boards: cut.boards, token: cut.token } }).catch(() => {});
+  }
+  return Response.json({ sent: true, parts: cut.parts, boards: cut.boards });
 }

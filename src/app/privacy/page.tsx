@@ -64,8 +64,10 @@ export default function Privacy() {
           <H>When you ask for a cut list</H>
           <p>
             If you tap Get the cut list in the <Link href="/wardrobe-planner">wardrobe planner</Link> and leave your email, I keep that email, the design you made
-            (its sizes and units, no name or address) and the country your connection is in, in the same private database (<b>Supabase</b>, Frankfurt). I use it
-            only to email you the cut list for that design when it’s ready. Ask me and I’ll delete it. Nothing is charged.
+            (its sizes and units, no name or address) and the country your connection is in, in the same private database (<b>Supabase</b>, Frankfurt). The
+            design and your email go to <b>CabinetOS</b>, my cabinet-making app (also Rafal Solutions Ltd), which works out the cut list and emails it to you
+            through <b>Resend</b>, with a link that opens the design in CabinetOS if you make a free account. It’s used only for that one email: no mailing
+            list. Ask me and I’ll delete it. Nothing is charged.
           </p>
 
           <H>Things kept on your own phone or computer</H>

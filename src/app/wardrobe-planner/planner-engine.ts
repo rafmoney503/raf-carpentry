@@ -53,7 +53,7 @@ let uid=1;
 function setPreset(m,key){if(key==='pair'&&canSplit(m.w)){m.split=[{...PAIR[0]},{...PAIR[1]}];m.edit=m.edit||0;}else{m.split=null;m.inside={...presetInside(key==='pair'?'drawers':key)};}}
 const mk=(w,preset)=>{const m={id:'m'+(uid++),w,custom:!CFG.standardWidths.includes(w),inside:presetInside('shelves'),split:null,edit:0};setPreset(m,preset);return m;};
 const S={unitMode:'standard',perDoor:[],side:{mode:'auto',l:50,r:50},wall:2800,ceiling:2400,fit:'wall',plinth:100,plinthCustom:false,infill:50,infillCustom:false,freeH:CFG.freeHeight,depthMode:'std',depthCustom:600,height:'full',doors:'hinged',style:'slab',handle:'brass',colour:'sage',
-  modules:[mk(900,'double'),mk(900,'pair'),mk(900,'short')],sel:0,step:0,view:'3d',open:false,sent:false,drawInside:false,cut:{email:'',sent:''},
+  modules:[mk(900,'double'),mk(900,'pair'),mk(900,'short')],sel:0,step:0,view:'3d',open:false,sent:false,drawInside:false,cut:{email:'',sent:'',mailed:false,parts:0,boards:0},
   contact:{name:'',email:'',phone:'',postcode:'',when:'',notes:'',company:''}};
 const colour=()=>CFG.colours.find(c=>c.k===S.colour)||CFG.colours[0];
 function depth(){if(S.depthMode==='custom')return clamp(S.depthCustom,CFG.depth.min,CFG.depth.max);if(S.depthMode==='shallow'&&S.doors==='hinged')return CFG.depth.shallow;return S.doors==='sliding'?CFG.depth.sliding:CFG.depth.hinged;}
@@ -611,14 +611,17 @@ function stepSend(){
   </form>
   <div class="contact"><span>Or call <span class="mono">${CFG.phone}</span></span><span>Email <span class="mono">${CFG.email}</span></span></div>
   ${cutBox()}`;}
-/* 'Get the cut list for this design' (22 Oct 2026): for people building it themselves. The cut list isn't for sale yet,
-   so this keeps their email and the design (/api/cutlist-request) for Raf to send it when it is; the tap is counted
-   in the website stats (goal 'cutlist', by the button's words). */
+/* 'Get the cut list for this design' (22 Oct 2026): for people building it themselves. /api/cutlist-request keeps
+   their email and the design and has CabinetOS email the cut list straight away (parts, edge banding, boards,
+   hardware, the spreadsheet, a link to open it in CabinetOS); the tap is counted in the website stats (goal
+   'cutlist', by the button's words). */
 function cutBox(){const K=S.cut;
-  if(K.sent)return `<div class="cutbox" id="cutBox"><h3>Building it yourself?</h3><p class="okline">${TICK}Thanks. I'll email the cut list for this design to ${esc(K.sent)} when it's ready.</p><p class="priv">Change the design and ask again any time.</p></div>`;
+  if(K.sent){const what=K.mailed?`Sent to ${esc(K.sent)}${K.parts?`: ${K.parts} parts on ${K.boards} ${K.boards===1?'board':'boards'}`:''}.`:`Thanks. I'll email the cut list for this design to ${esc(K.sent)} shortly.`;
+    const more=K.mailed?'It should be in your inbox in a minute (check the junk folder too), with a spreadsheet for your cutting company. Change the design and ask again any time.':'Change the design and ask again any time.';
+    return `<div class="cutbox" id="cutBox"><h3>Building it yourself?</h3><p class="okline">${TICK}${what}</p><p class="priv">${more}</p></div>`;}
   return `<div class="cutbox" id="cutBox"><h3>Building it yourself?</h3>
     <p class="cut-title">Get the cut list for this design</p>
-    <p class="note">Every part with its size, the board layout and the edge banding, worked out in CabinetOS, the app I cut from. Coming soon: leave your email and I'll send it when it's ready.</p>
+    <p class="note">Every part with its size, the edge banding, the boards to buy and the hardware, worked out in CabinetOS, the app I cut from. Free, by email, with a spreadsheet for your cutting company.</p>
     <div class="cutrow"><div class="field"><label for="cut-email">Your email</label><input id="cut-email" data-cut="email" type="email" autocomplete="email" inputmode="email" value="${esc(K.email)}"></div>
       <button type="button" class="wbtn" id="cutBtn" data-act="cutlist">Get the cut list</button></div>
     <div class="hp" aria-hidden="true"><label for="cut-company">Company</label><input id="cut-company" tabindex="-1" autocomplete="off"></div>
@@ -628,11 +631,12 @@ let cutting=false;
 async function cutSubmit(){if(cutting)return;const err=$('#cutErr'),btn=$('#cutBtn'),inp=$('#cut-email');if(!btn)return;
   const email=(S.cut.email||'').trim();
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)){err.textContent='Add your email so I can send it.';err.hidden=false;if(inp)inp.focus();return;}
-  cutting=true;btn.disabled=true;btn.textContent='Sending...';err.hidden=true;
+  cutting=true;btn.disabled=true;btn.textContent='Working it out...';err.hidden=true;
   const body=JSON.stringify({email,summary:specRows().map(([k,v])=>`${k}: ${v}`).join('\n'),design:designPayload(),company:($('#cut-company')||{}).value||'',ms:Math.round(performance.now()-t0)});
   let res=null;try{res=await fetch(cutEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body});}catch(_){res=null;}
   cutting=false;
-  if(res&&res.ok){S.cut.sent=email;render();return;}
+  if(res&&res.ok){let out={};try{out=res.status===204?{}:await res.json();}catch(_){}
+    S.cut.sent=email;S.cut.mailed=out.sent===true;S.cut.parts=Number(out.parts)||0;S.cut.boards=Number(out.boards)||0;render();return;}
   let code='';try{code=res?((await res.json()).error||''):'';}catch(_){}
   err.textContent=code==='email'?'That email address looks incomplete.':code==='busy'?'That has been sent a few times already. Try again later.':'It did not send. Try again in a minute.';
   err.hidden=false;btn.disabled=false;btn.textContent='Get the cut list';}

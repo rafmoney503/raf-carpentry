@@ -40,3 +40,33 @@ export async function sendDesignToCabinetOS(
     return { ok: false, reason: e instanceof Error && e.name === 'TimeoutError' ? 'CabinetOS took too long' : 'CabinetOS could not be reached' };
   }
 }
+
+export type CutlistResult =
+  | { ok: true; sent: boolean; token: string; name: string; parts: number; boards: number }
+  | { ok: false; reason: string };
+
+/**
+ * The planner's 'Get the cut list': CabinetOS works the cut list out with its own code and emails it with the
+ * spreadsheet (cabinetos-site src/app/api/inbound/cutlist/route.ts, same secret, the address next to
+ * CABINETOS_INBOUND_URL). Waited on, so the planner can say it's on its way; 25 s at most.
+ */
+export async function requestCutlistFromCabinetOS(design: Record<string, unknown>, email: string, host: string): Promise<CutlistResult> {
+  if (!cabinetosSetUp()) return { ok: false, reason: 'not-set-up' };
+  try {
+    const url = new URL('/api/inbound/cutlist', process.env.CABINETOS_INBOUND_URL as string);
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.CABINETOS_INBOUND_SECRET}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ design, email, host }),
+      signal: AbortSignal.timeout(25_000),
+      cache: 'no-store',
+    });
+    const out = (await res.json().catch(() => ({}))) as { ok?: boolean; sent?: boolean; token?: string; name?: string; parts?: number; boards?: number; error?: string; reason?: string };
+    if (res.ok && out.ok) {
+      return { ok: true, sent: out.sent === true, token: String(out.token ?? ''), name: String(out.name ?? ''), parts: Number(out.parts) || 0, boards: Number(out.boards) || 0 };
+    }
+    return { ok: false, reason: [out.error, out.reason].filter(Boolean).join(': ') || `CabinetOS answered ${res.status}` };
+  } catch (e) {
+    return { ok: false, reason: e instanceof Error && e.name === 'TimeoutError' ? 'CabinetOS took too long' : 'CabinetOS could not be reached' };
+  }
+}
