@@ -1,0 +1,54 @@
+{
+  "code": "9psjrmhn",
+  "request": "design-2026-10-fitted-wardrobe-n4-g6jw",
+  "updatedFor": "2026-10-22T20:19:47.712Z",
+  "title": "Two fitted wardrobes in IKEA PAX",
+  "area": "N4",
+  "made": "2026-10-22",
+  "options": [
+    {
+      "name": "Wardrobe by the door",
+      "text": "Three shaker doors on IKEA PAX frames 2364 high, with a top box above to the ceiling and wooden knobs. Inside, a 500 unit of six shelves on the left, and a 750 unit on the right with three drawers, a shelf, short hanging and a top shelf.",
+      "model": {
+        "src": "/designs/9psjrmhn/a-phbr4p.glb",
+        "poster": {
+          "src": "/designs/9psjrmhn/a-phbr4p.jpg",
+          "w": 1600,
+          "h": 1200,
+          "alt": "3D model of a three-door PAX wardrobe with shelves on the left and drawers under a hanging rail on the right"
+        },
+        "shape": "tall"
+      },
+      "sizes": [
+        { "label": "Width", "value": "1300 mm" },
+        { "label": "Height, to the ceiling", "value": "2800 mm" },
+        { "label": "Depth, doors included", "value": "600 mm" }
+      ]
+    },
+    {
+      "name": "Wardrobe along the side wall",
+      "text": "Six shaker doors on IKEA PAX frames 2364 high, with top boxes above to the ceiling and wooden knobs. Inside, two 750 units with three drawers, a shelf, short hanging and a top shelf, and a 1000 unit by the window with long hanging under a top shelf.",
+      "model": {
+        "src": "/designs/9psjrmhn/b-17khwf.glb",
+        "poster": {
+          "src": "/designs/9psjrmhn/b-17khwf.jpg",
+          "w": 1600,
+          "h": 1200,
+          "alt": "3D model of a six-door PAX wardrobe with drawers under short hanging in two units and long hanging in the third"
+        },
+        "shape": "tall"
+      },
+      "sizes": [
+        { "label": "Width", "value": "2510 mm" },
+        { "label": "Height, to the ceiling", "value": "2800 mm" },
+        { "label": "Depth, doors included", "value": "600 mm" }
+      ]
+    }
+  ],
+  "notes": [
+    "The widths come from the room plan and the ceiling height of about 2800 mm is still to be measured.",
+    "The depth is the standard PAX depth with the doors, and the layouts inside are standard ones to start from: shelves, drawers and rails can change.",
+    "Built on IKEA PAX frames, with a top box above each one up to the ceiling.",
+    "Colours on screen are a guide."
+  ]
+}
