@@ -10,10 +10,12 @@ import type { SearchEntry, SearchKind } from '@/lib/site-search';
 /* Search everything from the menu: jobs, blog posts, services, 3D designs, pages, tips, tools, materials, questions
    and the brief's choices. The list (/search-index.json, src/lib/site-search.ts) loads the first time search
    opens and is searched here in the browser with the same word matching as My Work. 'panel' is the computer
-   version under the header (three columns); 'menu' sits at the top of the phone menu (one column). */
+   version under the header (three columns); 'menu' sits at the top of the phone menu (one column); 'sheet' is the
+   full-screen search a pull down at the top of a page opens on a phone (src/components/PullSearch.tsx): one column
+   like the menu, with its own suggestions (`idle`) under the Try words and Cancel (`after`) beside the box. */
 
 let indexPromise: Promise<SearchEntry[]> | null = null;
-function loadIndex() {
+export function loadSearchIndex() {
   if (!indexPromise) {
     indexPromise = fetch('/search-index.json')
       .then((r) => (r.ok ? (r.json() as Promise<SearchEntry[]>) : Promise.reject(new Error(String(r.status)))))
@@ -25,7 +27,7 @@ function loadIndex() {
   return indexPromise;
 }
 
-const KIND_LABEL: Record<SearchKind, string> = {
+export const KIND_LABEL: Record<SearchKind, string> = {
   job: 'Job',
   post: 'Blog',
   service: 'Service',
@@ -101,11 +103,17 @@ export default function SiteSearch({
   onPick,
   onActive,
   autoFocus = false,
+  replace = false,
+  idle,
+  after,
 }: {
-  layout: 'panel' | 'menu';
+  layout: 'panel' | 'menu' | 'sheet';
   onPick?: () => void;
   onActive?: (active: boolean) => void;
   autoFocus?: boolean;
+  replace?: boolean; // open results in place of this history entry (the sheet's own entry, so Back doesn't return to it)
+  idle?: React.ReactNode; // shown under the Try words while nothing is typed
+  after?: React.ReactNode; // beside the box (the sheet's Cancel)
 }) {
   const [query, setQuery] = useState('');
   const [index, setIndex] = useState<SearchEntry[] | null>(null);
@@ -115,7 +123,7 @@ export default function SiteSearch({
 
   const load = () => {
     setFailed(false);
-    loadIndex().then(setIndex, () => setFailed(true));
+    loadSearchIndex().then(setIndex, () => setFailed(true));
   };
   useEffect(() => {
     load();
@@ -126,6 +134,7 @@ export default function SiteSearch({
 
   const res = useMemo(() => (index ? run(index, query) : null), [index, query]);
   const panel = layout === 'panel';
+  const sheet = layout === 'sheet';
   // Enter opens the best match: a page, service or 3D kind named by the words, then a job or post named by them, then the first result.
   const first = res
     ? [
@@ -142,7 +151,7 @@ export default function SiteSearch({
 
   const jobList = (n: number) =>
     res!.jobs.slice(0, n).map((h) => (
-      <Link key={h.href} href={h.href} onClick={pick} className="group flex items-center gap-3 rounded-sm py-1.5 text-ink">
+      <Link key={h.href} href={h.href} replace={replace} onClick={pick} className="group flex items-center gap-3 rounded-sm py-1.5 text-ink">
         {h.img ? (
           <span className={`relative flex-none overflow-hidden border border-line bg-raised ${panel ? 'h-[72px] w-[72px]' : 'h-14 w-14'}`}>
             <Image src={h.img} alt="" fill sizes={panel ? '72px' : '56px'} className="object-cover" />
@@ -164,7 +173,7 @@ export default function SiteSearch({
     <ul className="grid gap-2.5">
       {res!.posts.slice(0, n).map((h) => (
         <li key={h.href}>
-          <Link href={h.href} onClick={pick} className="block text-[15.5px] leading-snug text-ink hover:text-accent">
+          <Link href={h.href} replace={replace} onClick={pick} className="block text-[15.5px] leading-snug text-ink hover:text-accent">
             <Hl text={h.title} stems={res!.stems} />
           </Link>
         </li>
@@ -175,7 +184,7 @@ export default function SiteSearch({
   const alsoList = (n: number) => (
     <div className="grid gap-2.5">
       {res!.also.slice(0, n).map((h) => (
-        <Link key={h.href} href={h.href} onClick={pick} className="block rounded-sm border border-line-strong bg-paper px-3.5 py-2.5 text-ink transition-colors hover:border-accent">
+        <Link key={h.href} href={h.href} replace={replace} onClick={pick} className="block rounded-sm border border-line-strong bg-paper px-3.5 py-2.5 text-ink transition-colors hover:border-accent">
           <span className="block font-mono text-[12px] text-accent">{KIND_LABEL[h.k]}</span>
           <span className="mt-0.5 block text-[15px] font-[620] leading-snug">
             <Hl text={h.title} stems={res!.stems} />
@@ -194,7 +203,8 @@ export default function SiteSearch({
 
   return (
     <div role="search">
-      <label className={`flex items-center gap-3 rounded-sm border-2 bg-white px-4 ${panel ? 'h-14 border-accent' : 'h-12 border-line-strong focus-within:border-accent'}`}>
+      <div className={after ? 'flex items-center gap-2' : undefined}>
+      <label className={`flex items-center gap-3 rounded-sm border-2 bg-white px-4 ${after ? 'min-w-0 flex-1 ' : ''}${panel ? 'h-14 border-accent' : sheet ? 'h-12 border-accent' : 'h-12 border-line-strong focus-within:border-accent'}`}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" className="flex-none text-faint">
           <circle cx="10.5" cy="10.5" r="6.5" />
           <path d="M15.5 15.5L21 21" />
@@ -208,7 +218,8 @@ export default function SiteSearch({
           onKeyDown={(e) => {
             if (e.key === 'Enter' && first) {
               e.preventDefault();
-              router.push(first.href);
+              if (replace) router.replace(first.href);
+              else router.push(first.href);
               pick();
             }
           }}
@@ -228,16 +239,21 @@ export default function SiteSearch({
           </button>
         ) : null}
       </label>
+      {after}
+      </div>
 
       {!q ? (
-        <div className={`flex flex-wrap items-center gap-2 ${panel ? 'mt-4' : 'mt-3'}`}>
-          <span className="mr-1 font-mono text-[12.5px] text-faint">Try</span>
-          {SUGGEST.map((w) => (
-            <button key={w} type="button" onClick={() => { setQuery(w); input.current?.focus(); }} className="h-9 rounded-sm border border-line-strong px-3 text-[14px] text-ink transition-colors hover:border-ink">
-              {w}
-            </button>
-          ))}
-        </div>
+        <>
+          <div className={`flex flex-wrap items-center gap-2 ${panel ? 'mt-4' : 'mt-3'}`}>
+            <span className="mr-1 font-mono text-[12.5px] text-faint">Try</span>
+            {SUGGEST.map((w) => (
+              <button key={w} type="button" onClick={() => { setQuery(w); input.current?.focus(); }} className="h-9 rounded-sm border border-line-strong px-3 text-[14px] text-ink transition-colors hover:border-ink">
+                {w}
+              </button>
+            ))}
+          </div>
+          {idle}
+        </>
       ) : failed ? (
         <p className="mt-4 text-[15px] text-muted">
           Search didn’t load.{' '}
@@ -273,7 +289,7 @@ export default function SiteSearch({
             <Group title="Jobs" count={res.jobs.length}>
               <div className="grid gap-1.5">{jobList(4)}</div>
               {res.jobs.length > 4 ? (
-                <Link href={`/portfolio?q=${encodeURIComponent(q)}`} onClick={pick} className="link-more mt-2 text-[15px]">
+                <Link href={`/portfolio?q=${encodeURIComponent(q)}`} replace={replace} onClick={pick} className="link-more mt-2 text-[15px]">
                   All {res.jobs.length} jobs <span aria-hidden="true">→</span>
                 </Link>
               ) : null}

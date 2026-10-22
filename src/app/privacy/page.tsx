@@ -72,8 +72,9 @@ export default function Privacy() {
 
           <H>Things kept on your own phone or computer</H>
           <p>
-            Some parts of the site remember things in your browser only, never sent to me: designs you save with the heart for your brief, the calculator’s
-            history, your best score in the timber game and whether you’ve seen the planner’s quick guide. Clearing your browser’s data removes them.
+            Some parts of the site remember things in your browser only, never sent to me: designs you save with the heart for your brief, the last few pages
+            you looked at (so search can offer them again), the calculator’s history, your best score in the timber game and whether you’ve seen the
+            planner’s quick guide. Clearing your browser’s data removes them.
           </p>
 
           <H id="stats">How visits are counted</H>

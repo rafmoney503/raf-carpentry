@@ -8,6 +8,7 @@ import type { MenuPanel } from '@/lib/menu-panels';
 import MenuPanelView, { MenuFeatureRow, MenuTags } from './MenuPanel';
 import { PLANNER_HREF, PLANNER_IMAGE_SQUARE } from '@/lib/planner-picture';
 import SiteSearch from './SiteSearch';
+import PullSearch from './PullSearch';
 import { MiniLevel } from './ScrollLevel';
 import { getDock, getUndocked, subscribeDock } from '@/lib/scroll-level';
 
@@ -114,6 +115,8 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
   return (
     <>
     <span ref={topMark} aria-hidden="true" className="pointer-events-none absolute left-0 top-0 h-[160px] w-px" />
+    {/* touch screens: pull down at the top of a page to search (src/components/PullSearch.tsx) */}
+    <PullSearch disabled={open || searching} />
     <header
       className="sticky top-0 z-50 border-b border-line bg-paper/90 backdrop-blur-md"
       onBlur={(e) => {
@@ -224,6 +227,9 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
         <nav aria-label="Mobile" className="max-h-[calc(100dvh-64px)] overflow-y-auto border-t border-line bg-paper px-5 pb-6 pt-2 lg:hidden">
           <div className="pb-2 pt-2">
             <SiteSearch layout="menu" onPick={() => setOpen(false)} onActive={setPhoneSearch} />
+            {phoneSearch ? null : (
+              <p className="mt-2 hidden font-mono text-[12px] text-faint [@media(pointer:coarse)]:block">Tip: pull down at the top of any page to search.</p>
+            )}
           </div>
           {phoneSearch ? null : [
             ...links.flatMap((l) => (l.href === '/designs' ? [l, { href: '/wardrobe-planner', label: 'Wardrobe planner' }] : [l])),
