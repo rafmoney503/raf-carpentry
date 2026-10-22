@@ -27,7 +27,7 @@ export function agoWords(ms: number): string | null {
 /* What the card says about one job, from its views and saves: a save counts for more than a look. */
 export function recentLine(now: number, view?: RecentRow, save?: RecentRow): string | null {
   const saves = save?.saves ?? 0;
-  if (saves >= 2) return `Saved for a brief ${saves} times in the past week`;
+  if (saves >= 2) return `Saved for a brief ${saves === 2 ? 'twice' : `${saves} times`} in the past week`;
   if (saves === 1 && save) {
     const a = agoWords(now - Date.parse(save.last));
     return a ? `Saved for a brief ${a}` : 'Saved for a brief in the past week';
@@ -36,7 +36,7 @@ export function recentLine(now: number, view?: RecentRow, save?: RecentRow): str
   const a = agoWords(now - Date.parse(view.last));
   if (a) return `Looked at ${a}`;
   const n = view.visits ?? 0;
-  return n >= 2 ? `Looked at ${n} times in the past week` : 'Looked at in the past week';
+  return n >= 2 ? `Looked at ${n === 2 ? 'twice' : `${n} times`} in the past week` : 'Looked at in the past week';
 }
 
 export function recentItems(data: RecentData): RecentItem[] {
