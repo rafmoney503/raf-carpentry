@@ -72,12 +72,14 @@ function CloseButton({ card, onClose }: { card: BoardCard; onClose: () => void }
   );
 }
 
-function Card({ c, onOpen, onClose, onPay }: { c: BoardCard; onOpen: (uuid: string) => void; onClose: (uuid: string) => void; onPay: (uuid: string) => void }) {
+function Card({ c, onOpen, onClose, onPay, onSent }: { c: BoardCard; onOpen: (uuid: string) => void; onClose: (uuid: string) => void; onPay: (uuid: string) => void; onSent: (uuid: string) => void }) {
   const j = c.job;
   const what = j.description ? whatOf(j.description) : '';
   const owed = c.stage === 'completed' && (c.left ?? 0) > 0;
   // Money comes in from a quote sent on (a deposit) until a finished job is paid in full.
   const canPay = c.stage === 'sent' || c.stage === 'accepted' || (c.stage === 'deposit' && c.left !== 0) || (c.stage === 'completed' && c.left !== 0 && !j.paid);
+  // The quote goes out by WhatsApp or by hand, so ServiceM8 doesn't know: one tap moves the card on (Undo in the note).
+  const canSend = c.stage === 'enquiry' || c.stage === 'quote';
   return (
     <li className="min-w-0 rounded-sm border border-line-strong bg-mount" data-jk-id={j.uuid}>
       <button type="button" onClick={() => onOpen(j.uuid)} className="block w-full px-3.5 pb-3 pt-2.5 text-left">
@@ -92,8 +94,13 @@ function Card({ c, onOpen, onClose, onPay }: { c: BoardCard; onOpen: (uuid: stri
         {c.money ? <span className={`mt-0.5 block font-mono text-[12.5px] leading-snug ${owed ? 'font-semibold text-ink' : 'text-muted'}`}>{c.money}</span> : null}
         {c.flag ? <span className={`mt-2 inline-block rounded-sm border px-1.5 py-0.5 font-mono text-[11.5px] ${owed ? 'border-ink text-ink' : 'border-accent text-accent'}`}>{c.flag}</span> : null}
       </button>
-      {canPay || c.stage === 'completed' ? (
+      {canSend || canPay || c.stage === 'completed' ? (
         <div className="divide-y divide-line border-t border-line px-3.5">
+          {canSend ? (
+            <button type="button" onClick={() => onSent(j.uuid)} className="h-10 w-full font-mono text-[13px] text-accent underline">
+              I’ve sent the quote
+            </button>
+          ) : null}
           {canPay ? (
             <button type="button" onClick={() => onPay(j.uuid)} className="h-10 w-full font-mono text-[13px] text-accent underline">
               {c.stage === 'sent' ? 'Add a deposit' : 'Add a payment'}
@@ -126,6 +133,7 @@ export function ClientBoard({
   methods,
   onPay,
   onWorkOrder,
+  onQuoteSent,
 }: {
   sm8: Sm8;
   marks: Marks;
@@ -138,17 +146,22 @@ export function ClientBoard({
   methods: string[]; // how payments come in (payments.tsx methodsFrom)
   onPay: (uuid: string, p: NewPayment) => Promise<string>;
   onWorkOrder: (uuid: string) => void;
+  onQuoteSent: (uuid: string, sent: boolean) => void; // the Job Kit's own mark, as the job screen's 'I've sent the quote'
 }) {
   const board = useMemo(() => buildBoard(sm8.jobs, sm8.bookings, marks), [sm8.jobs, sm8.bookings, marks]);
   const [pick, setPick] = useState<BoardStage | 'all'>('all');
   const [showClosed, setShowClosed] = useState(false);
-  const [closedNow, setClosedNow] = useState<{ uuid: string; name: string } | null>(null);
+  const [closedNow, setClosedNow] = useState<{ uuid: string; name: string; kind: 'closed' | 'sent' } | null>(null);
   const [payFor, setPayFor] = useState<string | null>(null);
   const payJob = payFor ? sm8.jobs.find((j) => j.uuid === payFor) : undefined;
   const problem = problemText(sm8.error, sm8.detail, sm8.at);
   const close = (uuid: string) => {
     onClose(uuid, true);
-    setClosedNow({ uuid, name: sm8.jobs.find((j) => j.uuid === uuid)?.name ?? 'the client' });
+    setClosedNow({ uuid, name: sm8.jobs.find((j) => j.uuid === uuid)?.name ?? 'the client', kind: 'closed' });
+  };
+  const sent = (uuid: string) => {
+    onQuoteSent(uuid, true);
+    setClosedNow({ uuid, name: sm8.jobs.find((j) => j.uuid === uuid)?.name ?? 'the client', kind: 'sent' });
   };
   const cols = board.columns.filter((c) => pick === 'all' || c.stage === pick);
 
@@ -183,14 +196,16 @@ export function ClientBoard({
       {closedNow ? (
         <p role="status" className="mt-4 flex items-center justify-between gap-3 rounded-sm border border-line-strong bg-mount px-3.5 py-2.5 text-[14.5px]">
           <span className="min-w-0">
-            Closed off the board: <b className="font-semibold">{closedNow.name}</b>
+            {closedNow.kind === 'sent' ? 'Moved to Quote sent: ' : 'Closed off the board: '}
+            <b className="font-semibold">{closedNow.name}</b>
           </span>
           <span className="flex shrink-0 gap-4">
             <button
               type="button"
               className="h-9 font-semibold text-accent underline"
               onClick={() => {
-                onClose(closedNow.uuid, false);
+                if (closedNow.kind === 'sent') onQuoteSent(closedNow.uuid, false);
+                else onClose(closedNow.uuid, false);
                 setClosedNow(null);
               }}
             >
@@ -262,7 +277,7 @@ export function ClientBoard({
                       {c.cards.length ? (
                         <ul className="grid grid-cols-[minmax(0,1fr)] gap-2.5">
                           {c.cards.map((card) => (
-                            <Card key={card.job.uuid} c={card} onOpen={onOpen} onClose={close} onPay={setPayFor} />
+                            <Card key={card.job.uuid} c={card} onOpen={onOpen} onClose={close} onPay={setPayFor} onSent={sent} />
                           ))}
                         </ul>
                       ) : (
@@ -290,7 +305,7 @@ export function ClientBoard({
                   {c.cards.length ? (
                     <ul className="mt-2.5 grid grid-cols-[minmax(0,1fr)] gap-2.5">
                       {c.cards.map((card) => (
-                        <Card key={card.job.uuid} c={card} onOpen={onOpen} onClose={close} onPay={setPayFor} />
+                        <Card key={card.job.uuid} c={card} onOpen={onOpen} onClose={close} onPay={setPayFor} onSent={sent} />
                       ))}
                     </ul>
                   ) : (

@@ -1131,6 +1131,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 methods={payMethods}
                 onPay={pay}
                 onWorkOrder={(uuid) => void changeStatus(uuid, 'Work Order')}
+                onQuoteSent={(uuid, sent) => mark(uuid, { quoteSentAt: sent ? Date.now() : undefined })}
               />
             ) : screen.name === 'whatsapp' ? (
               <WaList chats={waChats} onOpen={(id) => go({ name: 'wa-chat', id })} />
