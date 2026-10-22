@@ -447,7 +447,7 @@ function Suggestions({ pathname, onPick }: { pathname: string; onPick: () => voi
                   <span className="line-clamp-2">{r.line}</span>
                 </span>
                 <span className="mt-1 line-clamp-2 block text-[14px] font-[620] leading-snug group-hover:text-accent">{r.title}</span>
-                <span className="block truncate text-[13px] text-muted">{r.area}</span>
+                <span className="block truncate text-[13px] text-muted">Built in {r.area}</span>
               </Link>
             ))}
           </div>

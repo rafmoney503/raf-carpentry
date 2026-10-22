@@ -11,7 +11,8 @@ import type { RecentItem } from '@/lib/recent-designs';
    it has to be discreet', made from real visits after he agreed it had to be true). Never the page they're on, never
    their own visit, nothing about who looked. It comes 20 s into the visit (at least 2.5 s after a new page), not while
    they're typing (a key in the last 8 s with a box focused), stays 9 s (longer while the pointer or focus is on it) and doesn't come back in that tab once shown
-   or closed. When nothing real happened in the last 7 days it doesn't come at all. */
+   or closed. When nothing real happened in the last 7 days it doesn't come at all. The place on it is where the job was
+   built ('Built in Finchley'), never where the person who looked was. */
 
 const SHOWN = 'raf_recent_shown';
 const START = 'raf_recent_t0';
@@ -115,7 +116,7 @@ export default function RecentDesign() {
             </span>
             <span className="mt-0.5 line-clamp-2 font-display text-[15px] font-semibold leading-snug text-ink group-hover:text-accent">{item.title}</span>
             <span className="block truncate text-[13px] leading-snug text-muted">
-              {item.area} · <span className="text-accent">see it in 3D</span>
+              Built in {item.area} · <span className="text-accent">see it in 3D</span>
             </span>
           </span>
         </Link>

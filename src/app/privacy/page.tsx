@@ -85,7 +85,8 @@ export default function Privacy() {
           <ul>
             <li>
               <b>Its own counter.</b> For each page: which page it was and the one before it, where the visit came from (for example Google or Instagram), the
-              screen size, the country, how long the page was in use, how far down it was scrolled, which part of the page the time went on, and what was tapped
+              screen size, roughly where from (the country, town or city and, in the UK, the first half of the postcode, such as N22, as your
+              internet connection suggests; often only approximate), how long the page was in use, how far down it was scrolled, which part of the page the time went on, and what was tapped
               (the button or link and where on it, never anything you type). A visitor code made from your connection and browser ties together the pages of one
               day’s visit; it changes every day, and your IP address itself is never stored. Kept for 13 months, in a database in the EU (Supabase, Frankfurt).
             </li>

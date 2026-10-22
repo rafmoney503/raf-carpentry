@@ -23,10 +23,19 @@ export async function POST(req: Request) {
     return done();
   }
   const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || req.headers.get('x-real-ip') || '';
-  const p = cleanHit(raw, { ip, ua, country: (req.headers.get('x-vercel-ip-country') || '').toUpperCase() });
+  // roughly where, from the connection (Vercel's own lookup): town or city, the region, a UK postcode's first half
+  const h = (k: string) => req.headers.get(k) || '';
+  const p = cleanHit(raw, {
+    ip,
+    ua,
+    country: h('x-vercel-ip-country').toUpperCase(),
+    city: h('x-vercel-ip-city'),
+    region: h('x-vercel-ip-country-region'),
+    postal: h('x-vercel-ip-postal-code'),
+  });
   if (!p) return done();
   try {
-    await statsRpc('rafsite_hit', { p }, 4000);
+    await statsRpc('rafsite_hit_place', { p }, 4000);
   } catch {
     /* the stats are best effort */
   }

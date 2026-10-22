@@ -2,13 +2,15 @@ import { createHash } from 'crypto';
 import { deviceOf, goalOf, type Tap } from '@/lib/site-stats';
 
 /* Server side of the website stats. The page views go to the stats database (Supabase, the cabinetos project, its own
-   'rafsite' schema, nothing shared with CabinetOS) through three functions that need RAFSTATS_SECRET:
-   rafsite_hit (one page view), rafsite_report and rafsite_page (the Job Kit's Website stats screen).
+   'rafsite' schema, nothing shared with CabinetOS) through functions that need RAFSTATS_SECRET:
+   rafsite_hit_place (one page view: rafsite_hit, then its place), rafsite_report and rafsite_page (the Job Kit's
+   Website stats screen).
    Vercel settings: RAFSTATS_URL (https://<project>.supabase.co), RAFSTATS_KEY (the publishable key) and
    RAFSTATS_SECRET (sensitive). Page views are only recorded on www.rafcarpentry.com (RAFSTATS_ANY_HOST=1 records
    them anywhere, for tests), so previews never mix test visits into the numbers.
    The visitor code is a hash of the secret, the London date, the IP address and the browser's user agent: the same
-   for one person all day, different the next day, and the IP address itself is never stored. */
+   for one person all day, different the next day, and the IP address itself is never stored. Since 22 Oct 2026 each
+   view also keeps roughly where it came from (placeOf: town or city, region, a UK postcode's first half). */
 
 export const statsSetUp = () => Boolean(process.env.RAFSTATS_URL && process.env.RAFSTATS_KEY && process.env.RAFSTATS_SECRET);
 
@@ -18,7 +20,7 @@ export class StatsError extends Error {
   }
 }
 
-export async function statsRpc<T>(fn: 'rafsite_hit' | 'rafsite_report' | 'rafsite_page' | 'rafsite_indexnow' | 'rafsite_cutlist' | 'rafsite_recent', args: Record<string, unknown>, timeoutMs = 8000): Promise<T> {
+export async function statsRpc<T>(fn: 'rafsite_hit' | 'rafsite_hit_place' | 'rafsite_report' | 'rafsite_page' | 'rafsite_indexnow' | 'rafsite_cutlist' | 'rafsite_recent', args: Record<string, unknown>, timeoutMs = 8000): Promise<T> {
   const url = `${process.env.RAFSTATS_URL!.replace(/\/$/, '')}/rest/v1/rpc/${fn}`;
   const res = await fetch(url, {
     method: 'POST',
@@ -112,8 +114,25 @@ const pathOf = (v: unknown) => {
 };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/* Roughly where a visit came from, as Vercel reads the connection (x-vercel-ip-city is percent-encoded): the town or
+   city, the region code and, in the UK, only the first half of the postcode (N22), never more. It's the connection's
+   place, not the person's: phones on 4G / 5G often show the network's hub. */
+export function placeOf(country: string, cityRaw: string, regionRaw: string, postalRaw: string) {
+  let city = '';
+  try {
+    city = decodeURIComponent(cityRaw.replace(/\+/g, ' '));
+  } catch {
+    city = ''; // not readable: no town rather than a garbled one
+  }
+  city = city.replace(/[^\p{L}\p{M}\s'.\-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 60);
+  const region = regionRaw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+  const pc = postalRaw.toUpperCase().replace(/\s+/g, ' ').trim();
+  const district = country === 'GB' ? (pc.match(/^([A-Z]{1,2}\d[A-Z\d]?)(?=\s|$|\d[A-Z]{2}$)/)?.[1] ?? '') : '';
+  return { city: city || null, region: region || null, district: district || null };
+}
+
 /* The page view as the browser sent it, checked and trimmed; null when it isn't one. */
-export function cleanHit(raw: unknown, ctx: { ip: string; ua: string; country: string }) {
+export function cleanHit(raw: unknown, ctx: { ip: string; ua: string; country: string; city?: string; region?: string; postal?: string }) {
   if (!raw || typeof raw !== 'object') return null;
   const b = raw as Record<string, unknown>;
   const id = str(b.id, 36);
@@ -147,6 +166,7 @@ export function cleanHit(raw: unknown, ctx: { ip: string; ua: string; country: s
     vw,
     vh: Math.round(num(b.vh, 0, 10000)),
     country: /^[A-Z]{2}$/.test(ctx.country) ? ctx.country : null,
+    ...placeOf(ctx.country, ctx.city ?? '', ctx.region ?? '', ctx.postal ?? ''),
     engaged: Math.round(num(b.engaged, 0, 21_600_000)),
     scroll: num(b.scroll, 0, 1),
     docH: Math.round(num(b.docH, 0, 200000)) || null,

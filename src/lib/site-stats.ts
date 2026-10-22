@@ -71,6 +71,22 @@ export type StatsReport = {
   goals: Partial<Record<Goal, number>>;
   pages: { path: string; title: string | null; views: number; visitors: number; engagedAvg: number; scrollAvg: number; entries: number; exits: number; goals: number }[];
   journeys: { paths: string[]; more: boolean; visits: number }[];
+  // since 22 Oct 2026: roughly where visits came from (missing in a report from before that)
+  places?: { country: string; city: string | null; visits: number; districts: { d: string; n: number }[] }[];
+  placesFrom?: string | null; // the first day a place was counted
+  latest?: Visit[]; // the newest 30 visits, newest first
+};
+/* Roughly where from, as the connection says (see placeOf in site-stats-server.ts). */
+export type Place = { country?: string | null; city?: string | null; region?: string | null; district?: string | null };
+export type Visit = Place & {
+  at: string;
+  last: string;
+  device: Device | null;
+  src: string;
+  engaged: number;
+  pages: { p: string; t: string | null; e: number }[];
+  goals: Goal[];
+  saves: number;
 };
 export type StatsPage = {
   path: string;
@@ -91,7 +107,35 @@ export type StatsPage = {
   top: { t: string; g: Goal | null; n: number }[];
   next: { path: string; n: number }[]; // '' = left the website
   from: { from: string; n: number }[]; // 'src:google' etc. for the first page of a visit, else the page before
+  // every screen size, since 22 Oct 2026: where the people who looked at it were, and its latest views
+  places?: (Place & { country: string; n: number })[];
+  recent?: (Place & { at: string; device: Device | null; engaged: number; scroll: number; src: string; prev: string | null })[];
 };
+
+const regionNames = (() => {
+  try {
+    return new Intl.DisplayNames(['en-GB'], { type: 'region' });
+  } catch {
+    return null;
+  }
+})();
+export const countryName = (c: string) => (c === 'GB' ? 'UK' : (() => {
+  try {
+    return regionNames?.of(c) ?? c;
+  } catch {
+    return c;
+  }
+})());
+
+/* 'London N22', 'Enfield', 'Warsaw, Poland', 'Somewhere in the UK', 'Not known'. */
+export function placeName(p: Place, opts: { district?: boolean } = {}) {
+  const c = p.country && p.country !== '?' ? p.country : '';
+  const d = opts.district === false ? '' : p.district || '';
+  if (c === 'GB' || (!c && d)) return [p.city || (d ? '' : 'Somewhere in the UK'), d].filter(Boolean).join(' ');
+  if (!c) return p.city || 'Not known';
+  const name = countryName(c);
+  return p.city ? `${p.city}${c === 'US' && p.region ? `, ${p.region}` : ''}, ${name}` : name;
+}
 
 export const SOURCE_LABEL: Record<string, string> = {
   google: 'Google',

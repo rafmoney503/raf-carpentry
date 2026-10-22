@@ -4,14 +4,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { readPin } from './uploader';
 import { post } from './sm8-post';
 import { Icon } from './icons';
-import { GOAL_LABEL, SOURCE_LABEL, statsOff, type Device, type Goal, type StatsPage, type StatsReport, type Tap } from '@/lib/site-stats';
+import { GOAL_LABEL, SOURCE_LABEL, placeName, statsOff, type Device, type Goal, type StatsPage, type StatsReport, type Tap, type Visit } from '@/lib/site-stats';
 
 /* The Job Kit's Website stats screen: the website's own visitor counter (src/components/SiteStats.tsx), read through
    /api/job-kit/stats behind the PIN. The overview (numbers, visits by day, where people come from, the ways to get in
    touch they tapped, pages, the usual routes through the site) and one page in detail, with the real page shown at
    phone, tablet or computer size and three layers over it: Taps (a heatmap of what was tapped), How far (how many
    got down to each part) and Time (where on the page the time went). Drag the page (or use the map beside it) to
-   scroll it. The last overview is kept on the phone (raf_jobkit_stats) so the Today screen can show a line. */
+   scroll it. The last overview is kept on the phone (raf_jobkit_stats) so the Today screen can show a line.
+   Since 22 Oct 2026 (Raf: 'can I have this data in jobkit telling from which area someone looked at something'): Latest
+   visits (each visit: roughly where from, when, phone or computer, where it came from, the pages in order with the time
+   on each, what they tapped), Where they are (towns, with the London postcode areas) and, on a page, who looked at it
+   from where. The place is the connection's (Vercel's lookup), so it's rough: see PLACE_NOTE. */
 
 const API = '/api/job-kit/stats';
 const KEY = 'raf_jobkit_stats';
@@ -218,6 +222,119 @@ function ShareRow({ label, n, of, note, onClick }: { label: string; n: number; o
   );
 }
 
+/* 'Today 18:20', 'Yesterday 21:05', 'Mon 20 Oct, 14:02' (London time) */
+function whenWords(iso: string, now = new Date()) {
+  const d = new Date(iso);
+  const day = (x: Date) => x.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+  if (day(d) === day(now)) return `Today ${time}`;
+  if (day(d) === day(new Date(now.getTime() - 86_400_000))) return `Yesterday ${time}`;
+  return `${d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/London' })}, ${time}`;
+}
+/* where a visit came from, as words after 'from' */
+const fromWords = (src: string) => (src === 'direct' ? 'typed in or a saved link' : src === 'internal' ? 'back on the site later' : `from ${sourceName(src)}`);
+
+const PLACE_NOTE =
+  'Roughly where, from their internet connection: home broadband usually shows the right town and postcode area; phones on 4G or 5G often show the network’s nearest hub (often just London), so treat it as a hint, not an address. Nobody’s name or street is ever known.';
+
+/* The newest visits, one by one: where from, when, how, the pages in order, what they tapped. */
+function LatestVisits({ list, names, onPage }: { list: Visit[]; names: Record<string, string>; onPage: (path: string) => void }) {
+  const [all, setAll] = useState(false);
+  const shown = all ? list : list.slice(0, 8);
+  return (
+    <Band label="Latest visits" right={list.length ? 'newest first' : undefined}>
+      {list.length ? (
+        <ul className="divide-y divide-line" data-latest>
+          {shown.map((v) => {
+            const more = v.pages.length - 5;
+            return (
+              <li key={`${v.at}-${v.pages[0]?.p}`} className="py-3" data-visit>
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="min-w-0 truncate text-[16px] font-semibold" data-place>
+                    {placeName(v)}
+                  </p>
+                  <span className="shrink-0 font-mono text-[12.5px] text-muted">{whenWords(v.at)}</span>
+                </div>
+                <p className="mt-0.5 font-mono text-[12px] text-faint">
+                  {v.device ?? 'screen not known'} · {fromWords(v.src)}
+                  {v.engaged ? ` · ${dur(Math.round(v.engaged / 1000))} in use` : ''}
+                </p>
+                <ol className="mt-1.5 grid grid-cols-[minmax(0,1fr)]">
+                  {v.pages.slice(0, 5).map((pg, i) => (
+                    <li key={i}>
+                      <button type="button" onClick={() => onPage(pg.p)} className="flex w-full items-baseline gap-2.5 py-1.5 text-left">
+                        <span className="w-4 shrink-0 font-mono text-[11.5px] text-faint">{i + 1}</span>
+                        <span className="min-w-0 flex-1 truncate text-[14.5px]">{names[pg.p] ?? pageName(pg.p, pg.t)}</span>
+                        {pg.e >= 1000 ? <span className="shrink-0 font-mono text-[12px] text-muted">{dur(Math.round(pg.e / 1000))}</span> : null}
+                        <span aria-hidden className="shrink-0 text-accent">
+                          →
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+                {more > 0 ? <p className="pl-[26px] font-mono text-[12px] text-faint">and {more} more page{more === 1 ? '' : 's'}</p> : null}
+                {v.goals.length || v.saves ? (
+                  <p className="mt-1.5 flex flex-wrap gap-1.5">
+                    {v.goals.map((g) => (
+                      <span key={g} className="rounded-sm bg-accent-soft px-1.5 py-0.5 font-mono text-[11.5px] text-accent">
+                        Tapped {GOAL_LABEL[g] ?? g}
+                      </span>
+                    ))}
+                    {v.saves ? (
+                      <span className="rounded-sm bg-raised px-1.5 py-0.5 font-mono text-[11.5px] text-muted">
+                        Saved {v.saves} for a brief
+                      </span>
+                    ) : null}
+                  </p>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="py-2 text-[14.5px] text-muted">No visits yet.</p>
+      )}
+      {list.length > 8 ? (
+        <button type="button" onClick={() => setAll((x) => !x)} className="mt-1 h-10 text-[14px] font-semibold text-accent">
+          {all ? 'Show fewer' : `Show all ${list.length}`}
+        </button>
+      ) : null}
+      <p className="mt-2 text-[13px] leading-relaxed text-faint">Tap a page for its heatmap. {PLACE_NOTE}</p>
+    </Band>
+  );
+}
+
+/* Towns and cities the visits came from, with the postcode areas inside each. */
+function PlacesBand({ r }: { r: StatsReport }) {
+  const places = r.places ?? [];
+  const known = places.filter((p) => p.city || p.districts.length);
+  const total = places.reduce((a, p) => a + p.visits, 0);
+  return (
+    <Band label="Where they are" right={total ? `${total} visit${total === 1 ? '' : 's'}` : undefined}>
+      {known.length ? (
+        <ul className="divide-y divide-line" data-places>
+          {places.map((p) => (
+            <ShareRow
+              key={`${p.country}-${p.city ?? ''}`}
+              label={placeName({ country: p.country, city: p.city }, { district: false })}
+              n={p.visits}
+              of={total}
+              note={p.districts.length ? p.districts.map((d) => `${d.d} ${d.n}`).join(' · ') : undefined}
+            />
+          ))}
+        </ul>
+      ) : (
+        <p className="py-2 text-[14.5px] text-muted">Towns are counted from 22 October 2026: the next visits show up here.</p>
+      )}
+      <p className="mt-2 text-[13px] leading-relaxed text-faint">
+        {r.placesFrom && r.placesFrom > r.since ? `Towns counted since ${dayLong(r.placesFrom)}; visits before that show only the country. ` : ''}
+        {PLACE_NOTE}
+      </p>
+    </Band>
+  );
+}
+
 /* ---------- the overview ---------- */
 
 export function StatsView({ onPage }: { onPage: (path: string) => void }) {
@@ -363,6 +480,8 @@ export function StatsView({ onPage }: { onPage: (path: string) => void }) {
             </p>
           </Band>
 
+          {r.latest ? <LatestVisits list={r.latest} names={names} onPage={onPage} /> : null}
+
           <Band label="Where they come from" right={`${t!.visits} visits`}>
             {r.sources.length ? (
               <ul className="divide-y divide-line">
@@ -379,6 +498,8 @@ export function StatsView({ onPage }: { onPage: (path: string) => void }) {
               </p>
             ) : null}
           </Band>
+
+          {r.places ? <PlacesBand r={r} /> : null}
 
           <Band label="Ways to get in touch tapped" right={goalsTotal ? `${goalsTotal} taps` : undefined}>
             {goals.length ? (
@@ -625,6 +746,43 @@ export function StatsPageView({ path }: { path: string }) {
               <p className="py-2 text-[14.5px] text-muted">No visits at this size yet.</p>
             )}
           </Band>
+
+          {page.places ? (
+            <Band label="Who looked at it" right="every screen size">
+              {page.places.length ? (
+                <ul className="divide-y divide-line" data-page-places>
+                  {page.places.map((p, i) => (
+                    <ShareRow key={i} label={placeName(p)} n={p.n} of={page.places!.reduce((a, x) => a + x.n, 0)} />
+                  ))}
+                </ul>
+              ) : (
+                <p className="py-2 text-[14.5px] text-muted">Nobody yet in these days.</p>
+              )}
+              {page.recent?.length ? (
+                <>
+                  <p className="mt-3 font-mono text-[12px] uppercase tracking-[0.06em] text-faint">Latest views</p>
+                  <ul className="mt-1 divide-y divide-line" data-page-recent>
+                    {page.recent.map((v, i) => (
+                      <li key={i} className="py-2">
+                        <div className="flex items-baseline justify-between gap-3">
+                          <span className="min-w-0 truncate text-[15px] font-semibold">{placeName(v)}</span>
+                          <span className="shrink-0 font-mono text-[12.5px] text-muted">{whenWords(v.at)}</span>
+                        </div>
+                        <p className="mt-0.5 font-mono text-[12px] text-faint">
+                          {v.device ?? 'screen not known'}
+                          {v.engaged >= 1000 ? ` · ${dur(Math.round(v.engaged / 1000))}` : ''}
+                          {v.scroll ? ` · read ${Math.round(v.scroll * 100)}%` : ''}
+                          {' · '}
+                          {v.src === 'internal' ? `after ${v.prev ? names[v.prev] ?? pageName(v.prev) : 'another page'}` : fromWords(v.src)}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+              <p className="mt-2 text-[13px] leading-relaxed text-faint">{PLACE_NOTE}</p>
+            </Band>
+          ) : null}
         </>
       )}
     </div>
