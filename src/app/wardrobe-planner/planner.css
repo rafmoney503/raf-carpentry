@@ -262,6 +262,13 @@
 .wp .priv { font-size: 12.5px; color: var(--color-faint); }
 .wp .row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
 .wp .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+/* 'Get the cut list for this design' on the Send step (people building it themselves) */
+.wp .cutbox { position: relative; display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--color-line-strong); background: var(--color-mount); border-radius: var(--radius); padding: 14px; }
+.wp .cut-title { margin: 0; font-family: var(--font-display); font-size: 19px; font-weight: 650; letter-spacing: -0.01em; line-height: 1.2; }
+.wp .cutrow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.wp .cutrow .field { flex: 1 1 200px; min-width: 0; }
+.wp .cutrow .wbtn { flex: 1 0 auto; min-height: 44px; }
+@media (min-width: 420px) { .wp .cutrow .wbtn { flex-grow: 0; } }
 .wp .spec { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 14px; font-size: 14.5px; border: 1px solid var(--color-line-strong); border-radius: var(--radius); padding: 12px 14px; background: var(--color-paper); }
 .wp .spec dt { color: var(--color-faint); font-family: var(--font-mono); font-size: 12px; padding-top: 2px; }
 .wp .spec dd { margin: 0; min-width: 0; }

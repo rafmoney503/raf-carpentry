@@ -21,7 +21,7 @@ export function setStatsOff(off: boolean) {
 }
 
 /* What a tap was for, when it's one of the ways to get in touch (or plan a wardrobe). */
-export type Goal = 'quote' | 'send' | 'call' | 'whatsapp' | 'email' | 'planner';
+export type Goal = 'quote' | 'send' | 'call' | 'whatsapp' | 'email' | 'planner' | 'cutlist';
 export const GOAL_LABEL: Record<Goal, string> = {
   quote: 'Get a quote',
   send: 'Send to Raf',
@@ -29,6 +29,7 @@ export const GOAL_LABEL: Record<Goal, string> = {
   whatsapp: 'WhatsApp',
   email: 'Email',
   planner: 'Wardrobe planner',
+  cutlist: 'Cut list button (planner)',
 };
 export function goalOf(href: string, text: string): Goal | '' {
   const h = href.toLowerCase();
@@ -36,6 +37,7 @@ export function goalOf(href: string, text: string): Goal | '' {
   if (h.startsWith('mailto:')) return 'email';
   if (h.includes('wa.me/') || h.includes('whatsapp.com')) return 'whatsapp';
   if (/^send to raf\b/i.test(text.trim())) return 'send';
+  if (/^get the cut list\b/i.test(text.trim())) return 'cutlist';
   let path = '';
   try {
     const u = new URL(href, 'https://www.rafcarpentry.com');

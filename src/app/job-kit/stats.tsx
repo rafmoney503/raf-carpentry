@@ -17,7 +17,9 @@ const API = '/api/job-kit/stats';
 const KEY = 'raf_jobkit_stats';
 const DAYS = [7, 30, 90] as const;
 
-type Saved = { days: number; report: StatsReport | null; at: number };
+/** Who asked for the wardrobe planner's cut list (/api/cutlist-request; rafsite_cutlist 'list'). */
+type CutlistInfo = { days: number; total: number; all: number; recent: { id: number; at: string; email: string; summary: string; country: string | null; host: string | null; sent_at: string | null }[] };
+type Saved = { days: number; report: StatsReport | null; at: number; cutlist?: CutlistInfo | null };
 
 export function savedStats(): Saved {
   try {
@@ -42,7 +44,8 @@ export function statsLine(s: Saved = savedStats()) {
   if (!r) return 'Visitors, pages and heatmaps of rafcarpentry.com';
   const t = r.totals;
   if (!t.visits) return `No visitors counted in the last ${r.days} days yet`;
-  return `${t.visitors} visitor${t.visitors === 1 ? '' : 's'} in the last ${r.days} days, ${pct(t.phone, t.visits)} on a phone`;
+  const asked = s.cutlist?.total ? ` · ${s.cutlist.total} asked for a cut list` : '';
+  return `${t.visitors} visitor${t.visitors === 1 ? '' : 's'} in the last ${r.days} days, ${pct(t.phone, t.visits)} on a phone${asked}`;
 }
 
 const problem = (e: string) =>
@@ -115,6 +118,55 @@ function Band({ label, right, children }: { label: string; right?: string; child
   );
 }
 
+/* The planner's 'Get the cut list for this design' (rafcarpentry.com/wardrobe-planner, Send step): people who left
+   their email for the cut list of the design they made. Raf sends it once the cut list is for sale. */
+function CutlistBand({ info, days }: { info: CutlistInfo | null; days: number }) {
+  const [all, setAll] = useState(false);
+  if (!info) return null;
+  const list = all ? info.recent : info.recent.slice(0, 5);
+  const line = (summary: string, key: string) => (summary.split('\n').find((l) => l.startsWith(`${key}:`)) ?? '').slice(key.length + 1).trim();
+  return (
+    <Band label="Cut list button (planner)" right={`${info.total} in ${days} days`}>
+      {info.recent.length ? (
+        <ul className="divide-y divide-line" data-cutlist-list>
+          {list.map((c) => {
+            const when = new Date(c.at);
+            const preview = c.host && !/^(www\.)?rafcarpentry\.com$/i.test(c.host);
+            return (
+              <li key={c.id} className="py-2.5">
+                <div className="flex items-baseline justify-between gap-3">
+                  <a href={`mailto:${c.email}?subject=${encodeURIComponent('The cut list for your wardrobe design')}`} className="min-w-0 truncate text-[15px] font-semibold text-accent">
+                    {c.email}
+                  </a>
+                  <span className="shrink-0 font-mono text-[12.5px] text-muted">
+                    {when.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' })}
+                    {c.country ? ` · ${c.country === 'GB' ? 'UK' : c.country}` : ''}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-[13.5px] leading-snug text-muted">
+                  {[line(c.summary, 'Space'), line(c.summary, 'Doors')].filter(Boolean).join(' · ')}
+                  {preview ? <span className="ml-1 font-mono text-[12px] text-faint">(from a preview)</span> : null}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="py-2 text-[14.5px] text-muted">Nobody has asked for a cut list yet.</p>
+      )}
+      {info.recent.length > 5 ? (
+        <button type="button" onClick={() => setAll((v) => !v)} className="mt-1 h-10 text-[14px] font-semibold text-accent">
+          {all ? 'Show fewer' : `Show all ${info.recent.length}`}
+        </button>
+      ) : null}
+      <p className="mt-2 text-[13px] leading-relaxed text-faint">
+        They designed a wardrobe in the planner, tapped Get the cut list and left their email. The cut list isn&apos;t for sale yet, so
+        nobody has been charged; email them when it is. {info.all} asked in all.
+      </p>
+    </Band>
+  );
+}
+
 function Num({ v, label, sub }: { v: string; label: string; sub?: string }) {
   return (
     <div className="rounded-sm border border-line bg-paper px-3 py-2.5">
@@ -166,10 +218,10 @@ export function StatsView({ onPage }: { onPage: (path: string) => void }) {
   const [mine] = useState(() => statsOff());
 
   const fetchReport = useCallback(async (d: number) => {
-    const r = await post<{ report: StatsReport; at: number }>(readPin(), { action: 'report', days: d }, API);
+    const r = await post<{ report: StatsReport; at: number; cutlist?: CutlistInfo | null }>(readPin(), { action: 'report', days: d }, API);
     setLoading(false);
     if (!r.ok) return setError(r.error);
-    const s = { days: d, report: r.data.report, at: r.data.at };
+    const s = { days: d, report: r.data.report, at: r.data.at, cutlist: r.data.cutlist ?? null };
     keep(s);
     setSaved(s);
   }, []);
@@ -329,6 +381,8 @@ export function StatsView({ onPage }: { onPage: (path: string) => void }) {
             )}
             <p className="mt-2 text-[13px] leading-relaxed text-faint">Taps on the buttons, not finished enquiries: those arrive in ServiceM8 and the Inbox.</p>
           </Band>
+
+          <CutlistBand info={saved.days === days ? (saved.cutlist ?? null) : null} days={days} />
 
           <Band label="Pages" right={`${r.pages.length} pages`}>
             <Chips

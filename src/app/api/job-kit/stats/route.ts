@@ -2,7 +2,8 @@ import { guard } from '@/lib/job-kit-server';
 import { StatsError, statsRpc, statsSetUp } from '@/lib/site-stats-server';
 
 /* The Job Kit's Website stats screen (src/app/job-kit/stats.tsx), behind the PIN.
-   { action: 'report', days }                  the numbers, sources, pages and journeys for the last `days` days
+   { action: 'report', days }                  the numbers, sources, pages and journeys for the last `days` days, plus
+                                               `cutlist`: who asked for the wardrobe planner's cut list (rafsite_cutlist)
    { action: 'page', path, device?, days }     one page: taps, how far down people got, time, where they came from and went */
 export const maxDuration = 20;
 
@@ -20,7 +21,14 @@ export async function POST(req: Request) {
   }
   const days = Math.max(1, Math.min(400, Math.floor(Number(body.days) || 30)));
   try {
-    if (body.action === 'report') return Response.json({ report: await statsRpc('rafsite_report', { p_days: days }), at: Date.now() }, { headers: noStore });
+    if (body.action === 'report') {
+      // the planner's cut list button: who asked (best effort, the numbers come without it)
+      const [report, cutlist] = await Promise.all([
+        statsRpc('rafsite_report', { p_days: days }),
+        statsRpc('rafsite_cutlist', { p_action: 'list', p: { days } }).catch(() => null),
+      ]);
+      return Response.json({ report, cutlist, at: Date.now() }, { headers: noStore });
+    }
     if (body.action === 'page') {
       const path = typeof body.path === 'string' ? body.path.slice(0, 200) : '';
       if (!/^\/[\w\-./~%@]*$/.test(path)) return Response.json({ error: 'bad' }, { status: 400 });

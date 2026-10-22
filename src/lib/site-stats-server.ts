@@ -18,7 +18,7 @@ export class StatsError extends Error {
   }
 }
 
-export async function statsRpc<T>(fn: 'rafsite_hit' | 'rafsite_report' | 'rafsite_page' | 'rafsite_indexnow', args: Record<string, unknown>, timeoutMs = 8000): Promise<T> {
+export async function statsRpc<T>(fn: 'rafsite_hit' | 'rafsite_report' | 'rafsite_page' | 'rafsite_indexnow' | 'rafsite_cutlist', args: Record<string, unknown>, timeoutMs = 8000): Promise<T> {
   const url = `${process.env.RAFSTATS_URL!.replace(/\/$/, '')}/rest/v1/rpc/${fn}`;
   const res = await fetch(url, {
     method: 'POST',
@@ -128,7 +128,7 @@ export function cleanHit(raw: unknown, ctx: { ip: string; ua: string; country: s
         const s = str(t.s, 400);
         if (!s) return [];
         const label = str(t.t, 40);
-        const g = goalOf('', label) || (['quote', 'send', 'call', 'whatsapp', 'email', 'planner'].includes(String(t.g)) ? (t.g as Tap['g']) : '');
+        const g = goalOf('', label) || (['quote', 'send', 'call', 'whatsapp', 'email', 'planner', 'cutlist'].includes(String(t.g)) ? (t.g as Tap['g']) : '');
         return [{ s, fx: num(t.fx, 0, 1, 0.5), fy: num(t.fy, 0, 1, 0.5), x: num(t.x, 0, 1, 0.5), y: Math.round(num(t.y, 0, 200000)), h: Math.round(num(t.h, 0, 200000)), t: label, ...(g ? { g } : {}) }];
       })
     : [];

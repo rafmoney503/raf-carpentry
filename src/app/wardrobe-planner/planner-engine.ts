@@ -13,7 +13,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { COS, PLAN, SLIDE, slidingDoorsFor, slidingDrawerSpans, slidingLineUp, PRESETS, presetInside, presetOf, PAIR, canSplit, insideText, planPieces, payloadUnits, runFor } from '@/lib/cabinetos-wardrobe';
 
-export function mountPlanner(host: HTMLElement, endpoint = '/api/brief'): () => void {
+export function mountPlanner(host: HTMLElement, endpoint = '/api/brief', cutEndpoint = '/api/cutlist-request'): () => void {
   let raf = 0, sending = false;
   const t0 = performance.now();
   const observers: ResizeObserver[] = [];
@@ -53,7 +53,7 @@ let uid=1;
 function setPreset(m,key){if(key==='pair'&&canSplit(m.w)){m.split=[{...PAIR[0]},{...PAIR[1]}];m.edit=m.edit||0;}else{m.split=null;m.inside={...presetInside(key==='pair'?'drawers':key)};}}
 const mk=(w,preset)=>{const m={id:'m'+(uid++),w,custom:!CFG.standardWidths.includes(w),inside:presetInside('shelves'),split:null,edit:0};setPreset(m,preset);return m;};
 const S={unitMode:'standard',perDoor:[],side:{mode:'auto',l:50,r:50},wall:2800,ceiling:2400,fit:'wall',plinth:100,plinthCustom:false,infill:50,infillCustom:false,freeH:CFG.freeHeight,depthMode:'std',depthCustom:600,height:'full',doors:'hinged',style:'slab',handle:'brass',colour:'sage',
-  modules:[mk(900,'double'),mk(900,'pair'),mk(900,'short')],sel:0,step:0,view:'3d',open:false,sent:false,drawInside:false,
+  modules:[mk(900,'double'),mk(900,'pair'),mk(900,'short')],sel:0,step:0,view:'3d',open:false,sent:false,drawInside:false,cut:{email:'',sent:''},
   contact:{name:'',email:'',phone:'',postcode:'',when:'',notes:'',company:''}};
 const colour=()=>CFG.colours.find(c=>c.k===S.colour)||CFG.colours[0];
 function depth(){if(S.depthMode==='custom')return clamp(S.depthCustom,CFG.depth.min,CFG.depth.max);if(S.depthMode==='shallow'&&S.doors==='hinged')return CFG.depth.shallow;return S.doors==='sliding'?CFG.depth.sliding:CFG.depth.hinged;}
@@ -609,7 +609,33 @@ function stepSend(){
     <button type="submit" class="wbtn primary wide" id="sendBtn">Send to Raf</button>
     <p class="note">Needs your mobile or email so I can reply.</p>
   </form>
-  <div class="contact"><span>Or call <span class="mono">${CFG.phone}</span></span><span>Email <span class="mono">${CFG.email}</span></span></div>`;}
+  <div class="contact"><span>Or call <span class="mono">${CFG.phone}</span></span><span>Email <span class="mono">${CFG.email}</span></span></div>
+  ${cutBox()}`;}
+/* 'Get the cut list for this design' (22 Oct 2026): for people building it themselves. The cut list isn't for sale yet,
+   so this keeps their email and the design (/api/cutlist-request) for Raf to send it when it is; the tap is counted
+   in the website stats (goal 'cutlist', by the button's words). */
+function cutBox(){const K=S.cut;
+  if(K.sent)return `<div class="cutbox" id="cutBox"><h3>Building it yourself?</h3><p class="okline">${TICK}Thanks. I'll email the cut list for this design to ${esc(K.sent)} when it's ready.</p><p class="priv">Change the design and ask again any time.</p></div>`;
+  return `<div class="cutbox" id="cutBox"><h3>Building it yourself?</h3>
+    <p class="cut-title">Get the cut list for this design</p>
+    <p class="note">Every part with its size, the board layout and the edge banding, worked out in CabinetOS, the app I cut from. Coming soon: leave your email and I'll send it when it's ready.</p>
+    <div class="cutrow"><div class="field"><label for="cut-email">Your email</label><input id="cut-email" data-cut="email" type="email" autocomplete="email" inputmode="email" value="${esc(K.email)}"></div>
+      <button type="button" class="wbtn" id="cutBtn" data-act="cutlist">Get the cut list</button></div>
+    <div class="hp" aria-hidden="true"><label for="cut-company">Company</label><input id="cut-company" tabindex="-1" autocomplete="off"></div>
+    <p class="err" id="cutErr" role="alert" hidden></p>
+    <small class="priv">Only used to send you the cut list. Nothing is charged.</small></div>`;}
+let cutting=false;
+async function cutSubmit(){if(cutting)return;const err=$('#cutErr'),btn=$('#cutBtn'),inp=$('#cut-email');if(!btn)return;
+  const email=(S.cut.email||'').trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)){err.textContent='Add your email so I can send it.';err.hidden=false;if(inp)inp.focus();return;}
+  cutting=true;btn.disabled=true;btn.textContent='Sending...';err.hidden=true;
+  const body=JSON.stringify({email,summary:specRows().map(([k,v])=>`${k}: ${v}`).join('\n'),design:designPayload(),company:($('#cut-company')||{}).value||'',ms:Math.round(performance.now()-t0)});
+  let res=null;try{res=await fetch(cutEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body});}catch(_){res=null;}
+  cutting=false;
+  if(res&&res.ok){S.cut.sent=email;render();return;}
+  let code='';try{code=res?((await res.json()).error||''):'';}catch(_){}
+  err.textContent=code==='email'?'That email address looks incomplete.':code==='busy'?'That has been sent a few times already. Try again later.':'It did not send. Try again in a minute.';
+  err.hidden=false;btn.disabled=false;btn.textContent='Get the cut list';}
 /* The design as data for CabinetOS (/api/brief forwards it; cabinetos-site src/lib/inbound/websiteDesign.ts reads it). */
 function designPayload(){const c=calc(),fr=free();
   const left=hasL()?Math.max(0,Math.round(c.fillL)):0,right=hasR()?Math.max(0,Math.round(c.fillR)):0;
@@ -643,7 +669,7 @@ function render(){
   if(shownStep!==S.step){shownStep=S.step;highlight();if(S.view==='draw')drawPlan();}
 }
 function chips(){const c=calc();$('#fitText').textContent=c.t;$('#fitChip').className='fit'+(c.lv==='ok'?'':' '+c.lv);$('#dimsChip').textContent=`${S.wall} × ${S.ceiling} · ${S.modules.length} unit${S.modules.length===1?'':'s'}`;}
-function changed(rebuildPanel=true,keepCam=true){S.example=false;S.sent=false;if(S.unitMode==='equal'&&S.modules.length)equalise(S.modules.length);if(lined())lineUp();normalise();build();if(S.view==='draw')drawPlan();if(rebuildPanel)render();else chips();}
+function changed(rebuildPanel=true,keepCam=true){S.example=false;S.sent=false;S.cut.sent='';if(S.unitMode==='equal'&&S.modules.length)equalise(S.modules.length);if(lined())lineUp();normalise();build();if(S.view==='draw')drawPlan();if(rebuildPanel)render();else chips();}
 function numVal(id){return id==='sidel'?S.side.l:id==='sider'?S.side.r:id==='wall'?S.wall:id==='ceiling'?S.ceiling:id==='depthc'?S.depthCustom:id==='plinthc'?S.plinth:id==='infillc'?S.infill:id==='freeh'?S.freeH:(S.modules[Number(id.slice(2))]||{}).w;}
 function setNum(id,v){v=Number(v);if(!isFinite(v))return;
   if(id==='wall'){S.wall=clamp(Math.round(v),500,8000);}
@@ -725,16 +751,18 @@ on(host,'click',e=>{
     case'height':S.height=v;changed();break;
     case'colour':S.colour=v;changed();break;
     case'again':S.sent=false;S.step=1;render();break;
+    case'cutlist':cutSubmit();break;
   }
 });
 let flashT=0;function flash(m){const el=$('#fitText');el.textContent=m;clearTimeout(flashT);flashT=setTimeout(chips,2600);}
 on(body,'input',e=>{const el=e.target;
+  if(el.dataset.cut){S.cut[el.dataset.cut]=el.value;return;}
   if(el.dataset.num){clearTimeout(el._t);el._t=setTimeout(()=>setNum(el.dataset.num,el.value),450);return;}
   if(el.dataset.c){S.contact[el.dataset.c]=el.type==='checkbox'?el.checked:el.value;}});
 on(body,'change',e=>{const el=e.target;
   if(el.dataset.num){clearTimeout(el._t);setNum(el.dataset.num,el.value);return;}
   if(el.dataset.c){S.contact[el.dataset.c]=el.type==='checkbox'?el.checked:el.value;}});
-on(body,'keydown',e=>{if(e.key==='Enter'&&e.target.dataset.num)e.target.blur();});
+on(body,'keydown',e=>{if(e.key==='Enter'&&e.target.dataset.num)e.target.blur();if(e.key==='Enter'&&e.target.dataset.cut){e.preventDefault();cutSubmit();}});
 on(body,'submit',async e=>{e.preventDefault();if(sending)return;const C=S.contact,err=$('#formErr');
   const okMobile=(C.phone||'').replace(/\D/g,'').length>=10,okEmail=/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test((C.email||'').trim());
   const msg=C.name.trim().length<2?'Add your name.':!okMobile&&!okEmail?'Add your mobile or email so I can reply.':(C.email.trim()&&!okEmail)?'That email address looks incomplete.':'';

@@ -10,7 +10,7 @@ export const metadata = pageMeta({
   path: '/privacy',
 });
 
-const UPDATED = '19 October 2026';
+const UPDATED = '22 October 2026';
 
 function H({ id, children }: { id?: string; children: React.ReactNode }) {
   return (
@@ -60,6 +60,13 @@ export default function Privacy() {
             </li>
           </ul>
           <p>The law lets me do this because you asked for a quote (steps before a contract), to do the job we agree, and to keep records I’m required to keep.</p>
+
+          <H>When you ask for a cut list</H>
+          <p>
+            If you tap Get the cut list in the <Link href="/wardrobe-planner">wardrobe planner</Link> and leave your email, I keep that email, the design you made
+            (its sizes and units, no name or address) and the country your connection is in, in the same private database (<b>Supabase</b>, Frankfurt). I use it
+            only to email you the cut list for that design when it’s ready. Ask me and I’ll delete it. Nothing is charged.
+          </p>
 
           <H>Things kept on your own phone or computer</H>
           <p>
