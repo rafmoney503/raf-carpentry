@@ -204,6 +204,10 @@
 .wp .chips.row4 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .wp .chips.row4 .chip { align-items: flex-start; padding: 8px 10px; }
 .wp .chip svg { width: 34px; height: 26px; flex: 0 0 auto; stroke: var(--color-ink); fill: none; stroke-width: 1.5; }
+/* Doors step: little door drawings on the style and handle chips, the run on the height chips (planner-engine.ts doorPic / heightPic) */
+.wp .chips.pics .chip { padding: 6px 12px 6px 8px; }
+.wp .chip svg.dp { width: 24px; height: 32px; stroke: none; fill: none; stroke-width: 0; }
+.wp .chip svg.htp { width: 50px; height: 36px; stroke: none; fill: none; stroke-width: 0; }
 .wp .wchips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
 .wp .wchips::-webkit-scrollbar { display: none; }
 .wp .wchips .chip { flex: 0 0 auto; font-family: var(--font-mono); padding: 8px 10px; }

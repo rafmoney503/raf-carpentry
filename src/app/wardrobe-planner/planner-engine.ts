@@ -607,14 +607,38 @@ function stepUnits(){const c=calc(),mode=S.unitMode,R=equalRange(),n=S.modules.l
     <p class="note">Every door. Pick a unit to change just the door in front of it.</p></div>`;})():''}
   <div class="mods">${(()=>{const PCS=pieces();return S.modules.map((m,i)=>modCard(m,i,PCS.filter(p=>p.section===i),mode)).join('');})()}</div>
   ${mode==='doors'?'':`<button type="button" class="wbtn ghost wide" data-act="add" ${S.modules.length>=(mode==='equal'?R.max:12)?'disabled':''}>Add a unit</button>`}`;}
+/* Little drawings on the Doors step's chips (Raf, 22 Oct 2026: 'graphics with each handle, mini graphics, and with one
+   tall door and with top cupboards'): a door in the picked colour and style with the handle in its own metal, and the
+   run with one tall door or with top cupboards. */
+const PIC_INK='#14202E',PIC_METAL={brass:'#B8924F',black:'#222426',edge:'#AEB5BB',edgeb:'#222426'};
+const picFace=st=>st==='mirror'?'#D5DEE4':colour().c;
+function doorPic(st,h){const ink=PIC_INK,m=PIC_METAL[h];
+  let o=`<svg class="dp" viewBox="0 0 30 40" aria-hidden="true"><rect x="3" y="2" width="24" height="36" rx="0.6" fill="${picFace(st)}" stroke="${ink}" stroke-width="1.2"/>`;
+  if(st==='shaker')o+=`<rect x="7" y="6" width="16" height="28" fill="none" stroke="${ink}" stroke-opacity=".55" stroke-width="1"/>`;
+  if(st==='mirror')o+=`<path d="M9 2.6h5L3.6 22v-7z" fill="#fff" fill-opacity=".75"/><path d="M16 2.6h3L3.6 31v-3z" fill="#fff" fill-opacity=".5"/>`;
+  if(h==='brass'||h==='black')o+=`<rect x="20.6" y="12.5" width="2.4" height="15" rx="1.2" fill="${m}" stroke="${ink}" stroke-opacity=".35" stroke-width=".5"/>`;
+  else if(h==='knob')o+=`<circle cx="21.4" cy="20" r="3.1" fill="${m}" stroke="${ink}" stroke-opacity=".7" stroke-width=".7"/><circle cx="20.6" cy="19.2" r="1" fill="#fff" fill-opacity=".45"/>`;
+  // an edge pull wraps round the opening edge (the door's right edge here): a lip on the face and a strip past the edge
+  else if(h==='edge'||h==='edgeb')o+=`<rect x="25" y="14.5" width="3.8" height="11" fill="${m}" stroke="${ink}" stroke-width=".7"/><path d="M27 14.5v11" stroke="${ink}" stroke-opacity=".5" stroke-width=".6"/>`;
+  else if(h==='push')o+=`<circle cx="21.5" cy="20" r="1.5" fill="${ink}"/><circle cx="21.5" cy="20" r="4.2" fill="none" stroke="${ink}" stroke-width=".9" stroke-dasharray="1.7 1.4"/>`;
+  return o+'</svg>';}
+/* The run from the front: one tall door per opening up to the infill, or tall doors to 2000 with top cupboards over them. */
+function heightPic(top){const ink=PIC_INK,f=picFace(S.style),x=[4,13,22,31,40],yT=top?11.5:5,hm=PIC_METAL[S.handle]||ink,
+    bar=(cx,y0,y1)=>S.handle==='push'?'':S.handle==='knob'?`<circle cx="${cx}" cy="${(y0+y1)/2}" r="1.1" fill="${hm}"/>`:`<rect x="${cx-0.7}" y="${y0}" width="1.4" height="${y1-y0}" fill="${hm}"/>`;
+  let o=`<svg class="htp" viewBox="0 0 44 32" aria-hidden="true"><rect x="4" y="3" width="36" height="2" fill="none" stroke="${ink}" stroke-width=".8" stroke-opacity=".6"/><rect x="4" y="5" width="36" height="23" fill="${f}" stroke="${ink}" stroke-width="1.1"/><path d="M5 28h34v2H5z" fill="${ink}" fill-opacity=".25"/>`;
+  [13,22,31].forEach(v=>{o+=`<path d="M${v} 5v23" stroke="${ink}" stroke-width=".9"/>`;});
+  if(top)o+=`<path d="M4 ${yT}h36" stroke="${ink}" stroke-width=".9"/>`;
+  // a pair in each half: handles where the doors meet
+  [[11.6,14.4],[29.6,32.4]].forEach(([a,b])=>{o+=bar(a,15,20)+bar(b,15,20);if(top)o+=bar(a,8.4,10.4)+bar(b,8.4,10.4);});
+  return o+'</svg>';}
 function stepDoors(){
   return `<div><h2>Doors</h2><p class="lede">Tap any door in the 3D view to open it.</p></div>
   <div class="grp"><h3>Type</h3><div class="chips">${chip('doors','hinged','<span>Hinged<small>Up to 600 mm wide is one door, wider is a pair</small></span>',S.doors==='hinged')}${chip('doors','sliding',`<span>Sliding<small>${S.modules.length?(()=>{const SD=slideDoors();return `${SD.n} doors ${SD.w} wide`;})():'Saves space in front'}, needs ${CFG.depth.sliding} mm depth</small></span>`,S.doors==='sliding')}</div></div>
   ${S.doors==='sliding'?(lined()?`<p class="note">The units behind line up with the doors, ${perText()}, so every drawer can open. Change it in Units.</p>`:`<button type="button" class="wbtn ghost wide" data-act="umode" data-v="doors" ${lineUpFor(1)?'':'disabled'}>Line the units up with the doors</button>`):''}
   ${(()=>{const cg=caughtLabels();return cg.size?`<p class="hint">${esc([...cg].join(', '))}: two sliding doors meet in front of the drawers, so they can't open fully. See Units.</p>`:'';})()}
-  <div class="grp"><h3>Style</h3><div class="chips">${Object.keys(CFG.styles).map(k=>chip('style',k,CFG.styles[k],S.style===k)).join('')}</div></div>
-  <div class="grp"><h3>${S.doors==='sliding'?'Pulls':'Handles'}</h3><div class="chips">${Object.keys(CFG.handles).filter(k=>!(S.style==='mirror'&&CFG.throughDoor.includes(k))).map(k=>chip('handle',k,CFG.handles[k],S.handle===k)).join('')}</div>${pullNote()}</div>
-  <div class="grp"><h3>Height</h3><div class="chips">${chip('height','full',`<span>${free()?'Full-height doors':'One tall door'}<small>${free()?`To ${topY()} mm`:infill()?`Up to the ${infill()} mm infill`:'To the ceiling'}</small></span>`,S.height==='full'||!topOk())}${chip('height','top',`<span>With top cupboards<small>${topOk()?`Main doors ${CFG.topSplit}, top ${topY()-CFG.topSplit}`:`Needs ${CFG.topSplit+CFG.topMin} mm to the top`}</small></span>`,S.height==='top'&&topOk(),!topOk())}</div></div>`;}
+  <div class="grp"><h3>Style</h3><div class="chips pics">${Object.keys(CFG.styles).map(k=>chip('style',k,`${doorPic(k,'')}<span>${CFG.styles[k]}</span>`,S.style===k)).join('')}</div></div>
+  <div class="grp"><h3>${S.doors==='sliding'?'Pulls':'Handles'}</h3><div class="chips pics">${Object.keys(CFG.handles).filter(k=>!(S.style==='mirror'&&CFG.throughDoor.includes(k))).map(k=>chip('handle',k,`${doorPic(S.style,k)}<span>${CFG.handles[k]}</span>`,S.handle===k)).join('')}</div>${pullNote()}</div>
+  <div class="grp"><h3>Height</h3><div class="chips pics">${chip('height','full',`${heightPic(false)}<span>${free()?'Full-height doors':'One tall door'}<small>${free()?`To ${topY()} mm`:infill()?`Up to the ${infill()} mm infill`:'To the ceiling'}</small></span>`,S.height==='full'||!topOk())}${chip('height','top',`${heightPic(true)}<span>With top cupboards<small>${topOk()?`Main doors ${CFG.topSplit}, top ${topY()-CFG.topSplit}`:`Needs ${CFG.topSplit+CFG.topMin} mm to the top`}</small></span>`,S.height==='top'&&topOk(),!topOk())}</div></div>`;}
 /* What an edge pull is, under the handle chips (and why a mirror door only gets edge pulls or push to open). */
 function pullNote(){const e=isEdge(),mir=S.style==='mirror',sl=S.doors==='sliding';if(!e&&!mir)return'';
   let t=mir?(sl?'Mirror doors get a slim pull screwed into the edge of the board behind the mirror, so nothing is drilled through the glass. Or push to open, with no pull at all.'
