@@ -158,6 +158,8 @@ export default function SiteStats() {
         h: docHeight(),
         t: text,
         g: goalOf(href, text) || undefined,
+        // a heart that saves a job (SaveButton's data-save): which job, for the recently looked at card
+        sv: el.closest('[data-save]')?.getAttribute('data-save') || undefined,
       });
       if (goalOf(href, text)) send.current(); // a way to get in touch: don't risk losing it if the page changes
     };

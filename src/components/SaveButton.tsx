@@ -16,6 +16,8 @@ export function Heart({ on, size = 18 }: { on: boolean; size?: number }) {
 export default function SaveButton({ item, variant = 'button', className = '' }: { item: SavedItem; variant?: 'button' | 'icon'; className?: string }) {
   const saved = useSaved();
   const on = saved.some((x) => x.id === item.id);
+  // the visit counter notes which job a heart saved (not who), for the 'Saved for a brief' line (RecentDesign.tsx)
+  const statSave = !on && item.id.startsWith('job:') ? item.id.slice(4) : undefined;
   const click = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -28,6 +30,7 @@ export default function SaveButton({ item, variant = 'button', className = '' }:
         type="button"
         onClick={click}
         aria-pressed={on}
+        data-save={statSave}
         aria-label={on ? `Saved: remove ${item.title} from my brief` : `Save ${item.title} for my brief`}
         title={on ? 'Saved for your brief' : 'Save for my brief'}
         className={`inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-[0_2px_8px_rgb(22_25_28/0.12)] transition-colors ${on ? 'border-accent bg-mount text-accent' : 'border-line-strong bg-mount/90 text-ink hover:border-accent hover:text-accent'} ${className}`}
@@ -42,6 +45,7 @@ export default function SaveButton({ item, variant = 'button', className = '' }:
       type="button"
       onClick={click}
       aria-pressed={on}
+      data-save={statSave}
       className={`btn gap-2.5 border ${on ? 'border-accent bg-accent/10 text-accent hover:bg-accent/15' : 'btn-ghost'} ${className}`}
     >
       <Heart on={on} />

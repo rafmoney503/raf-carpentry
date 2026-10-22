@@ -20,6 +20,8 @@ const nextConfig: NextConfig = {
     "/api/job-kit/designs": ["./content/designs/*.json", "./content/projects/*.json", "./content/pages/*.json"],
     /* Send to Raf matches the brief to the job models (src/lib/design-library.ts reads these at run time). */
     "/api/brief": ["./content/projects/*.json", "./content/pages/*.json", "./content/designs/*.json"],
+    /* The recently looked at card names the jobs (src/lib/recent-designs.ts reads these at run time). */
+    "/api/recent": ["./content/projects/*.json", "./content/pages/*.json", "./content/designs/*.json"],
   },
 };
 

@@ -4,6 +4,7 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import WhatsAppFloat from './WhatsAppFloat';
 import HowItWorksFloat from './HowItWorksFloat';
+import RecentDesign from './RecentDesign';
 import type { MenuPanel } from '@/lib/menu-panels';
 
 export default function LayoutShell({ children, menu }: { children: React.ReactNode; menu?: Record<string, MenuPanel> }) {
@@ -27,6 +28,8 @@ export default function LayoutShell({ children, menu }: { children: React.ReactN
         <>
           <HowItWorksFloat />
           <WhatsAppFloat />
+          {/* once a visit: a job someone really looked at or saved lately, above Plan your project */}
+          <RecentDesign />
         </>
       )}
     </>

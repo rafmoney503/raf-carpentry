@@ -2,7 +2,8 @@
 import { useSyncExternalStore } from 'react';
 
 /* "Save for my brief": the hearts on 3D designs and jobs. What a visitor saves is kept in their own browser only
-   (localStorage raf_saved, nothing is sent anywhere) and shows in Plan your project, where each one goes into the
+   (localStorage raf_saved; the list itself is never sent anywhere, though the visit counter notes the tap on a heart and
+   which job it saved, as it notes any tap) and shows in Plan your project, where each one goes into the
    brief message with its link. If the browser won't keep it (private mode, blocked storage) it lasts until the
    page is closed. Other tabs follow along through the storage event, so a design saved in a tab opened from the
    brief shows up in the brief straight away. */

@@ -93,6 +93,10 @@ export default function Privacy() {
             </li>
           </ul>
           <p>
+            From these counts the site sometimes shows a small card saying a job was looked at or saved for a brief lately (for example “Looked at 40
+            minutes ago”). It says nothing about who that was or where they were, and never shows you your own visit.
+          </p>
+          <p>
             Counting visits only to improve the site is allowed without asking first, as long as you can say no easily. The switch below does that for this
             browser, and both counters also stop if your browser sends Global Privacy Control.
           </p>

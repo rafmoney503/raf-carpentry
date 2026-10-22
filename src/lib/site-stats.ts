@@ -51,8 +51,9 @@ export function goalOf(href: string, text: string): Goal | '' {
 }
 
 /* One tap: where on the element (fx, fy as fractions), where on the screen (x as a fraction of the width) and the
-   page (y in px, of a page docH tall), its label and what it was for. s finds the element again in the Job Kit. */
-export type Tap = { s: string; fx: number; fy: number; x: number; y: number; h: number; t: string; g?: Goal | '' };
+   page (y in px, of a page docH tall), its label and what it was for. s finds the element again in the Job Kit.
+   sv: the job it saved with a heart (its slug), for the 'Saved for a brief' line of the recently looked at card. */
+export type Tap = { s: string; fx: number; fy: number; x: number; y: number; h: number; t: string; g?: Goal | ''; sv?: string };
 
 export type Device = 'phone' | 'tablet' | 'computer';
 export const deviceOf = (vw: number): Device => (vw < 700 ? 'phone' : vw < 1024 ? 'tablet' : 'computer');
