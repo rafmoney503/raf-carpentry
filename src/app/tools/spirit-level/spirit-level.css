@@ -207,6 +207,9 @@
 .lv-fix { margin-top: 4px; font-family: var(--font-mono); font-size: 13px; line-height: 1.3; color: var(--lv-sub); }
 .lv-said { margin-top: 8px; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.3; color: var(--lv-hi); }
 .lv-said svg { display: inline-block; width: 14px; height: 14px; margin-right: 6px; vertical-align: -2px; }
+/* Sound check line (same place as Saying): pale, amber when the phone has paused the sound */
+.lv-sound { color: var(--lv-sub); }
+.lv-sound.off { color: var(--lv-hold); }
 .lv-warn,
 .lv-held { margin-top: 10px; max-width: 40ch; font-size: 13px; line-height: 1.35; color: var(--lv-sub); }
 .lv-held { color: var(--lv-hold); font-weight: 600; }
@@ -410,6 +413,7 @@
   .lv-flat .lv-num { font-size: 40px; }
   .lv-dir { font-size: 15px; }
   .lv-fix { font-size: 12px; }
+  .lv-said { margin-top: 4px; font-size: 11.5px; line-height: 1.2; }
   .lv-tile { height: 46px; }
   .lv-tile-t { font-size: 12.5px; }
 }

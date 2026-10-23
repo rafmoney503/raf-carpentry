@@ -132,6 +132,12 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
   const lastTick = useRef(0);
   const steady = useRef<{ stop: () => void } | null>(null); // the steady tone at level, while it plays
   const wave = useRef<PeriodicWave | null>(null);
+  const unlocked = useRef(false);
+  // Sound check on the panel: 'check' for a few seconds after Start or Tone on (the beep that goes with it), 'paused'
+  // when the phone has stopped the page's sound (an iPhone can after the motion question) until a tap brings it back.
+  const [audioOk, setAudioOk] = useState(true);
+  const [soundCheck, setSoundCheck] = useState(false);
+  const [paused, setPaused] = useState(false);
   const sayCand = useRef({ text: '', since: 0 });
   const spoke = useRef({ text: '', at: 0 });
   const voice = useRef<SpeechSynthesisVoice | null>(null);
@@ -208,12 +214,59 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
     return o;
   }, []);
 
+  const pauseTimer = useRef(0);
+  const checkTimer = useRef(0);
+  /** Follows the page's sound: if it isn't running for more than a moment, the panel says so. */
+  const watchAudio = useCallback((ctx: AudioContext) => {
+    const look = () => {
+      const ok = ctx.state === 'running';
+      setAudioOk(ok);
+      window.clearTimeout(pauseTimer.current);
+      if (ok) setPaused(false);
+      else pauseTimer.current = window.setTimeout(() => setPaused(ctx.state !== 'running'), 1200);
+    };
+    ctx.onstatechange = look;
+    look();
+  }, []);
+  const showCheck = useCallback((on: boolean) => {
+    window.clearTimeout(checkTimer.current);
+    setSoundCheck(on);
+    if (on) checkTimer.current = window.setTimeout(() => setSoundCheck(false), 5000);
+  }, []);
+  useEffect(
+    () => () => {
+      window.clearTimeout(pauseTimer.current);
+      window.clearTimeout(checkTimer.current);
+    },
+    [],
+  );
+
+  /** Inside a tap: switch the page's sound back on if the phone has paused it (state suspended, or WebKit's
+   *  'interrupted'), and the first time play a silent sample, which is what lets an iPhone play sound at all. */
+  const unlock = useCallback(() => {
+    const ctx = audio.current;
+    if (!ctx) return;
+    try {
+      if (ctx.state !== 'running') ctx.resume().catch(() => {});
+      if (!unlocked.current) {
+        unlocked.current = true;
+        const b = ctx.createBuffer(1, 1, 22050);
+        const src = ctx.createBufferSource();
+        src.buffer = b;
+        src.connect(ctx.destination);
+        src.start(0);
+      }
+    } catch {
+      /* no sound */
+    }
+  }, []);
+
   /** One beep, `vol` 0 to 1 (louder nearer level). */
   const tick = useCallback((vol: number) => {
     const ctx = audio.current;
     if (!ctx) return;
     try {
-      if (ctx.state === 'suspended') ctx.resume();
+      if (ctx.state !== 'running') ctx.resume().catch(() => {});
       const t = ctx.currentTime;
       const o = voiceOsc(ctx);
       const g = ctx.createGain();
@@ -246,7 +299,7 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
     const ctx = audio.current;
     if (ctx) {
       try {
-        if (ctx.state === 'suspended') ctx.resume();
+        if (ctx.state !== 'running') ctx.resume().catch(() => {});
         const t = ctx.currentTime;
         const o = voiceOsc(ctx);
         const g = ctx.createGain();
@@ -396,8 +449,17 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
     // The sound, the voice and the motion permission all have to start inside the tap.
     try {
       const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (AC && !audio.current) audio.current = new AC();
-      audio.current?.resume().catch(() => {});
+      if (AC && !audio.current) {
+        const ctx = new AC();
+        audio.current = ctx;
+        watchAudio(ctx);
+      }
+      unlock();
+      // A sound check: one beep as the level opens, so it's plain straight away whether the phone will make a sound.
+      if (tone) {
+        tick(0.7);
+        showCheck(true);
+      }
     } catch {
       /* no sound */
     }
@@ -552,9 +614,15 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
   const toggleTone = () => {
     setTone(!tone);
     writeStore(TONE_KEY, !tone);
-    audio.current?.resume().catch(() => {});
-    if (!tone) armed.current = true;
-    else stopSteady();
+    unlock();
+    if (!tone) {
+      armed.current = true;
+      tick(0.7); // the same sound check as at Start
+      showCheck(true);
+    } else {
+      stopSteady();
+      showCheck(false);
+    }
   };
   const toggleSpeak = () => {
     const on = !speak;
@@ -615,7 +683,7 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
     <>
       <StartCard phase={phase} onStart={start} computer={computer} qrSvg={qrSvg} />
       {open ? (
-        <div className="lv-app" role="dialog" aria-modal="true" aria-label="Spirit level">
+        <div className="lv-app" role="dialog" aria-modal="true" aria-label="Spirit level" onClickCapture={unlock} onTouchEndCapture={unlock}>
           <div className="lv-top">
             <p className="lv-title">Spirit level</p>
             <ReadingsLink />
@@ -639,6 +707,7 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
               canSpeak={canSpeak}
               big={big}
               said={said}
+              sound={!tone ? null : paused && !audioOk ? 'paused' : soundCheck ? 'check' : null}
               onLen={pickLen}
               onOwn={chooseOwn}
               onZero={setZero}
@@ -698,6 +767,7 @@ function Reading(p: {
   canSpeak: boolean;
   big: boolean;
   said: string;
+  sound: 'paused' | 'check' | null;
   onLen: (l: number) => void;
   onOwn: (l: number) => void;
   onZero: () => void;
@@ -761,7 +831,15 @@ function Reading(p: {
           <span>{s.faceDown ? 'Turn the phone face up' : keep(words.main)}</span>
         </p>
         <p className="lv-fix">{(!s.faceDown && keep(words.sub)) || ' '}</p>
-        {p.speak && p.said ? (
+        {p.sound ? (
+          <p className={`lv-said lv-sound${p.sound === 'paused' ? ' off' : ''}`} role="status">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 9v6h4l5 4V5L8 9z" />
+              {p.sound === 'paused' ? <path d="M17 9l5 6M22 9l-5 6" /> : <path d="M16.5 8.5a5 5 0 0 1 0 7" />}
+            </svg>
+            {p.sound === 'paused' ? 'Sound paused. Tap the screen' : 'No beep? Turn silent mode off'}
+          </p>
+        ) : p.speak && p.said ? (
           <p className="lv-said">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M4 9v6h4l5 4V5L8 9z" />
