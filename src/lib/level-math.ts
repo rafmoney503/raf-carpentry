@@ -173,9 +173,23 @@ export function levelWords(mode: Mode, a: number, b: number, len: number, fromZe
   return { main, sub: `over ${len}`, icon: 'up', detail: `${lead}, raise ${fixes.join(' and ')} over ${len}`, say: `Raise ${said.join(', and ')}` };
 }
 
-/* Tone: beeps start within TONE_RANGE degrees of level and come faster as it gets nearer, like a parking sensor;
-   at level one higher chirp (as Beep did), then quiet until it has moved 0.15 off. */
+/* Tone, like a parking sensor: beeps start within TONE_RANGE degrees of level and come faster and louder as it gets
+   nearer; at level they join into one steady tone, which keeps going until the reading has moved STEADY_OFF off
+   (a little past 0.0, so it doesn't stutter on the edge). After Set zero or a flip reading it stays quiet until the
+   phone has been moved REARM off. */
 export const TONE_RANGE = 2;
+export const TONE_HZ = 880;
+/** Peak volume (0 to 1) of a beep far off, and of the loudest beep and the steady tone at level. */
+export const TONE_QUIET = 0.3;
+export const TONE_LOUD = 1;
+export const STEADY_OFF = 0.08;
+export const REARM = 0.15;
+
+/** How loud a beep is at `d` degrees off: TONE_QUIET at the edge of the range, rising faster near level to TONE_LOUD. */
+export function toneVolume(d: number) {
+  const c = closeness(d);
+  return TONE_QUIET + (TONE_LOUD - TONE_QUIET) * c * c;
+}
 
 /** 0 far off to 1 at level, for the five bars on the Tone button. */
 export function closeness(d: number, range = TONE_RANGE) {

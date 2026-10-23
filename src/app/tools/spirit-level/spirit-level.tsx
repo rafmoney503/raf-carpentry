@@ -14,8 +14,13 @@ import {
   nearestAxis,
   norm,
   readLength,
+  REARM,
   screenAxis,
+  STEADY_OFF,
+  TONE_HZ,
+  TONE_LOUD,
   toneGap,
+  toneVolume,
   toScreen,
   upFromAngles,
   wrap180,
@@ -33,10 +38,14 @@ import './spirit-level.css';
    readings, end for end, give the phone's own error on that edge, taken off every reading and remembered on this
    phone. Hold freezes the reading. The sums are in src/lib/level-math.ts.
    Version 2 (22 Oct 2026, from the 'Digital tools for the Tools page' canvas, Version 2 page): the reading sits on a
-   dark instrument panel; Tone beeps faster as it nears level and chirps at level; Speak says the mm out loud once the
-   reading settles; Big numbers drops the vial for a reading you can see from a step away; a fifth length chip takes
-   your own length; Save keeps the reading (from just before the tap, so the tap's wobble isn't in it) in Your readings
-   (src/lib/readings.ts, /tools/readings), with a name and a place. */
+   dark instrument panel; Tone beeps faster as it nears level; Speak says the mm out loud once the reading settles;
+   Big numbers drops the vial for a reading you can see from a step away; a fifth length chip takes your own length;
+   Save keeps the reading (from just before the tap, so the tap's wobble isn't in it) in Your readings
+   (src/lib/readings.ts, /tools/readings), with a name and a place.
+   Tone (23 Oct 2026, Raf: 'The tone could be louder when near 0 and continuous when reached 0'): the beeps get louder
+   as well as faster nearer level, and at level they join into one steady tone, like a parking sensor, until the
+   reading moves off again. Beeps and tone have a little of the higher notes in them, which a phone speaker plays
+   louder than a plain 880 Hz. */
 
 type Phase = 'idle' | 'asking' | 'running' | 'denied' | 'nosensor';
 type Tare = { mode: 'edge'; axis: Axis; t0: number } | { mode: 'flat'; x0: number; y0: number };
@@ -119,8 +128,10 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
   const modeRef = useRef<Mode>('edge');
   const axisRef = useRef<Axis>('y+');
   const audio = useRef<AudioContext | null>(null);
-  const armed = useRef(true);
+  const armed = useRef(true); // false after Set zero or a flip reading: quiet until the phone has moved REARM off
   const lastTick = useRef(0);
+  const steady = useRef<{ stop: () => void } | null>(null); // the steady tone at level, while it plays
+  const wave = useRef<PeriodicWave | null>(null);
   const sayCand = useRef({ text: '', since: 0 });
   const spoke = useRef({ text: '', at: 0 });
   const voice = useRef<SpeechSynthesisVoice | null>(null);
@@ -180,52 +191,90 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
     samples.current?.push(u);
   }, []);
 
-  const tick = useCallback(() => {
+  // One oscillator at TONE_HZ with a little of its 2nd and 3rd harmonics: a phone speaker plays those louder than a
+  // plain sine, without the harshness of a square wave.
+  const voiceOsc = useCallback((ctx: AudioContext) => {
+    const o = ctx.createOscillator();
+    try {
+      if (!wave.current && typeof ctx.createPeriodicWave === 'function') {
+        wave.current = ctx.createPeriodicWave(new Float32Array([0, 0, 0, 0]), new Float32Array([0, 1, 0.35, 0.15]));
+      }
+      if (wave.current) o.setPeriodicWave(wave.current);
+      else o.type = 'triangle';
+    } catch {
+      o.type = 'triangle';
+    }
+    o.frequency.value = TONE_HZ;
+    return o;
+  }, []);
+
+  /** One beep, `vol` 0 to 1 (louder nearer level). */
+  const tick = useCallback((vol: number) => {
     const ctx = audio.current;
     if (!ctx) return;
     try {
       if (ctx.state === 'suspended') ctx.resume();
       const t = ctx.currentTime;
-      const o = ctx.createOscillator();
+      const o = voiceOsc(ctx);
       const g = ctx.createGain();
-      o.type = 'sine';
-      o.frequency.value = 880;
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.16, t + 0.006);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.045);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.006);
+      g.gain.setValueAtTime(vol, t + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.065);
       o.connect(g).connect(ctx.destination);
       o.start(t);
-      o.stop(t + 0.05);
+      o.stop(t + 0.07);
     } catch {
       /* no sound */
     }
+  }, [voiceOsc]);
+
+  const stopSteady = useCallback(() => {
+    const s = steady.current;
+    steady.current = null;
+    s?.stop();
   }, []);
 
-  const chirp = useCallback(() => {
-    const ctx = audio.current;
+  /** The steady tone while it reads level (with a short buzz where the phone can). */
+  const startSteady = useCallback(() => {
     try {
       (navigator as Navigator & { vibrate?: (p: number) => boolean }).vibrate?.(25);
     } catch {
       /* no vibration */
     }
-    if (!ctx) return;
-    try {
-      if (ctx.state === 'suspended') ctx.resume();
-      const t = ctx.currentTime;
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = 'sine';
-      o.frequency.value = 1320;
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.25, t + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
-      o.connect(g).connect(ctx.destination);
-      o.start(t);
-      o.stop(t + 0.15);
-    } catch {
-      /* no sound */
+    let stop = () => {};
+    const ctx = audio.current;
+    if (ctx) {
+      try {
+        if (ctx.state === 'suspended') ctx.resume();
+        const t = ctx.currentTime;
+        const o = voiceOsc(ctx);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(TONE_LOUD, t + 0.02);
+        o.connect(g).connect(ctx.destination);
+        o.start(t);
+        stop = () => {
+          try {
+            const t2 = ctx.currentTime;
+            g.gain.cancelScheduledValues(t2);
+            g.gain.setValueAtTime(Math.max(0.0001, g.gain.value || TONE_LOUD), t2);
+            g.gain.exponentialRampToValueAtTime(0.0001, t2 + 0.06);
+            o.stop(t2 + 0.08);
+          } catch {
+            try {
+              o.stop();
+            } catch {
+              /* already stopped */
+            }
+          }
+        };
+      } catch {
+        /* no sound */
+      }
     }
-  }, []);
+    steady.current = { stop };
+  }, [voiceOsc]);
 
   const sayNow = useCallback((text: string, quiet = false) => {
     try {
@@ -278,19 +327,23 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
       const rec = recent.current;
       rec.push({ t: now, s });
       while (rec.length && now - rec[0].t > 1500) rec.shift();
-      if (hd || by || s.faceDown) return;
-      // Tone: a chirp each time it comes level, ready again once it has moved 0.15 off; quicker beeps on the way in.
+      if (hd || by || s.faceDown || document.hidden) {
+        stopSteady();
+        return;
+      }
+      // Tone: beeps on the way in, faster and louder nearer level; one steady tone while it reads level, until it has
+      // moved STEADY_OFF off. Quiet after Set zero or a flip reading until the phone has moved REARM off.
       const lv = levelOf(s);
       const off = offOf(s);
-      if (lv && armed.current) {
-        armed.current = false;
-        if (tn) chirp();
-      } else if (!lv && off > 0.15) armed.current = true;
-      if (tn && !lv && armed.current) {
+      if (off > REARM) armed.current = true;
+      if (steady.current) {
+        if (!tn || !armed.current || off >= STEADY_OFF) stopSteady();
+      } else if (tn && lv && armed.current) startSteady();
+      if (tn && !steady.current && !lv && armed.current) {
         const gap = toneGap(off);
         if (gap !== null && now - lastTick.current >= gap) {
           lastTick.current = now;
-          tick();
+          tick(toneVolume(off));
         }
       }
       // Speak: once the words have stayed the same for a moment, and not the same words twice running.
@@ -302,8 +355,11 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
       }
     };
     raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
-  }, [phase, chirp, tick, sayNow]);
+    return () => {
+      cancelAnimationFrame(raf);
+      stopSteady();
+    };
+  }, [phase, tick, startSteady, stopSteady, sayNow]);
 
   // Keep the screen on while the level is open
   useEffect(() => {
@@ -319,6 +375,8 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
     ask();
     const onVis = () => {
       if (document.visibilityState === 'visible') ask();
+      // The frame loop stops while the page is hidden, so the steady tone has to stop here.
+      else stopSteady();
     };
     document.addEventListener('visibilitychange', onVis);
     const root = document.documentElement;
@@ -330,7 +388,7 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
       wake.current = null;
       root.style.overflow = before;
     };
-  }, [phase]);
+  }, [phase, stopSteady]);
 
   useEffect(() => () => window.removeEventListener('deviceorientation', onOrient), [onOrient]);
 
@@ -496,6 +554,7 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
     writeStore(TONE_KEY, !tone);
     audio.current?.resume().catch(() => {});
     if (!tone) armed.current = true;
+    else stopSteady();
   };
   const toggleSpeak = () => {
     const on = !speak;
