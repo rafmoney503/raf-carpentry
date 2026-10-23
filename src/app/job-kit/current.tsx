@@ -272,7 +272,23 @@ export function WazeLink({ address }: { address: string }) {
     </a>
   );
 }
-/* The big Waze button at the top of a job: drives to the job's address. */
+/* The big Waze button at the top of a job: drives to the job's address. Its own drawing (a van driving to a map pin,
+   23 Oct 2026), not Waze's logo, which is their trademark. */
+function VanToPin({ size = 36 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true" className="text-on-accent">
+      <path d="M8 21.5c3-6 8-9.5 14.2-10.8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeDasharray="0.1 3.2" />
+      <path d="M24.5 2.5a5.2 5.2 0 0 1 5.2 5.2c0 3.8-5.2 8.6-5.2 8.6s-5.2-4.8-5.2-8.6a5.2 5.2 0 0 1 5.2-5.2z" fill="currentColor" />
+      <circle cx="24.5" cy="7.7" r="2" className="fill-accent" />
+      <path d="M2.5 17a1.5 1.5 0 0 1 1.5-1.5h12.6a2 2 0 0 1 1.5.7l3.4 4h1.9a2 2 0 0 1 2 2v2.3a1.5 1.5 0 0 1-1.5 1.5H4a1.5 1.5 0 0 1-1.5-1.5z" fill="currentColor" />
+      <path d="M15.6 17.3h1.3a1 1 0 0 1 .8.4l2.1 2.6h-4.2z" className="fill-accent" />
+      <circle cx="7.5" cy="26.3" r="2.6" className="fill-accent" />
+      <circle cx="7.5" cy="26.3" r="1.8" fill="currentColor" />
+      <circle cx="19.5" cy="26.3" r="2.6" className="fill-accent" />
+      <circle cx="19.5" cy="26.3" r="1.8" fill="currentColor" />
+    </svg>
+  );
+}
 function WazeTile({ address }: { address: string }) {
   const phone = onPhone();
   return (
@@ -280,13 +296,11 @@ function WazeTile({ address }: { address: string }) {
       href={waze(address, phone)}
       data-waze-top
       aria-label={`Drive there with Waze: ${address.replace(/\s*\n\s*/g, ', ')}`}
-      className="flex h-[60px] w-[60px] shrink-0 flex-col items-center justify-center gap-1 rounded-sm border border-line-strong bg-mount text-accent active:bg-raised"
+      className="flex h-[64px] w-[64px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-sm bg-accent text-on-accent shadow-sm hover:bg-accent-hover active:opacity-90"
       {...(phone ? {} : { target: '_blank', rel: 'noopener' })}
     >
-      <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-        <path d="M20.5 3.5 3.5 10.6l7.1 2.8 2.8 7.1z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      </svg>
-      <span className="font-mono text-[11.5px] font-semibold leading-none text-ink">Waze</span>
+      <VanToPin />
+      <span className="font-mono text-[12px] font-bold leading-none">Waze</span>
     </a>
   );
 }
