@@ -302,3 +302,116 @@
 }
 /* A small text button inside a note (Units behind door 2: Change every door) */
 .wp .linkbtn { border: 0; background: none; padding: 0; color: var(--color-accent); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+
+/* "Got an IKEA PAX design?" (pax-send.tsx): the link to it on the Space and Send steps (planner-engine.ts paxLink) and
+   in the quick guide, then the sheet itself. The sheet covers the 3D view and the steps (on a computer the drawing of
+   what Raf adds sits where the 3D view was, the form where the steps were). */
+.wp .paxlink { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: 1px solid var(--color-line-strong); border-left: 3px solid var(--color-accent); background: var(--color-paper); border-radius: var(--radius); padding: 8px 10px; font-size: 14px; color: var(--color-ink); }
+.wp .paxlink svg { flex: 0 0 auto; width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.wp .paxlink svg.chev { width: 16px; height: 16px; stroke-width: 2; color: var(--color-accent); }
+.wp .paxlink span { flex: 1 1 auto; min-width: 0; line-height: 1.3; }
+.wp .paxlink b { font-weight: 650; }
+.wp .paxlink small { display: block; font-size: 12.5px; color: var(--color-muted); }
+@media (hover: hover) { .wp .paxlink:hover { border-color: var(--color-accent); } }
+.wp .guide-pax { margin-top: 10px; }
+
+.wp .paxs { grid-row: 2 / 4; grid-column: 1; z-index: 3; min-height: 0; display: flex; flex-direction: column; background: var(--color-mount); border-top: 1px solid var(--color-line); }
+.wp .paxs[hidden] { display: none; }
+.wp .paxs-pic { display: none; }
+.wp .paxs-side { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.wp .paxs-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-block: 14px 24px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 20px; }
+.wp .paxs-scroll > * { flex-shrink: 0; }
+.wp .paxs-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.wp .paxs-head h2:focus { outline: none; }
+.wp .paxs-head .lede { margin-top: 6px; }
+.wp .paxs-x { flex: 0 0 auto; }
+.wp .paxs .grp { position: relative; }
+.wp .paxs h3 { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 0; }
+.wp .paxs-n { font-style: normal; display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--color-accent); color: var(--color-on-accent); font-size: 11px; letter-spacing: 0; margin-right: 8px; }
+.wp .paxs-opt { margin-left: 8px; text-transform: none; letter-spacing: 0; font-family: var(--font-sans); font-size: 12.5px; color: var(--color-faint); }
+.wp .paxs-ext { color: var(--color-accent); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
+.wp .paxs-ext::after { content: ' \2197'; }
+.wp .paxs .field input.mono { font-family: var(--font-mono); letter-spacing: 0.02em; }
+
+/* the drawing: walls, ceiling and floor hatched, IKEA's parts white, what Raf makes blue, what isn't asked for dashed */
+.wp .paxs-inline-pic { border: 1px solid var(--color-line); border-radius: var(--radius); padding: 8px 10px 9px; background-color: var(--color-paper); background-image: linear-gradient(var(--wp-grid) 1px, transparent 1px), linear-gradient(90deg, var(--wp-grid) 1px, transparent 1px); background-size: 12px 12px; }
+.wp .paxs-svg { display: block; width: 100%; height: auto; max-height: 240px; font-family: var(--font-mono); }
+.wp .paxs-svg .pw { stroke: var(--color-ink); stroke-opacity: 0.4; stroke-width: 0.6; }
+.wp .paxs-svg .pl { stroke: var(--color-ink); stroke-width: 1.1; }
+.wp .paxs-svg .hit { fill: transparent; stroke: none; }
+.wp .paxs-svg .tap { cursor: pointer; }
+.wp .paxs-svg .pp.on, .wp .paxs-svg .pd.mine { fill: rgb(37 71 208 / 0.16); stroke: var(--color-accent); stroke-width: 1.1; }
+.wp .paxs-svg .pp.off { fill: none; stroke: var(--color-faint); stroke-width: 0.9; stroke-dasharray: 3 2.4; }
+.wp .paxs-svg .pf { fill: var(--color-mount); stroke: var(--color-ink); stroke-width: 1.1; }
+.wp .paxs-svg .pd.ikea { fill: var(--color-mount); stroke: var(--color-ink); stroke-opacity: 0.55; stroke-width: 0.8; }
+.wp .paxs-svg .pd.mine { stroke-width: 0.9; }
+.wp .paxs-svg .pdl { stroke: var(--color-accent); stroke-width: 0.8; }
+.wp .paxs-svg .ph { stroke: var(--color-ink); stroke-width: 1.6; }
+.wp .paxs-svg .pscribe { stroke: var(--color-accent); stroke-width: 0.8; }
+.wp .paxs-svg .pbase { fill: var(--color-ink); fill-opacity: 0.12; }
+.wp .paxs-svg .pt { fill: var(--color-ink); stroke: none; font-size: 7.4px; }
+.wp .paxs-svg .pt.sm { font-size: 6.4px; }
+.wp .paxs-svg .pt.dim { fill: var(--color-faint); }
+.wp .paxs-svg .knock { stroke: var(--color-mount); stroke-width: 3px; paint-order: stroke; }
+@media (hover: hover) { .wp .paxs-svg .tap:hover .pp.off { stroke: var(--color-accent); } }
+@media (prefers-reduced-motion: no-preference) {
+  .wp .paxs-svg .pp.on, .wp .paxs-svg .pd.mine, .wp .paxs-svg .pscribe { animation: paxs-in 0.35s ease-out; }
+}
+@keyframes paxs-in { from { opacity: 0; } }
+.wp .paxs-legend { display: flex; flex-wrap: wrap; gap: 2px 14px; margin: 6px 0 0; font-size: 12.5px; color: var(--color-muted); }
+.wp .paxs-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.wp .paxs-legend i { display: inline-block; width: 13px; height: 10px; border: 1px solid; }
+.wp .paxs-legend .mine { background: rgb(37 71 208 / 0.16); border-color: var(--color-accent); }
+.wp .paxs-legend .ikea { background: var(--color-mount); border-color: var(--color-ink); }
+.wp .paxs-legend .none { border: 1px dashed var(--color-faint); }
+
+/* what they'd like: tick boxes */
+.wp .paxs-wants { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: 6px; }
+.wp .paxs-want { align-items: flex-start; padding: 9px 10px; }
+.wp .paxs-box { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 1px; display: grid; place-items: center; border: 1.5px solid var(--color-line-strong); border-radius: var(--radius); background: var(--color-field); }
+.wp .paxs-box svg { width: 14px; height: 14px; fill: none; stroke: var(--color-on-accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.wp .paxs-want[aria-pressed="true"] .paxs-box { background: var(--color-accent); border-color: var(--color-accent); }
+.wp .paxs-want[aria-pressed="true"] .paxs-box svg { opacity: 1; }
+
+/* screenshots */
+.wp .paxs-file { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+.wp .paxs-file:focus-visible + .paxs-row .paxs-add:first-child { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.wp .paxs-shots { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; }
+.wp .paxs-shots li { position: relative; aspect-ratio: 1; border: 1px solid var(--color-line); border-radius: var(--radius); overflow: hidden; background: var(--color-raised); }
+.wp .paxs-shots img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.wp .paxs-shots button { position: absolute; top: 3px; right: 3px; width: 26px; height: 26px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: rgb(22 25 28 / 0.72); color: #fff; }
+.wp .paxs-shots button svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+@media (prefers-reduced-motion: no-preference) { .wp .paxs-adding { animation: paxs-wait 1s ease-in-out infinite alternate; } }
+@keyframes paxs-wait { to { opacity: 0.4; } }
+.wp .paxs-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.wp .paxs-add { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; padding: 9px 14px; font-size: 14px; }
+.wp .paxs-add svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* rough size, in mm */
+.wp .paxs-mm { display: flex; align-items: center; border: 1px solid var(--color-line-strong); border-radius: var(--radius); background: var(--color-field); }
+.wp .paxs-mm:focus-within { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.wp .field .paxs-mm input { flex: 1 1 auto; min-width: 0; border: 0; background: transparent; outline: none; }
+.wp .paxs-mm span { padding: 0 10px 0 2px; font-family: var(--font-mono); font-size: 11px; color: var(--color-faint); }
+.wp .paxs-size { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.wp .paxs-foot { flex-direction: column; justify-content: flex-start; gap: 8px; }
+.wp .paxs-btns { display: flex; justify-content: space-between; gap: 10px; }
+.wp .paxs-btns .primary { flex: 1 1 auto; max-width: 340px; }
+@media (max-width: 360px) { .wp .paxs-btns .primary { font-size: 14px; padding-inline: 10px; } }
+
+@media (min-width: 900px) {
+  .wp .paxs { grid-row: 2; grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) 430px; border-top: 0; background: transparent; }
+  .wp .paxs-pic { display: flex; align-items: center; justify-content: center; min-height: 0; overflow: auto; padding: 28px 32px; background-color: var(--color-paper); background-image: linear-gradient(var(--wp-grid) 1px, transparent 1px), linear-gradient(90deg, var(--wp-grid) 1px, transparent 1px); background-size: 24px 24px; }
+  .wp .paxs-pic-in { width: 100%; max-width: 660px; }
+  .wp .paxs-pic-title { margin: 0 0 14px; font-family: var(--font-display); font-size: 22px; font-weight: 650; letter-spacing: -0.02em; }
+  .wp .paxs-pic .paxs-svg { max-height: calc(100dvh - 300px); }
+  .wp .paxs-pic .paxs-svg .knock { stroke: var(--color-paper); }
+  .wp .paxs-pic .paxs-legend { margin-top: 12px; font-size: 13.5px; }
+  .wp .paxs-inline-pic { display: none; }
+  .wp .paxs-side { background: var(--color-mount); border-left: 1px solid var(--color-line); }
+}
+/* the slim one at the top of the Space step, so the first size still shows on a phone */
+.wp .paxlink.slim { gap: 8px; padding: 6px 10px; font-size: 13.5px; }
+.wp .paxlink.slim svg { width: 20px; height: 20px; }
+.wp .paxlink.slim svg.chev { width: 14px; height: 14px; }
+.wp .paxlink.slim em { font-style: normal; font-weight: 600; color: var(--color-accent); }

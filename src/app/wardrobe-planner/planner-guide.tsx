@@ -253,7 +253,28 @@ export function GuideIcon() {
   );
 }
 
-export default function PlannerGuide({ open, first, onClose }: { open: boolean; first: boolean; onClose: () => void }) {
+/* Two PAX frames with a code tag (the link to the IKEA PAX sheet), and the arrow beside it. */
+export function PaxIcon() {
+  return (
+    <svg viewBox="0 0 26 26" aria-hidden="true">
+      <rect x="2.5" y="4.5" width="9" height="17" />
+      <rect x="11.5" y="4.5" width="9" height="17" />
+      <path d="M9.5 12v3M13.5 12v3" />
+      <path d="M16.5 2.5h7v5h-7z" fill="var(--color-mount)" />
+      <path d="M18 5h4" />
+    </svg>
+  );
+}
+
+export function Chevron() {
+  return (
+    <svg className="chev" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+export default function PlannerGuide({ open, first, onClose, onPax }: { open: boolean; first: boolean; onClose: () => void; onPax: () => void }) {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -282,6 +303,15 @@ export default function PlannerGuide({ open, first, onClose }: { open: boolean; 
             Five steps to your wardrobe
           </h2>
           <p className="lede">Rough sizes are fine: I measure properly on the free visit, and nothing is cut until you sign off the 3D drawing.</p>
+          {/* Someone who has already designed it in IKEA's PAX planner doesn't need the steps (pax-send.tsx) */}
+          <button type="button" className="paxlink guide-pax" onClick={onPax}>
+            <PaxIcon />
+            <span>
+              <b>Got an IKEA PAX design?</b>
+              <small>Skip the steps: send me the design code and I&rsquo;ll build it in</small>
+            </span>
+            <Chevron />
+          </button>
         </div>
 
         <ol className="guide-steps">

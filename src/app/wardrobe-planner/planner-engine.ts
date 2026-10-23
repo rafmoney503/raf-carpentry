@@ -8,12 +8,19 @@
    Sizes, colours and limits Raf may want to change are in CFG at the top. Nothing is stored on the website.
    Since 16 Oct 2026 every unit is a CabinetOS unit (src/lib/cabinetos-wardrobe.ts): the inside is set the way
    CabinetOS sets it (hanging rail, shelves with equal gaps, drawers behind or below the doors), the 3D view, the
-   drawing and the sizes all come from the same layout, and Send passes those settings to CabinetOS as they are. */
+   drawing and the sizes all come from the same layout, and Send passes those settings to CabinetOS as they are.
+   Since 23 Oct 2026 the Space and Send steps link to "Got an IKEA PAX design?" (pax-send.tsx, opened through
+   opts.openPax) for someone who designed it on IKEA's website: they send the design code instead. */
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { COS, PLAN, SLIDE, slidingDoorsFor, slidingDrawerSpans, slidingLineUp, PRESETS, presetInside, presetOf, PAIR, canSplit, insideText, planPieces, payloadUnits, runFor } from '@/lib/cabinetos-wardrobe';
 
-export function mountPlanner(host: HTMLElement, endpoint = '/api/brief', cutEndpoint = '/api/cutlist-request'): () => void {
+/* opts (wardrobe-planner.tsx): openPax opens the IKEA PAX sheet (pax-send.tsx); bind hands it what the planner knows. */
+type PlannerHooks = {
+  openPax?: () => void;
+  bind?: (bits: { space: () => { wall: number; ceiling: number; sized: boolean }; contact: () => { name: string; phone: string; email: string; postcode: string; when: string; notes: string } }) => void;
+};
+export function mountPlanner(host: HTMLElement, endpoint = '/api/brief', cutEndpoint = '/api/cutlist-request', opts: PlannerHooks = {}): () => void {
   let raf = 0, sending = false;
   const t0 = performance.now();
   const observers: ResizeObserver[] = [];
@@ -528,9 +535,13 @@ const body=$('#body');
 function numRow(id,label,val,hint,step=10){return `<div class="num"><label for="${id}">${esc(label)}${hint?`<small>${esc(hint)}</small>`:''}</label><div class="nctl"><button type="button" class="st" data-bump="${id}" data-d="-${step}" aria-label="${esc(label)} down ${step} mm">−</button><input id="${id}" data-num="${id}" type="number" inputmode="numeric" value="${Math.round(val)}" step="${step}"><span class="u">mm</span><button type="button" class="st" data-bump="${id}" data-d="${step}" aria-label="${esc(label)} up ${step} mm">+</button></div></div>`;}
 const chip=(act,v,inner,on,dis)=>`<button type="button" class="chip" data-act="${act}" data-v="${esc(v)}" aria-pressed="${!!on}" ${dis?'disabled':''}>${inner}</button>`;
 const ICON={free:'<svg viewBox="0 0 34 26"><path d="M8 6h18v16H8z"/><path d="M3 4v20M31 4v20" stroke-dasharray="2 3"/></svg>',wall:'<svg viewBox="0 0 34 26"><path d="M3 2v22M31 2v22M7 6h20v16H7z"/></svg>',openL:'<svg viewBox="0 0 34 26"><path d="M31 2v22M5 6h22v16H5z" /><path d="M3 4v20" stroke-dasharray="2 3"/></svg>',openR:'<svg viewBox="0 0 34 26"><path d="M3 2v22M7 6h22v16H7z"/><path d="M31 4v20" stroke-dasharray="2 3"/></svg>'};
+/* "Got an IKEA PAX design?": opens the IKEA PAX sheet (pax-send.tsx), for someone who designed it on IKEA's website. */
+function paxLink(sub,slim){if(slim)return `<button type="button" class="paxlink slim" data-act="pax"><svg viewBox="0 0 26 26" aria-hidden="true"><rect x="2.5" y="4.5" width="9" height="17"/><rect x="11.5" y="4.5" width="9" height="17"/><path d="M9.5 12v3M13.5 12v3"/><path d="M16.5 2.5h7v5h-7z" fill="var(--color-mount)"/><path d="M18 5h4"/></svg><span><b>Got an IKEA PAX design?</b> <em>${esc(sub)}</em></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>`;
+  return `<button type="button" class="paxlink" data-act="pax"><svg viewBox="0 0 26 26" aria-hidden="true"><rect x="2.5" y="4.5" width="9" height="17"/><rect x="11.5" y="4.5" width="9" height="17"/><path d="M9.5 12v3M13.5 12v3"/><path d="M16.5 2.5h7v5h-7z" fill="var(--color-mount)"/><path d="M18 5h4"/></svg><span><b>Got an IKEA PAX design?</b><small>${esc(sub)}</small></span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>`;}
 function stepSpace(){const fr=free();
   const pick=(act,list,cur,isCustom)=>list.map(v=>chip(act,v,`<span class="mono">${v}</span>`,!isCustom&&cur===v)).join('')+chip(act+'-c','1','Custom',isCustom);
   return `<div><h2>Your space</h2><p class="lede">${S.example?'Example sizes are filled in. Change them to yours.':'Sizes in millimetres.'}</p></div>
+  ${paxLink('Send me the code',true)}
   <div class="grp">${numRow('wall',fr?'Space available':'Width of the space',S.wall,fr?'How much wall the unit can take.':'Measure at the top, middle and bottom. Use the smallest.')}${numRow('ceiling','Ceiling height',S.ceiling,'Floor to ceiling where the wardrobe goes.')}</div>
   <div class="grp"><h3>Walls either side</h3><div class="chips">${chip('fit','wall',ICON.wall+'<span>Wall both sides<small>Alcove or full wall</small></span>',S.fit==='wall')}${chip('fit','openL',ICON.openL+'<span>Open on the left<small>Finished end panel</small></span>',S.fit==='openL')}${chip('fit','openR',ICON.openR+'<span>Open on the right<small>Finished end panel</small></span>',S.fit==='openR')}${chip('fit','free',ICON.free+'<span>Freestanding<small>Finished both ends and top</small></span>',fr)}</div>
     ${fr?numRow('freeh','Unit height',S.freeH,`Up to ${S.ceiling-20} mm with this ceiling.`):''}</div>
@@ -683,6 +694,7 @@ function stepSend(){
     <p class="note">Needs your mobile or email so I can reply.</p>
   </form>
   <div class="contact"><span>Or call <span class="mono">${CFG.phone}</span></span><span>Email <span class="mono">${CFG.email}</span></span></div>
+  ${paxLink('Send me its design code instead of this design')}
   ${cutBox()}`;}
 /* 'Get the cut list for this design' (22 Oct 2026): for people building it themselves. /api/cutlist-request keeps
    their email and the design and has CabinetOS email the cut list straight away (parts, edge banding, boards,
@@ -755,6 +767,7 @@ function chips(){const c=calc();$('#fitText').textContent=c.t;$('#fitChip').clas
 function changed(rebuildPanel=true,keepCam=true){S.example=false;S.sent=false;S.cut.sent='';if(S.unitMode==='equal'&&S.modules.length)equalise(S.modules.length);if(lined())lineUp();normalise();build();if(S.view==='draw')drawPlan();if(rebuildPanel)render();else chips();}
 function numVal(id){return id==='sidel'?S.side.l:id==='sider'?S.side.r:id==='wall'?S.wall:id==='ceiling'?S.ceiling:id==='depthc'?S.depthCustom:id==='plinthc'?S.plinth:id==='infillc'?S.infill:id==='freeh'?S.freeH:(S.modules[Number(id.slice(2))]||{}).w;}
 function setNum(id,v){v=Number(v);if(!isFinite(v))return;
+  if(id==='wall'||id==='ceiling')S.sized=true;
   if(id==='wall'){S.wall=clamp(Math.round(v),500,8000);}
   else if(id==='sidel'||id==='sider'){S.side[id==='sidel'?'l':'r']=clamp(Math.round(v),0,CFG.sideInfill.max);}
   else if(id==='ceiling'){S.ceiling=clamp(Math.round(v),1800,3600);S.freeH=Math.min(S.freeH,S.ceiling-20);}
@@ -836,6 +849,7 @@ on(host,'click',e=>{
     case'colour':S.colour=v;changed();break;
     case'again':S.sent=false;S.step=1;render();break;
     case'cutlist':cutSubmit();break;
+    case'pax':if(opts.openPax)opts.openPax();break;
   }
 });
 let flashT=0;function flash(m){const el=$('#fitText');el.textContent=m;clearTimeout(flashT);flashT=setTimeout(chips,2600);}
@@ -873,6 +887,7 @@ on($('#drawing'),'click',drawTap);
 
 /* ---------- boot ---------- */
 S.example=true;
+if(opts.bind)opts.bind({space:()=>({wall:S.wall,ceiling:S.ceiling,sized:!!S.sized}),contact:()=>{const C=S.contact;return{name:C.name,phone:C.phone,email:C.email,postcode:C.postcode,when:C.when,notes:C.notes};}});
 const gl=initGL();
 render();
 if(gl){build();frameCam(true);}else setView('draw');

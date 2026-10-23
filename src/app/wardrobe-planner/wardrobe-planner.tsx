@@ -1,20 +1,35 @@
 'use client';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import PlannerGuide, { GuideIcon } from './planner-guide';
+import PaxSend, { type PlannerBits } from './pax-send';
 import './planner.css';
 
 /* The planner's frame: view (3D or drawing) on top on phones, steps panel below; side by side from 900 px.
    planner-engine.ts fills it in and runs it. three.js loads with the engine, only on this page.
    The quick guide (planner-guide.tsx) covers the steps panel (under 900 px the 3D view too) on the first visit;
-   Guide in the header brings it back. */
+   Guide in the header brings it back.
+   "Got an IKEA PAX design?" (pax-send.tsx) covers the view and the steps; the Space and Send steps and the guide
+   open it, and so does /wardrobe-planner#ikea-pax (then the guide doesn't open by itself). */
 
 const GUIDE_SEEN = 'raf_wp_guide';
+const PAX_HASH = '#ikea-pax';
 
 export default function WardrobePlanner() {
   const rootRef = useRef<HTMLDivElement>(null);
   // null until the browser has said whether the guide was seen, so neither the guide nor the steps flash.
   const [guide, setGuide] = useState<null | 'first' | 'open' | 'closed'>(null);
   const open = guide === 'first' || guide === 'open';
+  const [pax, setPax] = useState(false);
+  // What the planner already knows (sizes typed in Space, details typed in Send), for the IKEA PAX sheet.
+  const bits = useRef<PlannerBits>({});
+  const paxFrom = useRef<HTMLElement | null>(null);
+  const planner = useCallback(() => bits.current, []);
+
+  const openPax = useCallback(() => {
+    paxFrom.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setGuide((g) => (g === 'first' || g === 'open' ? 'closed' : g));
+    setPax(true);
+  }, []);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -22,13 +37,13 @@ export default function WardrobePlanner() {
     let stop: (() => void) | undefined;
     let cancelled = false;
     import('./planner-engine').then(({ mountPlanner }) => {
-      if (!cancelled) stop = mountPlanner(root);
+      if (!cancelled) stop = mountPlanner(root, undefined, undefined, { openPax, bind: (b) => { bits.current = b; } });
     });
     return () => {
       cancelled = true;
       stop?.();
     };
-  }, []);
+  }, [openPax]);
 
   useEffect(() => {
     let seen = false;
@@ -37,13 +52,44 @@ export default function WardrobePlanner() {
     } catch {
       // storage blocked: show the guide each visit
     }
-    setGuide(seen ? 'closed' : 'first');
-  }, []);
+    // Sent straight to the IKEA PAX sheet: no guide this time (it isn't marked as seen).
+    const toPax = location.hash === PAX_HASH;
+    setGuide(seen || toPax ? 'closed' : 'first');
+    if (toPax) setPax(true);
+    const onHash = () => {
+      if (location.hash === PAX_HASH) openPax();
+    };
+    // A link to #ikea-pax on this page (site search in the header): Next changes the address without a hashchange.
+    const onLink = (e: MouseEvent) => {
+      const a = (e.target as Element | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
+      if (a && a.hash === PAX_HASH && a.pathname === location.pathname) {
+        e.preventDefault();
+        openPax();
+      }
+    };
+    addEventListener('hashchange', onHash);
+    document.addEventListener('click', onLink, true);
+    return () => {
+      removeEventListener('hashchange', onHash);
+      document.removeEventListener('click', onLink, true);
+    };
+  }, [openPax]);
 
-  // While the guide covers the steps, the steps can't be reached by Tab or a screen reader.
+  // While the guide covers the steps (or the IKEA PAX sheet covers everything), what's under it can't be reached by
+  // Tab or a screen reader.
   useEffect(() => {
-    rootRef.current?.querySelector('.panel')?.toggleAttribute('inert', open);
-  }, [open]);
+    rootRef.current?.querySelector('.panel')?.toggleAttribute('inert', open || pax);
+    rootRef.current?.querySelector('.view')?.toggleAttribute('inert', pax);
+  }, [open, pax]);
+
+  const closePax = useCallback(() => {
+    setPax(false);
+    if (location.hash === PAX_HASH) history.replaceState(history.state, '', location.pathname + location.search);
+    requestAnimationFrame(() => {
+      const back = paxFrom.current && document.contains(paxFrom.current) ? paxFrom.current : rootRef.current?.querySelector<HTMLElement>('.steps [aria-selected="true"]');
+      back?.focus({ preventScroll: true });
+    });
+  }, []);
 
   const close = useCallback(() => {
     setGuide('closed');
@@ -60,14 +106,25 @@ export default function WardrobePlanner() {
       <div className="wp-head">
         <h1>Wardrobe planner</h1>
         <p>Design your fitted wardrobe, then send it to me.</p>
-        <button type="button" className="guide-btn" aria-expanded={open} aria-controls="wp-guide" onClick={() => (open ? close() : setGuide('open'))}>
+        <button
+          type="button"
+          className="guide-btn"
+          aria-expanded={open}
+          aria-controls="wp-guide"
+          onClick={() => {
+            if (open) return close();
+            if (pax) closePax();
+            setGuide('open');
+          }}
+        >
           <GuideIcon />
           <span className="g-long">Quick guide</span>
           <span className="g-short">Guide</span>
         </button>
       </div>
       <PlannerFrame />
-      <PlannerGuide open={open} first={guide === 'first'} onClose={close} />
+      <PlannerGuide open={open} first={guide === 'first'} onClose={close} onPax={openPax} />
+      <PaxSend open={pax} onClose={closePax} planner={planner} />
     </div>
   );
 }

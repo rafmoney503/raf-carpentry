@@ -12,6 +12,7 @@ import WhatHappensNext, { type Direct } from './what-happens-next';
 import { shrinkPhoto } from '@/app/job-kit/media';
 import { closestDesigns, type MatchItem } from '@/lib/design-match';
 import { paxLines } from '@/lib/pax-brief';
+import { readCode } from '@/lib/pax-design';
 import { mtoLines, usesFor, type InsideKey } from '@/lib/wardrobe-brief';
 import { WardrobeCard, WardrobeWindow, wardrobeNow, withPlan, type Build, type WardrobeBrief } from './wardrobe-window';
 import { whatIcon } from './what-icons';
@@ -113,6 +114,8 @@ export default function BriefBuilder({
   // Fitted wardrobe: how it's built (made to measure, IKEA PAX, not sure) and the plan (wardrobe-window.tsx).
   const [wb, setWb] = useState<WardrobeBrief>({ build: null, pax: null, mto: null });
   const [wbOpen, setWbOpen] = useState(false);
+  // With IKEA PAX: the design code from IKEA's own planner, if they designed it there.
+  const [ikeaCode, setIkeaCode] = useState('');
   const wbAsked = useRef(false);
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
@@ -223,6 +226,8 @@ export default function BriefBuilder({
     if (liked.length) lines.push('Things I liked:', ...liked.flatMap((s) => [s.area ? `${s.title}, ${s.area}` : s.title, savedUrl(s)]), '');
     if (what.length) lines.push(`What: ${join(what)}`);
     if (wardrobeOn && buildWords) lines.push(`Wardrobe: ${buildWords}`);
+    const ikea = wardrobeOn && wb.build === 'pax' ? readCode(ikeaCode) : null;
+    if (ikea?.value) lines.push(`IKEA design ${ikea.kind === 'link' ? 'link' : 'code'}: ${ikea.value}`);
     if (room.length) lines.push(`${room.length > 1 ? 'Rooms' : 'Room'}: ${join(room)}`);
     if (uses.length) lines.push(`For: ${join(uses)}`);
     if (hasSize) lines.push(`Rough size: ${size.w || '?'} wide x ${size.h || '?'} high x ${size.d || '?'} deep (mm)`);
@@ -242,7 +247,7 @@ export default function BriefBuilder({
     if (notes.trim()) lines.push('', notes.trim());
     lines.push('', 'I will send photos of the space next.');
     return lines.join('\n').replace(/\n{3,}/g, '\n\n'); // never two empty lines in a row
-  }, [job, liked, what, wardrobeOn, buildWords, room, uses, material, finish, hasSize, size, planText, name, mobile, email, addressText, parking, access, timing, budget, notes]);
+  }, [job, liked, what, wardrobeOn, buildWords, wb.build, ikeaCode, room, uses, material, finish, hasSize, size, planText, name, mobile, email, addressText, parking, access, timing, budget, notes]);
 
   const mailto = `mailto:${EMAIL}?subject=${encodeURIComponent(`My project brief${what.length ? `: ${what.join(' + ')}` : ''}`.slice(0, 120))}&body=${encodeURIComponent(message.replace('I will send photos of the space next.', 'Photos of the space attached.'))}`;
 
@@ -356,7 +361,7 @@ export default function BriefBuilder({
     setWhat([]); setRoom([]); setUses([]); setMaterial([]); setFinish([]);
     setSize({ w: '', h: '', d: '' }); setName(''); setAddr({ line1: '', area: '', postcode: '' }); setParking([]); setAccess('');
     setTiming(''); setBudget(''); setNotes(''); setNeed(''); setSent(null);
-    setWb({ build: null, pax: null, mto: null }); wbAsked.current = false;
+    setWb({ build: null, pax: null, mto: null }); wbAsked.current = false; setIkeaCode('');
     setMobile(''); setEmail(''); setPhotos([]); setPhotoNote(''); setSendError(''); setDirect(null);
   };
 
@@ -409,7 +414,7 @@ export default function BriefBuilder({
         ) : null}
         <Field n={1} title="What is it?" hint="pick any">
           <Chips label="What is it?" options={options.what} value={what} onPick={toggle(setWhat)} multi icon={whatIcon} />
-          {wardrobeOn ? <WardrobeCard wb={wb} size={size} uses={uses} onBuild={pickBuild} onOpen={openPlanner} /> : null}
+          {wardrobeOn ? <WardrobeCard wb={wb} size={size} uses={uses} onBuild={pickBuild} onOpen={openPlanner} code={ikeaCode} onCode={setIkeaCode} /> : null}
           {/* A nudge to the Designs in 3D page for what they picked; opens in a new tab so the brief stays filled in. */}
           {(() => {
             const slugs = new Set(what.flatMap((w) => kindsIn(w).map((k) => k.slug)));

@@ -302,7 +302,25 @@ const BUILDS: { key: Build; title: string; sub: string; pic: React.ReactNode }[]
   },
 ];
 
-export function WardrobeCard({ wb, size, uses, onBuild, onOpen }: { wb: WardrobeBrief; size: Size; uses: string[]; onBuild: (b: Build) => void; onOpen: () => void }) {
+/* With IKEA PAX built in, a box for the design code from IKEA's own PAX planner, for someone who has already
+   designed it there (23 Oct 2026; the wardrobe planner has the same, src/app/wardrobe-planner/pax-send.tsx). */
+export function WardrobeCard({
+  wb,
+  size,
+  uses,
+  onBuild,
+  onOpen,
+  code = '',
+  onCode,
+}: {
+  wb: WardrobeBrief;
+  size: Size;
+  uses: string[];
+  onBuild: (b: Build) => void;
+  onOpen: () => void;
+  code?: string;
+  onCode?: (v: string) => void;
+}) {
   const { wall, ceiling, pax, mto } = wardrobeNow(wb, size, uses);
   const plan = wb.build === 'pax' ? pax : wb.build === 'mto' ? mto : null;
   return (
@@ -347,7 +365,30 @@ export function WardrobeCard({ wb, size, uses, onBuild, onOpen }: { wb: Wardrobe
             {plan ? 'Change it' : 'Plan it'}
           </button>
         </div>
-      ) : wb.build === 'unsure' ? (
+      ) : null}
+      {wb.build === 'pax' && onCode ? (
+        <div className="mt-3 border-t border-line pt-3" data-ikea-code>
+          <label htmlFor="brief-ikea-code" className="block text-[14px] font-medium leading-snug text-ink">
+            Already designed it in IKEA’s PAX planner? <span className="font-normal text-muted">Add the design code.</span>
+          </label>
+          <input
+            id="brief-ikea-code"
+            value={code}
+            onChange={(e) => onCode(e.target.value)}
+            autoComplete="off"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            maxLength={400}
+            placeholder="The code from IKEA"
+            className="mt-2 h-11 w-full rounded-sm border border-line-strong bg-paper px-3 font-mono text-[16px] text-ink placeholder:font-sans placeholder:text-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+          />
+          <p className="mt-1.5 text-[12.5px] leading-snug text-faint">
+            In IKEA’s planner press Finalise: the code is at the bottom of the page (a share link works too). Add screenshots of it with your photos in 10.
+          </p>
+        </div>
+      ) : null}
+      {wb.build === 'unsure' ? (
         <p className="mt-3 border-t border-line pt-3 text-[13.5px] leading-snug text-muted">
           Fine: I’ll suggest one on the visit.{' '}
           <button type="button" onClick={onOpen} data-pax="open" className="font-medium text-accent underline-offset-2 hover:underline">
