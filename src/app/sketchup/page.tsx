@@ -189,7 +189,7 @@ export default function SketchUpPage() {
             <p className="mt-4 max-w-[44ch] text-[14.5px] text-muted">{d.learnNote}</p>
           </div>
           <div className="md:col-span-6 md:col-start-7">
-            <ScreenGrid shots={d.learnImages} />
+            <ScreenGrid shots={d.learnImages} tilt />
           </div>
         </Container>
       </section>

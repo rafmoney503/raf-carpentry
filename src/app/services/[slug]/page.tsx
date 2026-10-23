@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Container, PageHeader, SectionHeading } from '@/components/ui';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import WipeCover from '@/components/WipeCover';
 import ServiceDrawing, { serviceDrawingFor } from '@/components/ServiceDrawing';
 import Reviews, { GoogleRating } from '@/components/Reviews';
 import { formatMonth, modelOf, countModels } from '@/lib/projects';
@@ -16,6 +17,7 @@ import { areasFor, getService, getServices, getServicesData, joinAreas, jobsFor 
 import ProjectGallery from '@/components/project/ProjectGallery';
 import { areaPageLinks } from '@/lib/areas';
 import '@/app/portfolio/project.css';
+import Magnetic from '@/components/Magnetic';
 
 export function generateStaticParams() {
   return getServices().map((s) => ({ slug: s.slug }));
@@ -115,16 +117,14 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
                 <li key={p.slug}>
                   <Link href={`/portfolio/${p.slug}`} className="group block">
                     <div className="mount transition-colors group-hover:border-accent">
-                      <div className="relative aspect-[3/4] overflow-hidden bg-raised">
-                        <Image
-                          src={p.cover.src}
-                          alt={p.cover.alt}
-                          fill
-                          priority={i < 2}
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px"
-                          className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                        />
-                      </div>
+                      <WipeCover
+                        photo={p.cover}
+                        model={modelOf(p)?.poster.src}
+                        priority={i < 2}
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px"
+                        className="relative aspect-[3/4] overflow-hidden bg-raised"
+                        imgClassName="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                      />
                     </div>
                     <p className="mt-4 font-mono text-[13px] text-faint">{p.area}, {formatMonth(p.finished)}</p>
                     <h3 className="mt-1.5 text-[20px] font-[620] leading-tight transition-colors group-hover:text-accent">{p.title}</h3>
@@ -231,7 +231,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
               <SectionHeading>Want something like this?</SectionHeading>
               <p className="mt-4 max-w-[52ch] text-muted">Tell me about the room. I&apos;ll come and measure up for a free quote.</p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href={QUOTE_HREF} className="btn btn-primary">Get a quote</Link>
+                <Magnetic><Link href={QUOTE_HREF} className="btn btn-primary">Get a quote</Link></Magnetic>
                 <WhatsAppButton text={waText} />
               </div>
             </div>

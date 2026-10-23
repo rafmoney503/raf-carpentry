@@ -5,6 +5,7 @@ import SocialIcon, { networkOf } from '@/components/SocialIcon';
 import Logo3D from '@/components/Logo3D';
 import { CompanyCards } from '@/components/AlsoByMe';
 import { pageMeta } from '@/lib/seo';
+import CountUp from '@/components/CountUp';
 
 type AboutPageData = {
   title: string;
@@ -72,7 +73,7 @@ export default function About() {
         <div className="grid grid-cols-2 gap-x-5 gap-y-8 border-t border-line pt-10 md:grid-cols-4 md:gap-x-6">
           {d.stats.map((s, i) => (
             <div key={i}>
-              <div className="font-display text-[44px] font-[620] leading-none tracking-[-0.03em] md:text-[50px]">{s.value}</div>
+              <div className="font-display text-[44px] font-[620] leading-none tracking-[-0.03em] md:text-[50px]"><CountUp value={s.value} /></div>
               <div className="mt-3 text-[15px] text-muted">{s.label}</div>
             </div>
           ))}

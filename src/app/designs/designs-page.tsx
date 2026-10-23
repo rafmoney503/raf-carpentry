@@ -7,6 +7,7 @@ import { formatMonth } from '@/lib/projects';
 import { QUOTE_HREF } from '@/lib/site';
 import DesignBrowser, { type BrowserItem } from './design-browser';
 import PlannerTeaser from '@/components/PlannerTeaser';
+import Magnetic from '@/components/Magnetic';
 
 /* Designs in 3D: rafcarpentry.com/designs (everything) and /designs/<kind> (one kind, e.g. wardrobes).
    "What are you planning?" buttons at the top, one 3D viewer, the stills of that kind under it, and the way on:
@@ -58,9 +59,9 @@ export default function DesignsPage({ kind }: { kind?: string }) {
             Every design starts from your room. Tell me what you’re planning and I’ll draw it in 3D before anything is cut, so you can turn it round and open the doors first.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <Link href={QUOTE_HREF} className="btn btn-primary">
+            <Magnetic><Link href={QUOTE_HREF} className="btn btn-primary">
               Get a quote
-            </Link>
+            </Link></Magnetic>
             <WhatsAppButton />
           </div>
           {!k || k.slug === 'wardrobes' ? <PlannerTeaser className="mt-6 max-w-[560px]" /> : null}

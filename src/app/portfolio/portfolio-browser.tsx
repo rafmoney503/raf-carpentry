@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Container, SectionHeading } from '@/components/ui';
 import { matches } from '@/lib/search';
 import SaveButton from '@/components/SaveButton';
+import WipeCover from '@/components/WipeCover';
 
 export type JobCard = {
   slug: string;
@@ -13,6 +14,8 @@ export type JobCard = {
   month: string;
   summary: string;
   cover: { src: string; alt: string };
+  /** The 3D model's still, for the drawing-to-photo wipe (WipeCover) */
+  model?: string;
   tags: string[];
   meta: string;
   searchText: string;
@@ -112,16 +115,15 @@ export default function PortfolioBrowser({ jobs, archive, chips }: { jobs: JobCa
               <li key={p.slug} className="relative">
                 <Link href={`/portfolio/${p.slug}`} className="group block">
                   <div className="mount transition-colors group-hover:border-accent">
-                    <div className="relative aspect-[3/4] overflow-hidden bg-raised">
-                      <Image
-                        src={p.cover.src}
-                        alt={p.cover.alt}
-                        fill
-                        priority={i < 2}
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px"
-                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                      />
-                    </div>
+                    <WipeCover
+                      photo={p.cover}
+                      model={p.model}
+                      priority={i < 2}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px"
+                      className="relative aspect-[3/4] overflow-hidden bg-raised"
+                      imgClassName="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                      low
+                    />
                   </div>
                   <p className="mt-5 font-mono text-[13px] text-faint">
                     {p.area}, {p.month}

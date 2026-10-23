@@ -40,7 +40,7 @@
 @media (prefers-reduced-motion: reduce) { .home .hd { display: none; } }
 
 /* 2. Facts: the numbers count up (src/components/CountUp.tsx) */
-.home .fact-v .count { font-variant-numeric: tabular-nums; }
+.home .fact-v .count { font-variant-numeric: tabular-nums; } /* also site-motion.css .count */
 
 /* 3. What I build: the cards stack as the page scrolls (src/components/ServiceStack.tsx; --sp 0 to 1) */
 .home .sc-stack { display: flex; flex-direction: column; gap: 150px; }
@@ -58,25 +58,8 @@
 .home .sc-card:hover .sc-link { color: var(--color-accent); }
 .home .sc-shade { position: absolute; inset: 0; z-index: 1; background: var(--color-ink); opacity: calc(var(--sp, 0) * 0.42); pointer-events: none; }
 
-/* 4. Latest jobs: the SketchUp still wipes into the photo (src/components/WipeCover.tsx; --w 0 to 1) */
-.home .wc { --w: 1; background-color: var(--color-mount); background-image: linear-gradient(rgb(37 71 208 / 0.07) 1px, transparent 1px), linear-gradient(90deg, rgb(37 71 208 / 0.07) 1px, transparent 1px); background-size: 16px 16px; }
-.home .wc .wc-model { object-fit: contain; padding: 9%; mix-blend-mode: multiply; }
-.home .wc-photo { position: absolute; inset: 0; }
-.home .wc .wc-photo { clip-path: inset(0 calc((1 - var(--w)) * 100%) 0 0); }
-.home .wc-line { position: absolute; top: 0; bottom: 0; left: calc(var(--w) * 100%); width: 2px; margin-left: -1px; background: var(--color-accent); box-shadow: 0 0 0 3px rgb(37 71 208 / 0.16); opacity: 0; transition: opacity 0.25s; pointer-events: none; }
-.home .wc-tag { position: absolute; top: 10px; z-index: 1; padding: 6px 8px; border-radius: 2px; font: 500 11.5px/1 var(--font-mono); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
-.home .wc-tag-a { right: 10px; border: 1px solid var(--color-line-strong); background: rgb(251 251 249 / 0.94); color: var(--color-ink); }
-.home .wc-tag-b { left: 10px; background: var(--color-accent); color: var(--color-on-accent); }
-.home .wc[data-stage='wipe'] .wc-line { opacity: 1; }
-.home .wc[data-stage='drawing'] .wc-tag-a,
-.home .wc[data-stage='wipe'] .wc-tag-a,
-.home .wc[data-stage='wipe'] .wc-tag-b,
-.home .wc[data-stage='photo'] .wc-tag-b { opacity: 1; }
-
-/* 5. Where the jobs are: the bars grow out one after another (src/components/JobsNear.tsx `bars`) */
-.home .jn-bar { display: block; height: 10px; overflow: hidden; border-radius: 2px; background: var(--color-raised); }
-.home .jn-bar i { display: block; height: 100%; background: var(--color-accent); transform-origin: 0 50%; transform: scaleX(var(--f)); transition: transform 1s var(--spring); transition-delay: calc(var(--i) * 70ms); }
-.home .jn-bars[data-grow='no'] .jn-bar i { transform: scaleX(0); transition: none; }
+/* 4. Latest jobs and 5. Where the jobs are: the wipe (WipeCover) and the bars (JobsNear `bars`) are styled in
+   src/app/site-motion.css, as other pages use them too. */
 
 /* 6. Reviews: the ticker (src/components/ReviewTicker.tsx) */
 .home .tk { position: relative; margin-top: 40px; overflow-x: auto; scrollbar-width: none; }
@@ -94,10 +77,8 @@
 /* 7. CabinetOS: the screen leans in 3D (src/components/TiltShot.tsx) */
 .home .app-tilt { will-change: transform; }
 
-/* 8. Quote panel on the home page: the Get a quote button leans towards the mouse (src/components/Magnetic.tsx) */
-.home .magnet { display: inline-flex; }
-.home .magnet-in { display: inline-flex; width: 100%; }
-@media (min-width: 768px) and (hover: hover) and (pointer: fine) { .home .magnet { padding: 20px; margin: -20px; } }
+/* 8. Quote panel on the home page: the Get a quote button leans towards the mouse (src/components/Magnetic.tsx,
+   styled in site-motion.css) */
 
 /* Laptop */
 @media (max-width: 1180px) {

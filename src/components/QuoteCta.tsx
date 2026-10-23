@@ -54,7 +54,7 @@ export default function QuoteCta({
         </div>
       ) : (
         <div className="mt-8 flex flex-col gap-3 md:flex-row md:flex-wrap">
-          {quote}
+          <Magnetic className="w-full md:w-auto">{quote}</Magnetic>
           <WhatsAppButton className="w-full md:w-auto" />
         </div>
       )}

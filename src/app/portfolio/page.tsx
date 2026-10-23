@@ -1,6 +1,6 @@
 import { readPageJson } from '@/lib/pages';
 import { PageHeader } from '@/components/ui';
-import { formatMonth, getAllProjects } from '@/lib/projects';
+import { formatMonth, getAllProjects, modelOf } from '@/lib/projects';
 import { jobSearchText, portfolioChips } from '@/lib/portfolio-chips';
 import PortfolioBrowser, { type ArchiveCard, type JobCard } from './portfolio-browser';
 import './project.css';
@@ -32,6 +32,7 @@ export default function PortfolioPage() {
       month,
       summary: p.summary,
       cover: { src: p.cover.src, alt: p.cover.alt },
+      model: modelOf(p)?.poster.src,
       tags: p.tags ?? [],
       meta: [p.steps.length ? `${p.steps.length} build steps` : '', `${p.gallery.length + 1} photos`, p.video ? 'video' : '', p.compare ? 'before and after' : ''].filter(Boolean).join(', '),
       // Everything a visitor might type: title, area, tags, facts, words from the write-up.

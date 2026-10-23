@@ -231,7 +231,7 @@ export default function HomePage() {
                 <li key={p.slug} className="reveal">
                   <Link href={`/portfolio/${p.slug}`} className="latest-card">
                     <div className="mount">
-                      <WipeCover photo={p.cover} model={modelOf(p)?.poster.src} sizes="(max-width: 860px) 68vw, 290px" />
+                      <WipeCover photo={p.cover} model={modelOf(p)?.poster.src} sizes="(max-width: 860px) 68vw, 290px" row />
                     </div>
                     <p className="latest-meta">{formatMonth(p.finished)} · {p.area}</p>
                     <h3>{p.title}</h3>

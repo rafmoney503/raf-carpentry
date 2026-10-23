@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { Container, PageHeader, SectionHeading } from '@/components/ui';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import WipeCover from '@/components/WipeCover';
+import CountUp from '@/components/CountUp';
 import SaveButton from '@/components/SaveButton';
 import Reviews, { GoogleRating } from '@/components/Reviews';
 import ModelGallery, { type GalleryItem } from '@/components/project/ModelGallery';
@@ -14,6 +16,7 @@ import { DESIGN_KINDS } from '@/lib/design-kinds';
 import { QUOTE_HREF } from '@/lib/site';
 import { jsonLd, pageMeta, SITE_URL } from '@/lib/seo';
 import '@/app/portfolio/project.css';
+import Magnetic from '@/components/Magnetic';
 
 /* One page per area with 3 or more jobs (src/lib/areas.ts): the jobs there with their photos, the same jobs in 3D,
    what kinds of work they were, other jobs within 3 miles, reviews about that kind of work, and a quote band.
@@ -122,7 +125,7 @@ export default async function AreaPage({ params }: { params: Promise<{ slug: str
           <dl className="grid grid-cols-2 gap-x-6 gap-y-6 md:grid-cols-12">
             <div className="border-t-2 border-accent pt-4 md:col-span-2">
               <dt className="font-mono text-[12.5px] text-faint">Jobs here</dt>
-              <dd className="mt-1 font-display text-[34px] font-[680] leading-none">{jobs.length}</dd>
+              <dd className="mt-1 font-display text-[34px] font-[680] leading-none"><CountUp value={String(jobs.length)} /></dd>
             </div>
             <div className="border-t-2 border-line-strong pt-4 md:col-span-2">
               <dt className="font-mono text-[12.5px] text-faint">Since</dt>
@@ -155,16 +158,15 @@ export default async function AreaPage({ params }: { params: Promise<{ slug: str
               <li key={p.slug} className="relative">
                 <Link href={`/portfolio/${p.slug}`} className="group block">
                   <div className="mount transition-colors group-hover:border-accent">
-                    <div className="relative aspect-[3/4] overflow-hidden bg-raised">
-                      <Image
-                        src={p.cover.src}
-                        alt={p.cover.alt}
-                        fill
-                        priority={i < 2}
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px"
-                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                      />
-                    </div>
+                    <WipeCover
+                      photo={p.cover}
+                      model={modelOf(p)?.poster.src}
+                      priority={i < 2}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 300px"
+                      className="relative aspect-[3/4] overflow-hidden bg-raised"
+                      imgClassName="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                      low
+                    />
                   </div>
                   <p className="mt-4 font-mono text-[13px] text-faint">{p.type}, {formatMonth(p.finished)}</p>
                   <h3 className="mt-1.5 text-[20px] font-[620] leading-tight transition-colors group-hover:text-accent">{p.title}</h3>
@@ -247,7 +249,7 @@ export default async function AreaPage({ params }: { params: Promise<{ slug: str
               <SectionHeading>{`In ${a.name}? Tell me about the room.`}</SectionHeading>
               <p className="mt-4 max-w-[52ch] text-muted">I reply within 24 hours, then come and measure up for a free quote. You get a 3D drawing to approve before anything is cut.</p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href={QUOTE_HREF} className="btn btn-primary">Get a quote</Link>
+                <Magnetic><Link href={QUOTE_HREF} className="btn btn-primary">Get a quote</Link></Magnetic>
                 <WhatsAppButton text={waText} />
               </div>
             </div>

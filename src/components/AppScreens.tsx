@@ -1,5 +1,6 @@
 'use client';
 import Image from 'next/image';
+import TiltShot from './TiltShot';
 import { useCallback, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from 'react';
 import Lightbox from '@/components/project/Lightbox';
 
@@ -203,7 +204,7 @@ export default function AppScreens({ screens, title = 'CabinetOS' }: { screens: 
         <div className="mt-7 hidden items-start gap-6 lg:flex">
           {DEVICES.map((d) => (
             <figure key={d.key} className="m-0 min-w-0" style={{ flex: `${d.w / d.h} 1 22px` }}>
-              {frame(d, d.row)}
+              <TiltShot mouseOnly deg={4} className="tilt-shot">{frame(d, d.row)}</TiltShot>
               <figcaption className="mt-3 flex items-center gap-2 font-mono text-[13px] text-faint">
                 <DeviceIcon>{d.icon}</DeviceIcon>
                 {d.name}
@@ -227,7 +228,7 @@ export default function AppScreens({ screens, title = 'CabinetOS' }: { screens: 
                   : 'hidden';
             return (
               <div key={d.key} className={`mx-auto ${ONE_WIDTH[d.key]} ${shown}`}>
-                {frame(d, d.one, ONE_FRAME[d.key])}
+                <TiltShot mouseOnly deg={4} className="tilt-shot">{frame(d, d.one, ONE_FRAME[d.key])}</TiltShot>
               </div>
             );
           })}

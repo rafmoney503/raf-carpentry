@@ -10,6 +10,8 @@ import { getAllProjects } from '@/lib/projects';
 import { getServices, jobMatches } from '@/lib/services';
 import { QUOTE_HREF } from '@/lib/site';
 import { pageMeta } from '@/lib/seo';
+import GrowList from '@/components/GrowList';
+import Magnetic from '@/components/Magnetic';
 
 /* Where I work (/areas): the areas with their own page (3 or more jobs), Jobs near you, and every place there's
    a job, each linking to its area page, its one job, or My Work's search. */
@@ -94,8 +96,8 @@ export default function AreasPage() {
       <section className="border-t border-line">
         <Container className="py-14 md:py-20">
           <SectionHeading>Every place so far</SectionHeading>
-          <ul className="mt-8 grid border-t border-line md:grid-cols-2 md:gap-x-10">
-            {places.map(([area, list]) => {
+          <GrowList className="mt-8 grid grid-cols-1 border-t border-line md:grid-cols-2 md:gap-x-10">
+            {places.map(([area, list], i) => {
               const href = links[area] ? `/areas/${links[area]}` : list.length === 1 ? `/portfolio/${list[0].slug}` : `/portfolio?q=${encodeURIComponent(area)}`;
               return (
                 <li key={area} className="border-b border-line">
@@ -103,6 +105,10 @@ export default function AreasPage() {
                     <span className="min-w-0 flex-1">
                       <span className="block text-[17px] font-[620] text-ink group-hover:text-accent">{area}</span>
                       <span className="mt-0.5 block truncate text-[14.5px] text-muted">{list.length === 1 ? list[0].title : list.map((p) => p.title).slice(0, 2).join(' · ') + (list.length > 2 ? ' ...' : '')}</span>
+                      {/* how many jobs, as a bar scaled to the busiest place; grows out as the row comes into view */}
+                      <span className="jn-bar jn-bar-thin mt-2.5" aria-hidden="true">
+                        <i style={{ '--f': list.length / (places[0]?.[1].length || 1), '--i': i % 2 } as React.CSSProperties} />
+                      </span>
                     </span>
                     <span className="flex-none font-mono text-[13px] text-faint">
                       {list.length} {list.length === 1 ? 'job' : 'jobs'}
@@ -111,7 +117,7 @@ export default function AreasPage() {
                 </li>
               );
             })}
-          </ul>
+          </GrowList>
         </Container>
       </section>
 
@@ -120,7 +126,7 @@ export default function AreasPage() {
           <SectionHeading>Not on the list?</SectionHeading>
           <p className="mt-4 max-w-[52ch] text-muted">Tell me where you are and what you have in mind. I reply within 24 hours.</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href={QUOTE_HREF} className="btn btn-primary">Get a quote</Link>
+            <Magnetic><Link href={QUOTE_HREF} className="btn btn-primary">Get a quote</Link></Magnetic>
             <WhatsAppButton />
           </div>
         </Container>

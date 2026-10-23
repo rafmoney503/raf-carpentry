@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
 import './motion.css';
+import './site-motion.css';
 import LayoutShell from '@/components/LayoutShell';
 import { getMenuPanels } from '@/lib/menu-panels';
 import VercelAnalytics from '@/components/VercelAnalytics';

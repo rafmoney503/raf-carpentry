@@ -9,6 +9,7 @@ import { QUOTE_HREF, whatsappText } from '@/lib/site';
 import { getTipsData, tipSections } from '@/lib/tips';
 import { CopyTipLink, TipPhotos } from './tip-extras';
 import { TradeNudge } from '@/components/AlsoByMe';
+import Magnetic from '@/components/Magnetic';
 
 export function generateMetadata(): Metadata {
   const d = getTipsData();
@@ -106,7 +107,7 @@ export default function TipsPage() {
             <SectionHeading>{d.ctaHeading || 'Rather have it built for you?'}</SectionHeading>
             {d.ctaText ? <p className="mt-4 text-muted">{d.ctaText}</p> : null}
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={QUOTE_HREF} className="btn btn-primary">Get a quote</Link>
+              <Magnetic><Link href={QUOTE_HREF} className="btn btn-primary">Get a quote</Link></Magnetic>
               <WhatsAppButton text={whatsappText('/tips')} />
             </div>
           </div>

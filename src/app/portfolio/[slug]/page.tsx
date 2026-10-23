@@ -24,6 +24,7 @@ import { pageMeta } from '@/lib/seo';
 import Reviews, { GoogleRating } from '@/components/Reviews';
 import { getReviews } from '@/lib/reviews';
 import { serviceForJob } from '@/lib/services';
+import Magnetic from '@/components/Magnetic';
 
 export function generateStaticParams() {
   return getAllProjects().map((p) => ({ slug: p.slug }));
@@ -283,7 +284,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
             <SectionHeading>Want something like this?</SectionHeading>
             <p className="mt-4 max-w-[52ch] text-muted">Tell me about the room. I&apos;ll come and measure up, then draw it before anything is cut.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={`${QUOTE_HREF}?job=${p.slug}`} className="btn btn-primary">Get a quote</Link>
+              <Magnetic><Link href={`${QUOTE_HREF}?job=${p.slug}`} className="btn btn-primary">Get a quote</Link></Magnetic>
               <WhatsAppButton text={waText} />
             </div>
             <a href={BOOKING_URL} target="_blank" rel="noopener" className="link-more mt-6 text-[15px]">

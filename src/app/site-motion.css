@@ -1,0 +1,40 @@
+/* Scroll and pointer motion shared by the home page and the other pages (23 Oct 2026). Loaded in layout.tsx.
+   Everything here is drawn finished without its script and for prefers-reduced-motion: the scripts only add
+   the movement. The home page's own pieces (doors, stacking cards, ticker) stay in home-motion.css. */
+:root { --spring: cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* Numbers that count up (src/components/CountUp.tsx) */
+.count { font-variant-numeric: tabular-nums; }
+
+/* A job's 3D drawing wipes into its photo as the page scrolls (src/components/WipeCover.tsx; --w 0 to 1).
+   Sent as the plain photo (--w 1, stage 'still'). Home: Latest jobs; also My Work, service and area pages. */
+.wc { --w: 1; background-color: var(--color-mount); background-image: linear-gradient(rgb(37 71 208 / 0.07) 1px, transparent 1px), linear-gradient(90deg, rgb(37 71 208 / 0.07) 1px, transparent 1px); background-size: 16px 16px; }
+.wc .wc-model { object-fit: contain; padding: 9%; mix-blend-mode: multiply; }
+.wc-photo { position: absolute; inset: 0; }
+.wc .wc-photo { clip-path: inset(0 calc((1 - var(--w)) * 100%) 0 0); }
+.wc-line { position: absolute; top: 0; bottom: 0; left: calc(var(--w) * 100%); width: 2px; margin-left: -1px; background: var(--color-accent); box-shadow: 0 0 0 3px rgb(37 71 208 / 0.16); opacity: 0; transition: opacity 0.25s; pointer-events: none; }
+.wc-tag { position: absolute; top: 10px; z-index: 1; padding: 6px 8px; border-radius: 2px; font: 500 11.5px/1 var(--font-mono); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+/* Cards with a heart in the top corner (My Work, area pages) keep the tags along the bottom */
+.wc-low .wc-tag { top: auto; bottom: 10px; }
+.wc-tag-a { right: 10px; border: 1px solid var(--color-line-strong); background: rgb(251 251 249 / 0.94); color: var(--color-ink); }
+.wc-tag-b { left: 10px; background: var(--color-accent); color: var(--color-on-accent); }
+.wc[data-stage='wipe'] .wc-line { opacity: 1; }
+.wc[data-stage='drawing'] .wc-tag-a,
+.wc[data-stage='wipe'] .wc-tag-a,
+.wc[data-stage='wipe'] .wc-tag-b,
+.wc[data-stage='photo'] .wc-tag-b { opacity: 1; }
+
+/* Blue bars that grow out (JobsNear `bars` on the home page, Every place so far on /areas via GrowList).
+   A list or row with data-grow="no" holds its bars at nothing until it comes into view. */
+.jn-bar { display: block; height: 10px; overflow: hidden; border-radius: 2px; background: var(--color-raised); }
+.jn-bar-thin { height: 6px; }
+.jn-bar i { display: block; height: 100%; background: var(--color-accent); transform-origin: 0 50%; transform: scaleX(var(--f)); transition: transform 1s var(--spring); transition-delay: calc(var(--i, 0) * 70ms); }
+[data-grow='no'] .jn-bar i { transform: scaleX(0); transition: none; }
+
+/* A button that leans towards the mouse (src/components/Magnetic.tsx); a 20 px catch zone round it */
+.magnet { display: inline-flex; }
+.magnet-in { display: inline-flex; width: 100%; }
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) { .magnet { padding: 20px; margin: -20px; } }
+
+/* A screenshot that leans in 3D (src/components/TiltShot.tsx) */
+.tilt-shot { will-change: transform; }
