@@ -72,6 +72,7 @@ import type { InboxMail } from '@/lib/outlook';
 import { binOnServer, customerEmails, dropHere, EmailView, enquiryFromMail, fetchInbox, firstOf, freshUnread, INBOX_FRESH, InboxList, inboxLine, inboxTodayLine, lastWith, markReadHere, openedMail, putBackHere, savedInbox, unbinOnServer, whenSaid, type Inbox } from './inbox';
 import type { CurrentJob } from '@/lib/servicem8';
 import { StatsPageView, StatsView, statsLine } from './stats';
+import { BlogStatsView } from './blog-stats-view';
 import { setStatsOff } from '@/lib/site-stats';
 import { JobTimeline, TimelineMini } from './job-timeline';
 import { ClientBoard } from './client-board';
@@ -115,7 +116,8 @@ type Screen =
   | { name: 'library'; from?: 'designs'; for?: string } // for: a current job (ServiceM8 uuid) to send to
   | { name: 'stats' } // Website stats (stats.tsx)
   | { name: 'social' } // Instagram, Facebook and Threads: followers, posts, comments (social.tsx)
-  | { name: 'stats-page'; path: string }; // one page of the website: its heatmap
+  | { name: 'stats-blog' } // Blog stats: who read which post, and what to write next (blog-stats-view.tsx)
+  | { name: 'stats-page'; path: string; from?: 'blog' }; // one page of the website: its heatmap
 
 /* On a computer (desktop.tsx), the list drawn beside a screen: the one it's opened from. */
 function listFor(s: Screen): Screen | null {
@@ -145,7 +147,7 @@ function listFor(s: Screen): Screen | null {
   }
 }
 /* Screens that get the whole width on a computer. */
-const ROOMY = ['home', 'timeline', 'board', 'library', 'stats', 'stats-page', 'social'];
+const ROOMY = ['home', 'timeline', 'board', 'library', 'stats', 'stats-blog', 'stats-page', 'social'];
 
 /* Where "‹ Back" goes when the app was reopened straight onto a screen (no history to go back through). */
 const parentOf = (s: Screen): Screen =>
@@ -157,7 +159,9 @@ const parentOf = (s: Screen): Screen =>
     ? { name: 'wa-chat', id: s.chat }
     : s.name === 'sm8' && s.from === 'design' && s.design
     ? { name: 'design', id: s.design }
-    : s.name === 'stats-page'
+    : s.name === 'stats-page' && s.from === 'blog'
+    ? { name: 'stats-blog' }
+    : s.name === 'stats-page' || s.name === 'stats-blog'
     ? { name: 'stats' }
     : s.name === 'email'
     ? s.from === 'job' && s.job
@@ -190,7 +194,7 @@ const parentOf = (s: Screen): Screen =>
           : { name: 'home' };
 const backLabel = (s: Screen) => {
   const p = parentOf(s).name;
-  return p === 'stats' ? 'Stats' : p === 'designs' ? 'Designs' : p === 'design' ? 'Design' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'timeline' ? 'Timeline' : p === 'board' ? 'Board' : p === 'whatsapp' ? 'WhatsApp' : p === 'wa-chat' ? 'Chat' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : p === 'inbox' ? 'Inbox' : p === 'email' ? 'Email' : 'Today';
+  return p === 'stats-blog' ? 'Blog stats' : p === 'stats' ? 'Stats' : p === 'designs' ? 'Designs' : p === 'design' ? 'Design' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'timeline' ? 'Timeline' : p === 'board' ? 'Board' : p === 'whatsapp' ? 'WhatsApp' : p === 'wa-chat' ? 'Chat' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : p === 'inbox' ? 'Inbox' : p === 'email' ? 'Email' : 'Today';
 };
 
 const thisMonth = () => {
@@ -204,7 +208,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-page', 'kit', 'social'].includes(s.name)) return s;
+    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-blog', 'stats-page', 'kit', 'social'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -1301,7 +1305,9 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 />
               </>
             ) : screen.name === 'stats' ? (
-              <StatsView onPage={(path) => go({ name: 'stats-page', path })} />
+              <StatsView onPage={(path) => go({ name: 'stats-page', path })} onBlog={() => go({ name: 'stats-blog' })} />
+            ) : screen.name === 'stats-blog' ? (
+              <BlogStatsView onPage={(path) => go({ name: 'stats-page', path, from: 'blog' })} />
             ) : screen.name === 'stats-page' ? (
               <StatsPageView key={screen.path} path={screen.path} />
             ) : screen.name === 'settings' ? (

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { readPin } from './uploader';
 import { post } from './sm8-post';
 import { Icon } from './icons';
+import { BlogBand } from './blog-stats-view';
 import { GOAL_LABEL, SOURCE_LABEL, placeName, statsOff, type Device, type Goal, type StatsPage, type StatsReport, type Tap, type Visit } from '@/lib/site-stats';
 
 /* The Job Kit's Website stats screen: the website's own visitor counter (src/components/SiteStats.tsx), read through
@@ -59,7 +60,7 @@ export function statsLine(s: Saved = savedStats()) {
   return `${t.visitors} visitor${t.visitors === 1 ? '' : 's'} in the last ${r.days} days, ${pct(t.phone, t.visits)} on a phone${asked}`;
 }
 
-const problem = (e: string) =>
+export const problem = (e: string) =>
   e === 'stats-not-set-up'
     ? 'The stats aren’t connected yet: RAFSTATS_URL, RAFSTATS_KEY and RAFSTATS_SECRET are missing in Vercel.'
     : e === 'stats-key'
@@ -74,12 +75,12 @@ const problem = (e: string) =>
 
 /* ---------- small helpers ---------- */
 
-function pct(n: number, of: number) {
+export function pct(n: number, of: number) {
   if (!of) return '0%';
   const p = (n / of) * 100;
   return `${p > 0 && p < 1 ? '<1' : Math.round(p)}%`;
 }
-function dur(s: number) {
+export function dur(s: number) {
   if (!s) return '0 s';
   if (s < 60) return `${Math.round(s)} s`;
   const m = Math.floor(s / 60);
@@ -87,7 +88,7 @@ function dur(s: number) {
   return r ? `${m} min ${r} s` : `${m} min`;
 }
 const dayShort = (d: string) => new Date(`${d}T12:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-const dayLong = (d: string) => new Date(`${d}T12:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
+export const dayLong = (d: string) => new Date(`${d}T12:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
 
 export function pageName(path: string, title?: string | null) {
   if (!path) return 'Left the website';
@@ -97,9 +98,9 @@ export function pageName(path: string, title?: string | null) {
   const last = path.split('/').filter(Boolean).pop() || path;
   return last.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
 }
-const sourceName = (k: string) => SOURCE_LABEL[k] ?? k;
+export const sourceName = (k: string) => SOURCE_LABEL[k] ?? k;
 
-function Chips<T extends string | number>({ value, options, onPick, label }: { value: T; options: { v: T; t: string }[]; onPick: (v: T) => void; label: string }) {
+export function Chips<T extends string | number>({ value, options, onPick, label }: { value: T; options: { v: T; t: string }[]; onPick: (v: T) => void; label: string }) {
   return (
     <div role="group" aria-label={label} className="flex flex-wrap gap-1.5">
       {options.map((o) => (
@@ -117,7 +118,7 @@ function Chips<T extends string | number>({ value, options, onPick, label }: { v
   );
 }
 
-function Band({ label, right, children }: { label: string; right?: string; children: React.ReactNode }) {
+export function Band({ label, right, children }: { label: string; right?: string; children: React.ReactNode }) {
   return (
     <section className="mt-6 rounded-sm border border-line-strong bg-mount">
       <div className="flex h-11 items-center gap-2.5 border-b border-line-strong bg-raised px-4">
@@ -184,7 +185,7 @@ function CutlistBand({ info, days }: { info: CutlistInfo | null; days: number })
   );
 }
 
-function Num({ v, label, sub }: { v: string; label: string; sub?: string }) {
+export function Num({ v, label, sub }: { v: string; label: string; sub?: string }) {
   return (
     <div className="rounded-sm border border-line bg-paper px-3 py-2.5">
       <p className="font-display text-[28px] font-[680] leading-none tracking-[-0.02em]">{v}</p>
@@ -195,7 +196,7 @@ function Num({ v, label, sub }: { v: string; label: string; sub?: string }) {
 }
 
 /* a row with a bar for its share: label left, number right */
-function ShareRow({ label, n, of, note, onClick }: { label: string; n: number; of: number; note?: string; onClick?: () => void }) {
+export function ShareRow({ label, n, of, note, onClick }: { label: string; n: number; of: number; note?: string; onClick?: () => void }) {
   const inner = (
     <>
       <span className="flex items-baseline justify-between gap-3">
@@ -223,7 +224,7 @@ function ShareRow({ label, n, of, note, onClick }: { label: string; n: number; o
 }
 
 /* 'Today 18:20', 'Yesterday 21:05', 'Mon 20 Oct, 14:02' (London time) */
-function whenWords(iso: string, now = new Date()) {
+export function whenWords(iso: string, now = new Date()) {
   const d = new Date(iso);
   const day = (x: Date) => x.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
   const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
@@ -234,7 +235,7 @@ function whenWords(iso: string, now = new Date()) {
 /* where a visit came from, as words after 'from' */
 const fromWords = (src: string) => (src === 'direct' ? 'typed in or a saved link' : src === 'internal' ? 'back on the site later' : `from ${sourceName(src)}`);
 
-const PLACE_NOTE =
+export const PLACE_NOTE =
   'Roughly where, from their internet connection: home broadband usually shows the right town and postcode area; phones on 4G or 5G often show the network’s nearest hub (often just London), so treat it as a hint, not an address. Nobody’s name or street is ever known.';
 
 /* The newest visits, one by one: where from, when, how, the pages in order, what they tapped. */
@@ -337,7 +338,7 @@ function PlacesBand({ r }: { r: StatsReport }) {
 
 /* ---------- the overview ---------- */
 
-export function StatsView({ onPage }: { onPage: (path: string) => void }) {
+export function StatsView({ onPage, onBlog }: { onPage: (path: string) => void; onBlog?: () => void }) {
   // this screen only opens in the phone's browser (after the app is ready), so the kept numbers can be read at once
   const [saved, setSaved] = useState<Saved>(() => savedStats());
   const [days, setDays] = useState(() => savedStats().days || 7);
@@ -517,6 +518,8 @@ export function StatsView({ onPage }: { onPage: (path: string) => void }) {
           </Band>
 
           <CutlistBand info={saved.days === days ? (saved.cutlist ?? null) : null} days={days} />
+
+          {onBlog ? <BlogBand days={days} onOpen={onBlog} onPage={onPage} /> : null}
 
           <Band label="Pages" right={`${r.pages.length} pages`}>
             <Chips
@@ -858,7 +861,8 @@ function PageFrame({ path, device, layer, page }: { path: string; device: Device
     const cv = canvas.current;
     const d = doc();
     const wn = win();
-    if (!cv || !d || !wn || !k) return;
+    // the page in the frame is gone when the screen closes mid-load
+    if (!cv || !d?.documentElement || !wn || !k) return;
     const W = Math.round(frameW);
     const H = Math.round(dispH);
     if (cv.width !== W || cv.height !== H) {

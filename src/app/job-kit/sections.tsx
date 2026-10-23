@@ -33,7 +33,7 @@ export function secOfScreen(name: string): SecId | undefined {
   if (['designs', 'design', 'new-design', 'library'].includes(name)) return 'designs';
   if (name === 'timeline' || name === 'board') return 'timeline';
   if (name === 'whatsapp' || name === 'wa-chat') return 'whatsapp';
-  if (['stats', 'stats-page'].includes(name)) return 'website';
+  if (['stats', 'stats-blog', 'stats-page'].includes(name)) return 'website';
   if (['posts', 'post', 'job', 'new', 'kit', 'social'].includes(name)) return 'photos';
   return undefined;
 }

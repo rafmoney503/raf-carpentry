@@ -1,10 +1,31 @@
 import { guard } from '@/lib/job-kit-server';
 import { StatsError, statsRpc, statsSetUp } from '@/lib/site-stats-server';
+import { getAllPosts } from '@/lib/blog';
+import { getAllProjects } from '@/lib/projects';
+import { formatOf, topicOf, type BlogPostMeta } from '@/lib/blog-stats';
+
+/* Every post with its topic (the job it tells the story of, or its words) and format, for Blog stats. */
+function blogPosts(): BlogPostMeta[] {
+  const jobType = new Map(getAllProjects().map((p) => [p.blogSlug || p.slug, p.type]));
+  return getAllPosts().map((p) => ({
+    slug: p.slug,
+    title: p.title,
+    date: (() => {
+      const d = p.date as unknown;
+      const t = d instanceof Date ? d : new Date(String(d));
+      return Number.isFinite(t.getTime()) ? t.toISOString().slice(0, 10) : '';
+    })(),
+    category: p.category,
+    topic: topicOf(p.slug, p.title, jobType.get(p.slug)),
+    format: formatOf(p.category),
+  }));
+}
 
 /* The Job Kit's Website stats screen (src/app/job-kit/stats.tsx), behind the PIN.
    { action: 'report', days }                  the numbers, sources, pages and journeys for the last `days` days, plus
                                                `cutlist`: who asked for the wardrobe planner's cut list (rafsite_cutlist)
-   { action: 'page', path, device?, days }     one page: taps, how far down people got, time, where they came from and went */
+   { action: 'page', path, device?, days }     one page: taps, how far down people got, time, where they came from and went
+   { action: 'blog', days }                    every read of a blog post (rafsite_blog) and every post with its topic */
 export const maxDuration = 20;
 
 const noStore = { 'Cache-Control': 'no-store' };
@@ -28,6 +49,9 @@ export async function POST(req: Request) {
         statsRpc('rafsite_cutlist', { p_action: 'list', p: { days } }).catch(() => null),
       ]);
       return Response.json({ report, cutlist, at: Date.now() }, { headers: noStore });
+    }
+    if (body.action === 'blog') {
+      return Response.json({ blog: await statsRpc('rafsite_blog', { p_days: days }), posts: blogPosts(), at: Date.now() }, { headers: noStore });
     }
     if (body.action === 'page') {
       const path = typeof body.path === 'string' ? body.path.slice(0, 200) : '';

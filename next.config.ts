@@ -22,6 +22,8 @@ const nextConfig: NextConfig = {
     "/api/brief": ["./content/projects/*.json", "./content/pages/*.json", "./content/designs/*.json"],
     /* The recently looked at card names the jobs (src/lib/recent-designs.ts reads these at run time). */
     "/api/recent": ["./content/projects/*.json", "./content/pages/*.json", "./content/designs/*.json"],
+    /* Blog stats in the Job Kit name every post and its topic (src/lib/blog.ts and projects.ts read these at run time). */
+    "/api/job-kit/stats": ["./content/blog/*.md", "./content/projects/*.json"],
   },
 };
 

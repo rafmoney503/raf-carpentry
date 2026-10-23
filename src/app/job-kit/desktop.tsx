@@ -77,7 +77,7 @@ export function sideOf(name: string, from?: string): SideId | undefined {
   if (name === 'timeline') return 'timeline';
   if (['designs', 'design', 'new-design'].includes(name)) return 'designs';
   if (name === 'library') return 'library';
-  if (name === 'stats' || name === 'stats-page') return 'stats';
+  if (name === 'stats' || name === 'stats-blog' || name === 'stats-page') return 'stats';
   if (['kit', 'job', 'new'].includes(name)) return 'kit';
   if (name === 'posts' || name === 'post') return 'posts';
   if (name === 'social') return 'social';
