@@ -157,16 +157,22 @@ export default function BriefBuilder({
   };
 
   // A search result like "Start a brief: hiding a boiler, radiator or cylinder" opens /how-it-works?for=...#brief
-  // with that choice ticked (?what=, ?room= and ?for= work, only for choices that exist).
+  // with that choice ticked (?what=, ?room= and ?for= work, only for choices that exist; each can come more than
+  // once). The home page's quote panel sends ?what=...&when=... the same way (src/components/QuoteBrief.tsx).
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
     const pick = (key: string, list: string[], set: React.Dispatch<React.SetStateAction<string[]>>) => {
-      const v = q.get(key);
-      if (v && list.includes(v)) set((cur) => (cur.includes(v) ? cur : [...cur, v]));
+      const vs = q.getAll(key).filter((v) => list.includes(v));
+      if (vs.length) set((cur) => [...cur, ...vs.filter((v, i) => !cur.includes(v) && vs.indexOf(v) === i)]);
     };
     pick('what', options.what, setWhat);
     pick('room', options.room, setRoom);
     pick('for', options.uses, setUses);
+    const pickOne = (key: string, list: string[], set: (v: string) => void) => {
+      const v = q.get(key);
+      if (v && list.includes(v)) set(v);
+    };
+    pickOne('when', options.timing, setTiming);
   }, [options]);
 
   const one = (set: (v: string) => void, cur: string) => (v: string) => set(cur === v ? '' : v);

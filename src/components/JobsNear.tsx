@@ -1,7 +1,7 @@
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { NearJob } from '@/lib/areas';
 
 /* Jobs near you (home page, under Latest jobs): the visitor types a postcode (or the first half, like N22) or
@@ -14,6 +14,7 @@ const FULL = /^([A-Z]{1,2}\d[A-Z\d]?)(\d[A-Z]{2})$/;
 const OUT = /^[A-Z]{1,2}\d[A-Z\d]?$/;
 const NEAR_MILES = 3;
 const FIRST_ROWS = 6;
+const BAR_ROWS = 8; // `bars`: the busiest areas as bars, the rest as chips under them
 
 type Origin = { lat: number; lng: number; label: string };
 type Problem = 'format' | 'notfound' | 'network' | 'location';
@@ -68,8 +69,11 @@ async function lookup(typed: string): Promise<Origin> {
 type Row = { area: string; jobs: NearJob[]; d: number };
 
 /* areaLinks: area name -> its page slug (/areas/<slug>), for the areas that have one; others go to My Work's search.
-   heading: h3 under Latest jobs on the home page, h2 on its own on /areas. */
-export default function JobsNear({ jobs, areaLinks = {}, heading = 'h3' }: { jobs: NearJob[]; areaLinks?: Record<string, string>; heading?: 'h2' | 'h3' }) {
+   heading: h3 under Latest jobs on the home page, h2 on its own on /areas.
+   bars (home page): Where the jobs are shows the busiest areas as blue bars that grow out one after another as
+   they scroll into view (and again each time they come back after going right off screen); drawn full before
+   the script runs and with reduced motion (home-motion.css .jn-bar). */
+export default function JobsNear({ jobs, areaLinks = {}, heading = 'h3', bars = false }: { jobs: NearJob[]; areaLinks?: Record<string, string>; heading?: 'h2' | 'h3'; bars?: boolean }) {
   // An area's own page; else its one job; else My Work's search for it.
   const areaHref = (a: string) => {
     if (areaLinks[a]) return `/areas/${areaLinks[a]}`;
@@ -102,6 +106,30 @@ export default function JobsNear({ jobs, areaLinks = {}, heading = 'h3' }: { job
   }, [origin, jobs]);
 
   const near = rows.filter((r) => r.d <= NEAR_MILES).reduce((n, r) => n + r.jobs.length, 0);
+
+  const barsRef = useRef<HTMLUListElement>(null);
+  const [grow, setGrow] = useState<'yes' | 'no' | undefined>(undefined);
+  const listShown = !origin;
+  useEffect(() => {
+    const el = barsRef.current;
+    if (!bars || !listShown || !el || typeof IntersectionObserver === 'undefined') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let first = true;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (first) {
+          first = false;
+          if (e.intersectionRatio < 0.3) setGrow('no');
+          return;
+        }
+        if (e.intersectionRatio >= 0.3) setGrow('yes');
+        else if (!e.isIntersecting) setGrow('no');
+      },
+      { threshold: [0, 0.3] },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [bars, listShown]);
 
   const find = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -249,16 +277,36 @@ export default function JobsNear({ jobs, areaLinks = {}, heading = 'h3' }: { job
         ) : (
           <>
             <p className="font-mono text-[12.5px] uppercase tracking-[0.06em] text-faint">Where the jobs are</p>
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {areas.map(([a, n]) => (
-                <li key={a}>
-                  <Link href={areaHref(a)} className={`inline-flex h-10 items-center gap-2 rounded-sm border px-3.5 text-[14.5px] text-ink transition-colors hover:border-ink ${areaLinks[a] ? 'border-accent/50 bg-mount' : 'border-line-strong'}`}>
-                    {a}
-                    <span className="font-mono text-[12px] text-faint">{n}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {bars ? (
+              <ul ref={barsRef} data-grow={grow} className="jn-bars mt-4 grid gap-2.5">
+                {areas.slice(0, BAR_ROWS).map(([a, n], i) => (
+                  <li key={a}>
+                    <Link href={areaHref(a)} className="grid grid-cols-[112px_minmax(0,1fr)_24px] items-center gap-2.5 text-[15px] text-ink hover:text-accent md:grid-cols-[150px_minmax(0,1fr)_28px] md:gap-3.5">
+                      <span className="truncate">{a}</span>
+                      <span className="jn-bar" aria-hidden="true">
+                        <i style={{ '--f': n / (areas[0]?.[1] || 1), '--i': i } as React.CSSProperties} />
+                      </span>
+                      <span className="text-right font-mono text-[13px] text-muted">
+                        {n}
+                        <span className="sr-only">{n === 1 ? ' job' : ' jobs'}</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {!bars || areas.length > BAR_ROWS ? (
+              <ul className={`flex flex-wrap gap-2 ${bars ? 'mt-5' : 'mt-3'}`}>
+                {(bars ? areas.slice(BAR_ROWS) : areas).map(([a, n]) => (
+                  <li key={a}>
+                    <Link href={areaHref(a)} className={`inline-flex h-10 items-center gap-2 rounded-sm border px-3.5 text-[14.5px] text-ink transition-colors hover:border-ink ${areaLinks[a] ? 'border-accent/50 bg-mount' : 'border-line-strong'}`}>
+                      {a}
+                      <span className="font-mono text-[12px] text-faint">{n}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </>
         )}
       </div>

@@ -5,7 +5,7 @@ import { getAllPosts } from '@/lib/blog';
 import QuoteCta from '@/components/QuoteCta';
 import Reviews, { GoogleRating } from '@/components/Reviews';
 import { getReviews } from '@/lib/reviews';
-import { countModels, formatMonth, getAllProjects } from '@/lib/projects';
+import { countModels, formatMonth, getAllProjects, modelOf } from '@/lib/projects';
 import { libraryKinds } from '@/lib/design-library';
 import { QUOTE_HREF, whatsappText, whatsappUrl } from '@/lib/site';
 import SocialIcon from '@/components/SocialIcon';
@@ -13,9 +13,15 @@ import JobsNear from '@/components/JobsNear';
 import PlannerTeaser from '@/components/PlannerTeaser';
 import BuildStory from '@/components/BuildStory';
 import { HeroLevel } from '@/components/ScrollLevel';
+import HeroDoors from '@/components/HeroDoors';
+import CountUp from '@/components/CountUp';
+import ServiceStack from '@/components/ServiceStack';
+import WipeCover from '@/components/WipeCover';
+import TiltShot from '@/components/TiltShot';
 import { areaPageLinks, getNearJobs } from '@/lib/areas';
 import { businessJsonLd, jsonLd, pageMeta } from '@/lib/seo';
 import './home.css';
+import './home-motion.css';
 
 /* Rebuilt at most once an hour, so the photo of the day changes soon after midnight (London)
    and new jobs show in "Latest jobs" without a redeploy. */
@@ -81,8 +87,18 @@ function londonDay(now = new Date()) {
   return Math.floor(Date.UTC(y, m - 1, day) / 86_400_000);
 }
 
-const tileClass = ['tile-a', 'tile-b', 'tile-c'];
-const tileSizes = ['(max-width: 860px) 100vw, 700px', '(max-width: 860px) 100vw, 490px', '(max-width: 860px) 100vw, 490px'];
+/* The headline, a word at a time, so each word can settle in after the one before (home-motion.css .hw). */
+function Words({ text, from = 0 }: { text: string; from?: number }) {
+  return text
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w, i, all) => (
+      <span key={i}>
+        <span className="hw" style={{ '--i': from + i } as React.CSSProperties}>{w}</span>
+        {i < all.length - 1 ? ' ' : null}
+      </span>
+    ));
+}
 
 export default function HomePage() {
   const d = readPageJson<HomePageData>('home.json');
@@ -91,6 +107,8 @@ export default function HomePage() {
   const phoneHref = `tel:${d.phone.replace(/\s/g, '')}`;
   const projects = getAllProjects();
   const latest = projects.slice(0, 4);
+  // The brief's first two questions for the quote panel (QuoteBrief): the same choices as Plan your project.
+  const brief = readPageJson<{ briefWhat?: string[]; briefTiming?: string[] }>('how-it-works.json');
 
   // Main photo of the day: the jobs listed in home.json take turns, one per day; each links to its job.
   const bySlug = new Map(projects.map((p) => [p.slug, p]));
@@ -108,8 +126,8 @@ export default function HomePage() {
       <section className="wrap grid12 hero">
         <div className="hero-copy">
           <p className="kicker anim">{d.heroKicker}</p>
-          <h1 className="h1 anim d1">
-            {d.heroTitle} <em>{d.heroTitleAccent}</em>
+          <h1 className="h1">
+            <Words text={d.heroTitle} /> <em><Words text={d.heroTitleAccent} from={d.heroTitle.split(/\s+/).filter(Boolean).length} /></em>
           </h1>
           {/* A spirit level that tips while the page scrolls and settles with a tick (src/lib/scroll-level.ts). */}
           <HeroLevel className="anim d2" />
@@ -143,6 +161,7 @@ export default function HomePage() {
               <div className="mount">
                 <div className="photo hero-photo">
                   <Image src={hero.src} alt={hero.alt} fill priority sizes="(max-width: 860px) 100vw, 500px" style={hero.position ? { objectPosition: hero.position } : undefined} />
+                  <HeroDoors />
                 </div>
               </div>
               <figcaption className="hero-cap">
@@ -154,6 +173,7 @@ export default function HomePage() {
             <div className="mount">
               <div className="photo hero-photo">
                 <Image src={d.heroImage} alt={d.heroImageAlt} fill priority sizes="(max-width: 860px) 100vw, 500px" />
+                <HeroDoors />
               </div>
             </div>
           )}
@@ -165,7 +185,7 @@ export default function HomePage() {
           {d.facts.map((f) => (
             <div className="fact reveal" key={f.label}>
               <p className="fact-v">
-                {f.value}
+                <CountUp value={f.value} />
                 {f.unit ? <small>{f.unit}</small> : null}
               </p>
               <p className="fact-l">{f.label}</p>
@@ -180,19 +200,8 @@ export default function HomePage() {
             <h2 className="h2">{d.buildHeading}</h2>
             <p className="lede">{d.buildIntro}</p>
           </div>
-          <div className="grid12 build">
-            {d.services.slice(0, 3).map((s, i) => (
-              <article className={`tile ${tileClass[i]} reveal`} key={s.title}>
-                <div className="mount">
-                  <div className="photo">
-                    <Image src={s.image} alt={s.imageAlt} fill sizes={tileSizes[i]} />
-                  </div>
-                </div>
-                <h3>{s.link ? <Link href={s.link} className="tile-link">{s.title}</Link> : s.title}</h3>
-                <p>{s.description}</p>
-              </article>
-            ))}
-          </div>
+          {/* On a computer the three cards stack under the menu bar as the page scrolls (ServiceStack). */}
+          <ServiceStack items={d.services.slice(0, 3)} />
           <div className="build-foot">
             <Link className="link-more" href="/services">
               Everything I build <span aria-hidden="true">→</span>
@@ -215,13 +224,11 @@ export default function HomePage() {
               </Link>
             </div>
             <ul className="latest-row">
-              {latest.map((p) => (
+              {latest.map((p, i) => (
                 <li key={p.slug} className="reveal">
                   <Link href={`/portfolio/${p.slug}`} className="latest-card">
                     <div className="mount">
-                      <div className="photo latest-photo">
-                        <Image src={p.cover.src} alt={p.cover.alt} fill sizes="(max-width: 860px) 68vw, 290px" />
-                      </div>
+                      <WipeCover photo={p.cover} model={modelOf(p)?.poster.src} index={i} sizes="(max-width: 860px) 68vw, 290px" />
                     </div>
                     <p className="latest-meta">{formatMonth(p.finished)} · {p.area}</p>
                     <h3>{p.title}</h3>
@@ -231,7 +238,7 @@ export default function HomePage() {
             </ul>
             {/* Jobs near you: a postcode shows the nearest jobs with rough miles */}
             <div className="mt-16 border-t border-line pt-12 md:mt-20 md:pt-14">
-              <JobsNear jobs={getNearJobs()} areaLinks={areaPageLinks()} />
+              <JobsNear jobs={getNearJobs()} areaLinks={areaPageLinks()} bars />
               <p className="mt-8">
                 <Link href="/areas" className="link-more text-[15px]">
                   Everywhere I&apos;ve worked <span aria-hidden="true">→</span>
@@ -263,7 +270,7 @@ export default function HomePage() {
 
       <section className={`sec reviews${hasReviews ? '' : ' sec-tight'}`} id="reviews">
         <div className="wrap">
-          <Reviews max={6} homeHeading />
+          <Reviews max={6} homeHeading ticker />
         </div>
       </section>
 
@@ -278,9 +285,11 @@ export default function HomePage() {
             </Link>
           </div>
           <figure className="app-shot reveal">
-            <div className="app-frame">
-              <Image src={d.appImage} alt={d.appImageAlt} width={2400} height={1500} sizes="(max-width: 860px) 100vw, 760px" />
-            </div>
+            <TiltShot className="app-tilt">
+              <div className="app-frame">
+                <Image src={d.appImage} alt={d.appImageAlt} width={2400} height={1500} sizes="(max-width: 860px) 100vw, 760px" />
+              </div>
+            </TiltShot>
           </figure>
         </div>
       </section>
@@ -337,6 +346,7 @@ export default function HomePage() {
               steps={d.quoteNextSteps}
               buttonLabel={d.primaryCtaLabel}
               note={d.quoteNote}
+              brief={brief.briefWhat?.length && brief.briefTiming?.length ? { what: brief.briefWhat, when: brief.briefTiming } : undefined}
             />
           </div>
         </div>

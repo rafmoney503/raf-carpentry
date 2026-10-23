@@ -1,0 +1,136 @@
+/* Home page motion (23 Oct 2026, Raf: 'I like them all, do it' to the 'Raf Carpentry motion mock-up' design
+   canvas). Each piece is drawn finished without its script and with prefers-reduced-motion; the scripts only
+   add the movement. Kept out on purpose: page fades, pencil lines under headings, ruler lines, joints between
+   sections and the photo growing into the job page (removed at Raf's request on 9 Oct 2026). */
+
+.home { --spring: cubic-bezier(0.34, 1.56, 0.64, 1); --hd-door: #a8b8a0; /* the build story's sage doors */ }
+
+/* 1. Hero: the headline settles in word by word (CSS only) */
+.home .h1 .hw { display: inline-block; }
+@keyframes hw-rise { from { opacity: 0; transform: translateY(0.45em) rotate(1.5deg); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .home .h1 .hw { animation: hw-rise 0.9s var(--ease-soft) both; animation-delay: calc(var(--i) * 70ms + 80ms); }
+}
+
+/* 1. Hero: two sage doors swing open on the photo of the day (src/components/HeroDoors.tsx).
+   No class = the first opening, as a CSS animation with the page; .hd-shut = held shut until the photo is on
+   screen; .hd-open = opening (or open) again. They stop at 95 degrees, just past side-on, where a
+   door's back is hidden, so nearly all of the swing shows. */
+.home .hd { position: absolute; inset: 0; z-index: 1; display: flex; perspective: 1700px; pointer-events: none; }
+.home .hd-door { position: relative; flex: 1 1 0; background: var(--hd-door); border: 1px solid rgb(22 25 28 / 0.2); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.home .hd-door::before { content: ''; position: absolute; inset: 8% 13%; border: 1px solid rgb(22 25 28 / 0.16); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), 0 1px 0 rgb(255 255 255 / 0.3); }
+.home .hd-door i { position: absolute; top: 46%; width: 4px; height: 13%; min-height: 48px; border-radius: 2px; background: var(--color-ink); }
+.home .hd-l { transform-origin: 0 50%; transform: rotateY(-95deg); }
+.home .hd-r { transform-origin: 100% 50%; transform: rotateY(95deg); }
+.home .hd-l i { right: 12px; }
+.home .hd-r i { left: 12px; }
+@keyframes hd-open-l { from { transform: none; } to { transform: rotateY(-95deg); } }
+@keyframes hd-open-r { from { transform: none; } to { transform: rotateY(95deg); } }
+@keyframes hd-zoom { from { transform: scale(1.12); } to { transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .home .hd:not(.hd-shut):not(.hd-open) .hd-l { animation: hd-open-l 1.8s cubic-bezier(0.55, 0.05, 0.35, 1) 0.6s both; }
+  .home .hd:not(.hd-shut):not(.hd-open) .hd-r { animation: hd-open-r 1.8s cubic-bezier(0.55, 0.05, 0.35, 1) 0.69s both; }
+  .home .hd-shut .hd-door { transform: none; transition: none; }
+  .home .hd-open .hd-door { transition: transform 1.8s cubic-bezier(0.55, 0.05, 0.35, 1); }
+  .home .hd-open .hd-r { transition-delay: 0.09s; }
+  .home .hero-photo:has(.hd:not(.hd-shut):not(.hd-open)) img { animation: hd-zoom 2.4s var(--ease-soft) 0.6s both; }
+  .home .hero-photo:has(.hd-shut) img { transform: scale(1.12); transition: none; }
+  .home .hero-photo:has(.hd-open) img { transition: transform 2.4s var(--ease-soft); }
+}
+@media (prefers-reduced-motion: reduce) { .home .hd { display: none; } }
+
+/* 2. Facts: the numbers count up (src/components/CountUp.tsx) */
+.home .fact-v .count { font-variant-numeric: tabular-nums; }
+
+/* 3. What I build: the cards stack as the page scrolls (src/components/ServiceStack.tsx; --sp 0 to 1) */
+.home .sc-stack { display: flex; flex-direction: column; gap: 150px; }
+.home .sc-card { position: sticky; top: var(--sc-top, 96px); }
+.home .sc-in { position: relative; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); height: min(440px, calc(100vh - 150px)); min-height: 340px; overflow: hidden; background: var(--color-mount); border: 1px solid var(--color-line-strong); border-radius: 2px; box-shadow: 0 30px 60px -42px rgb(22 25 28 / 0.55); transform-origin: 50% 0; transform: scale(calc(1 - var(--sp, 0) * 0.05)); transition: border-color 0.3s var(--ease-soft); }
+.home .sc-card:hover .sc-in { border-color: var(--color-accent); }
+.home .sc-photo { position: relative; overflow: hidden; background: var(--color-raised); border-right: 1px solid var(--color-line); }
+.home .sc-photo img { object-fit: cover; transition: transform 0.7s var(--ease-soft); }
+.home .sc-card:hover .sc-photo img { transform: scale(1.03); }
+.home .sc-text { display: flex; flex-direction: column; justify-content: space-between; gap: 24px; padding: 48px; }
+.home .sc-text h3 { margin-top: 12px; font-weight: 650; font-size: 34px; line-height: 1.08; letter-spacing: -0.02em; }
+.home .sc-desc { margin-top: 14px; color: var(--color-muted); max-width: 44ch; text-wrap: pretty; }
+.home .sc-link::after { content: ''; position: absolute; inset: 0; z-index: 2; }
+.home .sc-card:hover .sc-link { color: var(--color-accent); }
+.home .sc-shade { position: absolute; inset: 0; z-index: 1; background: var(--color-ink); opacity: calc(var(--sp, 0) * 0.42); pointer-events: none; }
+
+/* 4. Latest jobs: the SketchUp still wipes into the photo (src/components/WipeCover.tsx; --w 0 to 1) */
+.home .wc { --w: 1; background-color: var(--color-mount); background-image: linear-gradient(rgb(37 71 208 / 0.07) 1px, transparent 1px), linear-gradient(90deg, rgb(37 71 208 / 0.07) 1px, transparent 1px); background-size: 16px 16px; }
+.home .wc .wc-model { object-fit: contain; padding: 9%; mix-blend-mode: multiply; }
+.home .wc-photo { position: absolute; inset: 0; }
+.home .wc .wc-photo { clip-path: inset(0 calc((1 - var(--w)) * 100%) 0 0); }
+.home .wc-line { position: absolute; top: 0; bottom: 0; left: calc(var(--w) * 100%); width: 2px; margin-left: -1px; background: var(--color-accent); box-shadow: 0 0 0 3px rgb(37 71 208 / 0.16); opacity: 0; transition: opacity 0.25s; pointer-events: none; }
+.home .wc-tag { position: absolute; top: 10px; z-index: 1; padding: 6px 8px; border-radius: 2px; font: 500 11.5px/1 var(--font-mono); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.home .wc-tag-a { right: 10px; border: 1px solid var(--color-line-strong); background: rgb(251 251 249 / 0.94); color: var(--color-ink); }
+.home .wc-tag-b { left: 10px; background: var(--color-accent); color: var(--color-on-accent); }
+.home .wc[data-stage='wipe'] .wc-line { opacity: 1; }
+.home .wc[data-stage='drawing'] .wc-tag-a,
+.home .wc[data-stage='wipe'] .wc-tag-a,
+.home .wc[data-stage='wipe'] .wc-tag-b,
+.home .wc[data-stage='photo'] .wc-tag-b { opacity: 1; }
+
+/* 5. Where the jobs are: the bars grow out one after another (src/components/JobsNear.tsx `bars`) */
+.home .jn-bar { display: block; height: 10px; overflow: hidden; border-radius: 2px; background: var(--color-raised); }
+.home .jn-bar i { display: block; height: 100%; background: var(--color-accent); transform-origin: 0 50%; transform: scaleX(var(--f)); transition: transform 1s var(--spring); transition-delay: calc(var(--i) * 70ms); }
+.home .jn-bars[data-grow='no'] .jn-bar i { transform: scaleX(0); transition: none; }
+
+/* 6. Reviews: the ticker (src/components/ReviewTicker.tsx) */
+.home .tk { position: relative; margin-top: 40px; overflow-x: auto; scrollbar-width: none; }
+.home .tk::-webkit-scrollbar { display: none; }
+.home .tk-live { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent); }
+.home .tk-track { display: flex; gap: 24px; width: max-content; padding-block: 6px 14px; touch-action: pan-y; }
+.home .tk-live .tk-track { cursor: grab; }
+.home .tk-live .tk-track:active { cursor: grabbing; }
+.home .tk-card { flex: none; display: flex; flex-direction: column; width: 380px; padding: 24px; border: 1px solid var(--color-line-strong); border-radius: 2px; background: var(--color-mount); transition: border-color 0.3s, transform 0.4s var(--ease-soft); }
+.home .tk-live .tk-card { user-select: none; -webkit-user-select: none; }
+.home .tk-card:hover { border-color: var(--color-accent); transform: translateY(-4px); }
+.home .tk-stars > span { display: inline-flex; transition: transform 0.5s var(--spring), opacity 0.3s; transition-delay: calc(var(--i) * 90ms); }
+.home .tk-live:not(.tk-seen) .tk-stars > span { transform: scale(0) rotate(-40deg); opacity: 0; transition-delay: 0s; }
+
+/* 7. CabinetOS: the screen leans in 3D (src/components/TiltShot.tsx) */
+.home .app-tilt { will-change: transform; }
+
+/* 8. Quote panel: the brief's first chips and the message building (src/components/QuoteBrief.tsx) */
+.home .qb-q { margin-top: 26px; font-family: var(--font-mono); font-size: 12.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-faint); }
+.home .qb-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.home .qb-chip { display: inline-flex; align-items: center; height: 44px; padding: 0 14px; border: 1px solid var(--color-line-strong); border-radius: 2px; background: var(--color-mount); font-size: 15px; line-height: 1.2; color: var(--color-ink); cursor: pointer; transition: border-color 0.2s, background-color 0.2s, transform 0.15s var(--ease-soft); }
+.home .qb-chip:hover { border-color: var(--color-ink); }
+.home .qb-chip:active { transform: scale(0.96); }
+.home .qb-tick { display: inline-flex; width: 0; overflow: hidden; color: var(--color-accent); transform: scale(0); transition: width 0.3s var(--ease-soft), margin 0.3s var(--ease-soft), transform 0.5s var(--spring); }
+.home .qb-on { border-color: var(--color-accent); background: var(--color-accent-soft); }
+.home .qb-on .qb-tick { width: 16px; margin-right: 8px; transform: scale(1); }
+.home .qb-msg { margin-top: 22px; padding: 16px 18px; border: 1px solid var(--color-line-strong); border-radius: 2px; background: var(--color-mount); font-family: var(--font-mono); font-size: 14px; line-height: 1.6; color: var(--color-ink); }
+.home .qb-msg-l { margin-bottom: 6px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-faint); }
+.home .qb-line { margin-inline: -4px; padding-inline: 4px; border-radius: 2px; }
+@keyframes qb-in {
+  from { opacity: 0; transform: translateY(10px); background: rgb(37 71 208 / 0.16); }
+  55% { opacity: 1; transform: none; background: rgb(37 71 208 / 0.12); }
+  to { opacity: 1; transform: none; background: rgb(37 71 208 / 0); }
+}
+@media (prefers-reduced-motion: no-preference) { .home .qb-line { animation: qb-in 0.8s var(--ease-soft) both; } }
+.home .magnet { display: inline-flex; }
+.home .magnet-in { display: inline-flex; width: 100%; }
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) { .home .magnet { padding: 20px; margin: -20px; } }
+
+/* Laptop */
+@media (max-width: 1180px) {
+  .home .sc-text { padding: 36px; }
+  .home .sc-text h3 { font-size: 30px; }
+}
+
+/* Tablet and phone: the cards are a plain list, the ticker cards narrower */
+@media (max-width: 860px) {
+  .home .sc-stack { gap: 24px; }
+  .home .sc-card { position: relative; top: auto; }
+  .home .sc-in { grid-template-columns: minmax(0, 1fr); height: auto; min-height: 0; transform: none; }
+  .home .sc-photo { aspect-ratio: 4 / 3; border-right: 0; border-bottom: 1px solid var(--color-line); }
+  .home .sc-text { padding: 22px; }
+  .home .sc-text h3 { font-size: 24px; margin-top: 8px; }
+  .home .sc-shade { display: none; }
+  .home .tk { margin-inline: -20px; padding-inline: 20px; }
+  .home .tk-live { -webkit-mask-image: none; mask-image: none; }
+  .home .tk-card { width: 300px; padding: 22px; }
+}

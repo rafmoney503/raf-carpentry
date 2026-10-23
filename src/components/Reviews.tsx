@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { GOOGLE_REVIEWS_URL } from '@/lib/site';
 import { getReviews, pickReviews, type JobForReviews } from '@/lib/reviews';
 import { SectionHeading } from './ui';
+import ReviewTicker from './ReviewTicker';
 
 /* "What customers say": the Google rating with a link to the profile, and review cards.
    With no reviews typed in yet it shows only the rating line, so it never looks empty. */
@@ -54,8 +55,9 @@ export function GoogleRating({ className = '', variant = 'box' }: { className?: 
   );
 }
 
-/* `job` (slug, type + title, tags) puts the reviews about that kind of work first. */
-export default function Reviews({ max = 3, job, homeHeading = false }: { max?: number; job?: JobForReviews; homeHeading?: boolean }) {
+/* `job` (slug, type + title, tags) puts the reviews about that kind of work first.
+   `ticker` (home page): the cards run as a slow ticker that can be held and dragged (ReviewTicker). */
+export default function Reviews({ max = 3, job, homeHeading = false, ticker = false }: { max?: number; job?: JobForReviews; homeHeading?: boolean; ticker?: boolean }) {
   const d = getReviews();
   const list = pickReviews(d.reviews, max, job);
 
@@ -77,25 +79,31 @@ export default function Reviews({ max = 3, job, homeHeading = false }: { max?: n
         </div>
         <GoogleRating />
       </div>
-      <ul className="-mx-5 mt-10 flex items-start snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 pb-2 md:mx-0 md:items-stretch md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0">
-        {list.map((r, i) => (
-          <li key={i} className="flex w-[84%] flex-none snap-start flex-col rounded-sm border border-line-strong bg-mount p-6 md:w-auto">
-            <span className="flex items-center gap-0.5 text-accent" aria-label={`${r.stars ?? 5} out of 5 stars`}>
-              {Array.from({ length: Math.max(1, Math.min(5, r.stars ?? 5)) }, (_, k) => <Star key={k} size={14} />)}
-            </span>
-            <blockquote className="mt-4 text-[16px] leading-relaxed text-ink">&ldquo;{r.text.trim()}&rdquo;</blockquote>
-            <div className="mt-auto flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pt-5">
-              <span className="font-mono text-[13px] text-faint">{r.name}{r.area ? `, ${r.area}` : ''}</span>
-              {r.job ? (
-                <Link href={`/portfolio/${r.job}`} className="text-[14px] font-medium text-accent hover:underline">
-                  See the job <span aria-hidden="true">→</span>
-                </Link>
-              ) : null}
-            </div>
-          </li>
-        ))}
-      </ul>
-      {list.length > 1 ? <p className="mt-3 font-mono text-[12px] text-faint md:hidden">Swipe for more <span aria-hidden="true">→</span></p> : null}
+      {ticker && list.length > 2 ? (
+        <ReviewTicker items={list.map((r) => ({ name: r.name, area: r.area, text: r.text, stars: r.stars, job: r.job }))} />
+      ) : (
+        <>
+          <ul className="-mx-5 mt-10 flex items-start snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 pb-2 md:mx-0 md:items-stretch md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0">
+            {list.map((r, i) => (
+              <li key={i} className="flex w-[84%] flex-none snap-start flex-col rounded-sm border border-line-strong bg-mount p-6 md:w-auto">
+                <span className="flex items-center gap-0.5 text-accent" aria-label={`${r.stars ?? 5} out of 5 stars`}>
+                  {Array.from({ length: Math.max(1, Math.min(5, r.stars ?? 5)) }, (_, k) => <Star key={k} size={14} />)}
+                </span>
+                <blockquote className="mt-4 text-[16px] leading-relaxed text-ink">&ldquo;{r.text.trim()}&rdquo;</blockquote>
+                <div className="mt-auto flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pt-5">
+                  <span className="font-mono text-[13px] text-faint">{r.name}{r.area ? `, ${r.area}` : ''}</span>
+                  {r.job ? (
+                    <Link href={`/portfolio/${r.job}`} className="text-[14px] font-medium text-accent hover:underline">
+                      See the job <span aria-hidden="true">→</span>
+                    </Link>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+          {list.length > 1 ? <p className="mt-3 font-mono text-[12px] text-faint md:hidden">Swipe for more <span aria-hidden="true">→</span></p> : null}
+        </>
+      )}
     </div>
   );
 }
