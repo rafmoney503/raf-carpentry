@@ -272,6 +272,24 @@ export function WazeLink({ address }: { address: string }) {
     </a>
   );
 }
+/* The big Waze button at the top of a job: drives to the job's address. */
+function WazeTile({ address }: { address: string }) {
+  const phone = onPhone();
+  return (
+    <a
+      href={waze(address, phone)}
+      data-waze-top
+      aria-label={`Drive there with Waze: ${address.replace(/\s*\n\s*/g, ', ')}`}
+      className="flex h-[60px] w-[60px] shrink-0 flex-col items-center justify-center gap-1 rounded-sm border border-line-strong bg-mount text-accent active:bg-raised"
+      {...(phone ? {} : { target: '_blank', rel: 'noopener' })}
+    >
+      <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+        <path d="M20.5 3.5 3.5 10.6l7.1 2.8 2.8 7.1z" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      </svg>
+      <span className="font-mono text-[11.5px] font-semibold leading-none text-ink">Waze</span>
+    </a>
+  );
+}
 /* A booking's end for putting it back (ServiceM8 can send one with no end: an hour). */
 const endOf = (b: Booking) => {
   if (b.end && b.end > b.start) return b.end;
@@ -1020,8 +1038,15 @@ export function CurrentView({
       <p className="kicker">
         Current job{job.number ? ` #${job.number}` : ''}
       </p>
-      <h1 className="mt-1 font-display text-[28px] font-[680] leading-[1.05] tracking-[-0.025em]">{job.name}</h1>
-      {job.address ? <p className="mt-1 whitespace-pre-line text-[15.5px] text-muted">{job.address}</p> : null}
+      {/* Waze beside the name and address (23 Oct 2026, Raf: 'at the very top next to client name and address put waze
+          icon and functionality to drive to the address'). */}
+      <div className="mt-1 flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <h1 className="font-display text-[28px] font-[680] leading-[1.05] tracking-[-0.025em] [overflow-wrap:anywhere]">{job.name}</h1>
+          {job.address ? <p className="mt-1 whitespace-pre-line text-[15.5px] text-muted [overflow-wrap:anywhere]">{job.address}</p> : null}
+        </div>
+        {job.address ? <WazeTile address={job.address} /> : null}
+      </div>
       {job.description ? <p className="mt-3 whitespace-pre-line text-[16px] leading-relaxed">{job.description}</p> : null}
 
       <div className="mt-4 flex flex-wrap gap-2">
