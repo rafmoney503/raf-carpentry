@@ -39,7 +39,7 @@ const STEPS = [
   },
   {
     title: 'Hands free',
-    text: 'Tone beeps faster and louder as it gets near level, then holds one steady tone while it reads level (on an iPhone the ring switch has to be on). Speak says the mm out loud once the reading settles. Big numbers gives you a reading you can see from a step away.',
+    text: 'Tone beeps faster and louder as it gets near level, then holds one steady tone while it reads level. It plays with the phone on silent too, so music playing on the phone pauses while Tone is on. Speak says the mm out loud once the reading settles. Big numbers gives you a reading you can see from a step away.',
   },
   {
     title: 'Hold and Save',

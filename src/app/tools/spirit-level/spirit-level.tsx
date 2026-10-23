@@ -45,7 +45,9 @@ import './spirit-level.css';
    Tone (23 Oct 2026, Raf: 'The tone could be louder when near 0 and continuous when reached 0'): the beeps get louder
    as well as faster nearer level, and at level they join into one steady tone, like a parking sensor, until the
    reading moves off again. Beeps and tone have a little of the higher notes in them, which a phone speaker plays
-   louder than a plain 880 Hz. */
+   louder than a plain 880 Hz. With Tone on the beeps play even with the phone on silent (soundSession 'playback',
+   Raf heard nothing on his iPhone otherwise); music playing on the phone pauses while the level is open with Tone on.
+   The sound check beep comes just after the motion question, which can cut a sound short. */
 
 type Phase = 'idle' | 'asking' | 'running' | 'denied' | 'nosensor';
 type Tare = { mode: 'edge'; axis: Axis; t0: number } | { mode: 'flat'; x0: number; y0: number };
@@ -84,6 +86,20 @@ function writeStore(key: string, v: unknown) {
     localStorage.setItem(key, JSON.stringify(v));
   } catch {
     /* private window: works for this visit only */
+  }
+}
+
+/** iPhone (Safari 16.4 on, Audio Session API): 'playback' lets the page's beeps play with the phone on silent, the way
+ *  a video's sound does (music playing on the phone pauses meanwhile); 'auto' hands it back to the browser. Answers
+ *  whether the phone took it. Without it, a web page's sound is muted in silent mode. */
+function soundSession(type: 'playback' | 'auto'): boolean {
+  try {
+    const s = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+    if (!s) return false;
+    if (s.type !== type) s.type = type;
+    return s.type === type;
+  } catch {
+    return false;
   }
 }
 
@@ -138,6 +154,7 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
   const [audioOk, setAudioOk] = useState(true);
   const [soundCheck, setSoundCheck] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [onSilent, setOnSilent] = useState(false); // the beeps play with the phone on silent (soundSession)
   const sayCand = useRef({ text: '', since: 0 });
   const spoke = useRef({ text: '', at: 0 });
   const voice = useRef<SpeechSynthesisVoice | null>(null);
@@ -448,18 +465,17 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
   async function start() {
     // The sound, the voice and the motion permission all have to start inside the tap.
     try {
+      // Before the sound starts: with Tone on, the beeps play even with the phone on silent.
+      if (tone) setOnSilent(soundSession('playback'));
       const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (AC && !audio.current) {
         const ctx = new AC();
         audio.current = ctx;
         watchAudio(ctx);
       }
+      window.clearTimeout(pauseTimer.current);
+      setPaused(false);
       unlock();
-      // A sound check: one beep as the level opens, so it's plain straight away whether the phone will make a sound.
-      if (tone) {
-        tick(0.7);
-        showCheck(true);
-      }
     } catch {
       /* no sound */
     }
@@ -489,6 +505,15 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
     window.addEventListener('deviceorientation', onOrient);
     setPhase('running');
     setNote('');
+    // A sound check: one beep as the level opens, so it's plain straight away whether the phone will make a sound.
+    // After the motion question, which on an iPhone can cut a sound short.
+    if (tone) {
+      window.setTimeout(() => {
+        if (!live.current.tone) return;
+        tick(0.7);
+        showCheck(true);
+      }, 300);
+    }
     // A computer has the event but never sends a reading.
     window.setTimeout(() => {
       if (!raw.current) {
@@ -504,6 +529,13 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
       window.speechSynthesis?.cancel();
     } catch {
       /* no voice */
+    }
+    // Let go of the sound, so music on the phone can carry on.
+    soundSession('auto');
+    try {
+      audio.current?.suspend().catch(() => {});
+    } catch {
+      /* no sound */
     }
     setPhase('idle');
     setShown(null);
@@ -614,6 +646,8 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
   const toggleTone = () => {
     setTone(!tone);
     writeStore(TONE_KEY, !tone);
+    if (!tone) setOnSilent(soundSession('playback'));
+    else soundSession('auto');
     unlock();
     if (!tone) {
       armed.current = true;
@@ -708,6 +742,7 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
               big={big}
               said={said}
               sound={!tone ? null : paused && !audioOk ? 'paused' : soundCheck ? 'check' : null}
+              onSilent={onSilent}
               onLen={pickLen}
               onOwn={chooseOwn}
               onZero={setZero}
@@ -768,6 +803,7 @@ function Reading(p: {
   big: boolean;
   said: string;
   sound: 'paused' | 'check' | null;
+  onSilent: boolean;
   onLen: (l: number) => void;
   onOwn: (l: number) => void;
   onZero: () => void;
@@ -837,7 +873,7 @@ function Reading(p: {
               <path d="M4 9v6h4l5 4V5L8 9z" />
               {p.sound === 'paused' ? <path d="M17 9l5 6M22 9l-5 6" /> : <path d="M16.5 8.5a5 5 0 0 1 0 7" />}
             </svg>
-            {p.sound === 'paused' ? 'Sound paused. Tap the screen' : 'No beep? Turn silent mode off'}
+            {p.sound === 'paused' ? 'Sound paused. Tap the screen' : p.onSilent ? 'No beep? Turn the volume up' : 'No beep? Turn silent mode off'}
           </p>
         ) : p.speak && p.said ? (
           <p className="lv-said">
