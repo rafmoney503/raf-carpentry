@@ -90,9 +90,39 @@
 .home .app-copy { grid-column: 1 / span 5; }
 .home .app-copy .kicker { margin-bottom: 20px; }
 .home .app-copy .link-more { margin-top: 32px; }
-.home .app-shot { grid-column: 7 / span 6; margin: 0; }
-.home .app-frame { width: 128%; border: 1px solid var(--color-line-strong); border-radius: 2px; overflow: hidden; background: #f6f7f8; }
-.home .app-frame img { width: 100%; height: auto; }
+.home .app-shot { grid-column: 6 / span 7; margin: 0; container-type: inline-size; }
+
+/* The same app on a computer, a tablet and a phone (src/components/DeviceTrio.tsx). Every size is in cqw of
+   .app-shot, so the three keep their places at any width. They stand on one line: the computer's foot at 59,
+   the tablet and phone a little in front, at 63. Plain bodies in ink, no maker's marks. */
+.home .app-tilt { transform-style: preserve-3d; }
+.home .dv { --dv-body: var(--color-ink); --dv-edge: rgb(255 255 255 / 0.1); --dv-metal: color-mix(in srgb, var(--color-ink) 18%, var(--color-mount)); position: relative; height: 66cqw; transform-style: preserve-3d; }
+.home .dv-screen { position: relative; overflow: hidden; background: #f6f7f8; }
+.home .dv-screen img { object-fit: cover; object-position: 50% 0; }
+/* a soft shadow on the desk under each one */
+.home .dv-mon::after, .home .dv-tab::after, .home .dv-phone::after { content: ''; position: absolute; left: 6%; right: 6%; bottom: -1.6cqw; height: 3cqw; z-index: -1; background: radial-gradient(closest-side, rgb(22 25 28 / 0.32), transparent); }
+
+/* Computer: a thin bezel, a deeper strip along the bottom, a neck and a foot */
+.home .dv-mon { position: absolute; left: 7cqw; top: 0; width: 78cqw; }
+.home .dv-mon-body { position: relative; padding: 0.9cqw 0.9cqw 2.4cqw; border-radius: 1cqw; background: var(--dv-body); box-shadow: inset 0 0 0 1px var(--dv-edge), 0 2.4cqw 4cqw -2.4cqw rgb(22 25 28 / 0.55); }
+.home .dv-mon-body::after { content: ''; position: absolute; left: 50%; bottom: 0.95cqw; width: 0.55cqw; height: 0.55cqw; margin-left: -0.275cqw; border-radius: 50%; background: rgb(255 255 255 / 0.18); }
+.home .dv-mon-screen { aspect-ratio: 2400 / 1500; border-radius: 0.2cqw; }
+.home .dv-neck { display: block; position: relative; width: 9cqw; height: 6.4cqw; margin: 0 auto; background: linear-gradient(90deg, color-mix(in srgb, var(--dv-metal) 88%, var(--color-ink)), var(--dv-metal) 45%, color-mix(in srgb, var(--dv-metal) 80%, var(--color-ink))); clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%); }
+.home .dv-foot { display: block; position: relative; width: 25cqw; height: 1.1cqw; margin: 0 auto; border-radius: 0.6cqw 0.6cqw 0.3cqw 0.3cqw; background: linear-gradient(var(--dv-metal), color-mix(in srgb, var(--dv-metal) 78%, var(--color-ink))); }
+.home .dv-mon::after { bottom: -0.9cqw; left: 30%; right: 30%; }
+
+/* Tablet: upright, an even bezel with the camera in the top one */
+.home .dv-tab { position: absolute; right: 0; bottom: 3cqw; width: 27cqw; padding: 1.2cqw; border-radius: 2.2cqw; background: var(--dv-body); box-shadow: inset 0 0 0 1px var(--dv-edge), 0 2cqw 3.4cqw -1.6cqw rgb(22 25 28 / 0.55); transform: translateZ(24px); }
+.home .dv-tab::before { content: ''; position: absolute; top: 0.4cqw; left: 50%; width: 0.45cqw; height: 0.45cqw; margin-left: -0.225cqw; border-radius: 50%; background: rgb(255 255 255 / 0.2); }
+.home .dv-tab-screen { aspect-ratio: 1230 / 1770; border-radius: 1cqw; }
+
+/* Phone: slim bezel, rounded screen, a status strip with the camera, side buttons */
+.home .dv-phone { position: absolute; left: 0; bottom: 3cqw; width: 13.5cqw; padding: 0.55cqw; border-radius: 2.3cqw; background: var(--dv-body); box-shadow: inset 0 0 0 1px var(--dv-edge), 0 2cqw 3cqw -1.4cqw rgb(22 25 28 / 0.6); transform: translateZ(40px); }
+.home .dv-phone::before { content: ''; position: absolute; right: -0.28cqw; top: 22%; width: 0.3cqw; height: 4.2cqw; border-radius: 0 0.2cqw 0.2cqw 0; background: var(--dv-body); }
+.home .dv-phone-screen { aspect-ratio: 780 / 1688; border-radius: 1.8cqw; }
+.home .dv-status { position: absolute; inset: 0 0 auto; height: 6%; background: #fafaf9; }
+.home .dv-status::after { content: ''; position: absolute; left: 50%; top: 30%; width: 34%; height: 46%; transform: translateX(-50%); border-radius: 99px; background: var(--dv-body); }
+.home .dv-view { position: absolute; inset: 6% 0 0; }
 
 /* Blog */
 .home .blog { padding-top: 0; }
@@ -172,7 +202,7 @@
   .home .latest-row > li { scroll-snap-align: start; }
   .home .latest-card h3 { font-size: 18px; }
 
-  .home .app-frame { width: 100%; }
+  .home .app-shot { max-width: 620px; }
 
   .home .post { grid-template-columns: minmax(0, 1fr) 24px; row-gap: 8px; padding-block: 22px; }
   .home .post-date { grid-column: 1; grid-row: 1; }

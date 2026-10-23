@@ -18,6 +18,7 @@ import CountUp from '@/components/CountUp';
 import ServiceStack from '@/components/ServiceStack';
 import WipeCover from '@/components/WipeCover';
 import TiltShot from '@/components/TiltShot';
+import DeviceTrio from '@/components/DeviceTrio';
 import { areaPageLinks, getNearJobs } from '@/lib/areas';
 import { businessJsonLd, jsonLd, pageMeta } from '@/lib/seo';
 import './home.css';
@@ -60,6 +61,10 @@ export type HomePageData = {
   appBody: string;
   appImage: string;
   appImageAlt: string;
+  appTabletImage?: string;
+  appTabletImageAlt?: string;
+  appPhoneImage?: string;
+  appPhoneImageAlt?: string;
   appLinkLabel: string;
   blogHeading: string;
   quoteHeading: string;
@@ -284,9 +289,11 @@ export default function HomePage() {
           </div>
           <figure className="app-shot reveal">
             <TiltShot className="app-tilt">
-              <div className="app-frame">
-                <Image src={d.appImage} alt={d.appImageAlt} width={2400} height={1500} sizes="(max-width: 860px) 100vw, 760px" />
-              </div>
+              <DeviceTrio
+                computer={{ src: d.appImage, alt: d.appImageAlt }}
+                tablet={d.appTabletImage ? { src: d.appTabletImage, alt: d.appTabletImageAlt || '' } : undefined}
+                phone={d.appPhoneImage ? { src: d.appPhoneImage, alt: d.appPhoneImageAlt || '' } : undefined}
+              />
             </TiltShot>
           </figure>
         </div>

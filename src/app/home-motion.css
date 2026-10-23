@@ -47,7 +47,8 @@
 .home .sc-card { position: sticky; top: var(--sc-top, 96px); }
 .home .sc-in { position: relative; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); height: min(440px, calc(100vh - 150px)); min-height: 340px; overflow: hidden; background: var(--color-mount); border: 1px solid var(--color-line-strong); border-radius: 2px; box-shadow: 0 30px 60px -42px rgb(22 25 28 / 0.55); transform-origin: 50% 0; transform: scale(calc(1 - var(--sp, 0) * 0.05)); transition: border-color 0.3s var(--ease-soft); }
 .home .sc-card:hover .sc-in { border-color: var(--color-accent); }
-.home .sc-photo { position: relative; overflow: hidden; background: var(--color-raised); border-right: 1px solid var(--color-line); }
+/* The photo sits 10 px in from the card's edge, like every mounted photo on the site (.mount) */
+.home .sc-photo { position: relative; overflow: hidden; margin: 10px 0 10px 10px; background: var(--color-raised); }
 .home .sc-photo img { object-fit: cover; transition: transform 0.7s var(--ease-soft); }
 .home .sc-card:hover .sc-photo img { transform: scale(1.03); }
 .home .sc-text { display: flex; flex-direction: column; justify-content: space-between; gap: 24px; padding: 48px; }
@@ -109,7 +110,7 @@
   .home .sc-stack { gap: 24px; }
   .home .sc-card { position: relative; top: auto; }
   .home .sc-in { grid-template-columns: minmax(0, 1fr); height: auto; min-height: 0; transform: none; }
-  .home .sc-photo { aspect-ratio: 4 / 3; border-right: 0; border-bottom: 1px solid var(--color-line); }
+  .home .sc-photo { aspect-ratio: 4 / 3; margin: 10px 10px 0; }
   .home .sc-text { padding: 22px; }
   .home .sc-text h3 { font-size: 24px; margin-top: 8px; }
   .home .sc-shade { display: none; }
