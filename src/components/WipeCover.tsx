@@ -4,9 +4,10 @@ import { useRef } from 'react';
 import { clamp01, useScrollFx } from '@/lib/use-scroll-fx';
 
 /* A Latest jobs card on the home page: it starts as the job's SketchUp still (the 3D model's poster, on graph
-   paper) and a blue line wipes it into the finished photo as the card comes up the screen: from its top at 95%
-   of the window to just under half way, each card a little after the one before (`index`), so all four are
-   photos by the time the row is in the middle of the screen. --w (0 to 1) is
+   paper) and a blue line wipes it into the finished photo while the page scrolls (23 Oct 2026, Raf: start when
+   the bottom of the picture comes into view, finish when its top reaches the top). So --w is 0 while the
+   picture's bottom edge is at the bottom of the window and 1 once its top edge reaches the bottom of the menu
+   bar (the top of what can be seen); the four cards sit in one row, so they wipe together. --w (0 to 1) is
    written straight onto the box while it scrolls, with data-stage drawing / wipe / photo for the labels ('3D
    drawing' while the drawing shows, 'Built' once the photo comes in). Sent finished (--w 1, the photo, stage
    'still' with no labels), so it's the plain photo before the script runs, with reduced motion and for jobs
@@ -14,20 +15,21 @@ import { clamp01, useScrollFx } from '@/lib/use-scroll-fx';
 export default function WipeCover({
   photo,
   model,
-  index = 0,
   sizes,
 }: {
   photo: { src: string; alt: string };
   model?: string;
-  index?: number;
   sizes: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   useScrollFx(ref, (vh) => {
     const el = ref.current;
     if (!el || !model) return;
-    const top = el.getBoundingClientRect().top;
-    const w = clamp01((vh * 0.95 - top - index * vh * 0.05) / (vh * 0.5));
+    const r = el.getBoundingClientRect();
+    // The menu bar stays at the top of the screen, so the top of the picture "reaches the top" at its bottom edge.
+    const bar = document.querySelector('header')?.getBoundingClientRect().bottom ?? 0;
+    const top0 = Math.max(0, Math.min(bar, vh * 0.3));
+    const w = clamp01((vh - r.bottom) / Math.max(40, vh - top0 - r.height));
     el.style.setProperty('--w', w.toFixed(3));
     el.dataset.stage = w < 0.01 ? 'drawing' : w > 0.99 ? 'photo' : 'wipe';
   }, (el) => el.closest('ul') ?? el);

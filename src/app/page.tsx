@@ -107,8 +107,6 @@ export default function HomePage() {
   const phoneHref = `tel:${d.phone.replace(/\s/g, '')}`;
   const projects = getAllProjects();
   const latest = projects.slice(0, 4);
-  // The brief's first two questions for the quote panel (QuoteBrief): the same choices as Plan your project.
-  const brief = readPageJson<{ briefWhat?: string[]; briefTiming?: string[] }>('how-it-works.json');
 
   // Main photo of the day: the jobs listed in home.json take turns, one per day; each links to its job.
   const bySlug = new Map(projects.map((p) => [p.slug, p]));
@@ -224,11 +222,11 @@ export default function HomePage() {
               </Link>
             </div>
             <ul className="latest-row">
-              {latest.map((p, i) => (
+              {latest.map((p) => (
                 <li key={p.slug} className="reveal">
                   <Link href={`/portfolio/${p.slug}`} className="latest-card">
                     <div className="mount">
-                      <WipeCover photo={p.cover} model={modelOf(p)?.poster.src} index={i} sizes="(max-width: 860px) 68vw, 290px" />
+                      <WipeCover photo={p.cover} model={modelOf(p)?.poster.src} sizes="(max-width: 860px) 68vw, 290px" />
                     </div>
                     <p className="latest-meta">{formatMonth(p.finished)} · {p.area}</p>
                     <h3>{p.title}</h3>
@@ -346,7 +344,7 @@ export default function HomePage() {
               steps={d.quoteNextSteps}
               buttonLabel={d.primaryCtaLabel}
               note={d.quoteNote}
-              brief={brief.briefWhat?.length && brief.briefTiming?.length ? { what: brief.briefWhat, when: brief.briefTiming } : undefined}
+              quoteOnly
             />
           </div>
         </div>
