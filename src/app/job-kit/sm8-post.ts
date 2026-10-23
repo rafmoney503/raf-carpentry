@@ -79,6 +79,8 @@ export function problemText(error?: string, detail?: string, at?: number) {
       return 'That mobile number doesn’t look right.';
     case 'missing-text':
       return 'Write the text first.';
+    case 'missing-note':
+      return 'Write the note first.';
     case 'bad-amount':
       return 'Type the amount in pounds, like 1500 or 1500.50.';
     case 'bad-date':

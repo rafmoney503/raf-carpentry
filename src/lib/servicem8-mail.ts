@@ -105,7 +105,7 @@ const addrOf = (r: Row, keys: string[]) => {
 /* London wall-clock time from whatever ServiceM8 sends: its usual "YYYY-MM-DD HH:MM:SS" (already London), an
    ISO time with a zone, or seconds / milliseconds since 1970. */
 const london = (d: Date) => d.toLocaleString('sv-SE', { timeZone: 'Europe/London' }).replace(' ', 'T').slice(0, 16);
-function stampOf(v: unknown): string | null {
+export function stampOf(v: unknown): string | null {
   if (typeof v === 'number' && v > 1e9) return london(new Date(v < 1e12 ? v * 1000 : v));
   const s = str(v);
   if (!s) return null;

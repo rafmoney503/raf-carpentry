@@ -4,6 +4,7 @@ import { stableUuid } from '@/lib/brief-token';
 import { jobMail, recentReplies, sendJobEmail, sendJobText } from '@/lib/servicem8-mail';
 import { e164 } from '@/lib/mail-text';
 import { lookupProperty } from '@/lib/property';
+import { attachmentFile, FileProblem, jobDiary, jobNotes, saveJobNote } from '@/lib/servicem8-diary';
 
 /* The Job Kit's Current jobs (ServiceM8), behind the PIN:
    { action: 'list' }                                    open quotes, work orders, jobs finished in the last 30 days,
@@ -25,6 +26,12 @@ import { lookupProperty } from '@/lib/property';
    { action: 'send-text', job, to, text }                a text (SMS) to the customer through ServiceM8, filed on the job
    { action: 'note', job, text, key? }                   a note on the job (a WhatsApp chat's messages; key: the same
                                                          note isn't added twice when sent again)
+   { action: 'notes', job }                              the job's notes, newest first (src/lib/servicem8-diary.ts)
+   { action: 'note-save', job, uuid, text, isNew }       Raf's note from the job's Notes card: created with the
+                                                         phone's uuid (isNew), then the same note updated as he types
+   { action: 'diary', job, email?, mobile? }             the job's whole diary: notes, photos and files, emails and
+                                                         texts, bookings and check-ins
+   { action: 'file', uuid, size: 'thumb' | 'full' }      an attachment's bytes (thumb: a small JPEG of a photo)
    { action: 'touch', job }                              saves the job again so attachments added through the API show
                                                          in its diary (/api/job-kit/attach adds them)
    { action: 'pay', job, uuid, amount, date, method, deposit, note? }   records a payment on the job (amount in pounds,
@@ -137,6 +144,36 @@ export async function POST(req: Request) {
         if (!(e instanceof Sm8Error && e.detail.startsWith('409'))) throw e; // already there from an earlier try
       }
       return Response.json({ ok: true }, { headers: noStore });
+    }
+    if (body.action === 'notes') {
+      const job = text(body.job, 40);
+      if (!isUuid(job)) return Response.json({ error: 'bad' }, { status: 400 });
+      return Response.json({ notes: await jobNotes(job), at: Date.now() }, { headers: noStore });
+    }
+    if (body.action === 'note-save') {
+      const job = text(body.job, 40);
+      const uuid = text(body.uuid, 40);
+      const note = text(body.text, 8000);
+      if (!isUuid(job) || !isUuid(uuid)) return Response.json({ error: 'bad' }, { status: 400 });
+      if (!note) return Response.json({ error: 'missing-note' }, { status: 400 });
+      await saveJobNote(job, uuid, note, body.isNew === true);
+      return Response.json({ ok: true, at: Date.now() }, { headers: noStore });
+    }
+    if (body.action === 'diary') {
+      const job = text(body.job, 40);
+      if (!isUuid(job)) return Response.json({ error: 'bad' }, { status: 400 });
+      return Response.json({ diary: await jobDiary(job, text(body.email, 160), text(body.mobile, 40)), at: Date.now() }, { headers: noStore });
+    }
+    if (body.action === 'file') {
+      const uuid = text(body.uuid, 40);
+      if (!isUuid(uuid)) return Response.json({ error: 'bad' }, { status: 400 });
+      try {
+        const f = await attachmentFile(uuid, body.size === 'full' ? 'full' : 'thumb');
+        return new Response(f.bytes as BodyInit, { headers: { 'Cache-Control': 'private, max-age=86400', 'content-type': f.type } });
+      } catch (e) {
+        if (e instanceof FileProblem) return Response.json({ error: e.code }, { status: e.status });
+        throw e;
+      }
     }
     if (body.action === 'touch') {
       const job = text(body.job, 40);

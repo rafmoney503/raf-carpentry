@@ -1,9 +1,24 @@
 /* Small line icons for the Job Kit's sections, drawn like the site's sketches (round ends, one weight), so each
    card on the Today screen and each line in the Today list shows where it goes. Decorative: the text says it. */
 
-export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board';
+export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note';
 
 const PATHS: Record<IconName, React.ReactNode> = {
+  // a sheet with its corner folded: a file in a job's diary (PDF, drawing)
+  file: (
+    <>
+      <path d="M6.5 3.5h7.5l4.5 4.5v12.5h-12z" />
+      <path d="M14 3.5V8h4.5M9 12.5h6M9 15.5h6" />
+    </>
+  ),
+  // a pencil on a lined page: a note on the job
+  note: (
+    <>
+      <path d="M5 4.5h10.5v15.5H5z" />
+      <path d="M7.5 8.5h5.5M7.5 11.5h4" />
+      <path d="M19.5 9.5l-6.2 6.2-2.3.6.6-2.3 6.2-6.2a1.2 1.2 0 0 1 1.7 1.7z" />
+    </>
+  ),
   // a heart in a speech bubble: Instagram and Facebook, their followers and comments
   social: (
     <>

@@ -76,6 +76,7 @@ import { setStatsOff } from '@/lib/site-stats';
 import { JobTimeline, TimelineMini } from './job-timeline';
 import { ClientBoard } from './client-board';
 import { methodsFrom, sendPayment, type NewPayment } from './payments';
+import { flushNotes } from './job-notes';
 import { boardLine, buildBoard } from '@/lib/client-board';
 import { withoutGreeting } from '@/lib/whatsapp-chat';
 import { addSend, enquiryFromChat, WaChatView, waHomeLine, WaJobBox, WaList, waTodayLines } from './whatsapp';
@@ -485,7 +486,10 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     void reload().then(() => setReady(true));
     const offStatus = onStatus(setStatus);
     const offChange = onChange(() => void reload());
-    const online = () => wake();
+    const online = () => {
+      wake();
+      flushNotes(); // notes typed with no signal go to ServiceM8 (job-notes.tsx)
+    };
     const visible = () => {
       if (document.visibilityState === 'hidden') {
         hiddenAt = Date.now();
@@ -500,6 +504,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         hiddenAt = 0;
         void reload();
         wake();
+        flushNotes();
         checkDesigns();
         checkSm8();
         checkInbox();
@@ -521,6 +526,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     };
     window.addEventListener('online', online);
     document.addEventListener('visibilitychange', visible);
+    flushNotes();
     window.addEventListener('popstate', back);
     window.addEventListener('pageshow', shown);
     wake();

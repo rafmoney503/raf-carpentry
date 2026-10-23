@@ -10,6 +10,7 @@ import { askWebsite, designState } from './designs';
 import type { Job } from './store';
 import { clock, post, problemText } from './sm8-post';
 import { EmailBox } from './mail';
+import { JobNotes } from './job-notes';
 import { PropertyBox } from './property-box';
 import { methodsFrom, PaidNote, PaymentForm, type NewPayment } from './payments';
 import { CustomerSearch, indexClients, personName, SameCustomer, type Client, type Clients } from './customers';
@@ -1149,6 +1150,8 @@ export function CurrentView({
         </div>
         <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint">Moving a job here moves it in ServiceM8 too. Nothing is ever deleted there.</p>
       </section>
+
+      <JobNotes job={job} staff={staff} />
 
       {extra}
 
