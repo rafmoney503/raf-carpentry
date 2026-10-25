@@ -12,6 +12,7 @@ const explore = [
   { href: '/sketchup', label: 'SketchUp' },
   { href: '/cabinetos', label: 'CabinetOS' },
   { href: '/tools', label: 'Tools' },
+  { href: '/tools/workshop', label: 'Workshop Tools app' },
   { href: '/calculator', label: 'Calculator' },
   { href: '/tips', label: 'Workshop tips' },
 ];

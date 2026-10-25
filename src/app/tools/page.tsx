@@ -8,6 +8,7 @@ import { isAmazonLink } from '@/lib/affiliates';
 import Sketch from '@/app/how-it-works/sketches';
 import PlannerTeaser from '@/components/PlannerTeaser';
 import { TradeNudge } from '@/components/AlsoByMe';
+import AppNudge from '@/components/AppNudge';
 
 type ToolEntry = {
   name: string;
@@ -53,9 +54,11 @@ export default function ToolsPage() {
       </PageHeader>
 
       <Container className="pb-8">
-        {/* Teasers for the wardrobe planner, the free calculator, the workshop tips and the Timber Stack game */}
+        {/* Teasers for the wardrobe planner, the Workshop Tools app, the free calculator, the workshop tips and the Timber Stack game */}
         <div className="mb-12 grid grid-cols-1 gap-4 md:mb-16 lg:grid-cols-2">
           <PlannerTeaser variant="feature" className="lg:col-span-2" />
+          {/* the Workshop Tools app for phones (25 Oct 2026) */}
+          <AppNudge variant="card" className="lg:col-span-2" />
           <Link
             href="/calculator"
             className="group grid grid-cols-1 items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent sm:grid-cols-[minmax(0,1fr)_auto] md:p-6"

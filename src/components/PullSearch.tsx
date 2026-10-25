@@ -25,7 +25,7 @@ import { QUOTE_HREF, whatsappUrl } from '@/lib/site';
 
 const TRIGGER = 58; // px the page moves before letting go opens search
 const MAX_PULL = 120;
-const NO_PULL = ['/wardrobe-planner', '/calculator', '/tools/timber-stack', '/tools/spirit-level'];
+const NO_PULL = ['/wardrobe-planner', '/calculator', '/tools/timber-stack', '/tools/spirit-level', '/tools/workshop/app'];
 const SKIP_TARGETS = 'header, input, textarea, select, [contenteditable="true"], canvas, video, [data-no-pull], [role="dialog"], [aria-modal="true"]';
 
 const SEEN = 'raf_seen';

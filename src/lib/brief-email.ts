@@ -3,8 +3,8 @@ import { PHONE_DISPLAY, WHATSAPP_NUMBER } from './site';
 
 /* The thank-you email a customer gets straight after Send to Raf (when they gave an email address): it's arrived,
    the reply comes within 24 hours, the designs closest to their brief with links that open each one in 3D, the next
-   steps in the site's own promises, and where to send more photos. Plain text, as from Raf. No prices, sizes,
-   timescales or guarantees. */
+   steps in the site's own promises, where to send more photos, and a P.S. for the free Workshop Tools app. Plain text,
+   as from Raf. No prices, sizes, timescales or guarantees. */
 
 const SITE = 'https://www.rafcarpentry.com';
 
@@ -38,6 +38,9 @@ export function customerEmail(c: { name: string; mobile: string; picks: Picks })
     'Raf Carpentry',
     PHONE_DISPLAY,
     'www.rafcarpentry.com',
+    '',
+    // the free app (25 Oct 2026); utm_source shows these visits in the Job Kit's Website stats
+    'P.S. Measuring up yourself? My free Workshop Tools app works out flooring packs, wall panelling and unit sizes in mm, on any iPhone or Android phone: https://www.rafcarpentry.com/app?utm_source=email-brief',
   );
   return { subject: `Thanks for your brief, ${first}`, text: lines.join('\n') };
 }

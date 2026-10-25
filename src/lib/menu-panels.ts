@@ -144,6 +144,7 @@ export function getMenuPanels(): Record<string, MenuPanel> {
       listTitle: 'Free to use',
       list: [
         { label: 'Wardrobe planner in 3D', href: '/wardrobe-planner' },
+        { label: 'Workshop Tools app for your phone', href: '/tools/workshop' },
         { label: 'Workshop calculator in mm', href: '/calculator' },
         { label: 'Spirit level on your phone', href: '/tools/spirit-level' },
         { label: 'Workshop tips', href: '/tips' },

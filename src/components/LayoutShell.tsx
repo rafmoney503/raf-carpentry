@@ -9,8 +9,8 @@ import type { MenuPanel } from '@/lib/menu-panels';
 
 export default function LayoutShell({ children, menu }: { children: React.ReactNode; menu?: Record<string, MenuPanel> }) {
   const pathname = usePathname();
-  // The Instagram mini-site and Raf's Job Kit app stand alone: no menu, footer or floating buttons.
-  const isMiniSite = pathname === '/ms' || pathname?.startsWith('/job-kit');
+  // The Instagram mini-site, Raf's Job Kit app and the Workshop Tools app stand alone: no menu, footer or floating buttons.
+  const isMiniSite = pathname === '/ms' || pathname?.startsWith('/job-kit') || pathname?.startsWith('/tools/workshop/app');
 
   if (isMiniSite) {
     return <main>{children}</main>;
@@ -24,7 +24,7 @@ export default function LayoutShell({ children, menu }: { children: React.ReactN
       {/* Floating buttons: Plan your project (/how-it-works) bottom-left, WhatsApp bottom-right. None on the calculator
           (they sat on the keypad on phones). Plan your project has its own WhatsApp button that sends
           the customer's brief, so neither floats there either. Your readings has its own send bar at the bottom. */}
-      {pathname?.startsWith('/editor') || pathname === '/calculator' || pathname === '/tools/timber-stack' || pathname === '/tools/spirit-level' || pathname === '/tools/readings' || pathname === '/wardrobe-planner' || pathname === '/how-it-works' || pathname?.startsWith('/review') || pathname?.startsWith('/d/') ? null : (
+      {pathname?.startsWith('/editor') || pathname === '/calculator' || pathname === '/tools/timber-stack' || pathname === '/tools/spirit-level' || pathname === '/tools/workshop' || pathname === '/tools/readings' || pathname === '/wardrobe-planner' || pathname === '/how-it-works' || pathname?.startsWith('/review') || pathname?.startsWith('/d/') ? null : (
         <>
           <HowItWorksFloat />
           <WhatsAppFloat />

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Container, PageHeader } from '@/components/ui';
 import CalculatorClient from './calculator-client';
 import { TradeNudge } from '@/components/AlsoByMe';
+import AppNudge from '@/components/AppNudge';
 import './calculator.css';
 
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ export default function CalculatorPage() {
       />
       <Container className="pb-24 md:pb-32">
         <CalculatorClient />
+        <AppNudge bare kicker="In your pocket" text="A calculator with big keys, VAT, waste and square metres is in Workshop Tools, the free app for your phone, with hinges, drawer runners, panelling and stud walls. Works with no signal." />
       </Container>
       <TradeNudge />
     </>

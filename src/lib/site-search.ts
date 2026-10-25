@@ -55,6 +55,7 @@ const PAGES: { title: string; href: string; sub: string; words: string }[] = [
   { title: 'Tools I use', href: '/tools', sub: 'My kit, with links', words: 'tools kit amazon dewalt festool makita buy' },
   { title: 'Wardrobe planner', href: '/wardrobe-planner', sub: 'Design your fitted wardrobe in 3D', words: 'wardrobe planner design configurator 3d sizes units doors sliding hinged plinth' },
   { title: 'Send your IKEA PAX design', href: '/wardrobe-planner#ikea-pax', sub: 'The design code from IKEA, and I build it in', words: 'ikea pax design code planner share link built in fitted hack fillers top boxes' },
+  { title: 'Workshop Tools app', href: '/tools/workshop', sub: 'Free app for your phone: hinges, drawers, panelling, stud walls', words: 'app phone iphone android install home screen offline workshop tools hinge hinges drawer runners unit sizes panelling picture frames stairs batten flooring stud wall noggins plasterboard insulation inches converter calculator carpenter trade' },
   { title: 'Spirit level', href: '/tools/spirit-level', sub: 'Free: your phone as a level, with Set zero', words: 'spirit level bubble phone angle tilt degrees inclinometer zero tare flat plumb pack packers mm per metre' },
   { title: 'Timber Stack', href: '/tools/timber-stack', sub: 'A free game: stack the timber', words: 'game timber stack play fun' },
   { title: 'Where I work', href: '/areas', sub: 'Every area, and the jobs nearest you', words: 'areas where work near me local postcode london cover travel' },

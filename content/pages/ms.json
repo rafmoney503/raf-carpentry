@@ -54,6 +54,13 @@
       "highlight": false
     },
     {
+      "label": "Workshop Tools App",
+      "subtitle": "Free for iPhone and Android: hinges, drawer runners, panelling and stud walls in mm.",
+      "url": "/tools/workshop",
+      "icon": "",
+      "highlight": false
+    },
+    {
       "label": "Workshop Calculator",
       "subtitle": "Free mm calculator, the quick calc from CabinetOS.",
       "url": "/calculator",

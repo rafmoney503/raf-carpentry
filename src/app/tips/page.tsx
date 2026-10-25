@@ -9,6 +9,7 @@ import { QUOTE_HREF, whatsappText } from '@/lib/site';
 import { getTipsData, tipSections } from '@/lib/tips';
 import { CopyTipLink, TipPhotos } from './tip-extras';
 import { TradeNudge } from '@/components/AlsoByMe';
+import AppNudge from '@/components/AppNudge';
 import Magnetic from '@/components/Magnetic';
 
 export function generateMetadata(): Metadata {
@@ -17,6 +18,7 @@ export function generateMetadata(): Metadata {
 }
 
 const more = [
+  { href: '/tools/workshop', label: 'Workshop Tools app' },
   { href: '/calculator', label: 'Workshop calculator' },
   { href: '/tools', label: 'My tools' },
   { href: '/sketchup', label: 'SketchUp' },
@@ -123,6 +125,7 @@ export default function TipsPage() {
               ))}
             </ul>
           </nav>
+          <AppNudge bare text="Workshop Tools: the setting-out behind these tips on your phone. Hinges that miss every shelf, drawer runners, panelling, flooring and stud walls, in mm." />
           <TradeNudge bare />
         </Container>
       </section>

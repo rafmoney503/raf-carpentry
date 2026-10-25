@@ -49,6 +49,8 @@ export function visitorCode(ip: string, ua: string, now = new Date()) {
   return createHash('sha256').update(`${process.env.RAFSTATS_SECRET}|${londonDay(now)}|${ip}|${ua}`).digest('hex').slice(0, 16);
 }
 
+const CAMPAIGN_TAGS = /^(pwa|qr-[a-z0-9]{2,16}|email-[a-z0-9]{2,16}|quote|booked|invoice|review|launch-email|gbp|groups)$/;
+
 /* Where a visit came from, from the referring address (or ?utm_source=). */
 export function sourceOf(ref: string, utm: string): { kind: string; host: string } {
   let host = '';
@@ -58,6 +60,9 @@ export function sourceOf(ref: string, utm: string): { kind: string; host: string
     host = '';
   }
   const u = utm.toLowerCase();
+  // the Workshop Tools campaign's own tags (QR codes, emails, the home-screen icon) are kept as they are,
+  // so the Job Kit shows each one (SOURCE_LABEL in site-stats.ts)
+  if (CAMPAIGN_TAGS.test(u)) return { kind: u, host: host.slice(0, 80) };
   const test = (re: RegExp) => re.test(u) || re.test(host);
   const kind = test(/(^|\.)google\.|^google$/)
     ? 'google'

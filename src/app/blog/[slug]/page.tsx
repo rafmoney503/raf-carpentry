@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import ToolsUsed from '@/components/ToolsUsed';
 import { MountedImage } from '@/components/ui';
 import SocialIcon from '@/components/SocialIcon';
+import AppNudge from '@/components/AppNudge';
 import type { Metadata } from 'next';
 import { pageMeta } from '@/lib/seo';
 
@@ -79,6 +80,8 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
             <a href="https://www.tiktok.com/@rafcarpentry" target="_blank" rel="noopener" className="btn btn-ghost btn-sm gap-2"><SocialIcon network="tiktok" size={16} />TikTok</a>
           </div>
         </div>
+        {/* the posts for people who build things themselves get the free app (job stories are for customers) */}
+        {post.category && post.category !== 'Projects' ? <AppNudge bare /> : null}
       </section>
     </>
   );
