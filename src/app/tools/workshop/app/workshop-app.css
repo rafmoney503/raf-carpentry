@@ -42,3 +42,14 @@
   font-size: 20px;
   font-weight: 800;
 }
+
+/* Your readings from the spirit level, over the app (the level itself is the website's: spirit-level.css) */
+.wt-readings {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--color-paper);
+  color: var(--color-ink);
+}

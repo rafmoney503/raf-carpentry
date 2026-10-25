@@ -475,3 +475,29 @@
   .lv-bubble, .lv-ball, .lv-tick, .lv-bars span { transition: none; }
   .lv-app, .lv-sheet { animation: none; }
 }
+
+/* Inside the Workshop Tools app (25 Oct 2026): while the phone asks for motion, or it can't read one */
+.lv-embed {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgb(22 25 28 / 0.45);
+}
+.lv-embed-card {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 360px;
+  padding: 22px 18px;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 2px;
+  background: var(--color-mount);
+  text-align: center;
+}
+.lv-embed-qr { width: 132px; padding: 8px; border: 1px solid var(--color-line); background: var(--color-mount); }
+.lv-embed-qr svg { display: block; width: 100%; height: auto; }

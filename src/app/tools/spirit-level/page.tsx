@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { Container } from '@/components/ui';
 import { pageMeta, SITE_URL } from '@/lib/seo';
 import SpiritLevel from './spirit-level';
+import AppNudge from '@/components/AppNudge';
 
 /* The phone spirit level (17 Oct 2026). Linked from a card on the Tools page, the Tools menu, search and the
    sitemap. The level itself opens full screen on the phone; on a computer the page shows a code to scan.
@@ -95,6 +96,12 @@ export default async function SpiritLevelPage() {
             <Link href="/tips" className="link-more">Workshop tips <span aria-hidden="true">→</span></Link>
             <Link href="/tools" className="link-more">All my tools <span aria-hidden="true">→</span></Link>
           </div>
+          {/* the same level is the Spirit level tile in the app (25 Oct 2026) */}
+          <AppNudge
+            bare
+            kicker="Also in Workshop Tools"
+            text="This level is one of ten tools in Workshop Tools, the free app for your phone, with hinges, drawer runners, panelling, flooring and stud walls. Add it to your home screen and it works with no signal."
+          />
         </section>
       </div>
     </Container>

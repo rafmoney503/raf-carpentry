@@ -26,7 +26,7 @@ export const APP_TOOLS: { name: string; line: string }[] = [
   { name: 'Wall panelling', line: 'Picture frames on walls and up the stairs, or a batten grid: every mark, cut and mitre.' },
   { name: 'Flooring', line: 'Packs to order, the number of rows and how wide the last row comes out, room by room.' },
   { name: 'Stud wall', line: 'CLS, 2×3 or 2×4: studs, plates, noggins, the lengths to buy, plasterboard and insulation.' },
-  { name: 'Spirit level', line: 'Degrees and mm per metre from the phone’s own sensor.' },
+  { name: 'Spirit level', line: 'Set zero on any surface, flip check for true level, the mm to pack the low end, and a tone or a voice when your hands are full.' },
   { name: 'mm ↔ inches', line: 'Both ways, to the nearest 1/8, 1/16 or 1/32, with timber lengths and door sizes ready to tap.' },
   { name: 'Calculator', line: 'Big keys, VAT on and off, 10% waste, square metres and your last answers.' },
   { name: 'My kit', line: 'The tools I use on every job, with a link to today’s price.' },

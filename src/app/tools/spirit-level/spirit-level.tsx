@@ -93,7 +93,18 @@ const offOf = (s: Shown) => Math.abs(s.deg);
 const keep = (t: string) => t.replace(/(\d) (mm|m)\b/g, '$1\u00a0$2');
 const wordsOf = (s: Shown, len: number, tare: Tare | null) => levelWords(s.mode, s.mode === 'edge' ? s.deg : s.x, s.y, len, !!tare && tare.mode === s.mode);
 
-export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
+/* The same level runs in two places (25 Oct 2026, Raf: two spirit levels online is too much): its own page here, and
+   inside the Workshop Tools app (src/app/tools/workshop/app/workshop-app.tsx), where `embed` is passed: no start card
+   (the app's Spirit level tile starts it, with the start handed over by register, inside the tap so an iPhone can
+   ask for motion), Done
+   goes back to the app, and Your readings opens over the level instead of going to /tools/readings. */
+export type LevelEmbed = {
+  register: (start: () => void) => void;
+  onClose?: () => void;
+  onReadings?: () => void;
+};
+
+export default function SpiritLevel({ qrSvg, embed }: { qrSvg: string; embed?: LevelEmbed }) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [shown, setShown] = useState<Shown | null>(null);
   const [held, setHeld] = useState<Shown | null>(null);
@@ -351,14 +362,16 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
     }
     if (typeof DOE.requestPermission === 'function') {
       setPhase('asking');
+      // Chrome on a computer has requestPermission too and says no: that's no sensor, not a refusal
+      const no = () => setPhase(navigator.maxTouchPoints === 0 ? 'nosensor' : 'denied');
       try {
         const r = await DOE.requestPermission();
         if (r !== 'granted') {
-          setPhase('denied');
+          no();
           return;
         }
       } catch {
-        setPhase('denied');
+        no();
         return;
       }
     }
@@ -379,6 +392,7 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
   }
 
   function close() {
+    embed?.onClose?.();
     window.removeEventListener('deviceorientation', onOrient);
     try {
       window.speechSynthesis?.cancel();
@@ -551,15 +565,28 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
 
   const s = held ?? shown;
   const open = phase === 'running';
+  // the app holds the newest start for its own tile's tap
+  const register = embed?.register;
+  useEffect(() => {
+    register?.(start);
+  });
+  // in the app, Your readings closes the level first (no tone under the list); its Back starts the level again
+  const onReadings = embed?.onReadings;
+  const openReadings = onReadings
+    ? () => {
+        close();
+        onReadings();
+      }
+    : undefined;
 
   return (
     <>
-      <StartCard phase={phase} onStart={start} computer={computer} qrSvg={qrSvg} />
+      {embed ? <EmbedNote phase={phase} qrSvg={qrSvg} onClose={close} /> : <StartCard phase={phase} onStart={start} computer={computer} qrSvg={qrSvg} />}
       {open ? (
         <div className="lv-app" role="dialog" aria-modal="true" aria-label="Spirit level">
           <div className="lv-top">
             <p className="lv-title">Spirit level</p>
-            <ReadingsLink />
+            <ReadingsLink onOpen={openReadings} />
             <button type="button" className="lv-done" onClick={close}>
               Done
             </button>
@@ -599,22 +626,66 @@ export default function SpiritLevel({ qrSvg }: { qrSvg: string }) {
           ) : (
             <p className="lv-wait">Getting the first reading...</p>
           )}
-          {justSaved ? <SaveSheet key={justSaved.id} r={justSaved} onDone={closeSaved} /> : null}
+          {justSaved ? <SaveSheet key={justSaved.id} r={justSaved} onDone={closeSaved} onReadings={openReadings} /> : null}
         </div>
       ) : null}
     </>
   );
 }
 
-function ReadingsLink() {
+function ReadingsLink({ onOpen }: { onOpen?: () => void }) {
   const list = useReadings();
-  return (
-    <Link href="/tools/readings" className="lv-saved" aria-label={`Your readings: ${list.length} saved`}>
+  const inner = (
+    <>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M6 3h12v18l-6-4-6 4z" />
       </svg>
       <span>{list.length}</span>
+    </>
+  );
+  if (onOpen) {
+    return (
+      <button type="button" className="lv-saved" onClick={onOpen} aria-label={`Your readings: ${list.length} saved`}>
+        {inner}
+      </button>
+    );
+  }
+  return (
+    <Link href="/tools/readings" className="lv-saved" aria-label={`Your readings: ${list.length} saved`}>
+      {inner}
     </Link>
+  );
+}
+
+/* In the app there is no start card: while the phone is asked for motion, or when it says no, or on a computer,
+   this small card says so over the app. */
+function EmbedNote({ phase, qrSvg, onClose }: { phase: Phase; qrSvg: string; onClose: () => void }) {
+  if (phase !== 'asking' && phase !== 'denied' && phase !== 'nosensor') return null;
+  return (
+    <div className="lv-embed" role="dialog" aria-modal="true" aria-label="Spirit level">
+      <div className="lv-embed-card">
+        <p className="lv-title">Spirit level</p>
+        {phase === 'asking' ? (
+          <p className="lv-hint">Your phone is asking to use motion. Tap Allow: nothing leaves your phone.</p>
+        ) : phase === 'denied' ? (
+          <p className="lv-msg" role="alert">
+            Motion access was turned down, so the level can&apos;t read the phone. Close the app, open it again and tap Allow when your phone asks.
+          </p>
+        ) : (
+          <>
+            <p className="lv-msg" role="alert">
+              This needs a phone or tablet: the level reads its motion sensor. Scan the code with your phone to open the app there.
+            </p>
+            <div className="lv-embed-qr" dangerouslySetInnerHTML={{ __html: qrSvg }} />
+          </>
+        )}
+        {phase !== 'asking' ? (
+          <button type="button" className="btn btn-primary" onClick={onClose}>
+            Back to the tools
+          </button>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -882,7 +953,7 @@ function LengthForm({ start, onUse, onCancel }: { start: number; onUse: (l: numb
 
 /* After Save: the reading went into Your readings straight away. A name and a place can be added here; the place is
    used for the next Save too. Goes by itself after 6 s unless it's being used. */
-function SaveSheet({ r, onDone }: { r: Saved; onDone: () => void }) {
+function SaveSheet({ r, onDone, onReadings }: { r: Saved; onDone: () => void; onReadings?: () => void }) {
   const list = useReadings();
   const cur = list.find((x) => x.id === r.id) ?? r;
   const [label, setLabel] = useState(r.label);
@@ -969,9 +1040,22 @@ function SaveSheet({ r, onDone }: { r: Saved; onDone: () => void }) {
         ) : null}
       </div>
       <div className="lv-sheet-foot">
-        <Link href="/tools/readings" className="lv-link">
-          All readings ({list.length})
-        </Link>
+        {onReadings ? (
+          <button
+            type="button"
+            className="lv-link"
+            onClick={() => {
+              onDone();
+              onReadings();
+            }}
+          >
+            All readings ({list.length})
+          </button>
+        ) : (
+          <Link href="/tools/readings" className="lv-link">
+            All readings ({list.length})
+          </Link>
+        )}
         <button type="button" className="lv-use" onClick={onDone}>
           Done
         </button>

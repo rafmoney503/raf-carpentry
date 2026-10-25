@@ -11,7 +11,8 @@ const TOOL_NAME: Record<Reading['tool'], string> = { level: 'Spirit level' };
 const NONE = '\u0000none';
 const noop = () => () => {};
 
-export default function ReadingsList() {
+// onBack: inside the Workshop Tools app the list opens over the level, so 'back' closes it instead of a link.
+export default function ReadingsList({ onBack }: { onBack?: () => void } = {}) {
   const list = useReadings();
   // false on the server and while hydrating, so the empty list isn't flashed before the browser's own is read
   const ready = useSyncExternalStore(noop, () => true, () => false);
@@ -82,9 +83,15 @@ export default function ReadingsList() {
         <p className="mt-2 max-w-[52ch] text-[15px] leading-relaxed text-muted">
           Open the spirit level, put the phone on what you&apos;re checking and tap Save. Give it a name and a place (the kitchen, a client&apos;s address) and it shows up here, ready to send.
         </p>
-        <Link href="/tools/spirit-level" className="btn btn-primary mt-5">
-          Open the spirit level
-        </Link>
+        {onBack ? (
+          <button type="button" onClick={onBack} className="btn btn-primary mt-5">
+            Back to the spirit level
+          </button>
+        ) : (
+          <Link href="/tools/spirit-level" className="btn btn-primary mt-5">
+            Open the spirit level
+          </Link>
+        )}
       </div>
     );
   }
@@ -230,7 +237,14 @@ export default function ReadingsList() {
         </button>
       </div>
       <p className="mb-16 mt-2 text-[13px] text-faint md:mb-24">
-        WhatsApp asks who to send them to. <Link href="/tools/spirit-level" className="text-accent underline underline-offset-2">Back to the spirit level</Link>
+        WhatsApp asks who to send them to.{' '}
+        {onBack ? (
+          <button type="button" onClick={onBack} className="text-accent underline underline-offset-2">
+            Back to the spirit level
+          </button>
+        ) : (
+          <Link href="/tools/spirit-level" className="text-accent underline underline-offset-2">Back to the spirit level</Link>
+        )}
       </p>
     </div>
   );
