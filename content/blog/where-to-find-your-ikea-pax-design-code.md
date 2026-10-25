@@ -27,6 +27,18 @@ I open your design in IKEA's planner on my computer and see the frames, doors an
 
 *A design in IKEA's planner for a loft in Palmers Green: 199.8 cm wide, 201.2 cm high, 58 cm deep. [The finished job](/blog/loft-wardrobes-ikea-pax).*
 
+## What the inside looks like, built
+
+The insides you pick in the planner are IKEA's too: rails, shelves, drawers and wire baskets. This is how they look in PAX wardrobes I've built in.
+
+![Finchley: doors open on shelves, hanging rails and drawers](/images/blog/where-to-find-your-ikea-pax-design-code/inside-finchley.jpg) ![Palmers Green loft: clothes on the rails with wire baskets under them](/images/blog/where-to-find-your-ikea-pax-design-code/inside-loft-hanging.jpg)
+
+*Left: [Finchley](/blog/pax-wardrobe-finchley), a shelf at the top, rails, and drawers under a shelf. Right: [a Palmers Green loft](/blog/loft-wardrobes-ikea-pax), hanging with wire baskets underneath.*
+
+![PAX frames by a window before the doors went on, with wire baskets and rails](/images/blog/where-to-find-your-ikea-pax-design-code/inside-loft-frames.jpg) ![Wire baskets in a wardrobe beside a chimney breast](/images/blog/where-to-find-your-ikea-pax-design-code/inside-chimney-baskets.jpg)
+
+*Left: the same loft before the doors went on. Right: wire baskets in a wardrobe [round a chimney breast](/blog/wardrobes-around-a-chimney-breast), also in Palmers Green.*
+
 ## What I check first
 
 These are the things that catch people out, so I look at them before anything else:
