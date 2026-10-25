@@ -11,10 +11,15 @@ const nextConfig: NextConfig = {
      built, so Next.js traced the whole folder (over 200 MB) into every server function, and with the blog
      photos added on 10 Oct 2026 the functions went over Vercel's 250 MB limit and deploys failed.
      The build still sees every file; only the traced copies are left out. */
-  /* rafcarpentry.com/app: the short address for the Workshop Tools app on cards, QR codes and emails
-     (?utm_source=... is passed on, so the Job Kit's Website stats show where each person came from). */
+  /* rafcarpentry.com/app and /games: the short addresses for the Workshop Tools app and Workshop Games on cards,
+     QR codes and emails (?utm_source=... is passed on, so the Job Kit's Website stats show where each person came
+     from). The old Timber Stack page is one of the games now (25 Oct 2026). */
   async redirects() {
-    return [{ source: '/app', destination: '/tools/workshop', permanent: false }];
+    return [
+      { source: '/app', destination: '/tools/workshop', permanent: false },
+      { source: '/games', destination: '/tools/games', permanent: false },
+      { source: '/tools/timber-stack', destination: '/tools/games/app#/stack', permanent: true },
+    ];
   },
   outputFileTracingExcludes: {
     "**": ["public/**/*"],
@@ -29,6 +34,8 @@ const nextConfig: NextConfig = {
     "/api/recent": ["./content/projects/*.json", "./content/pages/*.json", "./content/designs/*.json"],
     /* Blog stats in the Job Kit name every post and its topic (src/lib/blog.ts and projects.ts read these at run time). */
     "/api/job-kit/stats": ["./content/blog/*.md", "./content/projects/*.json"],
+    /* A shared game score's picture is drawn when it's asked for, with the sharing fonts. */
+    "/tools/games/beat/card": ["./src/fonts/og/*.ttf"],
   },
 };
 

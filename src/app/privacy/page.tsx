@@ -74,7 +74,7 @@ export default function Privacy() {
           <p>
             Some parts of the site remember things in your browser only, never sent to me: designs you save with the heart for your brief, the last few pages
             you looked at (so search can offer them again), which suggestions the small card at the bottom has already shown you (so it doesn’t
-            repeat them), the calculator’s history, your best score in the timber game and whether you’ve seen the
+            repeat them), the calculator’s history, your stars, best scores and daily results in Workshop Games and whether you’ve seen the
             planner’s quick guide. Clearing your browser’s data removes them.
           </p>
 

@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Measure Up week and packs</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=Geist:wght@400..700&amp;family=Geist+Mono:wght@400..600&amp;display=swap">
+<style>
+body{margin:0}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+a{text-decoration:none;color:inherit}
+@keyframes ml-pulse{0%,100%{box-shadow:0 0 0 0 rgba(142,166,255,.55)}50%{box-shadow:0 0 0 7px rgba(142,166,255,0)}}
+.ml-card{transition:transform .12s ease, border-color .12s ease}
+.ml-card:hover{transform:translateY(-2px)}
+.ml-now{animation:ml-pulse 1.8s ease-in-out infinite}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; padding: 6px 16px 14px; display: flex; flex-direction: column; gap: 12px; background-color: #121518; background-image: linear-gradient(rgba(127,155,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(127,155,255,0.12) 1px, transparent 1px); background-size: 80px 80px; color: #f4f1ea; font-family: Geist, system-ui, sans-serif; overflow: hidden; user-select: none; -webkit-user-select: none">
+
+  <header style="flex: none; display: flex; align-items: center; gap: 6px; height: 50px">
+    <a href="#/" aria-label="Back to the games" style="width: 44px; height: 44px; margin-left: -10px; display: grid; place-items: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+    </a>
+    <div style="flex: 1">
+      <div class="mono" style="font-size: 10.5px; letter-spacing: 0.12em; color: #8ea6ff">MEASURE UP</div>
+      <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 20px; font-weight: 760; letter-spacing: -0.02em">Week and packs</div>
+    </div>
+    <div style="text-align: right">
+      <div class="mono" style="font-size: 10.5px; color: #a3abb3">STREAK</div>
+      <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 18px; font-weight: 760"><span style="color: #f2c94c">{{ streak }}</span> <span style="font-size: 13px; color: #a3abb3">days</span></div>
+    </div>
+  </header>
+
+  <div style="flex: none">
+    <div class="mono" style="font-size: 10.5px; letter-spacing: 0.12em; color: #8ea6ff">THIS WEEK · HARDER EACH DAY</div>
+    <div style="margin-top: 8px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px">
+      <sc-for list="{{ days }}" as="d" hint-placeholder-count="7">
+        <div class="{{ d.cls }}" style="height: 78px; box-sizing: border-box; padding: 6px 2px; border-radius: 9px; display: flex; flex-direction: column; align-items: center; gap: 2px; background: {{ d.bg }}; border: 1px solid {{ d.border }}; color: {{ d.fg }}">
+          <span class="mono" style="font-size: 9.5px; letter-spacing: 0.06em">{{ d.day }}</span>
+          <span style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 17px; font-weight: 760; line-height: 1.1">{{ d.date }}</span>
+          <span class="mono" style="font-size: 9.5px; font-weight: 600">{{ d.result }}</span>
+          <span style="margin-top: auto; display: flex; gap: 2px">
+            <sc-for list="{{ d.dots }}" as="x" hint-placeholder-count="5"><span style="width: 4px; height: 4px; border-radius: 50%; background: {{ x.c }}"></span></sc-for>
+          </span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <a href="#/measure" onClick="{{ playToday }}" class="ml-card" style="flex: none; display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 12px; background: linear-gradient(100deg, rgba(142,166,255,0.22), rgba(27,32,37,0.92)); border: 1px solid rgba(142,166,255,0.55)">
+    <svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true"><rect x="2" y="9" width="30" height="30" rx="7" fill="#f2c94c"></rect><circle cx="17" cy="24" r="8" fill="none" stroke="#16191c" stroke-width="3"></circle><rect x="32" y="30" width="13" height="7" fill="#f2c94c"></rect><path d="M35 30 v4 M38 30 v3 M41 30 v4" stroke="#16191c" stroke-width="1"></path></svg>
+    <div style="flex: 1; min-width: 0">
+      <div class="mono" style="font-size: 10px; letter-spacing: 0.08em; color: #8ea6ff">{{ todayKick }}</div>
+      <div style="margin-top: 2px; font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 18px; font-weight: 760">{{ todayTitle }}</div>
+      <div style="margin-top: 2px; font-size: 12.5px; color: #c4cad0">{{ todayList }}</div>
+    </div>
+    <span style="flex: none; padding: 8px 13px; border-radius: 999px; background: #8ea6ff; color: #0e1114; font-size: 13px; font-weight: 700">{{ todayBtn }}</span>
+  </a>
+
+  <div style="flex: none">
+    <div class="mono" style="font-size: 10.5px; letter-spacing: 0.12em; color: #8ea6ff">PRACTICE PACKS · PLAY ANY TIME</div>
+    <div style="margin-top: 8px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+      <sc-for list="{{ packs }}" as="p" hint-placeholder-count="4">
+        <a href="#/measure" onClick="{{ p.go }}" class="ml-card" style="display: flex; flex-direction: column; height: 150px; box-sizing: border-box; padding: 12px; border-radius: 12px; background: rgba(27,32,37,0.94); border: 1px solid {{ p.border }}">
+          <span style="display: flex; justify-content: space-between; align-items: flex-start">
+            <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true" style="border-radius: 8px; background: #0e1114"><path d="{{ p.icon }}" fill="none" stroke="#f4f1ea" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path><path d="{{ p.icon2 }}" fill="none" stroke="#f2c94c" stroke-width="1.8" stroke-linecap="round"></path></svg>
+            <span style="font-size: 15px; letter-spacing: 1px; color: #f2c94c">{{ p.stars }}</span>
+          </span>
+          <span style="margin-top: 10px; font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 16px; font-weight: 760; line-height: 1.15">{{ p.name }}</span>
+          <span style="margin-top: 3px; font-size: 12px; line-height: 1.35; color: #a3abb3">{{ p.what }}</span>
+          <span class="mono" style="margin-top: auto; font-size: 10.5px; color: {{ p.bestC }}">{{ p.best }}</span>
+        </a>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="flex: none; padding: 12px 14px; border-radius: 12px; border: 1px dashed rgba(244,241,234,0.2); font-size: 12.5px; line-height: 1.45; color: #a3abb3">
+    <span class="mono" style="font-size: 10px; letter-spacing: 0.08em; color: #8ea6ff">NEXT PACKS</span><br>Stairs and handrails, bathrooms, sheds and fences, and more sizes from my own jobs.
+  </div>
+
+  <div style="margin-top: auto; font-size: 12px; line-height: 1.4; color: #a3abb3">Everyone gets the same five each day, and you get one go. Stars on a pack: 3 for 10 mm or less a size, 2 for 30.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.PACKS = [
+      { id: 'doors', name: 'Doors and rooms', what: 'Old and metric doors, ceilings, plasterboard', n: 4, icon: 'M12 38 V8 H32 V38 M8 38 H36', icon2: 'M27 24 h-3' },
+      { id: 'kitchen', name: 'Kitchens and wardrobes', what: 'Worktops, wall units, both PAX frames', n: 4, icon: 'M6 20 H38 M8 20 V38 H36 V20 M22 20 V38 M8 6 H36 V14 H8 Z', icon2: 'M15 26 h4 M25 26 h4' },
+      { id: 'sheets', name: 'Sheets and boards', what: 'Ply, MDF and plasterboard', n: 3, icon: 'M8 36 L14 8 H34 L28 36 Z M12 30 H30', icon2: 'M14 18 C20 16, 24 20, 30 18' },
+      { id: 'jobs', name: 'From my jobs', what: 'The Kings Park bench and two loft wardrobes', n: 3, icon: 'M6 38 V10 H38 V38 M17 10 V38 M28 10 V38', icon2: 'M14 22 v5 M20 22 v5 M31 22 v5' },
+    ];
+    // the same list and order as the game (scripts/workshop-games/measure.dc.html), so today's five match
+    this.POOL = { door: 'a door', idoor: 'a metric door', ceiling: 'a ceiling', base: 'a worktop', wallunit: 'a wall unit', pax: 'a PAX frame', paxtall: 'a tall PAX frame', ply: 'a sheet of ply', mdf: 'a sheet of MDF', plaster: 'plasterboard', bench: 'a bench', hatfield: 'a loft wardrobe', palmers: 'a loft wardrobe' };
+    this.state = { stars: {}, cur: 'daily', days: {} };
+  }
+  load() {
+    try {
+      this.setState({
+        stars: JSON.parse(localStorage.getItem('raf_games_stars_measure') || '{}') || {},
+        cur: localStorage.getItem('raf_games_level_measure') || 'daily',
+        days: JSON.parse(localStorage.getItem('raf_games_measure_days') || '{}') || {},
+      });
+    } catch (e) {}
+  }
+  componentDidMount() {
+    this.load();
+    this.onStore = () => this.load(); this.onVis = () => { if (!document.hidden) this.load(); };
+    window.addEventListener('storage', this.onStore); document.addEventListener('visibilitychange', this.onVis); window.addEventListener('focus', this.onStore);
+  }
+  componentWillUnmount() { window.removeEventListener('storage', this.onStore); document.removeEventListener('visibilitychange', this.onVis); window.removeEventListener('focus', this.onStore); }
+  ac() { try { if (!this._c) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; this._c = new A(); } if (this._c.state === 'suspended') this._c.resume(); return this._c; } catch (e) { return null; } }
+  click() { const c = this.ac(); if (!c) return; const t = c.currentTime, o = c.createOscillator(), g = c.createGain(); o.type = 'square'; o.frequency.value = 2400; g.gain.setValueAtTime(0.08, t); g.gain.exponentialRampToValueAtTime(0.0008, t + 0.04); o.connect(g).connect(c.destination); o.start(t); o.stop(t + 0.05); }
+  today() {
+    const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' }).formatToParts(new Date());
+    const g = (t) => (p.find((x) => x.type === t) || {}).value;
+    const wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(g('weekday'));
+    return { key: g('year') + '-' + g('month') + '-' + g('day'), wd: Math.max(0, wd) };
+  }
+  shift(key, n) { const [y, m, d] = key.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); }
+  dailyIds(key) {
+    const [y, m, d] = key.split('-').map(Number), n = Math.round(Date.UTC(y, m - 1, d) / 86400000);
+    let seed = (n * 7919 + 17) >>> 0;
+    const rnd = () => { seed = (seed + 0x6d2b79f5) >>> 0; let t = seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const ids = Object.keys(this.POOL);
+    for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const t = ids[i]; ids[i] = ids[j]; ids[j] = t; }
+    return ids.slice(0, 5);
+  }
+  pick(id) { try { localStorage.setItem('raf_games_level_measure', id); } catch (e) {} this.click(); }
+  renderVals() {
+    const st = this.state, T = this.today(), mine = st.days[T.key], todayDone = !!mine;
+    const names = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'], hardness = [1, 2, 2, 3, 3, 4, 5];
+    const week = names.map((nm, i) => { const k = this.shift(T.key, i - T.wd); return [nm, Number(k.slice(8)), st.days[k] ? st.days[k].total : null, hardness[i], i - T.wd]; });
+    const days = week.map(([day, date, mm, hard, rel]) => {
+      const today = rel === 0, future = rel > 0;
+      const result = today ? (todayDone ? mine.total + ' MM' : 'TODAY') : future ? 'SOON' : mm == null ? 'MISSED' : mm + ' MM';
+      return {
+        day: day, date: String(date), result: result,
+        bg: today ? 'rgba(142,166,255,0.18)' : future ? 'transparent' : 'rgba(27,32,37,0.92)',
+        border: today ? '#8ea6ff' : future ? 'rgba(244,241,234,0.12)' : mm == null ? 'rgba(244,241,234,0.14)' : 'rgba(111,207,151,0.35)',
+        fg: future ? '#5d636a' : '#f4f1ea', cls: today && !todayDone ? 'ml-now' : '',
+        dots: [1, 2, 3, 4, 5].map((k) => ({ c: k <= hard ? (future ? '#5d636a' : '#8ea6ff') : 'rgba(244,241,234,0.15)' })),
+      };
+    });
+    const packs = this.PACKS.map((p) => {
+      const s = st.stars[p.id] || 0, best = st.stars[p.id + '_best'];
+      return {
+        name: p.name, what: p.what, icon: p.icon, icon2: p.icon2,
+        stars: '★★★'.slice(0, s) + '☆☆☆'.slice(0, 3 - s),
+        best: best != null ? 'BEST ' + best + ' MM OFF · ' + p.n + ' SIZES' : p.n + ' SIZES · NOT PLAYED',
+        bestC: best != null ? '#6fcf97' : '#a3abb3',
+        border: st.cur === p.id ? '#8ea6ff' : s === 3 ? 'rgba(111,207,151,0.6)' : 'rgba(244,241,234,0.12)',
+        go: () => this.pick(p.id),
+      };
+    });
+    let streak = 0; for (let n = todayDone ? 0 : 1; st.days[this.shift(T.key, -n)]; n++) streak++;
+    const list = this.dailyIds(T.key).map((id) => this.POOL[id]);
+    const wdName = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'][T.wd];
+    return {
+      days: days, packs: packs, streak: streak,
+      todayKick: 'TODAY · ' + wdName + (T.wd >= 5 ? ' · NO GRID' : ''),
+      todayList: list.slice(0, 4).join(', ').replace(/^a/, 'A') + ' and ' + list[4],
+      todayTitle: todayDone ? 'Done: ' + mine.total + ' mm off' : "Today's five sizes",
+      todayBtn: todayDone ? 'See it' : 'Play',
+      playToday: () => this.pick('daily'),
+    };
+  }
+}
+</script>
+</body>
+</html>

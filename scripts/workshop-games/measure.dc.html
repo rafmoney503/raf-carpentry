@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Measure Up in Workshop Games</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=Geist:wght@400..700&amp;family=Geist+Mono:wght@400..600&amp;display=swap">
+<style>
+body{margin:0}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+@keyframes mu-glow{0%{box-shadow:inset 0 0 0 0 rgba(111,207,151,0)}20%{box-shadow:inset 0 0 0 4px rgba(111,207,151,.95), inset 0 0 36px rgba(111,207,151,.4)}100%{box-shadow:inset 0 0 0 0 rgba(111,207,151,0)}}
+@keyframes mu-blue{0%{box-shadow:inset 0 0 0 0 rgba(142,166,255,0)}20%{box-shadow:inset 0 0 0 3px rgba(142,166,255,.9)}100%{box-shadow:inset 0 0 0 0 rgba(142,166,255,0)}}
+@keyframes mu-draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes mu-in{0%{opacity:0;transform:translateY(6px)}100%{opacity:1;transform:none}}
+@keyframes mu-card{0%{transform:translateY(24px);opacity:0}100%{transform:none;opacity:1}}
+@keyframes mu-up{0%,100%{transform:translateY(0);opacity:.95}50%{transform:translateY(-14px);opacity:1}}
+.fl-exact .mu-edge{animation:mu-glow .9s ease-out}
+.fl-good .mu-edge{animation:mu-blue .8s ease-out}
+.mu-real{stroke-dasharray:1;stroke-dashoffset:1;animation:mu-draw .6s ease-out forwards}
+.mu-fade{animation:mu-in .4s ease-out both}
+.mu-btn{transition:transform .1s ease, background-color .15s ease}
+.mu-btn:active{transform:scale(.97)}
+.mu-cover{transition:opacity .7s ease, transform .7s ease}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 6px 16px 14px; display: flex; flex-direction: column; gap: 9px; background-color: #121518; background-image: linear-gradient(rgba(127,155,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(127,155,255,0.12) 1px, transparent 1px); background-size: 80px 80px; color: #f4f1ea; font-family: Geist, system-ui, sans-serif; overflow: hidden; user-select: none; -webkit-user-select: none">
+
+  <header style="flex: none; display: flex; align-items: center; gap: 6px; height: 50px">
+    <a href="#/" aria-label="Back to the games" style="width: 44px; height: 44px; margin-left: -10px; display: grid; place-items: center; color: #f4f1ea; text-decoration: none">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+    </a>
+    <div style="flex: 1; min-width: 0">
+      <div class="mono" style="font-size: 10.5px; letter-spacing: 0.12em; color: #8ea6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ kicker }}</div>
+      <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 20px; font-weight: 760; letter-spacing: -0.02em">Measure Up</div>
+    </div>
+    <a href="#/measure/packs" style="height: 40px; padding: 0 11px; display: flex; align-items: center; gap: 6px; border-radius: 10px; border: 1px solid rgba(244,241,234,0.18); background: rgba(27,32,37,0.9); color: #f4f1ea; text-decoration: none; font-size: 13px; font-weight: 600">
+      <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1" fill="#8ea6ff"></rect><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity=".55"></rect><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity=".55"></rect><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity=".55"></rect></svg>Packs
+    </a>
+    <button type="button" onClick="{{ toggleSound }}" aria-label="{{ soundLabel }}" style="width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; border: 1px solid rgba(244,241,234,0.18); background: rgba(27,32,37,0.9); color: #f4f1ea; cursor: pointer">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 8v4h3l4 3V5L6 8H3z"></path>
+        <sc-if value="{{ soundOn }}" hint-placeholder-val="{{ true }}"><path d="M13.5 7a4 4 0 0 1 0 6M15.8 4.8a7 7 0 0 1 0 10.4"></path></sc-if>
+        <sc-if value="{{ soundOff }}" hint-placeholder-val="{{ false }}"><path d="M13.5 7.5l5 5M18.5 7.5l-5 5"></path></sc-if>
+      </svg>
+    </button>
+  </header>
+
+  <div style="flex: none; display: grid; grid-template-columns: repeat({{ pillCount }}, minmax(0, 1fr)); gap: 6px">
+    <sc-for list="{{ pills }}" as="p" hint-placeholder-count="5">
+      <div style="height: 32px; border-radius: 7px; display: grid; place-items: center; border: 1px solid {{ p.border }}; background: {{ p.bg }}; color: {{ p.fg }}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600">{{ p.text }}</div>
+    </sc-for>
+  </div>
+
+  <div style="flex: none">
+    <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 22px; font-weight: 760; letter-spacing: -0.02em; line-height: 1.1">{{ question }}</div>
+    <div style="margin-top: 3px; font-size: 13.5px; line-height: 1.35; color: #a3abb3">{{ given }}</div>
+  </div>
+
+  <div ref="{{ setBox }}" style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center">
+  <div class="{{ fieldClass }}" ref="{{ setField }}" onPointerDown="{{ fDown }}" onPointerMove="{{ fMove }}" onPointerUp="{{ fUp }}" onPointerCancel="{{ fUp }}" style="position: relative; flex: none; width: 358px; height: 500px; transform: scale({{ stageScale }}); transform-origin: center center; border-radius: 12px; overflow: hidden; border: 1px solid rgba(244,241,234,0.14); background-color: #0e1114; background-image: {{ gridImg }}; background-size: {{ grid }}px {{ grid }}px; background-position: 0 {{ gridY }}px; cursor: ns-resize; touch-action: none">
+    <svg width="358" height="500" viewBox="0 0 358 500" style="display: block" aria-hidden="true">
+      <defs>
+        <pattern id="mu-hatch" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="9" height="9" fill="#181c21"></rect><rect width="3" height="9" fill="rgba(244,241,234,0.05)"></rect></pattern>
+      </defs>
+      <sc-for list="{{ shapes }}" as="s" hint-placeholder-count="6">
+        <path d="{{ s.d }}" fill="{{ s.fill }}" stroke="{{ s.stroke }}" stroke-width="{{ s.sw }}" stroke-dasharray="{{ s.dash }}" stroke-linecap="round" stroke-linejoin="round"></path>
+      </sc-for>
+      <sc-for list="{{ labels }}" as="t" hint-placeholder-count="2">
+        <text x="{{ t.x }}" y="{{ t.y }}" text-anchor="{{ t.a }}" fill="{{ t.c }}" style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: {{ t.fs }}px; font-weight: 600">{{ t.s }}</text>
+      </sc-for>
+
+      <g class="mu-cover" style="opacity: {{ coverOp }}; transform: translateY({{ coverShift }}px)">
+        <rect x="0" y="0" width="358" height="{{ coverH }}" fill="url(#mu-hatch)"></rect>
+        <path d="{{ coverEdge }}" stroke="rgba(244,241,234,0.35)" stroke-width="1.2" stroke-dasharray="6 5" fill="none"></path>
+        <text x="{{ qX }}" y="{{ qY }}" text-anchor="middle" fill="rgba(244,241,234,0.22)" style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 64px; font-weight: 800">?</text>
+        <text x="12" y="{{ hiddenY }}" fill="rgba(163,171,179,0.75)" style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em">THE TOP IS HIDDEN</text>
+      </g>
+
+      <sc-if value="{{ revealed }}" hint-placeholder-val="{{ false }}">
+        <path class="mu-real" pathLength="1" d="{{ realLine }}" stroke="#8ea6ff" stroke-width="2.4" fill="none" stroke-linecap="round"></path>
+        <g class="mu-fade" style="animation-delay: .4s">
+          <rect x="{{ realBoxX }}" y="{{ realBoxY }}" width="52" height="20" rx="3" fill="#8ea6ff"></rect>
+          <text x="{{ realTextX }}" y="{{ realTextY }}" text-anchor="middle" fill="#0e1114" style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 700">{{ realTxt }}</text>
+        </g>
+      </sc-if>
+
+      <rect x="{{ bladeX }}" y="{{ bladeY }}" width="14" height="{{ bladeH }}" fill="#f2c94c"></rect>
+      <path d="{{ ticks }}" stroke="#16191c" stroke-width="0.9" fill="none"></path>
+      <sc-for list="{{ nums }}" as="n" hint-placeholder-count="4">
+        <text x="{{ n.x }}" y="{{ n.y }}" text-anchor="middle" fill="#16191c" style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 6.5px; font-weight: 700">{{ n.s }}</text>
+      </sc-for>
+      <sc-for list="{{ metres }}" as="m" hint-placeholder-count="1">
+        <rect x="{{ m.x }}" y="{{ m.y }}" width="12" height="9" fill="#2547d0"></rect>
+        <text x="{{ m.tx }}" y="{{ m.ty }}" text-anchor="middle" fill="#ffffff" style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 6.5px; font-weight: 700">{{ m.s }}</text>
+      </sc-for>
+      <rect x="{{ hookX }}" y="{{ hookY }}" width="20" height="5" rx="1" fill="#5d636a"></rect>
+      <sc-if value="{{ showGuess }}" hint-placeholder-val="{{ false }}">
+        <path d="{{ guessLine }}" stroke="#f2c94c" stroke-width="1.6" stroke-dasharray="5 4" fill="none"></path>
+      </sc-if>
+      <sc-if value="{{ showBubble }}" hint-placeholder-val="{{ true }}">
+        <rect x="{{ bubX }}" y="{{ bubY }}" width="62" height="22" rx="11" fill="#f2c94c"></rect>
+        <text x="{{ bubTX }}" y="{{ bubTY }}" text-anchor="middle" fill="#16191c" style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 700">{{ bubTxt }}</text>
+      </sc-if>
+      <rect x="{{ caseX }}" y="{{ caseY }}" width="36" height="30" rx="6" fill="#f2c94c"></rect>
+      <rect x="{{ caseIX }}" y="{{ caseIY }}" width="24" height="18" rx="9" fill="#16191c"></rect>
+      <rect x="{{ lockX }}" y="{{ lockY }}" width="10" height="5" rx="1" fill="{{ lockC }}"></rect>
+    </svg>
+
+    <div class="mu-edge" style="position: absolute; inset: 0; border-radius: 12px; pointer-events: none"></div>
+    <div class="mono" style="position: absolute; right: 10px; bottom: 7px; font-size: 9px; color: rgba(163,171,179,0.75); pointer-events: none">{{ scaleNote }}</div>
+
+    <sc-if value="{{ showHint }}" hint-placeholder-val="{{ true }}">
+      <div style="position: absolute; left: {{ hintX }}px; top: {{ hintY }}px; display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; animation: mu-up 1.4s ease-in-out infinite">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f2c94c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"></path><path d="M6 11l6-6 6 6"></path></svg>
+        <span style="padding: 6px 10px; border-radius: 999px; background: #f2c94c; color: #16191c; font-size: 12.5px; font-weight: 700; white-space: nowrap">Drag the tape up</span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showDone }}" hint-placeholder-val="{{ false }}">
+      <div onPointerDown="{{ stop }}" style="position: absolute; inset: 10px; padding: 16px; border-radius: 12px; background: #f1f2ef; color: #16191c; box-shadow: 0 10px 30px rgba(0,0,0,0.45); animation: mu-card .35s ease-out; display: flex; flex-direction: column; gap: 10px; cursor: default">
+        <div style="display: flex; justify-content: space-between; align-items: baseline"><span class="mono" style="font-size: 10.5px; letter-spacing: 0.1em; color: #2547d0">{{ doneKicker }}</span><span style="font-size: 20px; letter-spacing: 2px; color: #e0a400">{{ doneStars }}</span></div>
+        <div style="display: flex; align-items: baseline; gap: 8px">
+          <span style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 44px; font-weight: 800; letter-spacing: -0.03em; line-height: 1">{{ total }}</span>
+          <span style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 17px; font-weight: 700">mm off in all</span>
+        </div>
+        <div class="mono" style="font-size: 14px; line-height: 1.7; white-space: pre-line">{{ grid5 }}</div>
+        <div style="font-size: 13px; color: #4f555b">{{ verdict }}</div>
+        <div style="margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+          <button type="button" class="mu-btn" onClick="{{ shareIt }}" style="height: 46px; border: 0; border-radius: 9px; background: #2547d0; color: #ffffff; font-family: Geist, system-ui, sans-serif; font-size: 14.5px; font-weight: 650; cursor: pointer">Share result</button>
+          <a href="#/measure/packs" class="mu-btn" style="height: 46px; display: grid; place-items: center; border-radius: 9px; background: #16191c; color: #f4f1ea; font-size: 14.5px; font-weight: 650; text-decoration: none">Week and packs</a>
+        </div>
+        <div class="mono" style="text-align: center; font-size: 10.5px; color: #4f555b">{{ midnight }}<sc-if value="{{ canReplay }}" hint-placeholder-val="{{ false }}"> · <span onClick="{{ replay }}" style="text-decoration: underline; cursor: pointer">play it again</span></sc-if></div>
+      </div>
+    </sc-if>
+  </div>
+
+  </div>
+
+  <div style="flex: none; display: grid; grid-template-columns: 52px minmax(0, 1fr) 52px; gap: 8px; align-items: center; height: 48px">
+    <button type="button" class="mu-btn" onClick="{{ minus }}" aria-label="10 mm less" style="height: 48px; border-radius: 10px; border: 1px solid rgba(244,241,234,0.18); background: rgba(27,32,37,0.92); color: #f4f1ea; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; font-weight: 600; cursor: pointer">−10</button>
+    <div style="text-align: center">
+      <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; color: {{ readColor }}">{{ readTxt }}</div>
+      <div class="mono" style="margin-top: 3px; font-size: 11px; color: {{ resultColor }}">{{ resultTxt }}</div>
+    </div>
+    <button type="button" class="mu-btn" onClick="{{ plus }}" aria-label="10 mm more" style="height: 48px; border-radius: 10px; border: 1px solid rgba(244,241,234,0.18); background: rgba(27,32,37,0.92); color: #f4f1ea; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; font-weight: 600; cursor: pointer">+10</button>
+  </div>
+
+  <button type="button" class="mu-btn" onClick="{{ mainBtn }}" style="flex: none; height: 56px; border: 0; border-radius: 12px; background: {{ btnBg }}; color: {{ btnFg }}; font-family: Geist, system-ui, sans-serif; font-size: 16px; font-weight: 700; cursor: pointer">{{ btnLabel }}</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.F = 452; // the floor line in the drawing
+    this.MAX = 2700; // longest the tape goes
+    this.POOL = {
+      door: { q: 'How tall is a standard door?', given: 'This door is 762 mm wide.', ans: 1981, kind: 'door', cover: 900, w: 902, dw: 762 },
+      idoor: { q: 'How tall is a metric door?', given: 'The newer internal size, 826 mm wide.', ans: 2040, kind: 'idoor', cover: 900, w: 966, dw: 826 },
+      ceiling: { q: 'How high is a standard ceiling?', given: 'This wall is 3000 mm long.', ans: 2400, kind: 'ceiling', cover: 1000, w: 3000 },
+      base: { q: 'How high is the worktop?', given: 'Each base unit is 600 mm wide.', ans: 900, kind: 'base', cover: 350, w: 1240 },
+      wallunit: { q: 'How tall is a wall unit?', given: 'Stood on the floor before fitting, 600 mm wide.', ans: 720, kind: 'wallunit', cover: 300, w: 600 },
+      pax: { q: 'How tall is an IKEA PAX frame?', given: 'The shorter one. It is 1000 mm wide.', ans: 2010, kind: 'pax', cover: 800, w: 1000 },
+      paxtall: { q: 'How tall is the tall PAX frame?', given: 'Also 1000 mm wide.', ans: 2364, kind: 'pax', cover: 900, w: 1000 },
+      ply: { q: 'How tall is a sheet of ply?', given: 'Standing on its long edge, 2440 mm long.', ans: 1220, kind: 'sheet', cover: 450, w: 2440, tone: 'ply' },
+      mdf: { q: 'How tall is a sheet of MDF?', given: 'Standing on its short edge, 1220 mm wide.', ans: 2440, kind: 'sheet', cover: 900, w: 1220, tone: 'mdf' },
+      plaster: { q: 'How tall is plasterboard?', given: 'A standard sheet standing up, 1200 mm wide.', ans: 2400, kind: 'sheet', cover: 900, w: 1200, tone: 'plaster' },
+      bench: { q: 'How high is the seat?', given: 'Kings Park bench, short end: 1215 mm.', ans: 400, kind: 'bench', cover: 150, w: 1215 },
+      hatfield: { q: 'How high is this wardrobe?', given: 'Hatfield loft wardrobe, 2360 mm wide.', ans: 2200, kind: 'wardrobe', doors: 3, cover: 800, w: 2360 },
+      palmers: { q: 'How high is this wardrobe?', given: 'Palmers Green loft, two PAX frames, 1998 wide.', ans: 2012, kind: 'wardrobe', doors: 4, cover: 800, w: 1998 },
+    };
+    this.PACKS = {
+      daily: { name: 'Today', kicker: 'DAILY', rounds: [] },
+      doors: { name: 'Doors and rooms', rounds: ['door', 'idoor', 'ceiling', 'plaster'] },
+      kitchen: { name: 'Kitchens and wardrobes', rounds: ['base', 'wallunit', 'pax', 'paxtall'] },
+      sheets: { name: 'Sheets and boards', rounds: ['ply', 'mdf', 'plaster'] },
+      jobs: { name: 'From my jobs', rounds: ['bench', 'hatfield', 'palmers'] },
+    };
+    // Today's five: the same for everyone, picked from the sizes above by the London date. Later in the week more of
+    // the drawing is hidden and the grid goes (Saturday and Sunday).
+    this.day = this.today();
+    const hard = [1, 2, 2, 3, 3, 4, 5][this.day.wd];
+    this.hardK = 1.08 - hard * 0.08; this.noGrid = hard >= 4;
+    this.PACKS.daily.rounds = this.dailyIds(this.day.key);
+    this.PACKS.daily.kicker = 'DAILY · ' + this.day.label.toUpperCase();
+    let pack = 'daily', stars = {}, days = {};
+    try {
+      pack = localStorage.getItem('raf_games_level_measure') || 'daily';
+      stars = JSON.parse(localStorage.getItem('raf_games_stars_measure') || '{}') || {};
+      days = JSON.parse(localStorage.getItem('raf_games_measure_days') || '{}') || {};
+    } catch (e) {}
+    if (!this.PACKS[pack]) pack = 'daily';
+    this.days = days;
+    this.state = { pack: pack, round: 0, mode: 'aim', len: 0, touched: false, res: [], flash: '', sound: true, stars: stars, earned: 0, stageScale: 1 };
+    const done = pack === 'daily' && days[this.day.key];
+    if (done) Object.assign(this.state, { mode: 'done', res: done.res, round: done.res.length - 1 });
+    this.snd = this.soundPref(); this.state.sound = this.snd; this.field = null; this.dragging = false; this.lastTick = 0;
+    this.setBox = this.makeFit(358, 500);
+  }
+  rounds() { return this.PACKS[this.state.pack].rounds.map((id) => this.POOL[id]); }
+  today() {
+    const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' }).formatToParts(new Date());
+    const g = (t) => (p.find((x) => x.type === t) || {}).value;
+    const key = g('year') + '-' + g('month') + '-' + g('day');
+    const wd = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(g('weekday'));
+    const label = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short', day: 'numeric', month: 'short' }).format(new Date());
+    return { key: key, wd: Math.max(0, wd), label: label };
+  }
+  dailyIds(key) {
+    const [y, m, d] = key.split('-').map(Number), n = Math.round(Date.UTC(y, m - 1, d) / 86400000);
+    let seed = (n * 7919 + 17) >>> 0;
+    const rnd = () => { seed = (seed + 0x6d2b79f5) >>> 0; let t = seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const ids = Object.keys(this.POOL);
+    for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const t = ids[i]; ids[i] = ids[j]; ids[j] = t; }
+    return ids.slice(0, 5);
+  }
+  streak() {
+    const back = (k, n) => { const [y, m, d] = k.split('-').map(Number); const t = new Date(Date.UTC(y, m - 1, d - n)); return t.toISOString().slice(0, 10); };
+    let n = this.days[this.day.key] ? 0 : 1, c = 0;
+    while (this.days[back(this.day.key, n)]) { c++; n++; }
+    return c;
+  }
+  // The stage is drawn at a fixed size and scaled to the room the phone gives it (any width from 320, short Safari
+  // screens, a tablet, a computer). Pointer maths reads the drawn size, so it stays right at any scale.
+  makeFit(W, H) {
+    return (el) => {
+      if (el === this._box) return;
+      if (this._ro) { this._ro.disconnect(); this._ro = null; }
+      this._box = el;
+      if (!el) return;
+      const fit = () => {
+        const w = el.clientWidth, h = el.clientHeight; if (!w || !h) return;
+        const s = Math.max(0.5, Math.min(1.35, w / W, h / H));
+        if (Math.abs(s - (this.state.stageScale || 0)) > 0.004) this.setState({ stageScale: Math.round(s * 1000) / 1000 });
+      };
+      if (window.ResizeObserver) { this._ro = new ResizeObserver(fit); this._ro.observe(el); }
+      fit();
+    };
+  }
+  soundPref() { try { return localStorage.getItem('raf_games_sound') !== '0'; } catch (e) { return true; } }
+  saveSound(on) { try { localStorage.setItem('raf_games_sound', on ? '1' : '0'); } catch (e) {} }
+  share(p) { if (typeof this.shareScore === 'function') this.shareScore(p); }
+
+  componentDidMount() {
+    this.onStore = (e) => { if (e.key === 'raf_games_level_measure' && e.newValue && this.PACKS[e.newValue] && e.newValue !== this.state.pack) this.setPack(e.newValue); };
+    window.addEventListener('storage', this.onStore);
+  }
+  componentWillUnmount() { if (this._ro) this._ro.disconnect(); clearTimeout(this.flT); window.removeEventListener('storage', this.onStore); }
+  setPack(id) {
+    const done = id === 'daily' && this.days[this.day.key];
+    if (done) { this.setState({ pack: id, round: done.res.length - 1, mode: 'done', len: 0, res: done.res, touched: true, earned: 0 }); return; }
+    this.setState({ pack: id, round: 0, mode: 'aim', len: 0, res: [], touched: false, earned: 0 });
+  }
+  K(r) { return Math.min(0.155, 250 / r.w); }
+  geo(r) {
+    const K = this.K(r), objW = r.w * K, x0 = Math.max(12, (358 - (objW + 96)) / 2), tx = x0 + objW + 16;
+    return { K: K, objW: objW, x0: x0, tx: tx };
+  }
+  ac() {
+    try {
+      if (!this._c) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; this._c = new A(); }
+      if (this._c.state === 'suspended') this._c.resume();
+      return this._c;
+    } catch (e) { return null; }
+  }
+  tone(f, d, o) {
+    o = o || {}; if (!this.snd) return; const c = this.ac(); if (!c) return;
+    const t = c.currentTime + (o.at || 0), osc = c.createOscillator(), g = c.createGain();
+    osc.type = o.type || 'sine'; osc.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(o.vol || 0.2, t); g.gain.exponentialRampToValueAtTime(0.0008, t + d);
+    osc.connect(g).connect(c.destination); osc.start(t); osc.stop(t + d + 0.05);
+  }
+  tick(f, vol) {
+    if (!this.snd) return; const c = this.ac(); if (!c) return;
+    const t = c.currentTime, n = Math.ceil(c.sampleRate * 0.014), b = c.createBuffer(1, n, c.sampleRate), ch = b.getChannelData(0);
+    for (let i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+    const s = c.createBufferSource(); s.buffer = b; const fl = c.createBiquadFilter(); fl.type = 'bandpass'; fl.frequency.value = f; fl.Q.value = 3;
+    const g = c.createGain(); g.gain.value = vol; s.connect(fl).connect(g).connect(c.destination); s.start(t);
+  }
+  buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  flash(kind) { this.setState({ flash: '' }); clearTimeout(this.flT); this.flT = setTimeout(() => this.setState({ flash: kind }), 16); }
+
+  setLen(len) {
+    len = Math.max(0, Math.min(this.MAX, Math.round(len / 10) * 10));
+    if (len === this.state.len) return;
+    const now = performance.now();
+    if (now - this.lastTick > 24) { this.tick(3400 + Math.min(1800, len * 0.6), 0.14); this.lastTick = now; }
+    this.setState({ len: len, touched: true });
+  }
+  fromPointer(e) {
+    const el = this.field; if (!el) return;
+    const rect = el.getBoundingClientRect(), s = rect.height / 500 || 1;
+    const y = (e.clientY - rect.top) / s, r = this.rounds()[this.state.round];
+    this.setLen((this.F - y) / this.geo(r).K);
+  }
+  lockIn() {
+    if (this.state.mode !== 'aim' || this.state.len <= 0) return;
+    const r = this.rounds()[this.state.round], len = this.state.len, off = Math.abs(len - r.ans);
+    this.tone(2400, 0.03, { type: 'square', vol: 0.08 }); this.tick(5000, 0.25); this.tone(900, 0.05, { type: 'square', vol: 0.05, at: 0.03 });
+    this.buzz(10);
+    this.setState({ mode: 'shown', res: this.state.res.concat([{ guess: len, off: off }]) });
+    if (off <= 5) { [523, 659, 784, 1046].forEach((f, i) => this.tone(f, i === 3 ? 0.6 : 0.16, { type: 'triangle', vol: 0.2, at: 0.5 + i * 0.1 })); this.tone(1568, 0.6, { vol: 0.06, at: 0.8 }); setTimeout(() => this.flash('exact'), 450); this.buzz([15, 40, 15]); }
+    else if (off <= 20) { this.tone(784, 0.35, { vol: 0.16, at: 0.5 }); this.tone(1175, 0.45, { vol: 0.15, at: 0.61 }); setTimeout(() => this.flash('good'), 450); }
+    else if (off <= 60) { this.tone(660, 0.25, { vol: 0.15, at: 0.5 }); }
+    else { this.tone(196, 0.22, { type: 'triangle', vol: 0.18, at: 0.5 }); this.tone(165, 0.3, { type: 'triangle', vol: 0.16, at: 0.67 }); }
+  }
+  nextRound() {
+    const n = this.state.round + 1, R = this.rounds();
+    if (n >= R.length) {
+      const total = this.state.res.reduce((a, b) => a + b.off, 0), avg = total / R.length;
+      const earned = avg <= 10 ? 3 : avg <= 30 ? 2 : 1;
+      const stars = Object.assign({}, this.state.stars); stars[this.state.pack] = Math.max(stars[this.state.pack] || 0, earned);
+      const bestKey = this.state.pack + '_best'; stars[bestKey] = stars[bestKey] == null ? total : Math.min(stars[bestKey], total);
+      try { localStorage.setItem('raf_games_stars_measure', JSON.stringify(stars)); } catch (e) {}
+      if (this.state.pack === 'daily') {
+        // today's result is kept, so the daily can't be played again for a better score
+        this.days = Object.assign({}, this.days, { [this.day.key]: { total: total, res: this.state.res } });
+        const keys = Object.keys(this.days).sort(); while (keys.length > 60) delete this.days[keys.shift()];
+        try { localStorage.setItem('raf_games_measure_days', JSON.stringify(this.days)); } catch (e) {}
+      }
+      this.setState({ mode: 'done', stars: stars, earned: earned });
+      this.tone(659, 0.14, { vol: 0.16 }); this.tone(880, 0.14, { vol: 0.16, at: 0.12 }); this.tone(1318, 0.4, { vol: 0.16, at: 0.24 });
+      return;
+    }
+    this.tick(3000, 0.15);
+    this.setState({ round: n, mode: 'aim', len: 0 });
+  }
+  scene(r, G) {
+    const K = G.K, F = this.F, x0 = G.x0, H = r.ans * K, ink = 'rgba(244,241,234,0.9)', soft = 'rgba(244,241,234,0.45)', P = [], L = [];
+    const box = (x, y, w, h) => 'M' + x + ' ' + y + ' h' + w + ' v' + h + ' h' + (-w) + ' Z';
+    const path = (d, o) => P.push(Object.assign({ d: d, fill: 'none', stroke: ink, sw: 1.5, dash: 'none' }, o || {}));
+    const dim = (xa, xb, s) => { const y = F + 18; path('M' + xa + ' ' + y + ' H' + xb + ' M' + xa + ' ' + (y - 5) + ' v10 M' + xb + ' ' + (y - 5) + ' v10', { stroke: '#8ea6ff', sw: 1.2 }); L.push({ x: (xa + xb) / 2, y: y + 16, a: 'middle', c: '#8ea6ff', fs: 12, s: s }); };
+    path('M0 ' + F + ' H358', { stroke: soft, sw: 1.3 });
+    for (let x = 4; x < 358; x += 8) path('M' + x + ' ' + (F + 2) + ' l-6 7', { stroke: 'rgba(244,241,234,0.12)', sw: 1 });
+    if (r.kind === 'door' || r.kind === 'idoor') {
+      const a = 70 * K, x = x0 + a, w = r.dw * K, h = H;
+      path('M' + x0 + ' ' + F + ' V' + (F - h - a) + ' H' + (x + w + a) + ' V' + F, { stroke: soft });
+      path(box(x, F - h, w, h), { fill: r.kind === 'door' ? 'rgba(220,193,148,0.12)' : 'rgba(244,241,234,0.08)' });
+      if (r.kind === 'door') { path(box(x + w * 0.13, F - h * 0.94, w * 0.74, h * 0.4), { sw: 1 }); path(box(x + w * 0.13, F - h * 0.48, w * 0.74, h * 0.4), { sw: 1 }); }
+      path('M' + (x + w - 8) + ' ' + (F - 1000 * K) + ' h-12', { sw: 2.6 });
+      path('M' + (x + 1.5) + ' ' + (F - 230 * K) + ' v' + (100 * K) + ' M' + (x + 1.5) + ' ' + (F - 1800 * K) + ' v' + (100 * K), { stroke: '#a3abb3', sw: 2.4 });
+      dim(x, x + w, String(r.dw));
+    } else if (r.kind === 'ceiling') {
+      const w = 3000 * K;
+      path(box(x0, F - H, w, H), { fill: 'rgba(244,241,234,0.05)' });
+      path('M' + x0 + ' ' + (F - 150 * K) + ' H' + (x0 + w), { stroke: soft, sw: 1.2 });
+      const dx = x0 + w * 0.55, dw = 762 * K, dh = 1981 * K;
+      path(box(dx, F - dh, dw, dh), { fill: 'rgba(220,193,148,0.14)' });
+      path('M' + (dx + dw - 5) + ' ' + (F - 1000 * K) + ' h-7', { sw: 2.2 });
+      path(box(x0 + w * 0.12, F - 1900 * K, 900 * K, 1000 * K), { stroke: soft, sw: 1.2 });
+      dim(x0, x0 + w, '3000');
+    } else if (r.kind === 'base') {
+      const u = 600 * K, w = u * 2, h = H, pl = 100 * K, wt = 40 * K, x = x0 + 20 * K;
+      path(box(x - 20 * K, F - h, w + 40 * K, wt), { fill: 'rgba(201,154,98,0.4)' });
+      for (let i = 0; i < 2; i++) {
+        const ux = x + u * i;
+        path(box(ux, F - h + wt, u, h - wt - pl), { fill: 'rgba(220,193,148,0.12)' });
+        path(box(ux + 3, F - h + wt + 3, u - 6, h - wt - pl - 6), { sw: 1, stroke: soft });
+        path('M' + (ux + u / 2 - 10) + ' ' + (F - h + wt + 14) + ' h20', { sw: 2.6 });
+      }
+      path(box(x + 6, F - pl, w - 12, pl), { stroke: soft, sw: 1.2 });
+      dim(x, x + u, '600');
+    } else if (r.kind === 'wallunit') {
+      const w = 600 * K;
+      path(box(x0, F - H, w, H), { fill: 'rgba(220,193,148,0.12)' });
+      path(box(x0 + 3, F - H + 3, w - 6, H - 6), { sw: 1, stroke: soft });
+      path('M' + (x0 + w / 2 - 10) + ' ' + (F - 14) + ' h20', { sw: 2.6 });
+      dim(x0, x0 + w, '600');
+    } else if (r.kind === 'pax') {
+      const w = 1000 * K, h = H;
+      path(box(x0, F - h, w, h), { fill: 'rgba(244,241,234,0.06)' });
+      path(box(x0 + 3, F - h + 3, w / 2 - 4, h - 6), { sw: 1.1, stroke: soft });
+      path(box(x0 + w / 2 + 1, F - h + 3, w / 2 - 4, h - 6), { sw: 1.1, stroke: soft });
+      path('M' + (x0 + w / 2 - 7) + ' ' + (F - 1000 * K) + ' v18 M' + (x0 + w / 2 + 7) + ' ' + (F - 1000 * K) + ' v18', { sw: 2.6 });
+      dim(x0, x0 + w, '1000');
+    } else if (r.kind === 'sheet') {
+      const w = r.w * K, fill = r.tone === 'ply' ? 'rgba(220,193,148,0.18)' : r.tone === 'mdf' ? 'rgba(160,120,80,0.22)' : 'rgba(200,205,210,0.16)';
+      path(box(x0, F - H, w, H), { fill: fill });
+      if (r.tone === 'ply') for (let i = 1; i < 6; i++) { const y = F - H + (H / 6) * i; path('M' + (x0 + 4) + ' ' + y + ' C' + (x0 + w * 0.3) + ' ' + (y - 6) + ', ' + (x0 + w * 0.6) + ' ' + (y + 6) + ', ' + (x0 + w - 4) + ' ' + (y - 2), { stroke: 'rgba(201,154,98,0.55)', sw: 1 }); }
+      if (r.tone === 'plaster') { path('M' + (x0 + 6) + ' ' + F + ' V' + (F - H) + ' M' + (x0 + w - 6) + ' ' + F + ' V' + (F - H), { stroke: soft, sw: 1, dash: '2 4' }); }
+      if (r.tone === 'mdf') path('M' + (x0 + w) + ' ' + F + ' l4 -3 V' + (F - H - 3) + ' l-4 3', { stroke: soft, sw: 1 });
+      dim(x0, x0 + w, String(r.w));
+    } else if (r.kind === 'bench') {
+      const w = 1215 * K, h = H, pl = 75 * K;
+      path(box(x0, F - h, w, h - pl), { fill: 'rgba(220,193,148,0.14)' });
+      path(box(x0 + 6, F - pl, w - 12, pl), { stroke: soft, sw: 1.2 });
+      path('M' + x0 + ' ' + (F - h + 18 * K) + ' H' + (x0 + w), { sw: 1.1 });
+      path(box(x0 + 10, F - h + 18 * K + 8, w - 20, h - pl - 18 * K - 16), { sw: 0.9, stroke: soft });
+      dim(x0, x0 + w, '1215');
+    } else if (r.kind === 'wardrobe') {
+      const w = r.w * K, n = r.doors, dw = (w - 4) / n;
+      path(box(x0, F - H, w, H), { fill: 'rgba(244,241,234,0.07)' });
+      for (let i = 0; i < n; i++) {
+        path(box(x0 + 2 + dw * i + 1, F - H + 3, dw - 2, H - 6), { sw: 1, stroke: soft });
+        const right = (n === 4 ? i % 2 === 0 : i < n - 1) ? 1 : 0, hx = right ? x0 + 2 + dw * (i + 1) - 6 : x0 + 2 + dw * i + 6;
+        path('M' + hx + ' ' + (F - 1000 * K) + ' v' + (220 * K), { sw: 2.4 });
+      }
+      dim(x0, x0 + w, String(r.w));
+    }
+    return { P: P, L: L };
+  }
+  renderVals() {
+    const st = this.state, R = this.rounds(), pk = this.PACKS[st.pack], r = R[Math.min(st.round, R.length - 1)], G = this.geo(r), K = G.K, F = this.F, sc = this.scene(r, G);
+    const shown = st.mode === 'shown' || st.mode === 'done';
+    const res = shown ? st.res[st.res.length - 1] : null;
+    const len = st.len, bladeH = len * K, bladeY = F - bladeH, bx = G.tx - 7;
+    let ticks = '', nums = [], metres = [];
+    for (let mm = 50; mm <= len; mm += 50) {
+      const y = (F - mm * K).toFixed(1), big = mm % 100 === 0;
+      ticks += 'M' + bx + ' ' + y + ' h' + (big ? 6 : 3.5) + ' ';
+      if (big && mm % 1000 !== 0 && mm < len - 30 && (K >= 0.12 || mm % 200 === 0)) nums.push({ x: bx + 9.5, y: F - mm * K + 2.3, s: String(mm / 10) });
+      if (mm % 1000 === 0) metres.push({ x: bx + 1, y: F - mm * K - 4.5, tx: bx + 7, ty: F - mm * K + 2.4, s: mm / 1000 + 'm' });
+    }
+    const pills = R.map((x, i) => {
+      const done = st.res[i];
+      if (done) return { text: done.off <= 5 ? 'SPOT ON' : done.off + ' MM', border: done.off <= 5 ? '#6fcf97' : 'rgba(244,241,234,0.2)', bg: done.off <= 5 ? 'rgba(111,207,151,0.18)' : 'rgba(27,32,37,0.9)', fg: done.off <= 5 ? '#6fcf97' : '#f4f1ea' };
+      if (i === st.round && st.mode !== 'done') return { text: 'ROUND ' + (i + 1), border: '#8ea6ff', bg: 'rgba(142,166,255,0.14)', fg: '#8ea6ff' };
+      return { text: String(i + 1), border: 'rgba(244,241,234,0.1)', bg: 'transparent', fg: 'rgba(163,171,179,0.7)' };
+    });
+    const sq = (off) => { const n = off <= 5 ? 5 : off <= 20 ? 4 : off <= 60 ? 3 : off <= 150 ? 2 : 1; return '■■■■■'.slice(0, n) + '□□□□□'.slice(0, 5 - n); };
+    const total = st.res.reduce((a, b) => a + b.off, 0);
+    const now = new Date(), mid = new Date(now); mid.setHours(24, 0, 0, 0);
+    const mins = Math.max(0, Math.round((mid - now) / 60000));
+    let resultTxt = 'Drag the tape up, or use the buttons', resultColor = '#a3abb3';
+    if (res) {
+      const over = res.guess > r.ans;
+      if (res.off <= 5) { resultTxt = 'Spot on. It is ' + r.ans + ' mm.'; resultColor = '#6fcf97'; }
+      else { resultTxt = res.off + ' mm ' + (over ? 'over' : 'short') + '. It is ' + r.ans + ' mm.'; resultColor = res.off <= 20 ? '#8ea6ff' : res.off <= 60 ? '#f4f1ea' : '#ff8a5b'; }
+    } else if (len > 0) { resultTxt = 'Happy? Lock it in.'; }
+    const coverH = Math.max(0, F - r.cover * (st.pack === 'daily' ? this.hardK : 1) * K);
+    const realY = F - r.ans * K, rbx = G.x0 + G.objW / 2 - 26;
+    const mode = st.mode, last = st.round >= R.length - 1, daily = st.pack === 'daily';
+    return {
+      kicker: daily ? pk.kicker : 'PRACTICE · ' + pk.name.toUpperCase(),
+      pills: pills, pillCount: R.length, question: r.q, given: r.given,
+      shapes: sc.P, labels: sc.L,
+      grid: (100 * K).toFixed(2), gridY: (F % (100 * K)).toFixed(2),
+      gridImg: daily && this.noGrid ? 'none' : 'linear-gradient(rgba(127,155,255,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(127,155,255,0.09) 1px, transparent 1px)',
+      scaleNote: daily && this.noGrid ? 'TO SCALE · NO GRID TODAY' : 'TO SCALE · GRID 100 MM',
+      stageScale: st.stageScale || 1, setBox: this.setBox,
+      canReplay: !daily,
+      shareIt: () => this.share(daily ? { g: 'measure', m: total, d: this.day.key, res: st.res.map((x) => x.off) } : { g: 'measure', m: total, p: st.pack, res: st.res.map((x) => x.off) }),
+      coverH: coverH, coverEdge: 'M0 ' + coverH + ' H358', coverOp: shown ? 0 : 1, coverShift: shown ? -40 : 0,
+      qX: G.x0 + G.objW / 2, qY: Math.max(70, coverH - 50), hiddenY: Math.max(18, coverH - 10),
+      revealed: shown && !!res,
+      realLine: 'M' + (G.x0 - 6) + ' ' + realY + ' H' + (G.tx + 10),
+      realBoxX: rbx, realBoxY: realY - 26, realTextX: rbx + 26, realTextY: realY - 11.5, realTxt: String(r.ans),
+      bladeX: bx, bladeY: bladeY, bladeH: bladeH, ticks: ticks || 'M0 0', nums: nums, metres: metres,
+      hookX: bx - 3, hookY: bladeY - 4,
+      showGuess: shown && !!res, guessLine: 'M' + (G.x0 - 6) + ' ' + bladeY + ' H' + bx,
+      showBubble: len > 0, bubX: bx + 20, bubY: bladeY - 11, bubTX: bx + 51, bubTY: bladeY + 4, bubTxt: len + '',
+      caseX: G.tx + 9, caseY: F - 30, caseIX: G.tx + 15, caseIY: F - 24, lockX: G.tx + 22, lockY: F - 33, lockC: shown ? '#eb5757' : '#6fcf97',
+      showHint: st.round === 0 && !st.touched && mode === 'aim', hintX: G.tx - 52, hintY: F - 120,
+      fieldClass: st.flash ? 'fl-' + st.flash : '',
+      showDone: mode === 'done', total: total,
+      doneKicker: daily ? "TODAY'S MEASURE UP · STREAK " + this.streak() : pk.name.toUpperCase() + ' · DONE',
+      doneStars: daily ? '' : '★★★'.slice(0, st.earned) + '☆☆☆'.slice(0, 3 - st.earned),
+      grid5: st.res.map((x, i) => (i + 1) + '  ' + sq(x.off) + '  ' + (x.off <= 5 ? 'spot on' : x.off + ' mm')).join('\n'),
+      verdict: (daily ? '' : 'Stars: 3 for 10 mm or less a size, 2 for 30. ') + (total / R.length <= 10 ? 'Sharp eye. You know your sizes.' : total / R.length <= 30 ? 'Good eye. Measure twice anyway.' : 'Close enough for a sketch. Keep the tape handy.'),
+      midnight: daily ? 'New ones in ' + Math.floor(mins / 60) + ' h ' + (mins % 60) + ' min' : 'Practice packs play any time',
+      readTxt: len > 0 ? len + ' mm' : '0 mm', readColor: len > 0 ? '#f2c94c' : '#5d636a',
+      resultTxt: resultTxt, resultColor: resultColor,
+      btnLabel: mode === 'aim' ? "That's my guess" : mode === 'shown' ? (last ? (daily ? "See today's result" : 'See how you did') : 'Next one') : 'Done',
+      btnBg: mode === 'aim' ? (len > 0 ? '#f2c94c' : '#2a3037') : mode === 'shown' ? '#f4f1ea' : '#2a3037',
+      btnFg: mode === 'aim' ? (len > 0 ? '#16191c' : '#7d858d') : mode === 'shown' ? '#16191c' : '#a3abb3',
+      soundOn: st.sound, soundOff: !st.sound, soundLabel: st.sound ? 'Turn sound off' : 'Turn sound on',
+      setField: (el) => { this.field = el; },
+      fDown: (e) => { if (this.state.mode !== 'aim' || (e && e.button > 0)) return; this.ac(); this.dragging = true; try { e.currentTarget.setPointerCapture(e.pointerId); } catch (x) {} this.fromPointer(e); },
+      fMove: (e) => { if (this.dragging && this.state.mode === 'aim') this.fromPointer(e); },
+      fUp: () => { this.dragging = false; },
+      stop: (e) => { if (e) e.stopPropagation(); },
+      minus: () => { if (this.state.mode === 'aim') { this.ac(); this.setLen(this.state.len - 10); } },
+      plus: () => { if (this.state.mode === 'aim') { this.ac(); this.setLen(this.state.len + 10); } },
+      mainBtn: () => { this.ac(); if (this.state.mode === 'aim') this.lockIn(); else if (this.state.mode === 'shown') this.nextRound(); },
+      replay: () => { this.setState({ round: 0, mode: 'aim', len: 0, res: [], touched: false }); },
+      toggleSound: () => { const on = !this.state.sound; this.snd = on; this.saveSound(on); this.setState({ sound: on }); if (on) this.tick(4000, 0.2); },
+    };
+  }
+}
+</script>
+</body>
+</html>

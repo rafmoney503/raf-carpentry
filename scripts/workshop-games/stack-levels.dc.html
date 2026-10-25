@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Timber Stack levels</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=Geist:wght@400..700&amp;family=Geist+Mono:wght@400..600&amp;display=swap">
+<style>
+body{margin:0}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+a{text-decoration:none;color:inherit}
+@keyframes tl-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}
+@keyframes tl-pulse{0%,100%{box-shadow:0 0 0 0 rgba(242,201,76,.55)}50%{box-shadow:0 0 0 6px rgba(242,201,76,0)}}
+.tl-row{transition:transform .12s ease, border-color .12s ease}
+.tl-row:hover{transform:translateX(2px)}
+.tl-shake{animation:tl-shake .35s ease-out}
+.tl-now{animation:tl-pulse 1.8s ease-in-out infinite}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; padding: 6px 16px 14px; background-color: #121518; background-image: linear-gradient(rgba(127,155,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(127,155,255,0.12) 1px, transparent 1px); background-size: 80px 80px; color: #f4f1ea; font-family: Geist, system-ui, sans-serif; overflow: hidden; user-select: none; -webkit-user-select: none">
+
+  <header style="display: flex; align-items: center; gap: 6px; height: 50px">
+    <a href="#/" aria-label="Back to the games" style="width: 44px; height: 44px; margin-left: -10px; display: grid; place-items: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+    </a>
+    <div style="flex: 1">
+      <div class="mono" style="font-size: 10.5px; letter-spacing: 0.12em; color: #f2c94c">TIMBER STACK</div>
+      <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 20px; font-weight: 760; letter-spacing: -0.02em">Levels</div>
+    </div>
+    <div style="text-align: right">
+      <div class="mono" style="font-size: 10.5px; color: #a3abb3">STARS</div>
+      <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 18px; font-weight: 760"><span style="color: #f2c94c">★</span> {{ total }} <span style="font-size: 13px; color: #a3abb3">/ 30</span></div>
+    </div>
+  </header>
+
+  <a href="#/stack" onClick="{{ playFree }}" style="margin-top: 6px; display: flex; align-items: center; gap: 12px; height: 62px; padding: 0 14px; border-radius: 12px; background: linear-gradient(90deg, rgba(242,201,76,0.18), rgba(27,32,37,0.9)); border: 1px solid rgba(242,201,76,0.45)">
+    <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="3" y="25" width="28" height="6" fill="#dcc194"></rect><rect x="5" y="19" width="24" height="6" fill="#c99a62"></rect><rect x="7" y="13" width="20" height="6" fill="#77503a"></rect><rect x="9" y="7" width="16" height="6" fill="#e3c58c"></rect><rect x="11" y="1" width="12" height="6" fill="#9a5a40"></rect></svg>
+    <div style="flex: 1">
+      <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 17px; font-weight: 760">Free stack</div>
+      <div class="mono" style="font-size: 11px; color: #c4cad0">No goal · as high as you can · best {{ best }}</div>
+    </div>
+    <span style="padding: 7px 12px; border-radius: 999px; background: #f2c94c; color: #16191c; font-size: 13px; font-weight: 700">Play</span>
+  </a>
+
+  <div style="position: absolute; left: 16px; top: 140px; width: 30px; height: 650px; background-color: #f2c94c; background-image: repeating-linear-gradient(to bottom, rgba(22,25,28,0.75) 0 1px, transparent 1px 6.5px); background-size: 9px 100%; background-repeat: no-repeat; border-radius: 3px"></div>
+  <div style="position: absolute; left: 16px; top: 140px; width: 30px; height: 650px; background-image: repeating-linear-gradient(to bottom, rgba(22,25,28,0.8) 0 1px, transparent 1px 32.5px); background-size: 15px 650px; background-repeat: no-repeat"></div>
+
+  <div style="position: absolute; left: 16px; right: 16px; top: 140px; display: flex; flex-direction: column; gap: 5px">
+    <sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
+      <a href="#/stack" onClick="{{ r.go }}" class="{{ r.cls }}" style="position: relative; display: flex; align-items: center; gap: 10px; height: 60px; padding-left: 0">
+        <span class="{{ r.nowCls }}" style="flex: none; width: 30px; height: 30px; margin-left: 0; border-radius: 50%; display: grid; place-items: center; background: {{ r.dotBg }}; color: {{ r.dotFg }}; border: 2px solid {{ r.dotBorder }}; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 700; box-sizing: border-box">{{ r.dot }}</span>
+        <span class="tl-row" style="flex: 1; min-width: 0; height: 60px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 0 12px; border-radius: 11px; background: rgba(27,32,37,0.94); border: 1px solid {{ r.border }}; opacity: {{ r.op }}">
+          <span style="flex: none; width: 10px; height: 40px; border-radius: 2px; background: {{ r.swatch }}"></span>
+          <span style="flex: 1; min-width: 0">
+            <span style="display: flex; align-items: center; gap: 6px">
+              <span style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 15.5px; font-weight: 740; white-space: nowrap">{{ r.name }}</span>
+              <sc-if value="{{ r.hasTag }}" hint-placeholder-val="{{ false }}"><span class="mono" style="padding: 1px 6px; border-radius: 999px; background: {{ r.tagBg }}; color: #0e1114; font-size: 9px; font-weight: 700; letter-spacing: 0.06em">{{ r.tag }}</span></sc-if>
+            </span>
+            <span class="mono" style="display: block; margin-top: 2px; font-size: 11px; color: #a3abb3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ r.line }}</span>
+          </span>
+          <span style="flex: none; font-size: 15px; letter-spacing: 1px; color: #f2c94c">{{ r.stars }}</span>
+        </span>
+      </a>
+    </sc-for>
+  </div>
+
+  <div style="position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #a3abb3">
+    <span>A star on a level opens the next one.</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.SP = ['#dcc194', '#c99a62', '#77503a', '#e3c58c', '#9a5a40'];
+    this.SPN = ['birch ply', 'oak', 'walnut', 'pine', 'sapele'];
+    this.LEVELS = [
+      { n: 1, name: 'Seat height', goal: 450, sp: 0 }, { n: 2, name: 'Worktop height', goal: 900, sp: 1 },
+      { n: 3, name: 'Short timber', goal: 900, sp: 4, tag: 'OFFCUT', tagBg: '#ff8a5b' }, { n: 4, name: 'Door height', goal: 1981, sp: 2 },
+      { n: 5, name: 'Windy site', goal: 1500, sp: 3, tag: 'WIND', tagBg: '#8ea6ff' }, { n: 6, name: 'Ceiling height', goal: 2400, sp: -1 },
+      { n: 7, name: 'Fast saw', goal: 1981, sp: 1, tag: 'FAST', tagBg: '#eb5757' }, { n: 8, name: 'Upstairs', goal: 4800, sp: -1 },
+      { n: 9, name: 'Roof ridge', goal: 7500, sp: -1, tag: 'WIND', tagBg: '#8ea6ff' }, { n: 10, name: 'Ten metres', goal: 10000, sp: -1, tag: 'TOP', tagBg: '#f2c94c' },
+    ];
+    this.state = { stars: {}, best: 0, cur: 1, all: false, shake: 0 };
+  }
+  load() {
+    try {
+      const v = localStorage.getItem('raf_games_level_stack');
+      this.setState({
+        stars: JSON.parse(localStorage.getItem('raf_games_stars_stack') || '{}') || {},
+        best: parseInt(localStorage.getItem('raf_games_stack_best') || '0', 10) || 0,
+        cur: v == null ? 1 : parseInt(v, 10) || 0,
+        all: localStorage.getItem('raf_games_open_all') === '1',
+      });
+    } catch (e) {}
+  }
+  componentDidMount() {
+    this.load();
+    this.onStore = () => this.load(); this.onVis = () => { if (!document.hidden) this.load(); };
+    window.addEventListener('storage', this.onStore); document.addEventListener('visibilitychange', this.onVis); window.addEventListener('focus', this.onStore);
+  }
+  componentWillUnmount() { window.removeEventListener('storage', this.onStore); document.removeEventListener('visibilitychange', this.onVis); window.removeEventListener('focus', this.onStore); clearTimeout(this.sT); }
+  ac() { try { if (!this._c) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; this._c = new A(); } if (this._c.state === 'suspended') this._c.resume(); return this._c; } catch (e) { return null; } }
+  tone(f, d, o) { o = o || {}; const c = this.ac(); if (!c) return; const t = c.currentTime + (o.at || 0), osc = c.createOscillator(), g = c.createGain(); osc.type = o.type || 'sine'; osc.frequency.setValueAtTime(f, t); if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t + d); g.gain.setValueAtTime(o.vol || 0.2, t); g.gain.exponentialRampToValueAtTime(0.0008, t + d); osc.connect(g).connect(c.destination); osc.start(t); osc.stop(t + d + 0.05); }
+  pick(n) { try { localStorage.setItem('raf_games_level_stack', String(n)); } catch (e) {} this.tone(210, 0.12, { type: 'triangle', to: 95, vol: 0.3 }); }
+  renderVals() {
+    const st = this.state;
+    const open = (n) => st.all || n === 1 || (st.stars[n - 1] || 0) > 0;
+    const rows = this.LEVELS.slice().reverse().map((l) => {
+      const o = open(l.n), s = st.stars[l.n] || 0, now = st.cur === l.n;
+      const boards = Math.ceil(l.goal / 47) - 1;
+      return {
+        name: l.name, dot: o ? String(l.n) : '·',
+        line: o ? l.goal + ' mm · ' + boards + ' boards · ' + (l.sp >= 0 ? this.SPN[l.sp] : 'mixed timber') : 'Needs a star on level ' + (l.n - 1),
+        stars: o ? '★★★'.slice(0, s) + '☆☆☆'.slice(0, 3 - s) : '',
+        hasTag: !!l.tag && o, tag: l.tag || '', tagBg: l.tagBg || '#f2c94c',
+        swatch: l.sp >= 0 ? this.SP[l.sp] : 'linear-gradient(#dcc194 0 20%, #c99a62 20% 40%, #77503a 40% 60%, #e3c58c 60% 80%, #9a5a40 80%)',
+        op: o ? 1 : 0.42,
+        border: now ? '#f2c94c' : s === 3 ? 'rgba(111,207,151,0.6)' : 'rgba(244,241,234,0.12)',
+        dotBg: o ? (s ? '#f2c94c' : '#16191c') : '#2a3037', dotFg: o ? (s ? '#16191c' : '#f2c94c') : '#7d858d', dotBorder: o ? '#16191c' : '#3a4047',
+        nowCls: now ? 'tl-now' : '', cls: st.shake === l.n ? 'tl-shake' : '',
+        go: (e) => {
+          if (!o) { if (e) e.preventDefault(); this.tone(110, 0.15, { type: 'sawtooth', vol: 0.1 }); this.tone(104, 0.18, { type: 'sawtooth', vol: 0.1, at: 0.17 }); this.setState({ shake: 0 }); setTimeout(() => this.setState({ shake: l.n }), 16); return; }
+          this.pick(l.n);
+        },
+      };
+    });
+    const total = this.LEVELS.reduce((a, l) => a + (st.stars[l.n] || 0), 0);
+    return {
+      rows: rows, total: total, best: st.best,
+      playFree: () => this.pick(0),
+      allLabel: st.all ? 'Lock them again' : 'Open all levels (mockup)',
+      toggleAll: () => { const v = !this.state.all; try { localStorage.setItem('raf_games_open_all', v ? '1' : '0'); } catch (e) {} this.setState({ all: v }); },
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -148,7 +148,7 @@ export function getMenuPanels(): Record<string, MenuPanel> {
         { label: 'Workshop calculator in mm', href: '/calculator' },
         { label: 'Spirit level on your phone', href: '/tools/spirit-level' },
         { label: 'Workshop tips', href: '/tips' },
-        { label: 'Timber Stack, a game', href: '/tools/timber-stack' },
+        { label: 'Workshop Games, four free games', href: '/tools/games' },
       ],
       image: toolImage?.image ? { src: toolImage.image, alt: '', caption: toolImage.name ?? 'From my kit' } : undefined,
       feature: { href: PLANNER_HREF, src: PLANNER_IMAGE, square: PLANNER_IMAGE_SQUARE, kicker: 'Free planner', title: 'Plan your own wardrobe in 3D', line: 'Your sizes, units and doors. Then send it to me.' },

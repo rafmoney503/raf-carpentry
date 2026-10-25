@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Timber Stack in Workshop Games</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=Geist:wght@400..700&amp;family=Geist+Mono:wght@400..600&amp;display=swap">
+<style>
+body{margin:0}
+@media (max-height: 760px){.wg-foot{display:none !important}}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+@keyframes ts-glow{0%{box-shadow:inset 0 0 0 0 rgba(142,166,255,0)}20%{box-shadow:inset 0 0 0 4px rgba(142,166,255,.95), inset 0 0 36px rgba(142,166,255,.5)}100%{box-shadow:inset 0 0 0 0 rgba(142,166,255,0)}}
+@keyframes ts-gold{0%{box-shadow:inset 0 0 0 0 rgba(242,201,76,0)}20%{box-shadow:inset 0 0 0 4px rgba(242,201,76,.95), inset 0 0 40px rgba(242,201,76,.45)}100%{box-shadow:inset 0 0 0 0 rgba(242,201,76,0)}}
+@keyframes ts-win{0%{box-shadow:inset 0 0 0 0 rgba(111,207,151,0)}25%{box-shadow:inset 0 0 0 5px rgba(111,207,151,.95), inset 0 0 50px rgba(111,207,151,.45)}100%{box-shadow:inset 0 0 0 2px rgba(111,207,151,.5)}}
+@keyframes ts-red{0%{background:rgba(235,87,87,0)}18%{background:rgba(235,87,87,.32)}100%{background:rgba(235,87,87,0)}}
+@keyframes ts-hint{0%,100%{transform:translate(-50%,0);opacity:.95}50%{transform:translate(-50%,-5px);opacity:1}}
+@keyframes ts-card{0%{transform:translateY(24px);opacity:0}100%{transform:none;opacity:1}}
+@keyframes ts-num{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+@keyframes ts-star{0%{transform:scale(0) rotate(-40deg);opacity:0}60%{transform:scale(1.3) rotate(8deg);opacity:1}100%{transform:scale(1);opacity:1}}
+.fl-perfect .ts-edge{animation:ts-glow .7s ease-out}
+.fl-mark .ts-edge{animation:ts-gold 1s ease-out}
+.fl-win .ts-edge{animation:ts-win 1.2s ease-out forwards}
+.fl-miss .ts-red{animation:ts-red .7s ease-out}
+.ts-score-bump{animation:ts-num .25s ease-out}
+.ts-btn{transition:transform .1s ease}
+.ts-btn:active{transform:scale(.96)}
+.ts-star{display:inline-block;animation:ts-star .45s ease-out both}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 6px 16px 14px; display: flex; flex-direction: column; gap: 8px; background-color: #121518; background-image: linear-gradient(rgba(127,155,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(127,155,255,0.12) 1px, transparent 1px); background-size: 80px 80px; color: #f4f1ea; font-family: Geist, system-ui, sans-serif; overflow: hidden; user-select: none; -webkit-user-select: none">
+
+  <header style="flex: none; display: flex; align-items: center; gap: 6px; height: 50px">
+    <a href="#/" aria-label="Back to the games" style="width: 44px; height: 44px; margin-left: -10px; display: grid; place-items: center; color: #f4f1ea; text-decoration: none">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+    </a>
+    <div style="flex: 1; min-width: 0">
+      <div class="mono" style="font-size: 10.5px; letter-spacing: 0.12em; color: #f2c94c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ kicker }}</div>
+      <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 20px; font-weight: 760; letter-spacing: -0.02em">Timber Stack</div>
+    </div>
+    <a href="#/stack/levels" style="height: 40px; padding: 0 11px; display: flex; align-items: center; gap: 6px; border-radius: 10px; border: 1px solid rgba(244,241,234,0.18); background: rgba(27,32,37,0.9); color: #f4f1ea; text-decoration: none; font-size: 13px; font-weight: 600">
+      <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1" fill="#f2c94c"></rect><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity=".55"></rect><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity=".55"></rect><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity=".55"></rect></svg>Levels
+    </a>
+    <button type="button" onClick="{{ toggleSound }}" aria-label="{{ soundLabel }}" style="width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; border: 1px solid rgba(244,241,234,0.18); background: rgba(27,32,37,0.9); color: #f4f1ea; cursor: pointer">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 8v4h3l4 3V5L6 8H3z"></path>
+        <sc-if value="{{ soundOn }}" hint-placeholder-val="{{ true }}"><path d="M13.5 7a4 4 0 0 1 0 6M15.8 4.8a7 7 0 0 1 0 10.4"></path></sc-if>
+        <sc-if value="{{ soundOff }}" hint-placeholder-val="{{ false }}"><path d="M13.5 7.5l5 5M18.5 7.5l-5 5"></path></sc-if>
+      </svg>
+    </button>
+  </header>
+
+  <div style="flex: none; display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 8px; height: 58px">
+    <div class="mono" style="font-size: 11px; line-height: 1.4; color: #a3abb3">{{ leftLabel }}<br><span style="font-size: 15px; font-weight: 600; color: #f4f1ea">{{ leftValue }}</span></div>
+    <div style="text-align: center">
+      <div class="{{ scoreClass }}" style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 40px; font-weight: 800; letter-spacing: -0.03em; line-height: 0.95">{{ score }}</div>
+      <div class="mono" style="margin-top: 3px; font-size: 11px; color: #a3abb3">{{ scoreLine }}</div>
+    </div>
+    <div class="mono" style="text-align: right; font-size: 11px; line-height: 1.4; color: #a3abb3">{{ rightLabel }}<br><span style="font-size: 12px; font-weight: 600; color: {{ rightColor }}">{{ nextLine }}</span></div>
+  </div>
+
+  <div ref="{{ setBox }}" style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center">
+  <div class="{{ fieldClass }}" onPointerDown="{{ tapField }}" style="position: relative; flex: none; width: 358px; height: 520px; transform: scale({{ stageScale }}); transform-origin: center center; border-radius: 12px; overflow: hidden; border: 1px solid rgba(244,241,234,0.14); background: #0e1114; cursor: pointer; touch-action: manipulation">
+    <canvas ref="{{ setCv }}" width="716" height="1040" style="display: block; width: 358px; height: 520px"></canvas>
+    <div class="ts-edge" style="position: absolute; inset: 0; border-radius: 12px; pointer-events: none"></div>
+    <div class="ts-red" style="position: absolute; inset: 0; pointer-events: none"></div>
+
+    <sc-if value="{{ showHint }}" hint-placeholder-val="{{ true }}">
+      <div style="position: absolute; left: 50%; bottom: 66px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; animation: ts-hint 1.6s ease-in-out infinite; pointer-events: none">
+        <div class="mono" style="padding: 4px 9px; border-radius: 6px; background: rgba(14,17,20,0.85); color: #f2c94c; font-size: 10.5px; letter-spacing: 0.06em; white-space: nowrap">{{ hintGoal }}</div>
+        <div style="padding: 9px 14px; border-radius: 999px; background: rgba(242,201,76,0.96); color: #16191c; font-size: 13.5px; font-weight: 650; white-space: nowrap">Tap to drop the board</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showCard }}" hint-placeholder-val="{{ false }}">
+      <div onPointerDown="{{ stop }}" style="position: absolute; left: 12px; right: 12px; bottom: 12px; padding: 14px 14px 12px; border-radius: 12px; background: #f1f2ef; color: #16191c; box-shadow: 0 10px 30px rgba(0,0,0,0.45); animation: ts-card .35s ease-out; cursor: default">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px">
+          <span class="mono" style="font-size: 10.5px; letter-spacing: 0.1em; color: {{ kickColor }}">{{ cardKicker }}</span>
+          <sc-if value="{{ showStars }}" hint-placeholder-val="{{ false }}">
+            <span style="font-size: 22px; letter-spacing: 2px; line-height: 1"><sc-for list="{{ cardStars }}" as="s" hint-placeholder-count="3"><span class="ts-star" style="color: {{ s.c }}; animation-delay: {{ s.d }}s">★</span></sc-for></span>
+          </sc-if>
+          <sc-if value="{{ showCount }}" hint-placeholder-val="{{ false }}">
+            <span class="mono" style="font-size: 10.5px; color: #4f555b">{{ countLine }}</span>
+          </sc-if>
+        </div>
+        <div style="margin-top: 4px; display: flex; align-items: baseline; gap: 8px">
+          <span style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 38px; font-weight: 800; letter-spacing: -0.03em; line-height: 1">{{ score }}</span>
+          <span style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 16px; font-weight: 700">boards</span>
+          <span class="mono" style="margin-left: auto; font-size: 11.5px; color: #4f555b; text-align: right">{{ cardLine }}</span>
+        </div>
+        <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+          <button type="button" class="ts-btn" onClick="{{ primary }}" style="height: 44px; border: 0; border-radius: 9px; background: {{ primaryBg }}; color: {{ primaryFg }}; font-family: Geist, system-ui, sans-serif; font-size: 14.5px; font-weight: 700; cursor: pointer">{{ primaryLabel }}</button>
+          <a href="{{ secondHref }}" class="ts-btn" onClick="{{ holdCount }}" style="height: 44px; display: grid; place-items: center; border-radius: 9px; background: #2547d0; color: #ffffff; font-size: 14.5px; font-weight: 650; text-decoration: none">{{ secondLabel }}</a>
+        </div>
+        <a href="/how-it-works" target="_blank" rel="noopener" style="display: block; margin-top: 9px; text-align: center; font-size: 12.5px; color: #2547d0">Get a quote for real woodwork</a>
+      </div>
+    </sc-if>
+  </div>
+
+  </div>
+
+  <div class="wg-foot" style="flex: none; display: flex; flex-direction: column; gap: 6px; padding-top: 2px">
+    <div class="mono" style="font-size: 10.5px; letter-spacing: 0.12em; color: #8ea6ff">{{ footTitle }}</div>
+    <div style="font-size: 12.5px; line-height: 1.4; color: #d4d8dc">{{ footText }}</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.WORLD = 1000; this.THICK = 47; this.PERFECT = 8; this.GROW = 20; this.BONUS = 40;
+    this.MARKS = [
+      { mm: 450, label: 'SEAT 450', name: 'Seat height' }, { mm: 900, label: 'WORKTOP 900', name: 'Worktop height' },
+      { mm: 1500, label: '1.5 M', name: 'One and a half metres' },
+      { mm: 1981, label: 'DOOR 1981', name: 'Door height' }, { mm: 2400, label: 'CEILING 2400', name: 'Ceiling height' },
+      { mm: 4800, label: 'UPSTAIRS 4800', name: 'Upstairs ceiling' }, { mm: 7500, label: 'ROOF RIDGE 7500', name: 'Roof ridge' },
+      { mm: 10000, label: 'TEN METRES', name: 'Ten metres' },
+    ];
+    this.SPECIES = [
+      { base: '#dcc194', grain: '#b08a55', end: '#c4a26c', name: 'birch ply' }, { base: '#c99a62', grain: '#9c703d', end: '#b3844e', name: 'oak' },
+      { base: '#77503a', grain: '#4d311f', end: '#62412d', name: 'walnut' }, { base: '#e3c58c', grain: '#c19752', end: '#d0ad6c', name: 'pine' },
+      { base: '#9a5a40', grain: '#6c3826', end: '#844a33', name: 'sapele' },
+    ];
+    this.LEVELS = [
+      { n: 1, name: 'Seat height', goal: 450, w: 600, sp: 0, speed: 260, inc: 4, tip: 'Birch ply, nice and slow. Line each board up with the one below.' },
+      { n: 2, name: 'Worktop height', goal: 900, w: 600, sp: 1, speed: 300, inc: 5, tip: 'Oak, a little quicker. Three perfects in a row grow the board back.' },
+      { n: 3, name: 'Short timber', goal: 900, w: 300, sp: 4, speed: 300, inc: 5, tip: 'You start on a 300 mm offcut, so there is little room for a bad cut.' },
+      { n: 4, name: 'Door height', goal: 1981, w: 600, sp: 2, speed: 320, inc: 5, tip: 'Walnut, all the way to the top of a door.' },
+      { n: 5, name: 'Windy site', goal: 1500, w: 560, sp: 3, speed: 300, inc: 4, gust: 0.45, tip: 'Gusts push the board faster, then slower. Watch it, not the clock.' },
+      { n: 6, name: 'Ceiling height', goal: 2400, w: 600, sp: -1, speed: 330, inc: 5, tip: 'The timber changes every 6 boards, so the colours change under you.' },
+      { n: 7, name: 'Fast saw', goal: 1981, w: 600, sp: 1, speed: 480, inc: 6, tip: 'It starts fast and gets faster.' },
+      { n: 8, name: 'Upstairs', goal: 4800, w: 600, sp: -1, speed: 330, inc: 4, tip: 'Over a hundred boards. Pace yourself.' },
+      { n: 9, name: 'Roof ridge', goal: 7500, w: 600, sp: -1, speed: 340, inc: 4, gust: 0.25, tip: 'A long climb with a breeze near the top.' },
+      { n: 10, name: 'Ten metres', goal: 10000, w: 600, sp: -1, speed: 350, inc: 4, tip: 'The top of the tape.' },
+    ];
+    let best = 0, lv = 1, stars = {};
+    try {
+      best = parseInt(localStorage.getItem('raf_games_stack_best') || '0', 10) || 0;
+      const v = localStorage.getItem('raf_games_level_stack'); if (v != null) lv = parseInt(v, 10) || 0;
+      stars = JSON.parse(localStorage.getItem('raf_games_stars_stack') || '{}') || {};
+    } catch (e) {}
+    this.lv = Math.max(0, Math.min(10, lv));
+    this.state = { phase: 'ready', lv: this.lv, score: 0, best: best, newBest: false, count: 4, flash: '', bump: false, sound: true, tall: 47, nextTxt: '', perfects: 0, earned: 0, stars: stars };
+    this.snd = this.soundPref(); this.state.sound = this.snd; this.cv = null; this.raf = 0; this.state.stageScale = 1;
+    this.setBox = this.makeFit(358, 520);
+    this.g = this.fresh();
+    this.state.nextTxt = this.nextText(47, 0);
+  }
+  L() { return this.lv ? this.LEVELS[this.lv - 1] : null; }
+  // The stage is drawn at a fixed size and scaled to the room the phone gives it (any width from 320, short Safari
+  // screens, a tablet, a computer). Pointer maths reads the drawn size, so it stays right at any scale.
+  makeFit(W, H) {
+    return (el) => {
+      if (el === this._box) return;
+      if (this._ro) { this._ro.disconnect(); this._ro = null; }
+      this._box = el;
+      if (!el) return;
+      const fit = () => {
+        const w = el.clientWidth, h = el.clientHeight; if (!w || !h) return;
+        const s = Math.max(0.5, Math.min(1.35, w / W, h / H));
+        if (Math.abs(s - (this.state.stageScale || 0)) > 0.004) this.setState({ stageScale: Math.round(s * 1000) / 1000 });
+      };
+      if (window.ResizeObserver) { this._ro = new ResizeObserver(fit); this._ro.observe(el); }
+      fit();
+    };
+  }
+  soundPref() { try { return localStorage.getItem('raf_games_sound') !== '0'; } catch (e) { return true; } }
+  saveSound(on) { try { localStorage.setItem('raf_games_sound', on ? '1' : '0'); } catch (e) {} }
+  share(p) { if (typeof this.shareScore === 'function') this.shareScore(p); }
+
+  fresh() {
+    const L = this.L(), w = L ? L.w : 600;
+    const g = { stack: [{ x: (this.WORLD - w) / 2, w: w, sp: L && L.sp >= 0 ? L.sp : 0, seed: 11 }], cur: null, falling: [], dust: [], pops: [], band: null, combo: 0, mark: 0,
+      speed: L ? L.speed : 300, cam: 0, zoom: 0.316, floor: 486, shake: 0, phase: 'playing', t: 0, cardAt: 0, hold: false, perfects: 0 };
+    this.spawn(g);
+    return g;
+  }
+  spawn(g) {
+    const n = g.stack.length - 1, last = g.stack[g.stack.length - 1], L = this.L();
+    const sp = L && L.sp >= 0 ? L.sp : Math.floor(n / 6) % 5;
+    g.cur = { x: this.WORLD - last.w * 0.15, w: last.w, sp: sp, seed: n * 7919 + 13, dir: -1 };
+  }
+  setLevel(lv) {
+    this.lv = lv; this.g = this.fresh();
+    try { localStorage.setItem('raf_games_level_stack', String(lv)); } catch (e) {}
+    this.setState({ phase: 'ready', lv: lv, score: 0, newBest: false, tall: 47, perfects: 0, earned: 0, nextTxt: this.nextText(47, 0) });
+  }
+  componentDidMount() {
+    let prev = performance.now();
+    const loop = (now) => { this.raf = requestAnimationFrame(loop); const dt = Math.min(0.05, (now - prev) / 1000); prev = now; this.step(dt); this.draw(); };
+    this.raf = requestAnimationFrame(loop);
+    this.onKey = (e) => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); this.act(); } };
+    window.addEventListener('keydown', this.onKey);
+    // picking a level on the level screen switches this board too
+    this.onStore = (e) => {
+      if (e.key === 'raf_games_level_stack' && e.newValue != null) { const v = parseInt(e.newValue, 10) || 0; if (v !== this.lv) this.setLevel(v); }
+      if (e.key === 'raf_games_stars_stack') { try { this.setState({ stars: JSON.parse(e.newValue || '{}') || {} }); } catch (x) {} }
+    };
+    window.addEventListener('storage', this.onStore);
+  }
+  componentWillUnmount() { if (this._ro) this._ro.disconnect(); cancelAnimationFrame(this.raf); window.removeEventListener('keydown', this.onKey); window.removeEventListener('storage', this.onStore); clearTimeout(this.flT); clearTimeout(this.bumpT); }
+
+  ac() {
+    try {
+      if (!this._c) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; this._c = new A(); }
+      if (this._c.state === 'suspended') this._c.resume();
+      return this._c;
+    } catch (e) { return null; }
+  }
+  tone(f, d, o) {
+    o = o || {}; if (!this.snd) return; const c = this.ac(); if (!c) return;
+    const t = c.currentTime + (o.at || 0), osc = c.createOscillator(), g = c.createGain();
+    osc.type = o.type || 'sine'; osc.frequency.setValueAtTime(f, t);
+    if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t + (o.glide || d));
+    g.gain.setValueAtTime(o.vol || 0.2, t); g.gain.exponentialRampToValueAtTime(0.0008, t + d);
+    osc.connect(g).connect(c.destination); osc.start(t); osc.stop(t + d + 0.05);
+  }
+  noise(d, o) {
+    o = o || {}; if (!this.snd) return; const c = this.ac(); if (!c) return;
+    const t = c.currentTime + (o.at || 0), b = c.createBuffer(1, Math.ceil(c.sampleRate * d), c.sampleRate), ch = b.getChannelData(0);
+    for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+    const s = c.createBufferSource(); s.buffer = b;
+    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.setValueAtTime(o.f || 1800, t); if (o.f2) f.frequency.linearRampToValueAtTime(o.f2, t + d); f.Q.value = 0.9;
+    const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(o.vol || 0.22, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0008, t + d);
+    s.connect(f).connect(g).connect(c.destination); s.start(t); s.stop(t + d + 0.02);
+  }
+  knock(p) { this.tone(210 * (p || 1), 0.12, { type: 'triangle', to: 95 * (p || 1), glide: 0.09, vol: 0.32 }); }
+  buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  flash(kind) { this.setState({ flash: '' }); clearTimeout(this.flT); this.flT = setTimeout(() => this.setState({ flash: kind }), 16); }
+  nextText(tall, markIdx) {
+    const L = this.L();
+    if (L) return Math.max(0, Math.ceil((L.goal - tall) / this.THICK)) + ' boards to go';
+    const m = this.MARKS[markIdx]; if (!m) return 'Past ten metres';
+    return m.name + ' in ' + Math.max(1, Math.ceil((m.mm - tall) / this.THICK));
+  }
+
+  act() {
+    const g = this.g; this.ac();
+    if (g.phase === 'over' || g.phase === 'won') { if (this.state.phase === 'over' && !this.L()) this.restart(); return; }
+    this.drop();
+  }
+  restart() {
+    this.g = this.fresh();
+    this.setState({ phase: 'playing', score: 0, newBest: false, count: 4, tall: 47, perfects: 0, earned: 0, nextTxt: this.nextText(47, 0) });
+    this.tone(523, 0.08, { vol: 0.12 }); this.tone(784, 0.1, { vol: 0.12, at: 0.07 });
+  }
+  drop() {
+    const g = this.g, last = g.stack[g.stack.length - 1], cur = g.cur, T = this.THICK, W = this.WORLD, L = this.L();
+    const level = g.stack.length;
+    const d = cur.x - last.x;
+    let placed;
+    if (Math.abs(d) <= this.PERFECT) {
+      g.combo++; g.perfects++;
+      let w = last.w, text = 'PERFECT';
+      if (g.combo >= 3) { w = Math.min(W - last.x, w + this.GROW); text = 'PERFECT x' + g.combo + '  +20 mm'; }
+      else if (g.combo === 2) text = 'PERFECT x2';
+      placed = { x: last.x, w: w, sp: cur.sp, seed: cur.seed };
+      g.pops.push({ text: text, x: last.x + w / 2, y: (level + 1) * T + 30, life: 1, color: '#8ea6ff' });
+      this.knock(1.05);
+      this.tone(660 * Math.pow(2, Math.min(g.combo + 1, 9) / 12), 0.2, { vol: 0.18 });
+      this.flash('perfect'); this.buzz(12);
+    } else {
+      g.combo = 0;
+      const Lx = Math.max(cur.x, last.x), R = Math.min(cur.x + cur.w, last.x + last.w);
+      if (R - Lx <= 0) { this.over(); return; }
+      placed = { x: Lx, w: R - Lx, sp: cur.sp, seed: cur.seed };
+      const offLeft = cur.x < last.x;
+      const off = offLeft ? { x: cur.x, w: last.x - cur.x } : { x: R, w: cur.x + cur.w - R };
+      g.falling.push({ x: off.x, w: off.w, y: level * T, vx: offLeft ? -180 : 180, vy: 160, rot: 0, vr: offLeft ? -2.4 : 2.4, sp: cur.sp, seed: cur.seed });
+      const cutX = offLeft ? last.x : R;
+      for (let i = 0; i < 18; i++) g.dust.push({ x: cutX, y: level * T + Math.random() * T, vx: (Math.random() - 0.5) * 260 + (offLeft ? -60 : 60), vy: Math.random() * 300, life: 0.5 + Math.random() * 0.4, c: this.SPECIES[cur.sp].end });
+      this.noise(0.16, { f: 1800, f2: 2600 }); this.knock(0.9);
+      if (placed.w < 80) g.pops.push({ text: 'only ' + Math.round(placed.w) + ' mm left', x: placed.x + placed.w / 2, y: (level + 1) * T + 30, life: 1.2, color: '#ff8a5b' });
+    }
+    g.stack.push(placed);
+    const tall = g.stack.length * T;
+    while (g.mark < this.MARKS.length && tall >= this.MARKS[g.mark].mm) {
+      const m = this.MARKS[g.mark++];
+      if (L && m.mm > L.goal) break;
+      placed.w = Math.min(W - placed.x, placed.w + this.BONUS);
+      g.band = { mm: m.mm, life: 1 };
+      if (!L || m.mm < L.goal) {
+        g.pops.push({ text: m.name.toUpperCase() + '  +40 mm', x: 500, y: m.mm + 70, life: 1.5, color: '#f2c94c' });
+        this.tone(784, 0.35, { vol: 0.16, at: 0.05 }); this.tone(1175, 0.45, { vol: 0.15, at: 0.16 });
+        setTimeout(() => this.flash('mark'), 40); this.buzz([20, 40, 20]);
+      }
+    }
+    g.speed = Math.min(720, (L ? L.speed : 300) + (L ? L.inc : 6) * (g.stack.length - 1));
+    clearTimeout(this.bumpT);
+    this.setState({ phase: 'playing', score: g.stack.length - 1, tall: tall, perfects: g.perfects, nextTxt: this.nextText(tall, g.mark), bump: true });
+    this.bumpT = setTimeout(() => this.setState({ bump: false }), 260);
+    if (L && tall >= L.goal) { this.won(); return; }
+    this.spawn(g);
+  }
+  won() {
+    const g = this.g, L = this.L(), placed = g.stack.length - 1, ratio = g.perfects / Math.max(1, placed);
+    const earned = ratio >= 0.6 ? 3 : ratio >= 0.3 ? 2 : 1;
+    g.cur = null; g.phase = 'won'; g.cardAt = g.t + 1.1; g.band = { mm: L.goal, life: 1.4 };
+    const stars = Object.assign({}, this.state.stars); stars[L.n] = Math.max(stars[L.n] || 0, earned);
+    try { localStorage.setItem('raf_games_stars_stack', JSON.stringify(stars)); } catch (e) {}
+    [523, 659, 784, 1046].forEach((f, i) => this.tone(f, i === 3 ? 0.6 : 0.16, { type: 'triangle', vol: 0.2, at: i * 0.1 }));
+    for (let i = 0; i < earned; i++) this.tone([784, 988, 1318][i], 0.3, { vol: 0.13, at: 1.2 + i * 0.22 });
+    this.flash('win'); this.buzz([20, 40, 20, 40, 60]);
+    this.setState({ earned: earned, stars: stars });
+  }
+  over() {
+    const g = this.g, cur = g.cur, level = g.stack.length;
+    g.falling.push({ x: cur.x, w: cur.w, y: level * this.THICK, vx: cur.dir * 120, vy: 60, rot: 0, vr: cur.dir * 1.6, sp: cur.sp, seed: cur.seed });
+    g.cur = null; g.phase = 'over'; g.shake = 1; g.cardAt = g.t + 0.9;
+    this.tone(120, 0.36, { to: 48, glide: 0.3, vol: 0.38 });
+    this.flash('miss'); this.buzz([60, 30, 120]);
+    const score = g.stack.length - 1;
+    if (!this.L() && score > this.state.best) { try { localStorage.setItem('raf_games_stack_best', String(score)); } catch (e) {} this.setState({ best: score, newBest: true }); }
+  }
+
+  step(dt) {
+    const g = this.g; g.t += dt;
+    const T = this.THICK, W = this.WORLD, L = this.L();
+    if (g.cur && g.phase === 'playing') {
+      const c = g.cur, gust = L && L.gust ? 1 + L.gust * Math.sin(g.t * 1.9) * Math.sin(g.t * 0.7 + 1) : 1;
+      c.x += c.dir * g.speed * gust * dt;
+      if (c.dir < 0 && c.x < -c.w * 0.3) c.dir = 1;
+      if (c.dir > 0 && c.x > W - c.w * 0.7) c.dir = -1;
+      c.gust = gust;
+    }
+    for (const p of g.falling) { p.vy -= 2600 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; }
+    g.falling = g.falling.filter((p) => p.y > g.cam - 1600);
+    for (const d of g.dust) { d.vy -= 1500 * dt; d.x += d.vx * dt; d.y += d.vy * dt; d.life -= dt; }
+    g.dust = g.dust.filter((d) => d.life > 0);
+    for (const p of g.pops) { p.y += 70 * dt; p.life -= dt; }
+    g.pops = g.pops.filter((p) => p.life > 0);
+    if (g.band) { g.band.life -= dt * 0.8; if (g.band.life <= 0) g.band = null; }
+    g.shake = Math.max(0, g.shake - dt * 2.6);
+    const top = g.stack.length * T;
+    let zoomT = 0.316, camT, floorT = 486;
+    if (g.phase === 'over' || g.phase === 'won') { floorT = 520 - 186; zoomT = Math.min(0.316, (floorT - 40) / (top + 160)); camT = 0; }
+    else camT = Math.max(0, top + T - (floorT - 200) / zoomT);
+    const k = Math.min(1, dt * 4.5);
+    g.zoom += (zoomT - g.zoom) * k; g.cam += (camT - g.cam) * k; g.floor += (floorT - g.floor) * k;
+    if (g.phase === 'over' || g.phase === 'won') {
+      if (this.state.phase !== g.phase && g.t >= g.cardAt) this.setState({ phase: g.phase, count: 4 });
+      if (this.state.phase === 'over' && !L && !g.hold) {
+        const left = 4 - (g.t - g.cardAt), n = Math.max(0, Math.ceil(left));
+        if (n !== this.state.count) this.setState({ count: n });
+        if (left <= 0) this.restart();
+      }
+    }
+  }
+
+  draw() {
+    const cv = this.cv; if (!cv) return;
+    const ctx = cv.getContext('2d'); const g = this.g, L = this.L();
+    const Wpx = 358, Hpx = 520, s = g.zoom, T = this.THICK;
+    const fieldL = 34, fieldW = 316;
+    const x0 = fieldL + (fieldW - 1000 * s) / 2;
+    const sx = (mm) => x0 + mm * s;
+    const sy = (mm) => g.floor - (mm - g.cam) * s;
+    ctx.setTransform(2, 0, 0, 2, 0, 0);
+    const shx = g.shake ? (Math.random() - 0.5) * 14 * g.shake : 0, shy = g.shake ? (Math.random() - 0.5) * 8 * g.shake : 0;
+    ctx.fillStyle = '#0e1114'; ctx.fillRect(0, 0, Wpx, Hpx);
+    ctx.translate(shx, shy);
+    const gridStep = s > 0.2 ? 100 : s > 0.06 ? 500 : 1000;
+    ctx.lineWidth = 1;
+    const mmTop = g.cam + g.floor / s, mmBottom = g.cam - (Hpx - g.floor) / s;
+    for (let mm = Math.floor(mmBottom / gridStep) * gridStep; mm <= mmTop; mm += gridStep) {
+      const y = Math.round(sy(mm)) + 0.5;
+      ctx.strokeStyle = mm % 1000 === 0 ? 'rgba(127,155,255,0.13)' : 'rgba(127,155,255,0.06)';
+      ctx.beginPath(); ctx.moveTo(fieldL - 4, y); ctx.lineTo(Wpx, y); ctx.stroke();
+    }
+    for (let mm = 0; mm <= 1000; mm += 100) { const x = Math.round(sx(mm)) + 0.5; ctx.strokeStyle = 'rgba(127,155,255,0.06)'; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, Hpx); ctx.stroke(); }
+    // wind streaks on a gusty level
+    if (L && L.gust && g.phase === 'playing') {
+      ctx.strokeStyle = 'rgba(244,241,234,0.08)'; ctx.lineWidth = 1.2;
+      for (let i = 0; i < 9; i++) { const y = (i * 61 + g.t * 13) % Hpx, x = ((g.t * 260 * (1 + (i % 3) * 0.3)) + i * 97) % (Wpx + 120) - 60; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 40 + (i % 4) * 12, y); ctx.stroke(); }
+    }
+    const fy = sy(0);
+    ctx.fillStyle = '#171b1f'; ctx.fillRect(0, fy, Wpx, Hpx - fy);
+    ctx.strokeStyle = 'rgba(244,241,234,0.08)';
+    for (let x = -20; x < Wpx + 20; x += 9) { ctx.beginPath(); ctx.moveTo(x, fy + 3); ctx.lineTo(x + 9, fy + 12); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(244,241,234,0.55)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(fieldL - 4, fy + 0.5); ctx.lineTo(Wpx, fy + 0.5); ctx.stroke();
+
+    ctx.font = '600 9px "Geist Mono", ui-monospace, monospace'; ctx.textBaseline = 'alphabetic';
+    let lastLabel = 1e9;
+    const label = (y, text, fill, ink) => {
+      if (lastLabel - y < 16) return;
+      const tw = ctx.measureText(text).width + 10;
+      ctx.fillStyle = fill; ctx.fillRect(Wpx - 6 - tw, y - 14, tw, 13);
+      ctx.fillStyle = ink; ctx.fillText(text, Wpx - 1 - tw, y - 4.5);
+      lastLabel = y;
+    };
+    // the goal line for this level, in green
+    if (L) {
+      const y = Math.round(sy(L.goal)) + 0.5;
+      if (y > -20 && y < Hpx + 20) {
+        ctx.strokeStyle = '#6fcf97'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+        ctx.beginPath(); ctx.moveTo(fieldL, y); ctx.lineTo(Wpx - 6, y); ctx.stroke(); ctx.setLineDash([]);
+        label(y, 'GOAL · ' + L.goal, '#6fcf97', '#0e1114');
+      }
+    }
+    const showUpTo = Math.min(this.MARKS.length, g.mark + 1);
+    for (let i = 0; i < showUpTo; i++) {
+      const m = this.MARKS[i]; if (L && m.mm >= L.goal) continue;
+      const y = Math.round(sy(m.mm)) + 0.5;
+      if (y < -20 || y > Hpx + 20) continue;
+      const passed = i < g.mark;
+      ctx.strokeStyle = passed ? 'rgba(242,201,76,0.85)' : 'rgba(142,166,255,0.75)'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(fieldL, y); ctx.lineTo(Wpx - 6, y); ctx.stroke(); ctx.setLineDash([]);
+      label(y, m.label, passed ? '#f2c94c' : 'rgba(27,32,37,0.95)', passed ? '#16191c' : '#8ea6ff');
+    }
+    if (g.band) {
+      const y = sy(g.band.mm), a = Math.max(0, Math.min(1, g.band.life));
+      const col = L && g.band.mm === L.goal ? '111,207,151' : '242,201,76';
+      const gr = ctx.createLinearGradient(0, y - 26, 0, y + 26);
+      gr.addColorStop(0, 'rgba(' + col + ',0)'); gr.addColorStop(0.5, 'rgba(' + col + ',' + (0.5 * a) + ')'); gr.addColorStop(1, 'rgba(' + col + ',0)');
+      ctx.fillStyle = gr; ctx.fillRect(fieldL, y - 26, Wpx - fieldL, 52);
+    }
+
+    const drawBoard = (b, bottomMm) => {
+      const S = this.SPECIES[b.sp % 5];
+      const x = sx(b.x), w = b.w * s, h = T * s, y = sy(bottomMm + T);
+      ctx.fillStyle = S.base; ctx.fillRect(x, y, w, h);
+      if (h > 4) {
+        let seed = b.seed;
+        const r = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+        ctx.strokeStyle = S.grain; ctx.globalAlpha = 0.55; ctx.lineWidth = 0.8;
+        for (let i = 0; i < 3; i++) {
+          const yy = y + h * (0.22 + 0.28 * i + (r() - 0.5) * 0.12), amp = h * 0.12 * r(), ph = r() * 6;
+          ctx.beginPath(); ctx.moveTo(x, yy);
+          for (let xx = 0; xx <= w; xx += 8) ctx.lineTo(x + xx, yy + Math.sin(xx / (22 + 10 * r()) + ph) * amp);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = S.end; ctx.fillRect(x, y, Math.min(2, w), h); ctx.fillRect(x + w - Math.min(2, w), y, Math.min(2, w), h);
+        ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(x, y, w, 1);
+        ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(x, y + h - 1, w, 1);
+      }
+    };
+    g.stack.forEach((b, i) => { const by = sy(i * T); if (by > -20 && by - T * s < Hpx + 20) drawBoard(b, i * T); });
+    for (const p of g.falling) {
+      const cx = sx(p.x + p.w / 2), cy = sy(p.y + T / 2);
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(p.rot); ctx.translate(-cx, -cy);
+      drawBoard(p, p.y); ctx.restore();
+    }
+    if (g.cur) {
+      const lvl = g.stack.length * T;
+      drawBoard(g.cur, lvl);
+      const y = sy(lvl + T) - 9, xa = sx(g.cur.x), xb = sx(g.cur.x + g.cur.w);
+      const short = g.cur.w < 80;
+      ctx.strokeStyle = short ? '#ff8a5b' : '#8ea6ff'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(xa, y); ctx.lineTo(xb, y); ctx.moveTo(xa, y - 4); ctx.lineTo(xa, y + 4); ctx.moveTo(xb, y - 4); ctx.lineTo(xb, y + 4); ctx.stroke();
+      const lab = Math.round(g.cur.w) + ' mm';
+      ctx.font = '600 10px "Geist Mono", ui-monospace, monospace';
+      const tw = ctx.measureText(lab).width + 8, mx = Math.max(fieldL + tw / 2, Math.min(Wpx - tw / 2 - 2, (xa + xb) / 2));
+      ctx.fillStyle = short ? '#ff8a5b' : '#8ea6ff'; ctx.fillRect(mx - tw / 2, y - 16, tw, 13);
+      ctx.fillStyle = '#0e1114'; ctx.fillText(lab, mx - tw / 2 + 4, y - 6);
+    }
+    for (const d of g.dust) { ctx.globalAlpha = Math.max(0, Math.min(1, d.life * 2)); ctx.fillStyle = d.c; ctx.fillRect(sx(d.x) - 1, sy(d.y) - 1, 2.2, 2.2); }
+    ctx.globalAlpha = 1;
+    for (const p of g.pops) {
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 1.6));
+      ctx.font = '800 14px "Bricolage Grotesque", system-ui, sans-serif';
+      const tw = ctx.measureText(p.text).width, x = Math.max(fieldL + 4, Math.min(Wpx - tw - 6, sx(p.x) - tw / 2));
+      ctx.fillStyle = 'rgba(14,17,20,0.75)'; ctx.fillRect(x - 5, sy(p.y) - 14, tw + 10, 19);
+      ctx.fillStyle = p.color; ctx.fillText(p.text, x, sy(p.y));
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.setTransform(2, 0, 0, 2, 0, 0); ctx.translate(shx * 0.4, 0);
+    ctx.fillStyle = '#f2c94c'; ctx.fillRect(4, 0, 24, Hpx);
+    ctx.fillStyle = 'rgba(22,25,28,0.18)'; ctx.fillRect(26, 0, 2, Hpx);
+    const minor = s * 10 >= 2.6 ? 10 : s * 50 >= 2.6 ? 50 : 100;
+    const numEvery = s * 100 >= 22 ? 100 : s * 500 >= 22 ? 500 : 1000;
+    ctx.strokeStyle = '#16191c'; ctx.fillStyle = '#16191c'; ctx.lineWidth = 0.8;
+    ctx.font = '600 8px "Geist Mono", ui-monospace, monospace';
+    for (let mm = Math.max(0, Math.floor(mmBottom / minor) * minor); mm <= mmTop; mm += minor) {
+      const y = Math.round(sy(mm)) + 0.5; if (y < -10 || y > Hpx + 10) continue;
+      const len = mm % 100 === 0 ? 9 : mm % 50 === 0 ? 6 : 3.5;
+      ctx.beginPath(); ctx.moveTo(4, y); ctx.lineTo(4 + len, y); ctx.stroke();
+      if (mm > 0 && mm % numEvery === 0) {
+        const metre = mm % 1000 === 0, txt = metre ? (mm / 1000) + 'm' : String(mm / 10);
+        if (metre) { ctx.fillStyle = '#2547d0'; ctx.fillRect(12, y - 6, 15, 11); ctx.fillStyle = '#ffffff'; }
+        ctx.fillText(txt, 13.5, y + 3); ctx.fillStyle = '#16191c';
+      }
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+
+  renderVals() {
+    const st = this.state, L = this.L(), tall = st.tall;
+    const tallTxt = tall < 1000 ? tall + ' mm' : (tall / 1000).toFixed(2) + ' m';
+    const passed = this.MARKS.filter((m) => tall >= m.mm).pop();
+    const won = st.phase === 'won', over = st.phase === 'over';
+    const goalBoards = L ? Math.ceil(L.goal / this.THICK) - 1 : 0;
+    const hasNext = L && L.n < 10;
+    return {
+      kicker: L ? 'LEVEL ' + L.n + ' · ' + L.name.toUpperCase() : 'FREE STACK · NO GOAL',
+      leftLabel: L ? 'TIMBER' : 'BEST', leftValue: L ? (L.sp >= 0 ? this.SPECIES[L.sp].name : 'mixed') : st.best,
+      rightLabel: L ? 'GOAL ' + L.goal : 'NEXT', rightColor: L ? '#6fcf97' : '#f2c94c',
+      score: st.score,
+      scoreClass: st.bump ? 'ts-score-bump' : '',
+      scoreLine: st.score + (st.score === 1 ? ' board' : ' boards') + ' · ' + tallTxt + (st.perfects ? ' · ' + st.perfects + ' perfect' : ''),
+      nextLine: st.nextTxt,
+      fieldClass: st.flash ? 'fl-' + st.flash : '',
+      showHint: st.phase === 'ready',
+      hintGoal: L ? 'GOAL: ' + L.name.toUpperCase() + ', ' + L.goal + ' MM · ' + goalBoards + ' BOARDS' : 'FREE STACK: AS HIGH AS YOU CAN',
+      showCard: won || over,
+      cardKicker: won ? 'LEVEL ' + L.n + ' DONE' : st.newBest ? 'NEW BEST' : 'MISSED THE STACK' + (L ? ' · LEVEL ' + L.n : ''),
+      kickColor: won ? '#1f7a4a' : '#2547d0',
+      showStars: won, cardStars: [0, 1, 2].map((i) => ({ c: i < st.earned ? '#e0a400' : '#c9ccc6', d: (0.25 + i * 0.22).toFixed(2) })),
+      showCount: over && !L, countLine: this.g && this.g.hold ? 'Paused' : 'New game in ' + st.count,
+      cardLine: won ? st.perfects + ' perfect · stars at 30% / 60% perfect' : L ? st.score + ' of ' + goalBoards + ' boards' : tallTxt + (passed ? ' · past ' + passed.name.toLowerCase() : ''),
+      primaryLabel: won ? (hasNext ? 'Next: ' + this.LEVELS[L.n].name : 'Free stack') : 'Play again',
+      primaryBg: won ? '#6fcf97' : '#16191c', primaryFg: won ? '#0e1114' : '#f4f1ea',
+      secondHref: L ? '#/stack/levels' : '#/stack', secondLabel: L ? 'All levels' : 'Share score',
+      stageScale: st.stageScale || 1, setBox: this.setBox,
+      footTitle: L ? 'LEVEL ' + L.n + ' OF 10' : 'FREE STACK',
+      footText: L ? L.tip + ' Reach the green line to finish. More perfect drops, more stars.' : 'No goal: stack as high as you can. Height marks give the top board 40 mm back.',
+      soundOn: st.sound, soundOff: !st.sound, soundLabel: st.sound ? 'Turn sound off' : 'Turn sound on',
+      setCv: (el) => { this.cv = el; },
+      tapField: (e) => { if (e && e.button > 0) return; this.act(); },
+      stop: (e) => { if (e) e.stopPropagation(); },
+      primary: () => { if (won) this.setLevel(hasNext ? L.n + 1 : 0); else this.restart(); },
+      holdCount: (e) => { if (L) return; if (e) e.preventDefault(); this.g.hold = true; this.setState({ count: this.state.count }); this.share({ g: 'stack', n: st.score, h: st.tall }); },
+      toggleSound: () => { const on = !this.state.sound; this.snd = on; this.saveSound(on); this.setState({ sound: on }); if (on) this.knock(1.2); },
+    };
+  }
+}
+</script>
+</body>
+</html>

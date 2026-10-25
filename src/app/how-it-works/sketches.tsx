@@ -10,7 +10,7 @@ export const SKETCHES = [
   'reply', 'visit', 'drawing', 'board', 'fitted',
   // Workshop tips (/tips)
   'skirting', 'backSkirting', 'compass', 'hinge21', 'screw', 'hingeJig',
-  // Timber Stack game card (/tools)
+  // Workshop Games card (/tools)
   'stack',
 ] as const;
 export type SketchName = (typeof SKETCHES)[number];

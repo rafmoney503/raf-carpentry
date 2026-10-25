@@ -13,6 +13,7 @@ const explore = [
   { href: '/cabinetos', label: 'CabinetOS' },
   { href: '/tools', label: 'Tools' },
   { href: '/tools/workshop', label: 'Workshop Tools app' },
+  { href: '/tools/games', label: 'Workshop Games' },
   { href: '/calculator', label: 'Calculator' },
   { href: '/tips', label: 'Workshop tips' },
 ];

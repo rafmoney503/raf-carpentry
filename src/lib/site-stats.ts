@@ -180,4 +180,8 @@ export const SOURCE_LABEL: Record<string, string> = {
   'launch-email': 'Launch email to past clients',
   gbp: 'Google Business posts',
   groups: 'Trade groups',
+  // Workshop Games (25 Oct 2026)
+  'pwa-games': 'Workshop Games, opened from the home screen',
+  beat: 'A friend’s score link (Workshop Games)',
+  'qr-games': 'QR code on the Workshop Games page',
 };

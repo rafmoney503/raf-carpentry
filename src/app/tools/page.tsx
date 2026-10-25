@@ -54,7 +54,7 @@ export default function ToolsPage() {
       </PageHeader>
 
       <Container className="pb-8">
-        {/* Teasers for the wardrobe planner, the Workshop Tools app, the free calculator, the workshop tips and the Timber Stack game */}
+        {/* Teasers for the wardrobe planner, the Workshop Tools app, the free calculator, the workshop tips and Workshop Games */}
         <div className="mb-12 grid grid-cols-1 gap-4 md:mb-16 lg:grid-cols-2">
           <PlannerTeaser variant="feature" className="lg:col-span-2" />
           {/* the Workshop Tools app for phones (25 Oct 2026) */}
@@ -114,13 +114,13 @@ export default function ToolsPage() {
             </div>
           </Link>
           <Link
-            href="/tools/timber-stack"
+            href="/tools/games"
             className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6"
           >
             <div>
-              <p className="font-mono text-[13px] text-accent">Free game</p>
-              <h2 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Timber Stack</h2>
-              <p className="mt-1 text-[15px] text-muted">Drop each board on the stack. Whatever hangs over gets cut off. How high can you go?</p>
+              <p className="font-mono text-[13px] text-accent">Free games</p>
+              <h2 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Workshop Games</h2>
+              <p className="mt-1 text-[15px] text-muted">Measure Up, Sheet Saver, Timber Stack and Nail Pop. New tapes and a new board every day, with real sizes.</p>
             </div>
             <div className="flex items-center gap-5">
               <div className="w-[64px] sm:w-[76px]">

@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sheet Saver boards</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=Geist:wght@400..700&amp;family=Geist+Mono:wght@400..600&amp;display=swap">
+<style>
+body{margin:0}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+a{text-decoration:none;color:inherit}
+@keyframes sl-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}50%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
+@keyframes sl-pulse{0%,100%{box-shadow:0 0 0 0 rgba(111,207,151,.6)}50%{box-shadow:0 0 0 5px rgba(111,207,151,0)}}
+@keyframes sl-toast{0%{transform:translate(-50%,10px);opacity:0}12%{transform:translate(-50%,0);opacity:1}85%{opacity:1}100%{opacity:0}}
+.sl-thumb{transition:transform .12s ease}
+.sl-thumb:hover{transform:translateY(-2px)}
+.sl-shake{animation:sl-shake .3s ease-out}
+.sl-now{animation:sl-pulse 1.8s ease-in-out infinite}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; padding: 6px 16px 14px; display: flex; flex-direction: column; gap: 12px; background-color: #121518; background-image: linear-gradient(rgba(127,155,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(127,155,255,0.12) 1px, transparent 1px); background-size: 80px 80px; color: #f4f1ea; font-family: Geist, system-ui, sans-serif; overflow: hidden; user-select: none; -webkit-user-select: none">
+
+  <header style="flex: none; display: flex; align-items: center; gap: 6px; height: 50px">
+    <a href="#/" aria-label="Back to the games" style="width: 44px; height: 44px; margin-left: -10px; display: grid; place-items: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+    </a>
+    <div style="flex: 1">
+      <div class="mono" style="font-size: 10.5px; letter-spacing: 0.12em; color: #6fcf97">SHEET SAVER</div>
+      <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 20px; font-weight: 760; letter-spacing: -0.02em">40 boards</div>
+    </div>
+    <div style="text-align: right">
+      <div class="mono" style="font-size: 10.5px; color: #a3abb3">STARS</div>
+      <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 18px; font-weight: 760"><span style="color: #f2c94c">★</span> {{ total }} <span style="font-size: 13px; color: #a3abb3">/ 120</span></div>
+    </div>
+  </header>
+
+  <a href="#/sheet" onClick="{{ playDaily }}" style="flex: none; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: linear-gradient(100deg, rgba(111,207,151,0.2), rgba(27,32,37,0.92)); border: 1px solid rgba(111,207,151,0.5)">
+    <svg width="24" height="44" viewBox="0 0 24 44" aria-hidden="true"><rect x="1" y="1" width="22" height="42" fill="rgba(220,193,148,0.15)" stroke="#f4f1ea" stroke-width="1" stroke-dasharray="2 2"></rect><rect x="1" y="1" width="10" height="32" fill="#dcc194"></rect><rect x="11" y="1" width="10" height="32" fill="#c99a62"></rect><rect x="1" y="33" width="6" height="10" fill="#dcc194"></rect><rect x="7" y="33" width="6" height="10" fill="#c99a62"></rect><rect x="13" y="33" width="6" height="10" fill="#dcc194"></rect></svg>
+    <div style="flex: 1">
+      <div class="mono" style="font-size: 10px; letter-spacing: 0.08em; color: #6fcf97">TODAY · BOARD {{ dailyN }}</div>
+      <div style="margin-top: 2px; font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 17px; font-weight: 760">{{ dailyTitle }}</div>
+      <div class="mono" style="font-size: 11px; color: #c4cad0">{{ dailyLine }}</div>
+    </div>
+    <span style="padding: 8px 13px; border-radius: 999px; background: #6fcf97; color: #0e1114; font-size: 13px; font-weight: 700">Play</span>
+  </a>
+
+  <sc-for list="{{ chapters }}" as="ch" hint-placeholder-count="4">
+    <div style="flex: none">
+      <div style="display: flex; align-items: baseline; justify-content: space-between">
+        <span class="mono" style="font-size: 10.5px; letter-spacing: 0.1em; color: {{ ch.color }}">{{ ch.title }}</span>
+        <span class="mono" style="font-size: 10px; color: #a3abb3">{{ ch.count }}</span>
+      </div>
+      <div style="margin-top: 2px; font-size: 12px; color: #a3abb3">{{ ch.rule }}</div>
+      <div style="margin-top: 7px; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 5px">
+        <sc-for list="{{ ch.boards }}" as="b" hint-placeholder-count="10">
+          <a href="#/sheet" onClick="{{ b.go }}" class="{{ b.cls }}" style="display: flex; flex-direction: column; align-items: center; gap: 2px">
+            <span class="{{ b.thumbCls }}" style="position: relative; width: 28px; height: 56px; box-sizing: border-box; border: 1px {{ b.edge }} {{ b.border }}; background: {{ b.bg }}; overflow: hidden; display: grid; place-items: center; opacity: {{ b.op }}">
+              <sc-for list="{{ b.rects }}" as="r" hint-placeholder-count="0">
+                <span style="position: absolute; left: {{ r.x }}px; top: {{ r.y }}px; width: {{ r.w }}px; height: {{ r.h }}px; background: {{ r.c }}; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.35)"></span>
+              </sc-for>
+              <span class="mono" style="position: relative; font-size: 10px; font-weight: 700; color: {{ b.numC }}">{{ b.num }}</span>
+            </span>
+            <span style="font-size: 7.5px; letter-spacing: 0.5px; color: #f2c94c; height: 9px; line-height: 9px">{{ b.stars }}</span>
+          </a>
+        </sc-for>
+      </div>
+    </div>
+  </sc-for>
+
+  <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #a3abb3">
+    <span>A star on a board opens the next. Two-board jobs are coming soon.</span>
+  </div>
+
+  <sc-if value="{{ showToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; left: 50%; bottom: 60px; transform: translateX(-50%); padding: 9px 14px; border-radius: 10px; background: #f1f2ef; color: #16191c; font-size: 13px; font-weight: 600; white-space: nowrap; box-shadow: 0 8px 20px rgba(0,0,0,0.4); animation: sl-toast 2.2s ease-out forwards">{{ toast }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.CHAPTERS = [
+      { from: 1, title: '1 · FIRST BOARDS', rule: 'Five to seven parts. Turn them round to make them fit.', color: '#6fcf97' },
+      { from: 11, title: '2 · WITH THE GRAIN', rule: 'Parts marked ↕ or ↔ run with the grain and can’t be turned.', color: '#f2c94c' },
+      { from: 21, title: '3 · SAW CUTS COUNT', rule: 'Every cut takes 3 mm of board, so parts can’t touch.', color: '#ff8a5b' },
+      { from: 31, title: '4 · TWO BOARDS · COMING SOON', rule: 'Bigger jobs across two sheets. Least waste wins.', color: '#8ea6ff' },
+    ];
+    this.state = { stars: {}, done: {}, cur: 0, all: false, shake: 0, toast: '', toastN: 0 };
+  }
+  load() {
+    try {
+      this.setState({
+        stars: JSON.parse(localStorage.getItem('raf_games_stars_sheet') || '{}') || {},
+        done: JSON.parse(localStorage.getItem('raf_games_sheet_done') || '{}') || {},
+        cur: parseInt(localStorage.getItem('raf_games_level_sheet') || '0', 10) || 0,
+        all: localStorage.getItem('raf_games_open_all') === '1',
+      });
+    } catch (e) {}
+  }
+  componentDidMount() {
+    this.load();
+    this.onStore = () => this.load(); this.onVis = () => { if (!document.hidden) this.load(); };
+    window.addEventListener('storage', this.onStore); document.addEventListener('visibilitychange', this.onVis); window.addEventListener('focus', this.onStore);
+  }
+  componentWillUnmount() { window.removeEventListener('storage', this.onStore); document.removeEventListener('visibilitychange', this.onVis); window.removeEventListener('focus', this.onStore); clearTimeout(this.tT); }
+  ac() { try { if (!this._c) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; this._c = new A(); } if (this._c.state === 'suspended') this._c.resume(); return this._c; } catch (e) { return null; } }
+  tone(f, d, o) { o = o || {}; const c = this.ac(); if (!c) return; const t = c.currentTime + (o.at || 0), osc = c.createOscillator(), g = c.createGain(); osc.type = o.type || 'sine'; osc.frequency.setValueAtTime(f, t); g.gain.setValueAtTime(o.vol || 0.2, t); g.gain.exponentialRampToValueAtTime(0.0008, t + d); osc.connect(g).connect(c.destination); osc.start(t); osc.stop(t + d + 0.05); }
+  snap() { this.tone(880, 0.08, { type: 'square', vol: 0.05 }); this.tone(1320, 0.1, { vol: 0.08, at: 0.02 }); }
+  bad() { this.tone(110, 0.13, { type: 'sawtooth', vol: 0.1 }); this.tone(104, 0.16, { type: 'sawtooth', vol: 0.1, at: 0.17 }); }
+  say(msg) { this.setState({ toast: '' }); clearTimeout(this.tT); setTimeout(() => this.setState({ toast: msg }), 16); this.tT = setTimeout(() => this.setState({ toast: '' }), 2300); }
+  dailyNumber() {
+    const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+    const g = (t) => Number((p.find((x) => x.type === t) || {}).value);
+    return Math.round(Date.UTC(g('year'), g('month') - 1, g('day')) / 86400000) - Math.round(Date.UTC(2026, 6, 5) / 86400000);
+  }
+  renderVals() {
+    const st = this.state, s = st.stars, today = this.dailyNumber();
+    const open = (n) => st.all || n === 1 || (s[n - 1] || 0) > 0;
+    const tone = ['#dcc194', '#c99a62', '#e3c58c', '#b98a58', '#d0b080', '#c4a26c'];
+    const chapters = this.CHAPTERS.map((ch) => {
+      let done = 0;
+      const boards = [];
+      for (let n = ch.from; n < ch.from + 10; n++) {
+        const o = open(n), got = s[n] || 0, plan = st.done[n], playable = n <= 30;
+        if (got) done++;
+        const k = 28 / 1220;
+        const rects = got && plan ? plan.map((p, i) => ({ x: p[0] * k, y: p[1] * k, w: Math.max(0.8, p[2] * k), h: Math.max(0.8, p[3] * k), c: tone[i % tone.length] })) : [];
+        boards.push({
+          num: got && plan ? '' : o ? String(n) : '·', numC: o ? '#f4f1ea' : '#5d636a', rects: rects,
+          stars: got ? '★★★'.slice(0, got) + '☆☆☆'.slice(0, 3 - got) : '',
+          border: st.cur === n ? '#6fcf97' : o ? 'rgba(244,241,234,0.55)' : 'rgba(244,241,234,0.15)', edge: got ? 'solid' : 'dashed',
+          bg: o ? 'rgba(220,193,148,0.10)' : 'rgba(255,255,255,0.02)', op: o ? 1 : 0.55,
+          thumbCls: 'sl-thumb' + (st.cur === n ? ' sl-now' : ''), cls: st.shake === n ? 'sl-shake' : '',
+          go: (e) => {
+            if (!o) { if (e) e.preventDefault(); this.bad(); this.setState({ shake: 0 }); setTimeout(() => this.setState({ shake: n }), 16); this.say('Needs a star on board ' + (n - 1)); return; }
+            if (!playable) { if (e) e.preventDefault(); this.bad(); this.say('Two-board jobs are coming soon'); return; }
+            try { localStorage.setItem('raf_games_level_sheet', String(n)); } catch (x) {}
+            this.snap();
+          },
+        });
+      }
+      return { title: ch.title, rule: ch.rule, color: ch.color, count: done + ' of 10 done', boards: boards };
+    });
+    let total = 0; Object.keys(s).forEach((k) => { if (/^\d+$/.test(k) && +k <= 40) total += s[k]; });
+    const tDay = s[today + '_t'];
+    return {
+      chapters: chapters, total: total,
+      dailyN: today, dailyTitle: s[today] ? 'Done today' : 'A new board every day',
+      dailyLine: s[today] ? 'In ' + Math.floor(tDay / 60) + ':' + String(tDay % 60).padStart(2, '0') + ' · ' + '★★★'.slice(0, s[today]) + '☆☆☆'.slice(0, 3 - s[today]) : 'The same board for everyone today',
+      playDaily: () => { try { localStorage.setItem('raf_games_level_sheet', 'daily'); } catch (e) {} this.snap(); },
+      showToast: !!st.toast, toast: st.toast,
+    };
+  }
+}
+</script>
+</body>
+</html>

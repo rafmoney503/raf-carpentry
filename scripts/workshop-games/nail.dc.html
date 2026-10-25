@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Nail Pop in Workshop Games</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=Geist:wght@400..700&amp;family=Geist+Mono:wght@400..600&amp;display=swap">
+<style>
+body{margin:0}
+@media (max-height: 760px){.wg-foot{display:none !important}}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+@keyframes np-green{0%{box-shadow:inset 0 0 0 0 rgba(111,207,151,0)}20%{box-shadow:inset 0 0 0 4px rgba(111,207,151,.9), inset 0 0 30px rgba(111,207,151,.35)}100%{box-shadow:inset 0 0 0 0 rgba(111,207,151,0)}}
+@keyframes np-red{0%{background:rgba(235,87,87,0)}18%{background:rgba(235,87,87,.28)}100%{background:rgba(235,87,87,0)}}
+@keyframes np-card{0%{transform:translateY(24px);opacity:0}100%{transform:none;opacity:1}}
+@keyframes np-star{0%{transform:scale(0) rotate(-40deg);opacity:0}60%{transform:scale(1.3) rotate(8deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes np-in{0%{transform:translate(-50%,-46%);opacity:0}100%{transform:translate(-50%,-50%);opacity:1}}
+.fl-combo .np-edge{animation:np-green .7s ease-out}
+.fl-bad .np-red{animation:np-red .7s ease-out}
+.np-btn{transition:transform .1s ease}
+.np-btn:active{transform:scale(.96)}
+.np-star{display:inline-block;animation:np-star .45s ease-out both}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 6px 16px 14px; display: flex; flex-direction: column; gap: 8px; background-color: #121518; background-image: linear-gradient(rgba(127,155,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(127,155,255,0.12) 1px, transparent 1px); background-size: 80px 80px; color: #f4f1ea; font-family: Geist, system-ui, sans-serif; overflow: hidden; user-select: none; -webkit-user-select: none">
+
+  <header style="flex: none; display: flex; align-items: center; gap: 6px; height: 50px">
+    <a href="#/" aria-label="Back to the games" style="width: 44px; height: 44px; margin-left: -10px; display: grid; place-items: center; color: #f4f1ea; text-decoration: none">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+    </a>
+    <div style="flex: 1; min-width: 0">
+      <div class="mono" style="font-size: 10.5px; letter-spacing: 0.12em; color: #ff8a5b">WORKSHOP GAMES</div>
+      <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 20px; font-weight: 760; letter-spacing: -0.02em">Nail Pop</div>
+    </div>
+    <a href="#/nail/levels" style="height: 40px; padding: 0 11px; display: flex; align-items: center; gap: 6px; border-radius: 10px; border: 1px solid rgba(244,241,234,0.18); background: rgba(27,32,37,0.9); color: #f4f1ea; text-decoration: none; font-size: 13px; font-weight: 600">
+      <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1" fill="#ff8a5b"></rect><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity=".55"></rect><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity=".55"></rect><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity=".55"></rect></svg>Levels
+    </a>
+    <button type="button" onClick="{{ toggleSound }}" aria-label="{{ soundLabel }}" style="width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; border: 1px solid rgba(244,241,234,0.18); background: rgba(27,32,37,0.9); color: #f4f1ea; cursor: pointer">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 8v4h3l4 3V5L6 8H3z"></path>
+        <sc-if value="{{ soundOn }}" hint-placeholder-val="{{ true }}"><path d="M13.5 7a4 4 0 0 1 0 6M15.8 4.8a7 7 0 0 1 0 10.4"></path></sc-if>
+        <sc-if value="{{ soundOff }}" hint-placeholder-val="{{ false }}"><path d="M13.5 7.5l5 5M18.5 7.5l-5 5"></path></sc-if>
+      </svg>
+    </button>
+  </header>
+
+  <div style="flex: none; display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px; border-radius: 10px; background: rgba(27,32,37,0.92); border: 1px solid rgba(255,138,91,0.4)">
+    <span class="mono" style="flex: none; font-size: 10px; letter-spacing: 0.08em; color: #ff8a5b">LEVEL {{ levelN }} OF 9</span>
+    <span style="flex: 1; min-width: 0; font-size: 14px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ levelPlain }}</span>
+    <span style="flex: none; color: #f2c94c; letter-spacing: 1px">{{ levelStars }}</span>
+  </div>
+
+  <div style="flex: none; display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 8px; height: 52px">
+    <div>
+      <div class="mono" style="font-size: 11px; color: #a3abb3">SQUEAKS LEFT</div>
+      <div style="margin-top: 5px; display: flex; gap: 6px">
+        <sc-for list="{{ lives }}" as="v" hint-placeholder-count="3">
+          <span style="width: 16px; height: 16px; border-radius: 50%; display: inline-block; background: {{ v.c }}; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25)"></span>
+        </sc-for>
+      </div>
+    </div>
+    <div style="text-align: center">
+      <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 38px; font-weight: 800; letter-spacing: -0.03em; line-height: 0.95">{{ score }}</div>
+      <div class="mono" style="margin-top: 3px; font-size: 11px; color: #a3abb3">{{ scoreLine }}</div>
+    </div>
+    <div class="mono" style="text-align: right; font-size: 11px; line-height: 1.4; color: #a3abb3">TIME<br><span style="font-size: 15px; font-weight: 600; color: {{ timeColor }}">{{ timeTxt }}</span></div>
+  </div>
+
+  <div ref="{{ setBox }}" style="flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center">
+  <div class="{{ fieldClass }}" onPointerDown="{{ tapField }}" ref="{{ setField }}" style="position: relative; flex: none; width: 358px; height: 520px; transform: scale({{ stageScale }}); transform-origin: center center; border-radius: 12px; overflow: hidden; border: 1px solid rgba(244,241,234,0.14); background: #3a2a1c; cursor: crosshair; touch-action: none">
+    <canvas ref="{{ setCv }}" width="716" height="1040" style="display: block; width: 358px; height: 520px"></canvas>
+    <div class="np-edge" style="position: absolute; inset: 0; border-radius: 12px; pointer-events: none"></div>
+    <div class="np-red" style="position: absolute; inset: 0; pointer-events: none"></div>
+
+    <sc-if value="{{ showIntro }}" hint-placeholder-val="{{ true }}">
+      <div style="position: absolute; left: 50%; top: 50%; width: 290px; transform: translate(-50%,-50%); padding: 16px; border-radius: 12px; background: rgba(14,17,20,0.92); border: 1px solid rgba(244,241,234,0.16); text-align: center; animation: np-in .3s ease-out; pointer-events: none">
+        <div class="mono" style="font-size: 10.5px; letter-spacing: 0.1em; color: #ff8a5b">LEVEL {{ levelN }} · {{ levelName }}</div>
+        <div style="margin-top: 6px; font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 21px; font-weight: 780; letter-spacing: -0.02em; line-height: 1.15">{{ introTitle }}</div>
+        <div style="margin-top: 6px; font-size: 13px; line-height: 1.4; color: #c4cad0">{{ introText }}</div>
+        <div style="margin-top: 12px; display: inline-block; padding: 9px 16px; border-radius: 999px; background: #ff8a5b; color: #16191c; font-size: 14px; font-weight: 700">Tap to start · 30 seconds</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showCard }}" hint-placeholder-val="{{ false }}">
+      <div onPointerDown="{{ stop }}" style="position: absolute; left: 12px; right: 12px; bottom: 12px; padding: 14px; border-radius: 12px; background: #f1f2ef; color: #16191c; box-shadow: 0 10px 30px rgba(0,0,0,0.45); animation: np-card .35s ease-out; cursor: default">
+        <div style="display: flex; align-items: baseline; justify-content: space-between">
+          <span class="mono" style="font-size: 10.5px; letter-spacing: 0.1em; color: #c2410c">{{ cardKicker }}</span>
+          <span style="font-size: 22px; letter-spacing: 2px">
+            <sc-for list="{{ cardStars }}" as="s" hint-placeholder-count="3"><span class="np-star" style="color: {{ s.c }}; animation-delay: {{ s.d }}s">★</span></sc-for>
+          </span>
+        </div>
+        <div style="margin-top: 2px; display: flex; align-items: baseline; gap: 8px">
+          <span style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 38px; font-weight: 800; letter-spacing: -0.03em; line-height: 1">{{ score }}</span>
+          <span style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 16px; font-weight: 700">nails flush</span>
+          <span class="mono" style="margin-left: auto; font-size: 11.5px; color: #4f555b">{{ starLine }}</span>
+        </div>
+        <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
+          <button type="button" class="np-btn" onClick="{{ again }}" style="height: 44px; border: 0; border-radius: 9px; background: #16191c; color: #f4f1ea; font-family: Geist, system-ui, sans-serif; font-size: 14.5px; font-weight: 650; cursor: pointer">Play again</button>
+          <sc-if value="{{ canNext }}" hint-placeholder-val="{{ true }}">
+            <button type="button" class="np-btn" onClick="{{ nextLevel }}" style="height: 44px; border: 0; border-radius: 9px; background: #ff8a5b; color: #16191c; font-family: Geist, system-ui, sans-serif; font-size: 14.5px; font-weight: 700; cursor: pointer">{{ nextLabel }}</button>
+          </sc-if>
+          <sc-if value="{{ noNext }}" hint-placeholder-val="{{ false }}">
+            <button type="button" class="np-btn" onClick="{{ shareIt }}" style="height: 44px; border: 0; border-radius: 9px; background: #2547d0; color: #ffffff; font-family: Geist, system-ui, sans-serif; font-size: 14.5px; font-weight: 650; cursor: pointer">Share score</button>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+
+  </div>
+
+  <div class="wg-foot" style="flex: none; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding-top: 2px; font-size: 12px; line-height: 1.35; color: #d4d8dc">
+    <div><span style="display: block; height: 4px; margin-bottom: 5px; border-radius: 2px; background: #c7ced5"></span>Tap a popped nail to knock it flush.</div>
+    <div><span style="display: block; height: 4px; margin-bottom: 5px; border-radius: 2px; background: #eb5757"></span>Leave one too long and the floor squeaks.</div>
+    <div><span style="display: block; height: 4px; margin-bottom: 5px; border-radius: 2px; background: #8ea6ff"></span>Never hammer a screw. Gold nails score 3.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.LEVELS = [
+      { n: 1, name: 'Hallway floor', floor: 'oak', cols: 6, rows: 5, life: 2.4, every: [0.95, 0.55], up: 3, screw: 0, gold: 0, stars: [15, 25, 35],
+        title: 'Old oak boards, popping nails', text: 'Nails pop up out of the joists. Knock each one flush before it squeaks.' },
+      { n: 2, name: 'Garden decking', floor: 'deck', cols: 5, rows: 5, life: 1.9, every: [0.8, 0.45], up: 4, screw: 0.24, gold: 0, stars: [12, 20, 28],
+        title: 'Decking, nails and screws', text: 'Some of these are screws. Hammer a screw and it costs you a squeak.' },
+      { n: 3, name: 'Loft boarding', floor: 'chip', cols: 7, rows: 5, life: 1.5, every: [0.62, 0.34], up: 5, screw: 0.16, gold: 0.09, stars: [25, 40, 55],
+        title: 'Loft boards, fast and gold', text: 'They come quicker up here. Gold nails score 3.' },
+      { n: 4, name: 'Stair treads', floor: 'stairs', life: 1.7, every: [0.75, 0.45], up: 3, screw: 0.1, gold: 0, stars: [20, 32, 42],
+        title: 'Squeaky stairs', text: 'The nails sit along the front edge of each tread. Small targets, so aim.' },
+      { n: 5, name: 'Fence panels', floor: 'fence', life: 1.8, every: [1.0, 0.6], up: 4, screw: 0, gold: 0, pairs: 1, stars: [30, 48, 64],
+        title: 'Feather edge fence', text: 'Nails pop in pairs, one on each rail. Get both.' },
+      { n: 6, name: 'Shed at night', floor: 'shed', cols: 6, rows: 5, life: 2.0, every: [0.85, 0.5], up: 3, screw: 0.12, gold: 0, dark: 1, stars: [14, 24, 32],
+        title: 'Lights out in the shed', text: 'Your torch follows your taps. Popping nails glint in the dark.' },
+      { n: 7, name: 'Roof battens', floor: 'battens', life: 1.3, every: [0.55, 0.3], up: 6, screw: 0, gold: 0.06, stars: [35, 55, 75],
+        title: 'Battens on the roof', text: 'Lots of nails along the battens, and fast.' },
+      { n: 8, name: 'Pallet rush', floor: 'pallet', life: 1.6, every: [1.3, 0.9], up: 6, screw: 0.1, gold: 0, triple: 1, stars: [35, 55, 72],
+        title: 'A pallet coming apart', text: 'Three pop at a time. Clear them before the next lot.' },
+      { n: 9, name: 'The whole house', floor: 'oak', cols: 6, rows: 5, life: 1.3, every: [0.55, 0.3], up: 6, screw: 0.2, gold: 0.08, pairs: 0.3, stars: [40, 60, 80],
+        title: 'The whole house', text: 'Everything at once: screws, gold, pairs, and fast.' },
+    ];
+    this.ROUND = 30;
+    let saved = {}, lv = 1;
+    try {
+      saved = JSON.parse(localStorage.getItem('raf_games_stars_nail') || '{}') || {};
+      lv = parseInt(localStorage.getItem('raf_games_level_nail') || '1', 10) || 1;
+    } catch (e) {}
+    lv = Math.max(1, Math.min(9, lv));
+    this.state = { lvl: lv - 1, phase: 'ready', score: 0, combo: 0, best: 0, squeaks: 3, left: this.ROUND, flash: '', sound: true, stars: saved, earned: 0, why: '' };
+    this.snd = this.soundPref(); this.state.sound = this.snd; this.state.stageScale = 1; this.cv = null; this.field = null; this.raf = 0;
+    this.setBox = this.makeFit(358, 520);
+    this.g = this.fresh(lv - 1);
+  }
+  // The stage is drawn at a fixed size and scaled to the room the phone gives it (any width from 320, short Safari
+  // screens, a tablet, a computer). Pointer maths reads the drawn size, so it stays right at any scale.
+  makeFit(W, H) {
+    return (el) => {
+      if (el === this._box) return;
+      if (this._ro) { this._ro.disconnect(); this._ro = null; }
+      this._box = el;
+      if (!el) return;
+      const fit = () => {
+        const w = el.clientWidth, h = el.clientHeight; if (!w || !h) return;
+        const s = Math.max(0.5, Math.min(1.35, w / W, h / H));
+        if (Math.abs(s - (this.state.stageScale || 0)) > 0.004) this.setState({ stageScale: Math.round(s * 1000) / 1000 });
+      };
+      if (window.ResizeObserver) { this._ro = new ResizeObserver(fit); this._ro.observe(el); }
+      fit();
+    };
+  }
+  soundPref() { try { return localStorage.getItem('raf_games_sound') !== '0'; } catch (e) { return true; } }
+  saveSound(on) { try { localStorage.setItem('raf_games_sound', on ? '1' : '0'); } catch (e) {} }
+  share(p) { if (typeof this.shareScore === 'function') this.shareScore(p); }
+  spotsFor(L, li) {
+    const W = 358, spots = [];
+    let seed = 1000 + li * 77;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const add = (x, y, pair) => spots.push({ x: x, y: y, busy: false, pair: pair == null ? -1 : pair });
+    if (L.floor === 'stairs') {
+      for (let r = 0; r < 5; r++) for (let c = 0; c < 3; c++) add(84 + c * 95 + (rnd() - 0.5) * 20, 6 + r * 102 + 76);
+    } else if (L.floor === 'fence') {
+      const bw = W / 7;
+      for (let c = 0; c < 7; c++) { add(c * bw + bw / 2, 132, spots.length + 1); add(c * bw + bw / 2, 372, spots.length - 1); }
+    } else if (L.floor === 'battens') {
+      for (let r = 0; r < 6; r++) for (let c = 0; c < 6; c++) add(30 + c * 59.6 + (rnd() - 0.5) * 14, 66 + r * 78);
+    } else if (L.floor === 'pallet') {
+      [50, 179, 308].forEach((x) => { for (let r = 0; r < 4; r++) add(x + (rnd() - 0.5) * 10, 70 + r * 116); });
+    } else {
+      const bw = W / L.cols;
+      for (let r = 0; r < L.rows; r++) for (let c = 0; c < L.cols; c++) add(c * bw + bw / 2 + (rnd() - 0.5) * bw * 0.35, 70 + r * 92 + (rnd() - 0.5) * 8);
+    }
+    return spots;
+  }
+  fresh(li) {
+    const L = this.LEVELS[li];
+    return { t: 0, nails: [], spots: this.spotsFor(L, li), next: 0, pops: [], dust: [], hammers: [], shake: 0, playing: false, floor: null, li: li,
+      bw: 358 / (L.cols || 6), torch: { x: 179, y: 260, tx: 179, ty: 260 } };
+  }
+  componentDidMount() {
+    let prev = performance.now();
+    const loop = (now) => { this.raf = requestAnimationFrame(loop); const dt = Math.min(0.05, (now - prev) / 1000); prev = now; this.step(dt); this.draw(); };
+    this.raf = requestAnimationFrame(loop);
+    this.onStore = (e) => {
+      if (e.key === 'raf_games_level_nail' && e.newValue) { const v = Math.max(1, Math.min(9, parseInt(e.newValue, 10) || 1)); if (v - 1 !== this.state.lvl) this.pick(v - 1, true); }
+      if (e.key === 'raf_games_stars_nail') { try { this.setState({ stars: JSON.parse(e.newValue || '{}') || {} }); } catch (x) {} }
+    };
+    window.addEventListener('storage', this.onStore);
+  }
+  componentWillUnmount() { if (this._ro) this._ro.disconnect(); cancelAnimationFrame(this.raf); clearTimeout(this.flT); window.removeEventListener('storage', this.onStore); }
+  ac() {
+    try {
+      if (!this._c) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; this._c = new A(); }
+      if (this._c.state === 'suspended') this._c.resume();
+      return this._c;
+    } catch (e) { return null; }
+  }
+  tone(f, d, o) {
+    o = o || {}; if (!this.snd || !this._c) return; const c = this.ac(); if (!c) return;
+    const t = c.currentTime + (o.at || 0), osc = c.createOscillator(), g = c.createGain();
+    osc.type = o.type || 'sine'; osc.frequency.setValueAtTime(f, t);
+    if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t + (o.glide || d));
+    if (o.vib) { const l = c.createOscillator(), lg = c.createGain(); l.frequency.value = o.vib; lg.gain.value = o.vibAmt || 20; l.connect(lg).connect(osc.frequency); l.start(t); l.stop(t + d + 0.05); }
+    g.gain.setValueAtTime(o.vol || 0.2, t); g.gain.exponentialRampToValueAtTime(0.0008, t + d);
+    osc.connect(g).connect(c.destination); osc.start(t); osc.stop(t + d + 0.05);
+  }
+  noise(d, o) {
+    o = o || {}; if (!this.snd || !this._c) return; const c = this.ac(); if (!c) return;
+    const t = c.currentTime + (o.at || 0), b = c.createBuffer(1, Math.ceil(c.sampleRate * d), c.sampleRate), ch = b.getChannelData(0);
+    for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / ch.length, 2);
+    const s = c.createBufferSource(); s.buffer = b; const f = c.createBiquadFilter(); f.type = o.type || 'bandpass'; f.frequency.value = o.f || 3000; f.Q.value = o.q || 1.5;
+    const g = c.createGain(); g.gain.value = o.vol || 0.2; s.connect(f).connect(g).connect(c.destination); s.start(t);
+  }
+  sPop() { this.tone(300, 0.09, { to: 560, vol: 0.05, type: 'triangle' }); this.noise(0.02, { f: 2400, vol: 0.06 }); }
+  sHit(gold) { this.tone(1500, 0.05, { type: 'square', vol: 0.07 }); this.tone(150, 0.14, { to: 70, vol: 0.42 }); this.noise(0.04, { f: 3500, q: 2, vol: 0.2 }); this.tone(gold ? 1760 : 1320, 0.5, { vol: 0.09, at: 0.03 }); if (gold) [2093, 2637, 3136].forEach((f, i) => this.tone(f, 0.25, { vol: 0.05, at: 0.08 + i * 0.06 })); }
+  sScrew() { this.tone(900, 0.12, { type: 'square', vol: 0.08 }); this.tone(1340, 0.15, { type: 'square', vol: 0.06 }); this.noise(0.08, { f: 6000, vol: 0.18 }); this.tone(110, 0.25, { type: 'sawtooth', vol: 0.1, at: 0.12 }); }
+  sSqueak() { this.tone(420, 0.42, { type: 'triangle', to: 640, glide: 0.2, vib: 14, vibAmt: 40, vol: 0.16 }); this.tone(600, 0.3, { type: 'sine', to: 380, vib: 9, vibAmt: 30, vol: 0.08, at: 0.2 }); }
+  sMiss() { this.tone(210, 0.08, { type: 'triangle', to: 120, vol: 0.12 }); }
+  buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  flash(kind) { this.setState({ flash: '' }); clearTimeout(this.flT); this.flT = setTimeout(() => this.setState({ flash: kind }), 16); }
+
+  begin() {
+    const g = this.fresh(this.state.lvl);
+    g.playing = true; g.next = 0.5;
+    this.g = g;
+    this.setState({ phase: 'playing', score: 0, combo: 0, best: 0, squeaks: 3, left: this.ROUND, why: '' });
+    this.tone(523, 0.08, { vol: 0.12 }); this.tone(784, 0.1, { vol: 0.12, at: 0.07 });
+  }
+  pick(li, quiet) {
+    if (!quiet) { this.ac(); this.noise(0.02, { f: 3000, vol: 0.12 }); }
+    try { localStorage.setItem('raf_games_level_nail', String(li + 1)); } catch (e) {}
+    this.g = this.fresh(li);
+    this.setState({ lvl: li, phase: 'ready', score: 0, combo: 0, squeaks: 3, left: this.ROUND });
+  }
+  spawnAt(g, i) {
+    const L = this.LEVELS[g.li], roll = Math.random();
+    const kind = roll < L.gold ? 'gold' : roll < L.gold + L.screw ? 'screw' : 'nail';
+    const k = Math.min(1, g.t / this.ROUND);
+    g.spots[i].busy = true;
+    g.nails.push({ spot: i, kind: kind, born: g.t, life: L.life * (1 - 0.25 * k) * (kind === 'screw' ? 1.1 : 1), state: 'up', at: 0 });
+  }
+  spawn(g) {
+    const L = this.LEVELS[g.li];
+    const free = g.spots.map((s, i) => i).filter((i) => !g.spots[i].busy);
+    if (!free.length) return;
+    const i = free[Math.floor(Math.random() * free.length)];
+    this.spawnAt(g, i);
+    if (L.triple) {
+      for (let k = 0; k < 2; k++) { const f = g.spots.map((s, j) => j).filter((j) => !g.spots[j].busy); if (f.length) this.spawnAt(g, f[Math.floor(Math.random() * f.length)]); }
+    } else if (L.pairs && Math.random() < L.pairs) {
+      let j = g.spots[i].pair;
+      if (j < 0) { const f = g.spots.map((s, q) => q).filter((q) => !g.spots[q].busy); j = f.length ? f[Math.floor(Math.random() * f.length)] : -1; }
+      if (j >= 0 && !g.spots[j].busy) this.spawnAt(g, j);
+    }
+    this.sPop();
+  }
+  tap(e) {
+    this.ac();
+    if (this.state.phase === 'ready') { this.begin(); return; }
+    if (this.state.phase !== 'playing') return;
+    const el = this.field; if (!el) return;
+    const r = el.getBoundingClientRect(), s = r.width / 358 || 1, x = (e.clientX - r.left) / s, y = (e.clientY - r.top) / s;
+    const g = this.g;
+    g.torch.tx = x; g.torch.ty = y;
+    let best = null, bd = 34;
+    for (const n of g.nails) {
+      if (n.state !== 'up') continue;
+      const sp = g.spots[n.spot], h = this.height(n), hx = sp.x - 3 * h, hy = sp.y - 10 * h;
+      const d = Math.hypot(x - hx, y - hy);
+      if (d < bd) { bd = d; best = n; }
+    }
+    if (!best) { this.sMiss(); g.dust.push(...this.dustAt(x, y, 4, '#8a6a48')); if (this.state.combo) this.setState({ combo: 0 }); return; }
+    const sp = g.spots[best.spot];
+    best.state = 'hit'; best.at = g.t;
+    g.hammers.push({ x: sp.x, y: sp.y, t: g.t });
+    if (best.kind === 'screw') {
+      this.sScrew(); this.buzz([50, 30, 80]); this.flash('bad'); g.shake = 0.8;
+      g.pops.push({ text: "THAT'S A SCREW", x: sp.x, y: sp.y - 26, life: 1.1, c: '#8ea6ff' });
+      this.lose('screw');
+      this.setState({ combo: 0 });
+      return;
+    }
+    const gold = best.kind === 'gold', combo = this.state.combo + 1, bonus = combo % 5 === 0 ? 1 : 0, add = (gold ? 3 : 1) + bonus;
+    this.sHit(gold); this.buzz(gold ? [10, 30, 10] : 9);
+    g.dust.push(...this.dustAt(sp.x, sp.y, gold ? 16 : 9, gold ? '#f2c94c' : '#c99a62'));
+    g.pops.push({ text: gold ? '+3 GOLD' : bonus ? combo + ' IN A ROW +1' : '+1', x: sp.x, y: sp.y - 24, life: 0.8, c: gold ? '#f2c94c' : bonus ? '#6fcf97' : '#f4f1ea' });
+    if (bonus) { this.flash('combo'); this.tone(988, 0.12, { vol: 0.1, at: 0.1 }); this.tone(1318, 0.2, { vol: 0.1, at: 0.2 }); }
+    this.setState({ score: this.state.score + add, combo: combo, best: Math.max(this.state.best, combo) });
+  }
+  dustAt(x, y, n, c) { const out = []; for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, v = 40 + Math.random() * 110; out.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0.35 + Math.random() * 0.25, c: c }); } return out; }
+  lose(why) {
+    const left = this.state.squeaks - 1;
+    this.setState({ squeaks: left });
+    if (left <= 0) this.finish(why === 'screw' ? 'You hammered a screw' : 'Three squeaks');
+  }
+  finish(why) {
+    const g = this.g; if (!g.playing) return;
+    g.playing = false;
+    const L = this.LEVELS[this.state.lvl], sc = this.state.score, earned = L.stars.filter((s) => sc >= s).length;
+    const stars = Object.assign({}, this.state.stars); stars[L.n] = Math.max(stars[L.n] || 0, earned);
+    try { localStorage.setItem('raf_games_stars_nail', JSON.stringify(stars)); } catch (e) {}
+    if (why === 'time') { this.tone(784, 0.3, { vol: 0.15 }); this.tone(523, 0.5, { vol: 0.15, at: 0.25 }); } else this.tone(120, 0.36, { to: 48, glide: 0.3, vol: 0.38 });
+    for (let i = 0; i < earned; i++) this.tone([784, 988, 1318][i], 0.3, { vol: 0.13, at: 0.7 + i * 0.22 });
+    setTimeout(() => this.setState({ phase: 'over', stars: stars, earned: earned, why: why === 'time' ? "TIME'S UP" : why.toUpperCase() }), 450);
+  }
+  height(n) { return Math.min(1, (this.g.t - n.born) / n.life) * (n.kind === 'screw' ? 0.6 : 1); }
+  step(dt) {
+    const g = this.g; g.t += dt;
+    if (g.playing) {
+      const L = this.LEVELS[g.li], k = Math.min(1, g.t / this.ROUND);
+      const up = g.nails.filter((n) => n.state === 'up').length;
+      if (g.t >= g.next) { if (up < L.up) this.spawn(g); g.next = g.t + (L.every[0] + (L.every[1] - L.every[0]) * k) * (0.7 + Math.random() * 0.6); }
+      for (const n of g.nails) {
+        if (n.state !== 'up') continue;
+        const p = (g.t - n.born) / n.life;
+        if (n.kind === 'screw' && p >= 1) { n.state = 'gone'; g.spots[n.spot].busy = false; }
+        else if (n.kind !== 'screw' && p >= 1.18) {
+          n.state = 'squeak'; n.at = g.t; g.shake = 0.6;
+          this.sSqueak(); this.buzz([30, 30, 30]); this.flash('bad');
+          const sp = g.spots[n.spot]; g.pops.push({ text: 'SQUEAK', x: sp.x, y: sp.y - 28, life: 1, c: '#eb5757' });
+          this.setState({ combo: 0 }); this.lose('squeak');
+        }
+      }
+      const left = Math.max(0, Math.ceil(this.ROUND - g.t));
+      if (left !== this.state.left) { this.setState({ left: left }); if (left <= 5 && left > 0) this.tone(1200, 0.05, { type: 'square', vol: 0.05 }); }
+      if (g.t >= this.ROUND) this.finish('time');
+    } else if (this.state.phase === 'ready') {
+      if (g.t >= g.next) { g.nails = g.nails.filter((n) => n.state === 'up' && g.t - n.born < 2.2); g.spots.forEach((s) => (s.busy = false)); g.nails.forEach((n) => (g.spots[n.spot].busy = true)); if (g.nails.length < 2) { const f = g.spots.map((s, i) => i).filter((i) => !g.spots[i].busy); if (f.length) this.spawnAt(g, f[Math.floor(Math.random() * f.length)]); } g.next = g.t + 0.9; }
+    }
+    for (const n of g.nails) if ((n.state === 'hit' && g.t - n.at > 0.45) || (n.state === 'squeak' && g.t - n.at > 0.9)) { n.state = 'gone'; g.spots[n.spot].busy = false; }
+    g.nails = g.nails.filter((n) => n.state !== 'gone');
+    for (const d of g.dust) { d.x += d.vx * dt; d.y += d.vy * dt; d.vx *= 0.92; d.vy *= 0.92; d.life -= dt; }
+    g.dust = g.dust.filter((d) => d.life > 0);
+    for (const p of g.pops) { p.y -= 34 * dt; p.life -= dt; }
+    g.pops = g.pops.filter((p) => p.life > 0);
+    g.hammers = g.hammers.filter((h) => g.t - h.t < 0.22);
+    g.shake = Math.max(0, g.shake - dt * 2.5);
+    const tk = Math.min(1, dt * 9); g.torch.x += (g.torch.tx - g.torch.x) * tk; g.torch.y += (g.torch.ty - g.torch.y) * tk;
+  }
+  floor(g) {
+    if (g.floor) return g.floor;
+    const L = this.LEVELS[g.li], c = document.createElement('canvas'); c.width = 716; c.height = 1040;
+    const x = c.getContext('2d'); x.scale(2, 2);
+    let seed = 42 + g.li * 13; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const W = 358, H = 520;
+    const grainV = (bx, y, w, len, lines, wobble, col) => {
+      x.strokeStyle = col; x.lineWidth = 0.8;
+      for (let j = 1; j < lines; j++) { const lx = bx + (w / lines) * j + (rnd() - 0.5) * 3; x.beginPath(); x.moveTo(lx, y); for (let yy = 0; yy <= len; yy += 12) x.lineTo(lx + Math.sin((yy + j * 30) / (30 + rnd() * 20)) * wobble, y + yy); x.stroke(); }
+    };
+    const grainH = (bx, by, w, h, lines, col) => {
+      x.strokeStyle = col; x.lineWidth = 0.8;
+      for (let j = 1; j < lines; j++) { const ly = by + (h / lines) * j + (rnd() - 0.5) * 2; x.beginPath(); x.moveTo(bx, ly); for (let xx = 0; xx <= w; xx += 12) x.lineTo(bx + xx, ly + Math.sin((xx + j * 40) / (34 + rnd() * 20)) * 1.4); x.stroke(); }
+    };
+    if (L.floor === 'oak' || L.floor === 'deck') {
+      const bw = g.bw, tones = L.floor === 'oak' ? ['#b98a58', '#a97a4a', '#c49565', '#9f7244', '#b38452', '#c79b6b'] : ['#8a6a4f', '#7d5f45', '#94735a', '#866650', '#7a5a42'];
+      const gapW = L.floor === 'deck' ? 6 : 1;
+      x.fillStyle = L.floor === 'deck' ? '#1a1410' : '#4a3424'; x.fillRect(0, 0, W, H);
+      for (let i = 0; i < (L.cols || 6); i++) {
+        const bx = i * bw, w = bw - gapW; let y = -rnd() * 260;
+        while (y < H) {
+          const len = 200 + rnd() * 240;
+          x.fillStyle = tones[Math.floor(rnd() * tones.length)]; x.fillRect(bx, y, w, len - 1.5);
+          grainV(bx, y, w, len, L.floor === 'deck' ? 7 : 5, L.floor === 'deck' ? 0 : 1.6, L.floor === 'deck' ? 'rgba(0,0,0,0.22)' : 'rgba(80,50,25,0.28)');
+          if (L.floor === 'oak' && rnd() < 0.5) { const kx = bx + 8 + rnd() * (w - 16), ky = y + 30 + rnd() * (len - 60); x.fillStyle = 'rgba(70,40,18,0.5)'; x.beginPath(); x.ellipse(kx, ky, 3, 5, 0, 0, Math.PI * 2); x.fill(); }
+          x.fillStyle = 'rgba(255,255,255,0.08)'; x.fillRect(bx, y, 1, len);
+          y += len;
+        }
+      }
+    } else if (L.floor === 'chip' || L.floor === 'shed') {
+      x.fillStyle = L.floor === 'chip' ? '#d2b98c' : '#c9ad7c'; x.fillRect(0, 0, W, H);
+      if (L.floor === 'chip') { for (let i = 0; i < 2600; i++) { x.fillStyle = rnd() < 0.5 ? 'rgba(120,85,45,0.35)' : 'rgba(255,240,200,0.35)'; x.fillRect(rnd() * W, rnd() * H, 1 + rnd() * 2, 0.8 + rnd()); } }
+      else { for (let i = 0; i < 900; i++) { x.save(); x.translate(rnd() * W, rnd() * H); x.rotate(rnd() * Math.PI); x.fillStyle = ['rgba(150,105,55,0.45)', 'rgba(230,200,150,0.5)', 'rgba(120,80,40,0.35)'][Math.floor(rnd() * 3)]; x.fillRect(-7, -2.5, 8 + rnd() * 10, 3 + rnd() * 3); x.restore(); } }
+      x.strokeStyle = 'rgba(90,60,30,0.55)'; x.lineWidth = 1.5;
+      [[0, 180, W, 180], [180, 0, 180, 180], [100, 180, 100, H], [300, 180, 300, H]].forEach((l) => { x.beginPath(); x.moveTo(l[0], l[1]); x.lineTo(l[2], l[3]); x.stroke(); });
+      x.fillStyle = 'rgba(40,70,140,0.55)'; x.font = '700 9px "Geist Mono", monospace';
+      [[20, 30], [200, 30], [20, 220], [140, 330], [320, 260]].forEach((p) => x.fillText(L.floor === 'chip' ? 'P5 · 18MM' : 'OSB3 · 18MM', p[0], p[1]));
+    } else if (L.floor === 'stairs') {
+      x.fillStyle = '#2b2119'; x.fillRect(0, 0, W, H);
+      for (let r = 0; r < 5; r++) {
+        const y = 6 + r * 102;
+        x.fillStyle = ['#b98a58', '#ad7f4f', '#c08f5d', '#a77a4b', '#b58554'][r]; x.fillRect(28, y, W - 56, 94);
+        grainH(28, y, W - 56, 94, 7, 'rgba(80,50,25,0.25)');
+        x.fillStyle = 'rgba(255,255,255,0.14)'; x.fillRect(28, y + 86, W - 56, 3);
+        x.fillStyle = 'rgba(0,0,0,0.45)'; x.fillRect(28, y + 94, W - 56, 8);
+      }
+      x.fillStyle = '#3d2e22'; x.fillRect(0, 0, 28, H); x.fillRect(W - 28, 0, 28, H);
+      x.fillStyle = 'rgba(255,255,255,0.06)'; x.fillRect(26, 0, 2, H); x.fillRect(W - 28, 0, 2, H);
+      x.fillStyle = 'rgba(244,241,234,0.45)'; x.font = '700 9px "Geist Mono", monospace'; x.fillText('UP', 8, 514);
+    } else if (L.floor === 'fence') {
+      x.fillStyle = '#5d7a3a'; x.fillRect(0, 0, W, H);
+      const bw = W / 7;
+      for (let i = 0; i < 7; i++) {
+        const bx = i * bw;
+        x.fillStyle = ['#9d7c55', '#a8865d', '#94744f', '#a07f57', '#8f7049', '#a5845b', '#987850'][i]; x.fillRect(bx, 0, bw + 3, H - 30);
+        grainV(bx, 0, bw, H - 30, 4, 1.2, 'rgba(60,40,20,0.3)');
+        x.fillStyle = 'rgba(0,0,0,0.3)'; x.fillRect(bx + bw - 2, 0, 5, H - 30);
+        x.fillStyle = 'rgba(255,255,255,0.1)'; x.fillRect(bx, 0, 2, H - 30);
+      }
+      x.strokeStyle = 'rgba(30,20,10,0.35)'; x.setLineDash([5, 5]); x.lineWidth = 1;
+      [132, 372].forEach((y) => { x.beginPath(); x.moveTo(0, y); x.lineTo(W, y); x.stroke(); });
+      x.setLineDash([]);
+      x.fillStyle = '#4c6a2c'; x.fillRect(0, H - 34, W, 34);
+      for (let i = 0; i < 160; i++) { x.strokeStyle = 'rgba(120,170,70,0.6)'; x.beginPath(); const gx = rnd() * W; x.moveTo(gx, H); x.lineTo(gx + (rnd() - 0.5) * 6, H - 26 - rnd() * 14); x.stroke(); }
+      x.fillStyle = 'rgba(244,241,234,0.5)'; x.font = '700 9px "Geist Mono", monospace'; x.fillText('TOP RAIL', 6, 124); x.fillText('BOTTOM RAIL', 6, 364);
+    } else if (L.floor === 'battens') {
+      x.fillStyle = '#2c3034'; x.fillRect(0, 0, W, H);
+      for (let i = 0; i < 40; i++) { x.strokeStyle = 'rgba(255,255,255,0.04)'; x.beginPath(); const yy = rnd() * H; x.moveTo(0, yy); x.lineTo(W, yy + (rnd() - 0.5) * 8); x.stroke(); }
+      for (let r = 0; r < 6; r++) {
+        const y = 66 + r * 78 - 10;
+        x.fillStyle = ['#c9a46e', '#bf9a63', '#cda873', '#c39e68', '#c8a26b', '#bb965f'][r]; x.fillRect(0, y, W, 20);
+        grainH(0, y, W, 20, 3, 'rgba(90,60,25,0.35)');
+        x.fillStyle = 'rgba(0,0,0,0.35)'; x.fillRect(0, y + 20, W, 4);
+        x.fillStyle = 'rgba(255,255,255,0.15)'; x.fillRect(0, y, W, 1.5);
+      }
+      x.fillStyle = 'rgba(244,241,234,0.4)'; x.font = '700 9px "Geist Mono", monospace'; x.fillText('25 X 50 BATTENS ON FELT', 8, 20);
+    } else if (L.floor === 'pallet') {
+      x.fillStyle = '#141414'; x.fillRect(0, 0, W, H);
+      [50, 179, 308].forEach((bx) => { x.fillStyle = '#6b5236'; x.fillRect(bx - 30, 0, 60, H); });
+      for (let r = 0; r < 4; r++) {
+        const y = 30 + r * 116;
+        x.fillStyle = ['#c6a77a', '#bb9b6d', '#cfb084', '#b99a6c'][r]; x.fillRect(0, y, W, 80);
+        grainH(0, y, W, 80, 6, 'rgba(90,60,25,0.3)');
+        x.fillStyle = 'rgba(0,0,0,0.35)'; x.fillRect(0, y + 80, W, 4);
+        x.fillStyle = 'rgba(30,60,120,0.5)'; x.font = '700 10px "Geist Mono", monospace'; if (r === 1) x.fillText('EPAL · HT', 220, y + 46);
+      }
+    }
+    g.spots.forEach((s) => { x.fillStyle = 'rgba(30,24,20,0.55)'; x.beginPath(); x.arc(s.x, s.y, 2.6, 0, Math.PI * 2); x.fill(); x.fillStyle = 'rgba(255,255,255,0.15)'; x.beginPath(); x.arc(s.x - 0.6, s.y - 0.6, 1, 0, Math.PI * 2); x.fill(); });
+    g.floor = c;
+    return c;
+  }
+  draw() {
+    const cv = this.cv; if (!cv) return;
+    const ctx = cv.getContext('2d'), g = this.g, W = 358, H = 520, L = this.LEVELS[g.li];
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const shx = g.shake ? (Math.random() - 0.5) * 10 * g.shake : 0, shy = g.shake ? (Math.random() - 0.5) * 6 * g.shake : 0;
+    ctx.drawImage(this.floor(g), shx * 2, shy * 2);
+    ctx.setTransform(2, 0, 0, 2, shx * 2, shy * 2);
+    const drawNail = (n) => {
+      const sp = g.spots[n.spot];
+      if (n.state === 'hit') {
+        const k = Math.min(1, (g.t - n.at) / 0.45);
+        ctx.fillStyle = 'rgba(0,0,0,' + (0.35 * (1 - k)) + ')'; ctx.beginPath(); ctx.arc(sp.x, sp.y, 7, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = n.kind === 'gold' ? '#f2c94c' : n.kind === 'screw' ? '#9fb3d6' : '#cfd5db'; ctx.beginPath(); ctx.arc(sp.x, sp.y, 3.6, 0, Math.PI * 2); ctx.fill();
+        return;
+      }
+      const h = this.height(n), hx = sp.x - 3 * h, hy = sp.y - 10 * h, rr = 5 + 3.6 * h;
+      const p = (g.t - n.born) / n.life;
+      ctx.fillStyle = 'rgba(0,0,0,0.38)'; ctx.beginPath(); ctx.ellipse(sp.x + 4 * h + 1, sp.y + 4 * h + 1, rr * 0.9, rr * 0.7, 0.5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = n.kind === 'screw' ? '#8fa3c4' : '#9aa2aa'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(sp.x, sp.y); ctx.lineTo(hx, hy); ctx.stroke();
+      if (n.kind === 'nail' || n.kind === 'gold') {
+        const warn = n.state === 'squeak' ? 2 : p < 0.55 ? 0 : p < 0.85 ? 1 : 2;
+        const pulse = warn === 2 ? 0.5 + 0.5 * Math.sin(g.t * 22) : 1;
+        ctx.strokeStyle = warn === 0 ? 'rgba(244,241,234,0.55)' : warn === 1 ? 'rgba(242,201,76,0.9)' : 'rgba(235,87,87,' + (0.55 + 0.45 * pulse) + ')';
+        ctx.lineWidth = warn === 2 ? 3 : 2;
+        ctx.beginPath(); ctx.arc(hx, hy, rr + 5 + (warn === 2 ? pulse * 2 : 0), 0, Math.PI * 2); ctx.stroke();
+      }
+      const grd = ctx.createRadialGradient(hx - rr * 0.35, hy - rr * 0.35, 1, hx, hy, rr);
+      if (n.kind === 'gold') { grd.addColorStop(0, '#fff3c4'); grd.addColorStop(1, '#c9971c'); }
+      else if (n.kind === 'screw') { grd.addColorStop(0, '#eef3fb'); grd.addColorStop(1, '#7f93b5'); }
+      else { grd.addColorStop(0, '#ffffff'); grd.addColorStop(1, '#8a929a'); }
+      ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(hx, hy, rr, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 0.8; ctx.stroke();
+      if (n.kind === 'screw') { ctx.strokeStyle = '#3d4a60'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(hx - rr * 0.55, hy); ctx.lineTo(hx + rr * 0.55, hy); ctx.moveTo(hx, hy - rr * 0.55); ctx.lineTo(hx, hy + rr * 0.55); ctx.stroke(); }
+      if (n.kind === 'gold') { ctx.fillStyle = 'rgba(255,255,255,' + (0.5 + 0.5 * Math.sin(g.t * 9)) + ')'; ctx.fillRect(hx + rr * 0.2, hy - rr - 6, 2, 5); ctx.fillRect(hx + rr * 0.2 - 1.5, hy - rr - 4.5, 5, 2); }
+    };
+    for (const n of g.nails) drawNail(n);
+    // the shed at night: dark, with a torch that follows your taps, and glints where nails pop
+    if (L.dark) {
+      ctx.save();
+      const t = g.torch, R = 92;
+      const grd = ctx.createRadialGradient(t.x, t.y, R * 0.35, t.x, t.y, R);
+      grd.addColorStop(0, 'rgba(4,6,8,0)'); grd.addColorStop(1, 'rgba(4,6,8,0.9)');
+      ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(4,6,8,0.9)';
+      ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.arc(t.x, t.y, R, 0, Math.PI * 2, true); ctx.fill();
+      for (const n of g.nails) {
+        if (n.state !== 'up') continue;
+        const sp = g.spots[n.spot], h = this.height(n), hx = sp.x - 3 * h, hy = sp.y - 10 * h, tw = 0.45 + 0.55 * Math.abs(Math.sin(g.t * 5 + n.spot));
+        const col = n.kind === 'gold' ? '242,201,76' : n.kind === 'screw' ? '142,166,255' : h > 0.85 ? '235,87,87' : '244,241,234';
+        ctx.fillStyle = 'rgba(' + col + ',' + (0.35 + 0.5 * tw * h) + ')';
+        ctx.beginPath(); ctx.arc(hx, hy, 1.5 + 3 * h, 0, Math.PI * 2); ctx.fill();
+        ctx.fillRect(hx - 6 * tw, hy - 0.6, 12 * tw, 1.2); ctx.fillRect(hx - 0.6, hy - 6 * tw, 1.2, 12 * tw);
+      }
+      ctx.strokeStyle = 'rgba(255,236,170,0.18)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(t.x, t.y, R - 2, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+    for (const hm of g.hammers) {
+      const k = (g.t - hm.t), s = k < 0.06 ? 1.6 - (k / 0.06) * 0.6 : 1, a = k < 0.06 ? 0.75 : Math.max(0, 1 - (k - 0.06) / 0.16);
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(hm.x, hm.y); ctx.rotate(-0.45); ctx.scale(s, s);
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(6, 4, 96, 12);
+      ctx.fillStyle = '#9c703d'; ctx.fillRect(4, -5, 96, 11);
+      ctx.fillStyle = '#16191c'; ctx.fillRect(74, -6, 26, 13);
+      ctx.fillStyle = '#b9c0c7'; ctx.fillRect(-14, -16, 24, 32);
+      ctx.fillStyle = '#d4dae0'; ctx.beginPath(); ctx.arc(-2, 0, 10, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      if (k < 0.1) { ctx.strokeStyle = 'rgba(255,255,255,' + (1 - k * 10) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(hm.x, hm.y, 10 + k * 160, 0, Math.PI * 2); ctx.stroke(); }
+    }
+    for (const d of g.dust) { ctx.globalAlpha = Math.max(0, d.life * 2.4); ctx.fillStyle = d.c; ctx.fillRect(d.x - 1, d.y - 1, 2.4, 2.4); }
+    ctx.globalAlpha = 1;
+    for (const p of g.pops) {
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 1.8));
+      ctx.font = '800 15px "Bricolage Grotesque", system-ui, sans-serif'; ctx.textAlign = 'center';
+      const tw = ctx.measureText(p.text).width, x = Math.max(tw / 2 + 6, Math.min(W - tw / 2 - 6, p.x));
+      ctx.fillStyle = 'rgba(14,17,20,0.78)'; ctx.fillRect(x - tw / 2 - 6, p.y - 14, tw + 12, 19);
+      ctx.fillStyle = p.c; ctx.fillText(p.text, x, p.y); ctx.textAlign = 'left';
+    }
+    ctx.globalAlpha = 1;
+    if (this.state.phase === 'playing') {
+      const f = Math.max(0, 1 - g.t / this.ROUND);
+      ctx.fillStyle = 'rgba(14,17,20,0.6)'; ctx.fillRect(0, 0, W, 5);
+      ctx.fillStyle = f < 5 / this.ROUND ? '#eb5757' : '#ff8a5b'; ctx.fillRect(0, 0, W * f, 5);
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  renderVals() {
+    const st = this.state, L = this.LEVELS[st.lvl];
+    const starTxt = (n) => '★★★'.slice(0, n) + '☆☆☆'.slice(0, 3 - n);
+    const next = L.stars.find((s) => st.score < s);
+    const nextL = this.LEVELS[st.lvl + 1];
+    return {
+      levelN: L.n, levelPlain: L.name, levelStars: starTxt(st.stars[L.n] || 0),
+      lives: [0, 1, 2].map((i) => ({ c: i < st.squeaks ? '#c7ced5' : 'rgba(235,87,87,0.85)' })),
+      score: st.score,
+      scoreLine: st.combo > 1 ? st.combo + ' in a row' : next ? next + ' for the next star' : 'three stars',
+      timeTxt: '0:' + String(st.left).padStart(2, '0'), timeColor: st.left <= 5 && st.phase === 'playing' ? '#eb5757' : '#f4f1ea',
+      fieldClass: st.flash ? 'fl-' + st.flash : '',
+      showIntro: st.phase === 'ready', levelName: L.name.toUpperCase(), introTitle: L.title, introText: L.text,
+      showCard: st.phase === 'over', cardKicker: st.why + ' · LEVEL ' + L.n,
+      cardStars: [0, 1, 2].map((i) => ({ c: i < st.earned ? '#e0a400' : '#c9ccc6', d: (0.25 + i * 0.22).toFixed(2) })),
+      starLine: 'Stars at ' + L.stars.join(' / ') + ' · best run ' + st.best,
+      canNext: !!nextL && st.earned > 0, noNext: !(nextL && st.earned > 0),
+      nextLabel: nextL ? 'Level ' + nextL.n + ': ' + nextL.name : '',
+      soundOn: st.sound, soundOff: !st.sound, soundLabel: st.sound ? 'Turn sound off' : 'Turn sound on',
+      setCv: (el) => { this.cv = el; }, setField: (el) => { this.field = el; },
+      tapField: (e) => { if (e && e.button > 0) return; this.tap(e); },
+      stop: (e) => { if (e) e.stopPropagation(); },
+      again: () => this.begin(),
+      nextLevel: () => { if (nextL) this.pick(st.lvl + 1); },
+      shareIt: () => this.share({ g: 'nail', n: st.score, lv: L.n }),
+      stageScale: st.stageScale || 1, setBox: this.setBox,
+      toggleSound: () => { const on = !this.state.sound; this.snd = on; this.saveSound(on); this.setState({ sound: on }); if (on) { this.ac(); this.sHit(false); } },
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -57,7 +57,7 @@ const PAGES: { title: string; href: string; sub: string; words: string }[] = [
   { title: 'Send your IKEA PAX design', href: '/wardrobe-planner#ikea-pax', sub: 'The design code from IKEA, and I build it in', words: 'ikea pax design code planner share link built in fitted hack fillers top boxes' },
   { title: 'Workshop Tools app', href: '/tools/workshop', sub: 'Free app for your phone: hinges, drawers, panelling, stud walls', words: 'app phone iphone android install home screen offline workshop tools hinge hinges drawer runners unit sizes panelling picture frames stairs batten flooring stud wall noggins plasterboard insulation inches converter calculator carpenter trade' },
   { title: 'Spirit level', href: '/tools/spirit-level', sub: 'Free: your phone as a level, with Set zero', words: 'spirit level bubble phone angle tilt degrees inclinometer zero tare flat plumb pack packers mm per metre' },
-  { title: 'Timber Stack', href: '/tools/timber-stack', sub: 'A free game: stack the timber', words: 'game timber stack play fun' },
+  { title: 'Workshop Games', href: '/tools/games', sub: 'Four free games: Measure Up, Sheet Saver, Timber Stack, Nail Pop', words: 'game games play fun puzzle daily timber stack nail pop hammer measure up tape guess sheet saver board cutting layout' },
   { title: 'Where I work', href: '/areas', sub: 'Every area, and the jobs nearest you', words: 'areas where work near me local postcode london cover travel' },
   { title: 'Blog', href: '/blog', sub: 'Jobs step by step, SketchUp and CabinetOS', words: 'blog posts articles write ups' },
   { title: 'About', href: '/about', sub: 'Who I am and how I work', words: 'about raf rafal story who carpenter london' },

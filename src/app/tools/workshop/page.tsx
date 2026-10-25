@@ -169,6 +169,7 @@ export default async function WorkshopToolsPage() {
               ))}
               <div className="mt-6 flex flex-wrap gap-x-8 gap-y-3 border-t border-line pt-6">
                 <Link href="/tools/spirit-level" className="link-more">Spirit level <span aria-hidden="true">→</span></Link>
+                <Link href="/tools/games" className="link-more">Workshop Games <span aria-hidden="true">→</span></Link>
                 <Link href="/calculator" className="link-more">Workshop calculator <span aria-hidden="true">→</span></Link>
                 <Link href="/tips" className="link-more">Workshop tips <span aria-hidden="true">→</span></Link>
                 <Link href="/tools" className="link-more">All my tools <span aria-hidden="true">→</span></Link>

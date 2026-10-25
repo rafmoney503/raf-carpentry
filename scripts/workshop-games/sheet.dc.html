@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sheet Saver in Workshop Games</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=Geist:wght@400..700&amp;family=Geist+Mono:wght@400..600&amp;display=swap">
+<style>
+body{margin:0}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+@keyframes ss-snap{0%{filter:brightness(1.5)}100%{filter:brightness(1)}}
+@keyframes ss-bad{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes ss-win{0%{box-shadow:0 0 0 0 rgba(111,207,151,0)}30%{box-shadow:0 0 0 4px rgba(111,207,151,.9), 0 0 34px rgba(111,207,151,.55)}100%{box-shadow:0 0 0 2px rgba(111,207,151,.6)}}
+@keyframes ss-sweep{0%{transform:translateY(-120%)}100%{transform:translateY(420%)}}
+@keyframes ss-card{0%{transform:translate(-50%,-40%);opacity:0}100%{transform:translate(-50%,-50%);opacity:1}}
+@keyframes ss-turn{0%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+.ss-snap{animation:ss-snap .45s ease-out}
+.ss-bad{animation:ss-bad .35s ease-out}
+.ss-won{animation:ss-win 1s ease-out forwards}
+.ss-turn{animation:ss-turn .28s ease-out}
+.ss-btn{transition:transform .1s ease}
+.ss-btn:active{transform:scale(.96)}
+</style>
+</helmet>
+<div ref="{{ setRoot }}" style="position: relative; width: 390px; height: 844px; box-sizing: border-box; background-color: #121518; background-image: linear-gradient(rgba(127,155,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(127,155,255,0.12) 1px, transparent 1px); background-size: 80px 80px; color: #f4f1ea; font-family: Geist, system-ui, sans-serif; overflow: hidden; user-select: none; -webkit-user-select: none">
+
+  <header style="position: absolute; left: 16px; right: 16px; top: 6px; height: 50px; display: flex; align-items: center; gap: 6px">
+    <a href="#/" aria-label="Back to the games" style="width: 44px; height: 44px; margin-left: -10px; display: grid; place-items: center; color: #f4f1ea; text-decoration: none">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+    </a>
+    <div style="flex: 1; min-width: 0">
+      <div class="mono" style="font-size: 10.5px; letter-spacing: 0.12em; color: #6fcf97; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ kicker }}</div>
+      <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 20px; font-weight: 760; letter-spacing: -0.02em">Sheet Saver</div>
+    </div>
+    <a href="#/sheet/boards" style="height: 40px; padding: 0 11px; display: flex; align-items: center; gap: 6px; border-radius: 10px; border: 1px solid rgba(244,241,234,0.18); background: rgba(27,32,37,0.9); color: #f4f1ea; text-decoration: none; font-size: 13px; font-weight: 600">
+      <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><rect x="1" y="1" width="6" height="6" rx="1" fill="#6fcf97"></rect><rect x="9" y="1" width="6" height="6" rx="1" fill="currentColor" opacity=".55"></rect><rect x="1" y="9" width="6" height="6" rx="1" fill="currentColor" opacity=".55"></rect><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor" opacity=".55"></rect></svg>Boards
+    </a>
+    <button type="button" onClick="{{ toggleSound }}" aria-label="{{ soundLabel }}" style="width: 40px; height: 40px; display: grid; place-items: center; border-radius: 10px; border: 1px solid rgba(244,241,234,0.18); background: rgba(27,32,37,0.9); color: #f4f1ea; cursor: pointer">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 8v4h3l4 3V5L6 8H3z"></path>
+        <sc-if value="{{ soundOn }}" hint-placeholder-val="{{ true }}"><path d="M13.5 7a4 4 0 0 1 0 6M15.8 4.8a7 7 0 0 1 0 10.4"></path></sc-if>
+        <sc-if value="{{ soundOff }}" hint-placeholder-val="{{ false }}"><path d="M13.5 7.5l5 5M18.5 7.5l-5 5"></path></sc-if>
+      </svg>
+    </button>
+  </header>
+
+  <div style="position: absolute; left: 16px; right: 16px; top: 60px; height: 48px">
+    <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 20px; font-weight: 760; letter-spacing: -0.02em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ goalTitle }}</div>
+    <div style="margin-top: 6px; display: flex; align-items: center; gap: 12px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11.5px; color: #a3abb3">
+      <span><span style="color: #f4f1ea; font-weight: 600">{{ onCount }}</span> of {{ partCount }} on</span>
+      <span>{{ timeTxt }}</span>
+      <span>{{ turnsTxt }}</span>
+      <span style="margin-left: auto; display: flex; gap: 6px">
+        <button type="button" class="ss-btn" onClick="{{ clearBoard }}" style="height: 26px; padding: 0 9px; border-radius: 7px; border: 1px solid rgba(244,241,234,0.2); background: rgba(27,32,37,0.92); color: #f4f1ea; font-family: Geist, system-ui, sans-serif; font-size: 12px; font-weight: 600; cursor: pointer">Clear</button>
+        <button type="button" class="ss-btn" onClick="{{ showMe }}" style="height: 26px; padding: 0 9px; border-radius: 7px; border: 1px solid rgba(111,207,151,0.5); background: rgba(111,207,151,0.12); color: #6fcf97; font-family: Geist, system-ui, sans-serif; font-size: 12px; font-weight: 600; cursor: pointer">Show me</button>
+      </span>
+    </div>
+  </div>
+
+  <div style="position: absolute; left: 16px; top: 114px; width: 358px; height: 560px; box-sizing: border-box; border-radius: 12px; border: 1px solid rgba(244,241,234,0.14); background: #0e1114"></div>
+  <svg width="390" height="560" viewBox="0 0 390 560" style="position: absolute; left: 0; top: 114px; pointer-events: none" aria-hidden="true">
+    <path d="M64 12 H326.3 M64 7 v10 M326.3 7 v10" stroke="#8ea6ff" stroke-width="1.2" fill="none"></path>
+    <rect x="175" y="2" width="40" height="13" fill="#0e1114"></rect>
+    <text x="195" y="13" text-anchor="middle" fill="#8ea6ff" style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600">1220</text>
+    <path d="M44 22 V546.6 M39 22 h10 M39 546.6 h10" stroke="#8ea6ff" stroke-width="1.2" fill="none"></path>
+    <rect x="36" y="266" width="16" height="36" fill="#0e1114"></rect>
+    <text x="44" y="284" text-anchor="middle" fill="#8ea6ff" transform="rotate(-90 44 284)" style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600">2440</text>
+    <text x="64" y="556" fill="rgba(163,171,179,0.75)" style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.06em">{{ boardNote }}</text>
+  </svg>
+  <div class="{{ boardClass }}" style="position: absolute; left: 64px; top: 136px; width: 262.3px; height: 524.6px; box-sizing: border-box; border: 1.5px dashed rgba(244,241,234,0.5); background-color: rgba(220,193,148,0.07); background-image: linear-gradient(rgba(127,155,255,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(127,155,255,0.10) 1px, transparent 1px); background-size: 21.5px 21.5px; overflow: hidden">
+    <sc-if value="{{ won }}" hint-placeholder-val="{{ false }}">
+      <div style="position: absolute; left: 0; right: 0; height: 30%; background: linear-gradient(rgba(255,255,255,0), rgba(255,255,255,0.32), rgba(255,255,255,0)); animation: ss-sweep 1.2s ease-in-out 2"></div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ showSnap }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; left: {{ snapX }}px; top: {{ snapY }}px; width: {{ snapW }}px; height: {{ snapH }}px; box-sizing: border-box; border: 2px solid {{ snapColor }}; background: {{ snapFill }}; pointer-events: none; z-index: 20"></div>
+  </sc-if>
+
+  <div style="position: absolute; left: 16px; right: 16px; top: 680px; height: 20px; font-size: 13px; line-height: 20px; color: {{ msgColor }}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ msg }}</div>
+
+  <div style="position: absolute; left: 16px; top: 706px; width: 358px; height: 124px; display: grid; grid-template-columns: repeat({{ cardCount }}, minmax(0, 1fr)); gap: 8px">
+    <sc-for list="{{ cards }}" as="c" hint-placeholder-count="4">
+      <div onPointerDown="{{ c.down }}" onPointerMove="{{ c.move }}" onPointerUp="{{ c.up }}" onPointerCancel="{{ c.up }}" style="position: relative; border-radius: 10px; border: 1px solid {{ c.border }}; background: rgba(27,32,37,0.95); opacity: {{ c.op }}; cursor: grab; touch-action: none; display: flex; flex-direction: column; align-items: center; padding: 8px 4px 7px; box-sizing: border-box">
+        <span class="mono" style="position: absolute; top: 5px; right: 6px; padding: 1px 6px; border-radius: 999px; background: {{ c.badgeBg }}; color: #16191c; font-size: 10.5px; font-weight: 700">{{ c.badge }}</span>
+        <div style="flex: 1; width: 100%; display: grid; place-items: center">
+          <div class="{{ c.turnCls }}" style="width: {{ c.mw }}px; height: {{ c.mh }}px; background-color: #dcc194; background-image: {{ c.grain }}; border: 1px solid #9c7a45; box-shadow: 0 2px 4px rgba(0,0,0,0.4)"></div>
+        </div>
+        <div style="margin-top: 5px; font-size: 13px; font-weight: 650">{{ c.name }}</div>
+        <div class="mono" style="font-size: 10.5px; color: #a3abb3">{{ c.size }}</div>
+        <div class="mono" style="margin-top: 2px; font-size: 9.5px; color: #8ea6ff">{{ c.tip }}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <sc-for list="{{ parts }}" as="p" hint-placeholder-count="7">
+    <div class="{{ p.cls }}" onPointerDown="{{ p.down }}" onPointerMove="{{ p.move }}" onPointerUp="{{ p.up }}" onPointerCancel="{{ p.up }}" style="position: absolute; display: {{ p.disp }}; left: {{ p.x }}px; top: {{ p.y }}px; width: {{ p.w }}px; height: {{ p.h }}px; box-sizing: border-box; border: 1px solid {{ p.border }}; background-color: {{ p.bg }}; background-image: {{ p.grain }}; box-shadow: {{ p.shadow }}; z-index: {{ p.z }}; cursor: grab; touch-action: none; align-items: center; justify-content: center; overflow: hidden">
+      <span class="mono" style="writing-mode: {{ p.wm }}; text-align: center; font-size: 10px; line-height: 1.3; font-weight: 600; color: #16191c; white-space: pre; pointer-events: none">{{ p.label }}</span>
+    </div>
+  </sc-for>
+
+  <sc-if value="{{ showCard }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; left: 50%; top: 400px; width: 310px; transform: translate(-50%,-50%); padding: 16px; border-radius: 12px; background: #f1f2ef; color: #16191c; box-shadow: 0 14px 40px rgba(0,0,0,0.55); animation: ss-card .35s ease-out; z-index: 80">
+      <div class="mono" style="font-size: 10.5px; letter-spacing: 0.1em; color: #1f7a4a">{{ cardKicker }}</div>
+      <div style="margin-top: 4px; font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05">{{ cardTitle }}</div>
+      <div class="mono" style="margin-top: 6px; font-size: 12px; color: #4f555b">{{ cardStats }}</div>
+      <div style="margin-top: 12px; display: grid; grid-template-columns: {{ cardCols }}; gap: 8px">
+        <sc-if value="{{ hasNext }}" hint-placeholder-val="{{ true }}">
+          <button type="button" class="ss-btn" onClick="{{ nextBoard }}" style="height: 44px; border: 0; border-radius: 9px; background: #6fcf97; color: #0e1114; font-family: Geist, system-ui, sans-serif; font-size: 14px; font-weight: 700; cursor: pointer">{{ nextLabel }}</button>
+        </sc-if>
+        <sc-if value="{{ noNext }}" hint-placeholder-val="{{ false }}">
+          <button type="button" class="ss-btn" onClick="{{ shareIt }}" style="height: 44px; border: 0; border-radius: 9px; background: #2547d0; color: #ffffff; font-family: Geist, system-ui, sans-serif; font-size: 14px; font-weight: 650; cursor: pointer">Share result</button>
+        </sc-if>
+        <button type="button" class="ss-btn" onClick="{{ reset }}" style="height: 44px; border: 0; border-radius: 9px; background: #16191c; color: #f4f1ea; font-family: Geist, system-ui, sans-serif; font-size: 14px; font-weight: 650; cursor: pointer">{{ againLabel }}</button>
+      </div>
+      <a href="https://www.cabinetos.co.uk" target="_blank" rel="noopener" style="display: block; margin-top: 10px; text-align: center; font-size: 12.5px; color: #2547d0">Real cut lists get packed like this in CabinetOS</a>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    // The board stands up: 1220 across, 2440 down. All sizes in mm, drawn at K px per mm.
+    this.K = 0.215; this.BW = 1220; this.BH = 2440; this.BX = 64; this.BY = 136;
+    this.PUZZLES = {
+      1: { chapter: 'First boards', kerf: 0, times: [60, 25],
+        types: { side: { name: 'Side', w: 600, h: 2000, n: 2 }, shelf: { name: 'Shelf', w: 600, h: 400, n: 2 }, cleat: { name: 'Cleat', w: 1200, h: 30, n: 1 } },
+        plan: [['side', 0, 0, 600, 2000], ['side', 600, 0, 600, 2000], ['shelf', 0, 2000, 600, 400], ['shelf', 600, 2000, 600, 400], ['cleat', 0, 2400, 1200, 30]],
+        hint: 'Two sides side by side, the rest along the bottom.' },
+      2: { chapter: 'First boards', kerf: 0, times: [75, 35],
+        types: { side: { name: 'Side', w: 560, h: 1800, n: 2 }, plinth: { name: 'Plinth', w: 1800, h: 100, n: 1 }, shelf: { name: 'Shelf', w: 600, h: 600, n: 2 }, rail: { name: 'Rail', w: 1200, h: 40, n: 1 } },
+        plan: [['side', 0, 0, 560, 1800], ['side', 560, 0, 560, 1800], ['plinth', 1120, 0, 100, 1800], ['shelf', 0, 1800, 600, 600], ['shelf', 600, 1800, 600, 600], ['rail', 0, 2400, 1200, 40]],
+        hint: 'The plinth stands up beside the sides.' },
+      3: { chapter: 'First boards', kerf: 0, times: [75, 35],
+        types: { door: { name: 'Door', w: 595, h: 1950, n: 2 }, filler: { name: 'Filler', w: 1950, h: 30, n: 1 }, top: { name: 'Top', w: 280, h: 1190, n: 1 }, base: { name: 'Base', w: 1190, h: 200, n: 1 } },
+        plan: [['door', 0, 0, 595, 1950], ['door', 595, 0, 595, 1950], ['filler', 1190, 0, 30, 1950], ['top', 0, 1950, 1190, 280], ['base', 0, 2230, 1190, 200]],
+        hint: 'A 30 mm filler fits the gap beside the doors.' },
+      11: { chapter: 'With the grain', kerf: 0, times: [90, 45],
+        types: { door: { name: 'Door', w: 600, h: 1500, n: 2, grain: 'v' }, panel: { name: 'Panel', w: 900, h: 600, n: 1, grain: 'h' }, shelf: { name: 'Shelf', w: 560, h: 300, n: 1 }, plinth: { name: 'Plinth', w: 1200, h: 300, n: 1, grain: 'h' } },
+        plan: [['door', 0, 0, 600, 1500], ['door', 600, 0, 600, 1500], ['panel', 0, 1500, 900, 600], ['shelf', 900, 1500, 300, 560], ['plinth', 0, 2100, 1200, 300]],
+        hint: 'Only the shelf turns. Everything else runs with the grain.' },
+      21: { chapter: 'Saw cuts count', kerf: 3, times: [90, 45],
+        types: { side: { name: 'Side', w: 608, h: 1800, n: 2 }, shelf: { name: 'Shelf', w: 634, h: 401, n: 3 } },
+        plan: [['side', 0, 0, 608, 1800], ['side', 611, 0, 608, 1800], ['shelf', 0, 1803, 401, 634], ['shelf', 404, 1803, 401, 634], ['shelf', 808, 1803, 401, 634]],
+        hint: 'Every part needs 3 mm round it for the saw blade.' },
+    };
+    this.cache = {};
+    this.todayN = this.dailyNumber();
+    let pid = this.todayN, stars = {};
+    try { pid = this.resolve(localStorage.getItem('raf_games_level_sheet')); stars = JSON.parse(localStorage.getItem('raf_games_stars_sheet') || '{}') || {}; } catch (e) {}
+    this.pid = pid;
+    this.state = this.fresh(); this.state.sound = true; this.state.stars = stars; this.state.pid = pid; this.state.earned = 0;
+    this.snd = this.soundPref(); this.state.sound = this.snd; this.root = null;
+  }
+  soundPref() { try { return localStorage.getItem('raf_games_sound') !== '0'; } catch (e) { return true; } }
+  saveSound(on) { try { localStorage.setItem('raf_games_sound', on ? '1' : '0'); } catch (e) {} }
+  share(p) { if (typeof this.shareScore === 'function') this.shareScore(p); }
+  // Boards 1 to 30 (41 up are the daily boards). 'daily', nothing saved or an old daily: today's.
+  resolve(v) { const n = parseInt(v || '', 10); return n >= 1 && n <= 30 ? n : this.todayN; }
+  londonDay() {
+    const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+    const g = (t) => Number((p.find((x) => x.type === t) || {}).value);
+    return Math.round(Date.UTC(g('year'), g('month') - 1, g('day')) / 86400000);
+  }
+  // board 112 was Sunday 25 October 2026
+  dailyNumber() { return this.londonDay() - Math.round(Date.UTC(2026, 6, 5) / 86400000); }
+  P() { return this.getPuzzle(this.pid); }
+  getPuzzle(pid) {
+    if (this.PUZZLES[pid]) return this.PUZZLES[pid];
+    if (!this.cache[pid]) this.cache[pid] = this.gen(pid);
+    return this.cache[pid];
+  }
+  rng(seed) { let s = seed >>> 0; return () => { s = (s + 0x6d2b79f5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  /* A board is made by cutting a sheet the way a panel saw would (each cut straight across a piece), so it always
+     has an answer: the cuts themselves. Some halves make matching parts, some strips make plinths and rails. */
+  gen(pid) {
+    const daily = pid > 40;
+    const wd = daily ? (new Date((Math.round(Date.UTC(2026, 6, 5) / 86400000) + pid) * 86400000).getUTCDay() + 6) % 7 : 0;
+    const rule = daily ? ['plain', 'plain', 'plain', 'grain', 'grain', 'kerf', 'plain'][wd] : pid <= 10 ? 'plain' : pid <= 20 ? 'grain' : 'kerf';
+    const want = daily ? [6, 8] : rule === 'kerf' ? [4, 6] : [5, 7];
+    const rnd = this.rng(Math.imul(pid, 2654435761) + 7);
+    for (let attempt = 0; attempt < 120; attempt++) {
+      const R = [0, 20, 30, 40][Math.floor(rnd() * 4)], B = [0, 10, 20, 40][Math.floor(rnd() * 4)];
+      const W = 1220 - R, H = 2440 - B;
+      let rects = [{ x: 0, y: 0, w: W, h: H }];
+      const target = want[0] + Math.floor(rnd() * (want[1] - want[0] + 1));
+      for (let guard = 0; rects.length < target && guard < 60; guard++) {
+        rects.sort((p, q) => q.w * q.h - p.w * p.h);
+        let idx = rects.findIndex((r) => r.w >= 240 || r.h >= 240);
+        if (idx < 0) break;
+        if (rnd() < 0.3) { const alt = rects.findIndex((r, i) => i > idx && (r.w >= 240 || r.h >= 240)); if (alt > 0) idx = alt; }
+        const r = rects[idx];
+        let alongY = r.h >= r.w;
+        if (rnd() < 0.25) alongY = !alongY;
+        if (alongY && r.h < 240) alongY = false;
+        if (!alongY && r.w < 240) alongY = true;
+        const len = alongY ? r.h : r.w, q = rnd();
+        let cut = q < 0.45 ? Math.round(len / 20) * 10 : q < 0.65 && len >= 900 ? len - (80 + Math.floor(rnd() * 8) * 10) : Math.round((len * (0.3 + rnd() * 0.4)) / 10) * 10;
+        cut = Math.max(80, Math.min(len - 80, cut));
+        const p1 = alongY ? { x: r.x, y: r.y, w: r.w, h: cut } : { x: r.x, y: r.y, w: cut, h: r.h };
+        const p2 = alongY ? { x: r.x, y: r.y + cut, w: r.w, h: r.h - cut } : { x: r.x + cut, y: r.y, w: r.w - cut, h: r.h };
+        rects.splice(idx, 1, p1, p2);
+      }
+      if (rects.length < want[0]) continue;
+      // the saw takes 3 mm wherever two parts meet
+      if (rule === 'kerf') rects = rects.map((r) => ({ x: r.x, y: r.y, w: r.x + r.w < W ? r.w - 3 : r.w, h: r.y + r.h < H ? r.h - 3 : r.h }));
+      if (rects.some((r) => Math.min(r.w, r.h) < 60)) continue;
+      const groups = {};
+      rects.forEach((r) => { const k = Math.min(r.w, r.h) + 'x' + Math.max(r.w, r.h); (groups[k] = groups[k] || []).push(r); });
+      const keys = Object.keys(groups);
+      if (keys.length < 2 || keys.length > 5) continue;
+      const types = {}, used = {}, plan = [];
+      let turned = 0, grains = 0;
+      keys.forEach((k, i) => {
+        const g = groups[k], r0 = g[0], S = Math.min(r0.w, r0.h), L = Math.max(r0.w, r0.h);
+        let nm = S <= 160 ? (L >= 900 ? 'Plinth' : 'Rail') : L >= 1500 ? (S >= 450 ? 'Side' : 'Upright') : S / L >= 0.65 ? 'Panel' : L >= 900 ? (S >= 450 ? 'Door' : 'Top') : 'Shelf';
+        used[nm] = (used[nm] || 0) + 1;
+        const sameWay = g.every((r) => r.w === r0.w && r.h === r0.h) && S !== L;
+        const grain = rule === 'grain' && sameWay && rnd() < 0.65 ? (r0.h > r0.w ? 'v' : 'h') : '';
+        let w = r0.w, h = r0.h;
+        if (!grain && S !== L && rnd() < 0.5) { w = r0.h; h = r0.w; turned++; }
+        if (grain) grains++;
+        types['t' + i] = { name: nm, w: w, h: h, n: g.length, grain: grain || undefined, key: nm };
+        g.forEach((r) => plan.push(['t' + i, r.x, r.y, r.w, r.h]));
+      });
+      if (rule === 'grain' && (grains === 0 || grains === keys.length)) continue;
+      if (rule !== 'grain' && turned === 0) {
+        const k = Object.keys(types).find((t) => types[t].w !== types[t].h);
+        if (k) { const t = types[k]; const w = t.w; t.w = t.h; t.h = w; }
+      }
+      // two kinds with the same name get A, B
+      const seen = {};
+      Object.values(types).forEach((t) => { if (used[t.key] > 1) { seen[t.key] = (seen[t.key] || 0) + 1; t.name = t.key + ' ' + 'ABCDE'[seen[t.key] - 1]; } delete t.key; });
+      const n = rects.length;
+      return {
+        chapter: daily ? 'Daily' : rule === 'plain' ? 'First boards' : rule === 'grain' ? 'With the grain' : 'Saw cuts count',
+        kicker: daily ? 'DAILY · BOARD ' + pid : undefined, kerf: rule === 'kerf' ? 3 : 0, times: [50 + 12 * n, 20 + 6 * n], types: types, plan: plan,
+        hint: rule === 'grain' ? 'Parts with grain arrows only go one way, so place them first.' : rule === 'kerf' ? 'The parts snap 3 mm apart, so let the snap do the gaps.' : 'Start with the longest parts down the board.',
+      };
+    }
+    return this.PUZZLES[1];
+  }
+  fresh() {
+    const P = this.P(), parts = [], rot = {};
+    Object.keys(P.types).forEach((type) => { rot[type] = false; for (let i = 0; i < P.types[type].n; i++) parts.push({ id: type + i, type: type, w: P.types[type].w, h: P.types[type].h, on: false, x: 0, y: 0 }); });
+    return { parts: parts, rot: rot, turnFx: '', drag: null, t0: 0, now: 0, turns: 0, won: false, shown: false, card: false,
+      msg: P.kerf ? 'Drag parts on. They snap 3 mm apart for the saw.' : 'Drag a part onto the board. Tap a card to turn it.', msgC: '#a3abb3', flashId: '', badId: '' };
+  }
+  setPuzzle(pid) {
+    (this.showT || []).forEach(clearTimeout);
+    this.pid = pid;
+    try { localStorage.setItem('raf_games_level_sheet', pid > 40 ? 'daily' : String(pid)); } catch (e) {}
+    const f = this.fresh(); f.pid = pid; f.earned = 0;
+    this.setState(f);
+  }
+  componentDidMount() {
+    this.iv = setInterval(() => { if (this.state.t0 && !this.state.won) this.setState({ now: Date.now() }); }, 500);
+    this.onStore = (e) => {
+      if (e.key === 'raf_games_level_sheet' && e.newValue) { const v = this.resolve(e.newValue); if (v !== this.pid) this.setPuzzle(v); }
+      if (e.key === 'raf_games_stars_sheet') { try { this.setState({ stars: JSON.parse(e.newValue || '{}') || {} }); } catch (x) {} }
+    };
+    window.addEventListener('storage', this.onStore);
+  }
+  componentWillUnmount() { clearInterval(this.iv); (this.showT || []).forEach(clearTimeout); clearTimeout(this.fT); clearTimeout(this.cT); clearTimeout(this.tT); window.removeEventListener('storage', this.onStore); }
+
+  ac() {
+    try {
+      if (!this._c) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; this._c = new A(); }
+      if (this._c.state === 'suspended') this._c.resume();
+      return this._c;
+    } catch (e) { return null; }
+  }
+  tone(f, d, o) {
+    o = o || {}; if (!this.snd) return; const c = this.ac(); if (!c) return;
+    const t = c.currentTime + (o.at || 0), osc = c.createOscillator(), g = c.createGain();
+    osc.type = o.type || 'sine'; osc.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(o.vol || 0.2, t); g.gain.exponentialRampToValueAtTime(0.0008, t + d);
+    osc.connect(g).connect(c.destination); osc.start(t); osc.stop(t + d + 0.05);
+  }
+  noise(d, o) {
+    o = o || {}; if (!this.snd) return; const c = this.ac(); if (!c) return;
+    const t = c.currentTime, b = c.createBuffer(1, Math.ceil(c.sampleRate * d), c.sampleRate), ch = b.getChannelData(0);
+    for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / ch.length, 2);
+    const s = c.createBufferSource(); s.buffer = b; const f = c.createBiquadFilter(); f.type = o.type || 'highpass'; f.frequency.setValueAtTime(o.f || 2500, t); if (o.f2) f.frequency.linearRampToValueAtTime(o.f2, t + d);
+    const g = c.createGain(); g.gain.value = o.vol || 0.25; s.connect(f).connect(g).connect(c.destination); s.start(t);
+  }
+  sPick() { this.noise(0.02, { f: 3000, vol: 0.12 }); this.tone(520, 0.05, { vol: 0.05 }); }
+  sSnap() { this.noise(0.03, { f: 2500, vol: 0.28 }); this.tone(880, 0.08, { type: 'square', vol: 0.05 }); this.tone(1320, 0.1, { vol: 0.08, at: 0.02 }); }
+  sBad() { this.tone(110, 0.13, { type: 'sawtooth', vol: 0.12 }); this.tone(104, 0.16, { type: 'sawtooth', vol: 0.12, at: 0.17 }); }
+  sTurn() { this.noise(0.12, { type: 'bandpass', f: 900, f2: 3200, vol: 0.18 }); }
+  sWin() { [392, 523, 659, 784, 1046, 1318].forEach((f, i) => this.tone(f, 0.3, { vol: 0.13, at: i * 0.07 })); for (let i = 0; i < 6; i++) this.tone(2093 + i * 200, 0.15, { vol: 0.03, at: 0.45 + i * 0.05 }); }
+  buzz(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  say(msg, c) { this.setState({ msg: msg, msgC: c || '#a3abb3' }); }
+  pulse(key, id) { this.setState({ [key]: '' }); clearTimeout(this.fT); setTimeout(() => this.setState({ [key]: id }), 16); this.fT = setTimeout(() => this.setState({ [key]: '' }), 600); }
+
+  pt(e) {
+    const el = this.root; if (!el) return { x: 0, y: 0 };
+    const r = el.getBoundingClientRect(), s = r.width / 390 || 1;
+    return { x: (e.clientX - r.left) / s, y: (e.clientY - r.top) / s };
+  }
+  trayDims(type) { const t = this.P().types[type]; return this.state.rot[type] ? { w: t.h, h: t.w } : { w: t.w, h: t.h }; }
+  fits(parts, id, x, y, w, h) {
+    const k = this.P().kerf;
+    if (x < 0 || y < 0 || x + w > this.BW || y + h > this.BH) return false;
+    for (const q of parts) { if (q.id === id || !q.on) continue; if (x < q.x + q.w + k && x + w + k > q.x && y < q.y + q.h + k && y + h + k > q.y) return false; }
+    return true;
+  }
+  snapTo(parts, id, rawX, rawY, w, h) {
+    const k = this.P().kerf, xs = [0, this.BW - w], ys = [0, this.BH - h];
+    for (const q of parts) { if (q.id === id || !q.on) continue; xs.push(q.x + q.w + k, q.x - w - k, q.x, q.x + q.w - w); ys.push(q.y + q.h + k, q.y - h - k, q.y, q.y + q.h - h); }
+    const near = (v, list) => { let best = null, bd = 80; for (const c of list) { const d = Math.abs(c - v); if (d < bd) { bd = d; best = c; } } return best == null ? { v: Math.round(v / 10) * 10, hit: false } : { v: best, hit: true }; };
+    const nx = near(rawX, xs), ny = near(rawY, ys);
+    const x = Math.max(0, Math.min(this.BW - w, nx.v)), y = Math.max(0, Math.min(this.BH - h, ny.v));
+    return { x: x, y: y, ok: this.fits(parts, id, x, y, w, h), key: (nx.hit ? 'x' + x : '') + (ny.hit ? 'y' + y : '') };
+  }
+  begin(e, id, fromTray, type) {
+    if (this.state.won || this.state.shown || (e && e.button > 0)) return;
+    this.ac();
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (x) {}
+    const p0 = this.pt(e), K = this.K;
+    let d;
+    if (fromTray) {
+      const dims = this.trayDims(type), touch = e.pointerType === 'touch';
+      d = { id: id, type: type, tray: true, w: dims.w, h: dims.h, offX: dims.w * K / 2, offY: dims.h * K / 2 + (touch ? 50 : 10) };
+    } else {
+      const p = this.state.parts.find((q) => q.id === id);
+      d = { id: id, type: p.type, tray: false, w: p.w, h: p.h, offX: p0.x - (this.BX + p.x * K), offY: p0.y - (this.BY + p.y * K) };
+    }
+    Object.assign(d, { sx: p0.x, sy: p0.y, t: Date.now(), moved: false, px: p0.x - d.offX, py: p0.y - d.offY, over: false, snap: null });
+    this.setState({ drag: d, t0: this.state.t0 || Date.now() });
+    this.sPick();
+  }
+  move(e) {
+    const d = this.state.drag; if (!d) return;
+    const p0 = this.pt(e), K = this.K;
+    const moved = d.moved || Math.hypot(p0.x - d.sx, p0.y - d.sy) > 7;
+    const px = p0.x - d.offX, py = p0.y - d.offY, cx = px + d.w * K / 2, cy = py + d.h * K / 2;
+    const over = moved && cx > this.BX - 16 && cx < this.BX + this.BW * K + 16 && cy > this.BY - 16 && cy < this.BY + this.BH * K + 16;
+    const snap = over ? this.snapTo(this.state.parts, d.id, (px - this.BX) / K, (py - this.BY) / K, d.w, d.h) : null;
+    if (snap && snap.ok && snap.key && (!d.snap || d.snap.key !== snap.key)) this.noise(0.01, { f: 4200, vol: 0.09 });
+    this.setState({ drag: Object.assign({}, d, { moved: moved, px: px, py: py, over: over, snap: snap }) });
+  }
+  end() {
+    const d = this.state.drag; if (!d) return;
+    if (!d.moved && Date.now() - d.t < 450) { this.setState({ drag: null }); if (d.tray) this.turnType(d.type); else this.turnPlaced(d.id); return; }
+    const parts = this.state.parts.map((q) => Object.assign({}, q));
+    const p = parts.find((q) => q.id === d.id), name = this.P().types[p.type].name, total = parts.length;
+    if (d.over && d.snap && d.snap.ok) {
+      p.on = true; p.x = d.snap.x; p.y = d.snap.y; p.w = d.w; p.h = d.h;
+      this.setState({ parts: parts, drag: null });
+      this.sSnap(); this.buzz(8); this.pulse('flashId', p.id);
+      const on = parts.filter((q) => q.on).length;
+      this.say(on === total ? 'All on.' : name + ' ' + p.w + ' x ' + p.h + ' is on. ' + (total - on) + ' to go.', '#6fcf97');
+      if (on === total) this.win(false);
+      return;
+    }
+    if (d.over) {
+      this.setState({ drag: null });
+      this.sBad(); this.buzz([40, 30, 40]); this.pulse('badId', d.tray ? 'card-' + d.type : p.id);
+      const grain = this.P().types[p.type].grain;
+      this.say(this.P().kerf ? "Won't fit: leave 3 mm for the saw." : d.tray && !grain ? "Won't fit there. Try turning it: tap the " + name + ' card.' : "Won't fit there.", '#ff8a5b');
+      return;
+    }
+    if (p.on) { p.on = false; const t = this.trayDims(p.type); p.w = t.w; p.h = t.h; this.setState({ parts: parts, drag: null }); this.sPick(); this.say(name + ' back in the pile.'); return; }
+    this.setState({ drag: null });
+  }
+  grainLocked(type) {
+    const t = this.P().types[type];
+    if (!t.grain) return false;
+    this.sBad(); this.pulse('badId', 'card-' + type);
+    this.say(t.name + ' runs with the grain, so it can’t be turned.', '#ff8a5b');
+    return true;
+  }
+  turnType(type) {
+    if (this.grainLocked(type)) return;
+    const T = this.P().types[type], rot = Object.assign({}, this.state.rot, { [type]: !this.state.rot[type] });
+    const parts = this.state.parts.map((q) => (q.type !== type || q.on) ? q : Object.assign({}, q, rot[type] ? { w: T.h, h: T.w } : { w: T.w, h: T.h }));
+    this.setState({ rot: rot, parts: parts, turns: this.state.turns + 1, turnFx: '' });
+    clearTimeout(this.tT); this.tT = setTimeout(() => this.setState({ turnFx: type }), 16);
+    const now = rot[type] ? { w: T.h, h: T.w } : T;
+    this.sTurn(); this.say(T.name + ' turned: now ' + now.w + ' across, ' + now.h + ' down.');
+  }
+  turnPlaced(id) {
+    const parts = this.state.parts.map((q) => Object.assign({}, q)), p = parts.find((q) => q.id === id);
+    if (this.grainLocked(p.type)) return;
+    const w = p.h, h = p.w, x = Math.max(0, Math.min(p.x, this.BW - w)), y = Math.max(0, Math.min(p.y, this.BH - h));
+    if (w > this.BW || !this.fits(parts, id, x, y, w, h)) { this.sBad(); this.buzz([40, 30, 40]); this.pulse('badId', id); this.say('No room to turn it there.', '#ff8a5b'); return; }
+    p.w = w; p.h = h; p.x = x; p.y = y;
+    this.setState({ parts: parts, turns: this.state.turns + 1 });
+    this.sTurn(); this.say(this.P().types[p.type].name + ' turned.');
+  }
+  win(shown) {
+    const secs = this.state.t0 ? Math.round((Date.now() - this.state.t0) / 1000) : 0, P = this.P();
+    let earned = 0, stars = this.state.stars;
+    if (!shown) {
+      earned = secs <= P.times[1] ? 3 : secs <= P.times[0] ? 2 : 1;
+      stars = Object.assign({}, stars); stars[this.pid] = Math.max(stars[this.pid] || 0, earned);
+      const tk = this.pid + '_t'; stars[tk] = stars[tk] == null ? secs : Math.min(stars[tk], secs);
+      try { localStorage.setItem('raf_games_stars_sheet', JSON.stringify(stars)); } catch (e) {}
+      // the layout you found, for the boards screen to draw
+      try {
+        const done = JSON.parse(localStorage.getItem('raf_games_sheet_done') || '{}') || {};
+        done[this.pid] = this.state.parts.map((p) => [p.x, p.y, p.w, p.h]);
+        const ks = Object.keys(done).filter((k) => +k > 40).sort((x, y) => x - y); while (ks.length > 14) delete done[ks.shift()];
+        localStorage.setItem('raf_games_sheet_done', JSON.stringify(done));
+      } catch (e) {}
+    }
+    this.setState({ won: true, shown: shown, now: Date.now(), earned: earned, stars: stars });
+    setTimeout(() => this.sWin(), 120); this.buzz([20, 40, 20, 40, 60]);
+    for (let i = 0; i < earned; i++) this.tone([784, 988, 1318][i], 0.3, { vol: 0.13, at: 1.4 + i * 0.22 });
+    clearTimeout(this.cT); this.cT = setTimeout(() => this.setState({ card: true }), 1300);
+  }
+  grainFor(w, h, dir) {
+    const vertical = dir ? dir === 'v' : h > w;
+    return vertical ? 'repeating-linear-gradient(90deg, rgba(156,112,61,0.22) 0 1px, transparent 1px 7px)' : 'repeating-linear-gradient(0deg, rgba(156,112,61,0.22) 0 1px, transparent 1px 7px)';
+  }
+  renderVals() {
+    const st = this.state, K = this.K, d = st.drag, P = this.P(), types = P.types, total = st.parts.length;
+    const arrow = (t) => t.grain === 'v' ? ' ↕' : t.grain === 'h' ? ' ↔' : '';
+    const parts = st.parts.map((p) => {
+      const T = types[p.type], dragging = d && d.id === p.id && d.moved;
+      const w = (dragging ? d.w : p.w), h = (dragging ? d.h : p.h), wp = w * K, hp = h * K;
+      const x = dragging ? d.px : this.BX + p.x * K, y = dragging ? d.py : this.BY + p.y * K;
+      const ok = dragging && d.snap ? d.snap.ok : true;
+      let label = '', wm = 'horizontal-tb';
+      if (wp >= 60 && hp >= 30) label = T.name + arrow(T) + '\n' + w + ' x ' + h;
+      else if (hp >= 70) { label = T.name + '  ' + w + ' x ' + h; wm = 'vertical-rl'; }
+      else if (wp >= 70) label = T.name + '  ' + w + ' x ' + h;
+      return {
+        disp: p.on || dragging ? 'flex' : 'none', x: x, y: y, w: wp, h: hp, z: dragging ? 70 : 10,
+        cls: st.flashId === p.id ? 'ss-snap' : st.badId === p.id ? 'ss-bad' : '',
+        bg: dragging ? (d.over ? (ok ? '#e6cf9f' : '#e8b7a4') : '#e6cf9f') : T.grain ? '#d6b98a' : '#dcc194',
+        grain: this.grainFor(w, h, T.grain), border: dragging ? '#f4f1ea' : P.kerf ? '#6b4f2c' : '#9c7a45',
+        shadow: dragging ? '0 12px 24px rgba(0,0,0,0.55)' : P.kerf ? '0 0 0 0.65px #0e1114' : 'inset 0 0 0 1px rgba(255,255,255,0.18)',
+        label: label, wm: wm,
+        down: (e) => this.begin(e, p.id, false), move: (e) => this.move(e), up: () => this.end(),
+      };
+    });
+    const cards = Object.keys(types).map((type) => {
+      const T = types[type], left = st.parts.filter((q) => q.type === type && !q.on && !(d && d.id === q.id && d.moved));
+      const dims = this.trayDims(type), s = Math.min(58 / dims.w, 60 / dims.h);
+      const first = st.parts.find((q) => q.type === type && !q.on);
+      return {
+        name: T.name + arrow(T), size: dims.w + ' x ' + dims.h,
+        badge: left.length ? 'x' + left.length : 'ON', badgeBg: left.length ? '#f2c94c' : '#6fcf97',
+        op: left.length ? 1 : 0.45, border: st.badId === 'card-' + type ? '#eb5757' : 'rgba(244,241,234,0.16)',
+        mw: Math.max(3, dims.w * s), mh: Math.max(3, dims.h * s), grain: this.grainFor(dims.w, dims.h, T.grain),
+        turnCls: st.turnFx === type ? 'ss-turn' : '', tip: !left.length ? 'all on' : T.grain ? 'with the grain' : 'tap to turn',
+        down: (e) => { if (first) this.begin(e, first.id, true, type); }, move: (e) => this.move(e), up: () => this.end(),
+      };
+    });
+    const sn = d && d.moved && d.over && d.snap ? d.snap : null;
+    const secs = st.t0 ? Math.max(0, Math.round(((st.won ? st.now : (st.now || Date.now())) - st.t0) / 1000)) : 0;
+    const on = st.parts.filter((p) => p.on).length;
+    const area = st.parts.reduce((a, p) => a + p.w * p.h, 0), waste = (1 - area / (this.BW * this.BH)) * 100;
+    const clock = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+    const nextId = this.pid >= 1 && this.pid < 30 ? this.pid + 1 : 0;
+    return {
+      kicker: P.kicker || 'BOARD ' + this.pid + ' · ' + P.chapter.toUpperCase(),
+      goalTitle: P.kerf ? 'Fit them with 3 mm saw cuts' : Object.values(types).some((t) => t.grain) ? 'Fit them with the grain' : 'Fit all ' + total + ' parts on one board',
+      partCount: total, cardCount: Object.keys(types).length,
+      boardNote: P.kerf ? '18 MM BIRCH PLY · 3 MM SAW CUTS' : '18 MM BIRCH PLY, STANDING UP',
+      parts: parts, cards: cards, onCount: on,
+      timeTxt: st.t0 ? clock : '0:00', turnsTxt: st.turns + (st.turns === 1 ? ' turn' : ' turns'),
+      showSnap: !!sn, snapX: sn ? this.BX + sn.x * K : 0, snapY: sn ? this.BY + sn.y * K : 0, snapW: d ? d.w * K : 0, snapH: d ? d.h * K : 0,
+      snapColor: sn && sn.ok ? '#6fcf97' : '#eb5757', snapFill: sn && sn.ok ? 'rgba(111,207,151,0.2)' : 'rgba(235,87,87,0.2)',
+      boardClass: st.won ? 'ss-won' : '', won: st.won, showCard: st.card,
+      cardKicker: st.shown ? 'ONE WAY TO DO IT' : (P.kicker || 'BOARD ' + this.pid) + ' · DONE · ' + '★★★'.slice(0, st.earned) + '☆☆☆'.slice(0, 3 - st.earned),
+      cardTitle: 'All ' + total + ' on one board',
+      cardStats: (st.shown ? 'Shown, not scored' : clock + ' · ' + st.turns + ' turns · stars under ' + P.times[0] + ' s / ' + P.times[1] + ' s') + ' · ' + waste.toFixed(1) + '% waste',
+      // a board that was shown, not solved, has no score to share: just Now you try
+      hasNext: !!nextId && !st.shown, noNext: !nextId && !st.shown, nextLabel: nextId ? 'Next: board ' + nextId : '',
+      cardCols: st.shown ? '1fr' : '1fr 1fr', againLabel: st.shown ? 'Now you try' : 'Play again',
+      nextBoard: () => { if (nextId) this.setPuzzle(nextId); },
+      shareIt: () => this.share({ g: 'sheet', b: this.pid, t: secs, n: total }),
+      msg: st.msg, msgColor: st.msgC,
+      setRoot: (el) => { this.root = el; },
+      soundOn: st.sound, soundOff: !st.sound, soundLabel: st.sound ? 'Turn sound off' : 'Turn sound on',
+      toggleSound: () => { const v = !this.state.sound; this.snd = v; this.saveSound(v); this.setState({ sound: v }); if (v) this.sSnap(); },
+      reset: () => this.setPuzzle(this.pid),
+      clearBoard: () => { if (this.state.won) return; const f = this.fresh(); this.setState({ parts: f.parts, rot: f.rot }); this.sTurn(); this.say('Board cleared. The clock keeps going.'); },
+      showMe: () => {
+        if (this.state.won) return;
+        (this.showT || []).forEach(clearTimeout); this.showT = [];
+        const f = this.fresh();
+        this.setState({ parts: f.parts, rot: f.rot, shown: true, t0: this.state.t0 || Date.now(), msg: 'Watch: ' + P.hint, msgC: '#6fcf97' });
+        const used = {};
+        P.plan.forEach((v, i) => this.showT.push(setTimeout(() => {
+          const parts = this.state.parts.map((q) => Object.assign({}, q));
+          const p = parts.find((q) => q.type === v[0] && !q.on && !used[q.id]); used[p.id] = 1;
+          p.on = true; p.x = v[1]; p.y = v[2]; p.w = v[3]; p.h = v[4];
+          this.setState({ parts: parts }); this.sSnap(); this.pulse('flashId', p.id);
+          if (i === P.plan.length - 1) this.win(true);
+        }, 350 + i * 340)));
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>
