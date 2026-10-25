@@ -160,6 +160,8 @@ export default function SiteStats() {
         g: goalOf(href, text) || undefined,
         // a heart that saves a job (SaveButton's data-save): which job, for the recently looked at card
         sv: el.closest('[data-save]')?.getAttribute('data-save') || undefined,
+        // the small card bottom left (RecentDesign.tsx): what it suggested ('app', 'post:<slug>' or 'recent')
+        cd: el.closest('[data-card]')?.getAttribute('data-card') || undefined,
       });
       if (goalOf(href, text)) send.current(); // a way to get in touch: don't risk losing it if the page changes
     };

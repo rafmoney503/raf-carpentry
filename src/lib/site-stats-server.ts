@@ -20,7 +20,7 @@ export class StatsError extends Error {
   }
 }
 
-export async function statsRpc<T>(fn: 'rafsite_hit' | 'rafsite_hit_place' | 'rafsite_report' | 'rafsite_page' | 'rafsite_indexnow' | 'rafsite_cutlist' | 'rafsite_recent' | 'rafsite_blog', args: Record<string, unknown>, timeoutMs = 8000): Promise<T> {
+export async function statsRpc<T>(fn: 'rafsite_hit' | 'rafsite_hit_place' | 'rafsite_report' | 'rafsite_page' | 'rafsite_indexnow' | 'rafsite_cutlist' | 'rafsite_recent' | 'rafsite_blog' | 'rafsite_cards', args: Record<string, unknown>, timeoutMs = 8000): Promise<T> {
   const url = `${process.env.RAFSTATS_URL!.replace(/\/$/, '')}/rest/v1/rpc/${fn}`;
   const res = await fetch(url, {
     method: 'POST',
@@ -154,7 +154,8 @@ export function cleanHit(raw: unknown, ctx: { ip: string; ua: string; country: s
         const label = str(t.t, 40);
         const g = goalOf('', label) || (['quote', 'send', 'call', 'whatsapp', 'email', 'planner', 'cutlist'].includes(String(t.g)) ? (t.g as Tap['g']) : '');
         const sv = typeof t.sv === 'string' && /^[a-z0-9-]{1,40}$/.test(t.sv) ? t.sv : '';
-        return [{ s, fx: num(t.fx, 0, 1, 0.5), fy: num(t.fy, 0, 1, 0.5), x: num(t.x, 0, 1, 0.5), y: Math.round(num(t.y, 0, 200000)), h: Math.round(num(t.h, 0, 200000)), t: label, ...(g ? { g } : {}), ...(sv ? { sv } : {}) }];
+        const cd = typeof t.cd === 'string' && /^(app|recent|post:[a-z0-9-]{1,80})$/.test(t.cd) ? t.cd : '';
+        return [{ s, fx: num(t.fx, 0, 1, 0.5), fy: num(t.fy, 0, 1, 0.5), x: num(t.x, 0, 1, 0.5), y: Math.round(num(t.y, 0, 200000)), h: Math.round(num(t.h, 0, 200000)), t: label, ...(g ? { g } : {}), ...(sv ? { sv } : {}), ...(cd ? { cd } : {}) }];
       })
     : [];
   const dwell = Array.isArray(b.dwell) && b.dwell.length === 20 ? b.dwell.map((d) => Math.round(num(d, 0, 21_600_000))) : null;

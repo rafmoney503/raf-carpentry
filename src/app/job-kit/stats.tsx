@@ -5,7 +5,7 @@ import { readPin } from './uploader';
 import { post } from './sm8-post';
 import { Icon } from './icons';
 import { BlogBand } from './blog-stats-view';
-import { GOAL_LABEL, SOURCE_LABEL, placeName, statsOff, type Device, type Goal, type StatsPage, type StatsReport, type Tap, type Visit } from '@/lib/site-stats';
+import { type CardTaps, GOAL_LABEL, SOURCE_LABEL, placeName, statsOff, type Device, type Goal, type StatsPage, type StatsReport, type Tap, type Visit } from '@/lib/site-stats';
 
 /* The Job Kit's Website stats screen: the website's own visitor counter (src/components/SiteStats.tsx), read through
    /api/job-kit/stats behind the PIN. The overview (numbers, visits by day, where people come from, the ways to get in
@@ -31,7 +31,7 @@ type CutlistInfo = {
   sent?: number;
   recent: { id: number; at: string; email: string; summary: string; country: string | null; host: string | null; sent_at: string | null; parts?: number | null; boards?: number | null }[];
 };
-type Saved = { days: number; report: StatsReport | null; at: number; cutlist?: CutlistInfo | null };
+type Saved = { days: number; report: StatsReport | null; at: number; cutlist?: CutlistInfo | null; cards?: CardTaps | null };
 
 export function savedStats(): Saved {
   try {
@@ -127,6 +127,35 @@ export function Band({ label, right, children }: { label: string; right?: string
       </div>
       <div className="px-4 py-3">{children}</div>
     </section>
+  );
+}
+
+/* The small card bottom left of the website (src/components/RecentDesign.tsx): what it suggested that got tapped.
+   Only taps are counted, not how often it showed. */
+function CardBand({ info, days }: { info: CardTaps | null; days: number }) {
+  if (!info) return null;
+  const rows: { key: string; label: string; n: number }[] = [
+    { key: 'app', label: 'Workshop Tools app', n: info.app },
+    ...info.posts.map((p) => ({ key: `post:${p.slug}`, label: p.title || p.slug.replace(/-/g, ' '), n: p.n })),
+    { key: 'recent', label: 'A job someone looked at lately', n: info.recent },
+  ].filter((r) => r.n > 0);
+  return (
+    <Band label="Suggestion card (bottom left)" right={`${info.total} tap${info.total === 1 ? '' : 's'} in ${days} days`}>
+      {rows.length ? (
+        <ul className="divide-y divide-line" data-card-taps>
+          {rows
+            .sort((a, b) => b.n - a.n)
+            .map((r) => (
+              <ShareRow key={r.key} label={r.label} n={r.n} of={info.total} />
+            ))}
+        </ul>
+      ) : (
+        <p className="py-2 text-[14.5px] text-muted">Nobody has tapped the card in these days yet.</p>
+      )}
+      <p className="mt-2 text-[13px] leading-relaxed text-faint">
+        The small card that comes up 20 seconds into a visit: the free app on tools, tips and trade posts, the job&apos;s blog post on a job page, a PAX guide on the wardrobe and area pages, else a job someone looked at lately. Taps only, not how often it showed.
+      </p>
+    </Band>
   );
 }
 
@@ -349,10 +378,10 @@ export function StatsView({ onPage, onBlog }: { onPage: (path: string) => void; 
   const [mine] = useState(() => statsOff());
 
   const fetchReport = useCallback(async (d: number) => {
-    const r = await post<{ report: StatsReport; at: number; cutlist?: CutlistInfo | null }>(readPin(), { action: 'report', days: d }, API);
+    const r = await post<{ report: StatsReport; at: number; cutlist?: CutlistInfo | null; cards?: CardTaps | null }>(readPin(), { action: 'report', days: d }, API);
     setLoading(false);
     if (!r.ok) return setError(r.error);
-    const s = { days: d, report: r.data.report, at: r.data.at, cutlist: r.data.cutlist ?? null };
+    const s = { days: d, report: r.data.report, at: r.data.at, cutlist: r.data.cutlist ?? null, cards: r.data.cards ?? null };
     keep(s);
     setSaved(s);
   }, []);
@@ -518,6 +547,8 @@ export function StatsView({ onPage, onBlog }: { onPage: (path: string) => void; 
           </Band>
 
           <CutlistBand info={saved.days === days ? (saved.cutlist ?? null) : null} days={days} />
+
+          <CardBand info={saved.days === days ? (saved.cards ?? null) : null} days={days} />
 
           {onBlog ? <BlogBand days={days} onOpen={onBlog} onPage={onPage} /> : null}
 
