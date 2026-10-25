@@ -2,7 +2,13 @@
    area, which blog post most popular, what should we focus on with more blog posts"). The reads come from
    rafsite_blog in the stats database (every view of a /blog/<slug> page); the posts' titles, dates and topics from
    content/blog (and the job each one is about) through /api/job-kit/stats. No imports, so the sums can be tested on
-   their own. Nobody's name or address is ever known: places are the connection's rough town. */
+   their own. Nobody's name or address is ever known: places are the connection's rough town.
+   Quick opens (Raf, 25 Oct 2026: 'Yes' to not counting them): a post closed within QUICK_SECONDS of opening, usually
+   a tap on a link in ChatGPT or Google and straight back, isn't a read. rafsite_blog leaves them out of every count
+   and the posts, and lists them on their own (totals.quick, quick[], latest[].quick), so the advice never leans on
+   them. */
+
+export const QUICK_SECONDS = 5;
 
 export type BlogPostMeta = { slug: string; title: string; date: string; category: string; topic: string; format: string };
 export type BlogPlace = { country: string; city: string | null; district?: string | null; n: number };
@@ -37,15 +43,19 @@ export type BlogRead = {
   scroll: number;
   next: string | null;
   goals: string[];
+  quick?: boolean; // closed within QUICK_SECONDS: listed, not counted
 };
+/* A post opened and closed within QUICK_SECONDS, however often in these days. */
+export type BlogQuick = { path: string; title: string | null; n: number; people: number; last: string; from: { from: string; n: number }[] };
 export type BlogReport = {
   since: string;
   today: string;
   days: number;
   placesFrom: string | null;
-  totals: { reads: number; readers: number; posts: number; engagedAvg: number; finished: number; entries: number; goals: number; index: number };
+  totals: { reads: number; readers: number; posts: number; engagedAvg: number; finished: number; entries: number; goals: number; index: number; quick?: number; quickPeople?: number };
   sources: Record<string, number>;
   posts: BlogPostStats[];
+  quick?: BlogQuick[]; // missing in a report from before 25 Oct 2026, when quick opens counted as reads
   places: BlogPlace[];
   names?: Record<string, string>; // the titles of the pages read before and after a post
   latest: BlogRead[];
@@ -90,22 +100,45 @@ const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? o
 const pc = (n: number) => `${Math.round(n * 100)}%`;
 const one = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
-export type PostRow = BlogPostMeta & { path: string; s: BlogPostStats | null; found: number; ai: number };
-/* Every post, with its reads (null: not read in these days). A post read but no longer in content/blog keeps its
-   stored title. */
+export type PostRow = BlogPostMeta & { path: string; s: BlogPostStats | null; found: number; ai: number; quick: BlogQuick | null };
+/* Every post, with its reads (null: not read in these days) and its quick opens (null: none). A post read or opened
+   but no longer in content/blog keeps its stored title. found and ai count reads only, never quick opens. */
 export function postRows(meta: BlogPostMeta[], r: BlogReport | null): PostRow[] {
   const bySlug = new Map((r?.posts ?? []).map((p) => [slugOfPath(p.path), p]));
+  const quickBySlug = new Map((r?.quick ?? []).map((q) => [slugOfPath(q.path), q]));
   const landed = (p: BlogPostStats | null, kinds: string[]) => (p ? p.from.filter((f) => kinds.some((k) => f.from === `src:${k}`)).reduce((a, f) => a + f.n, 0) : 0);
+  const row = (m: BlogPostMeta, path: string, s: BlogPostStats | null, quick: BlogQuick | null): PostRow => ({
+    ...m,
+    path,
+    s,
+    found: landed(s, [...SEARCH_SOURCES, ...AI_SOURCES]),
+    ai: landed(s, AI_SOURCES),
+    quick,
+  });
   const rows: PostRow[] = meta.map((m) => {
     const s = bySlug.get(m.slug) ?? null;
+    const q = quickBySlug.get(m.slug) ?? null;
     bySlug.delete(m.slug);
-    return { ...m, path: `/blog/${m.slug}`, s, found: landed(s, [...SEARCH_SOURCES, ...AI_SOURCES]), ai: landed(s, AI_SOURCES) };
+    quickBySlug.delete(m.slug);
+    return row(m, `/blog/${m.slug}`, s, q);
   });
-  for (const [slug, s] of bySlug) {
-    const title = cleanTitle(s.title) || slug.replace(/-/g, ' ');
-    rows.push({ slug, title, date: '', category: '', topic: topicOf(slug, title), format: 'Other', path: s.path, s, found: landed(s, [...SEARCH_SOURCES, ...AI_SOURCES]), ai: landed(s, AI_SOURCES) });
+  for (const slug of new Set([...bySlug.keys(), ...quickBySlug.keys()])) {
+    const s = bySlug.get(slug) ?? null;
+    const q = quickBySlug.get(slug) ?? null;
+    const title = cleanTitle(s?.title ?? q?.title) || slug.replace(/-/g, ' ');
+    rows.push(row({ slug, title, date: '', category: '', topic: topicOf(slug, title), format: 'Other' }, (s ?? q)!.path, s, q));
   }
   return rows;
+}
+
+/* 'Not counted as reads: 5 quick opens by 4 people, closed within 5 seconds.' Empty when there were none (or the
+   report is from before they were split out). */
+export function quickLine(r: BlogReport | null) {
+  const n = r?.totals.quick ?? 0;
+  if (!n) return '';
+  const people = r?.totals.quickPeople ?? 0;
+  const who = people && people !== n ? ` by ${plural(people, 'person', 'people')}` : '';
+  return `Not counted as reads: ${plural(n, 'quick open')}${who}, closed within ${QUICK_SECONDS} seconds. That’s usually a tap on a link and straight back.`;
 }
 
 export type TopicRow = { topic: string; posts: number; read: number; reads: number; perPost: number; time: number; finished: number; found: number; ai: number; goals: number };
@@ -155,7 +188,9 @@ export function blogAdvice(rows: PostRow[], r: BlogReport | null): { early: stri
       items.push({
         kind: 'topic',
         title: `Write more about ${best.topic}`,
-        why: `${plural(best.posts, 'post')}, ${plural(best.reads, 'read')}${best.found ? ` (${best.found} found on Google or AI)` : ''}: ${one(Math.round(best.perPost * 10) / 10)} a post, against ${one(Math.round(otherPer * 10) / 10)} for the rest of the blog.`,
+        why: `${plural(best.posts, 'post')}, ${plural(best.reads, 'read')}${best.found ? ` (${best.found} found on Google or AI)` : ''}: ${one(
+          Math.round(best.perPost * 10) / 10
+        )} a post, against ${one(Math.round(otherPer * 10) / 10)} for the rest of the blog.`,
       });
     }
   }
@@ -168,7 +203,9 @@ export function blogAdvice(rows: PostRow[], r: BlogReport | null): { early: stri
     items.push({
       kind: 'ai',
       title: 'ChatGPT is sending readers',
-      why: `${plural(aiReads, 'read')} came straight from ChatGPT or another AI assistant: ${names.join(' and ')}${ai.length > 2 ? ` and ${ai.length - 2} more` : ''}. Keep the answer in the first two lines, with real sizes and “London”: that’s what gets quoted.`,
+      why: `${plural(aiReads, 'read')} came straight from ChatGPT or another AI assistant: ${names.join(' and ')}${
+        ai.length > 2 ? ` and ${ai.length - 2} more` : ''
+      }. Keep the answer in the first two lines, with real sizes and “London”: that’s what gets quoted.`,
       path: ai[0].path,
     });
   }
@@ -183,36 +220,40 @@ export function blogAdvice(rows: PostRow[], r: BlogReport | null): { early: stri
   if (g.n && j.n) {
     const gp = g.reads / g.n;
     const jp = j.reads / j.n;
-    const topGuide = g.list.filter((p) => p.s).sort((a, b) => (b.s!.reads + b.found) - (a.s!.reads + a.found))[0];
+    const topGuide = g.list.filter((p) => p.s).sort((a, b) => b.s!.reads + b.found - (a.s!.reads + a.found))[0];
     if (g.reads >= min && gp >= jp * 1.5 && topGuide) {
       items.push({
         kind: 'format',
         title: 'Write it as the question people ask',
-        why: `Guides that answer one question get ${one(Math.round(gp * 10) / 10)} reads a post, job stories ${one(Math.round(jp * 10) / 10)}. Title the next one the way a customer would type it, like “${topGuide.title}”.`,
+        why: `Guides that answer one question get ${one(Math.round(gp * 10) / 10)} reads a post, job stories ${one(
+          Math.round(jp * 10) / 10
+        )}. Title the next one the way a customer would type it, like “${topGuide.title}”.`,
         path: topGuide.path,
       });
     } else if (j.reads >= min && jp >= gp * 1.5) {
-      items.push({ kind: 'format', title: 'Tell more job stories', why: `Job stories get ${one(Math.round(jp * 10) / 10)} reads a post, guides ${one(Math.round(gp * 10) / 10)}. Each new job is a post.` });
+      items.push({
+        kind: 'format',
+        title: 'Tell more job stories',
+        why: `Job stories get ${one(Math.round(jp * 10) / 10)} reads a post, guides ${one(Math.round(gp * 10) / 10)}. Each new job is a post.`,
+      });
     }
   }
 
   // 4. read and left early (from a search or AI, or by more than one person)
-  const fix = read
-    .filter((p) => p.s!.scrollAvg < 0.35 && p.s!.engagedAvg < 30 && (p.s!.reads >= 2 || p.found >= 1))
-    .sort((a, b) => b.found - a.found || b.s!.reads - a.s!.reads)[0];
+  const fix = read.filter((p) => p.s!.scrollAvg < 0.35 && p.s!.engagedAvg < 30 && (p.s!.reads >= 2 || p.found >= 1)).sort((a, b) => b.found - a.found || b.s!.reads - a.s!.reads)[0];
   if (fix) {
     items.push({
       kind: 'fix',
       title: `Most leave “${fix.title}” early`,
-      why: `${fix.s!.reads === 1 ? 'Its reader' : `Its ${fix.s!.reads} readers`} got ${pc(fix.s!.scrollAvg)} of the way down in ${dur(fix.s!.engagedAvg)}${fix.found ? ', arriving from Google or AI' : ''}. Put the answer and a good photo at the very top.`,
+      why: `${fix.s!.reads === 1 ? 'Its reader' : `Its ${fix.s!.reads} readers`} got ${pc(fix.s!.scrollAvg)} of the way down in ${dur(fix.s!.engagedAvg)}${
+        fix.found ? ', arriving from Google or AI' : ''
+      }. Put the answer and a good photo at the very top.`,
       path: fix.path,
     });
   }
 
   // 5. the one read to the end, to copy
-  const copy = read
-    .filter((p) => p.s!.finished >= 1 && p.s!.reads >= min && p.s!.finished / p.s!.reads >= 0.5)
-    .sort((a, b) => b.s!.finished - a.s!.finished || b.s!.engagedAvg - a.s!.engagedAvg)[0];
+  const copy = read.filter((p) => p.s!.finished >= 1 && p.s!.reads >= min && p.s!.finished / p.s!.reads >= 0.5).sort((a, b) => b.s!.finished - a.s!.finished || b.s!.engagedAvg - a.s!.engagedAvg)[0];
   if (copy) {
     items.push({
       kind: 'copy',
