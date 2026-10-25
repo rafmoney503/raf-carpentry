@@ -42,7 +42,7 @@ const ANDROID = [
 const FAQ = [
   { q: 'Is it really free?', a: 'Yes. Every tool, with no sign-up and no adverts. My kit links to the tools I use on Amazon: if you buy through one, I earn a small fee and it costs you nothing extra.' },
   { q: 'Does it work with no signal?', a: 'Yes, once it has been opened with signal. It keeps a copy of itself on the phone, so it opens in a basement, a loft or a new build with no reception.' },
-  { q: 'Where are my saved jobs?', a: 'On your phone only. Tap Save in a tool and it comes back with every number as you left it. Nothing is sent anywhere.' },
+  { q: 'Where are my saved jobs?', a: 'On your phone only. The app opens where you left off (Carry on, at the top of its home screen), and Save keeps a job with every number as you left it. Nothing is sent anywhere.' },
   { q: 'Why is it not in the App Store?', a: 'It is a web app: it goes on your home screen straight from the browser, opens full screen like any other app and updates by itself. No store, no download to wait for.' },
   { q: 'Who made it?', a: 'Me, Raf, a carpenter in London. These are the sums I do on every job, put where I can reach them on site.' },
 ];
@@ -100,7 +100,7 @@ export default async function WorkshopToolsPage() {
           <div className="grid grid-cols-1 gap-8 md:grid-cols-12 md:gap-6">
             <div className="md:col-span-4">
               <h2 className="font-display text-[30px] font-[650] leading-[1.06] tracking-[-0.025em] md:text-[40px]">Ten tools in one</h2>
-              <p className="mt-3 max-w-[40ch] text-[16px] leading-relaxed text-muted">Type the sizes in, get the marks, the cuts and what to buy. Save a job and pick it up on site.</p>
+              <p className="mt-3 max-w-[40ch] text-[16px] leading-relaxed text-muted">Type the sizes in: the answer comes first, big enough to read at arm’s length, then the drawing to scale. It opens where you left off.</p>
             </div>
             <ol className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2 md:col-span-8">
               {APP_TOOLS.map((t, i) => (
@@ -117,7 +117,7 @@ export default async function WorkshopToolsPage() {
           <div className="-mx-5 mt-12 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 md:mx-0 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0">
             {[APP_SCREENS.stud, APP_SCREENS.stairs, APP_SCREENS.calc].map((s) => (
               <div key={s.src} className="mount w-[62vw] max-w-[260px] flex-none snap-start md:w-auto md:max-w-none">
-                <div className="relative aspect-[390/600] overflow-hidden bg-[#f2efe7]">
+                <div className="relative aspect-[390/600] overflow-hidden bg-[#f1f2ef]">
                   <Image src={s.src} alt={s.alt} fill sizes="(min-width: 768px) 30vw, 62vw" className="object-cover object-top" />
                 </div>
               </div>

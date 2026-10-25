@@ -7,11 +7,11 @@ export const APP_OPEN = '/tools/workshop/app';
 export const APP_SHORT = 'rafcarpentry.com/app';
 
 export const APP_SCREENS = {
-  home: { src: '/images/tools/workshop/screen-home-eebd7697.jpg', alt: 'The Workshop Tools app on a phone: ten tools on its home screen, from unit sizes and door hinges to stud walls and a calculator.' },
-  stud: { src: '/images/tools/workshop/screen-stud-45a68fdc.jpg', alt: 'The stud wall tool: 7 studs at 600 centres for a 3600 by 2400 wall, with the timber, sheets and insulation to buy.' },
-  stairs: { src: '/images/tools/workshop/screen-stairs-770aa92c.jpg', alt: 'Picture frame panelling up the stairs: a drawing of what to measure and the flights and landings typed in.' },
-  calc: { src: '/images/tools/workshop/screen-calc-1d98bad4.jpg', alt: 'The calculator with big keys: 2,400 minus 18 times 2 comes to 2,364, with VAT, waste and square metre keys above.' },
-  og: '/images/tools/workshop/og-d542f704.jpg',
+  home: { src: '/images/tools/workshop/screen-home-e87ea5ad.jpg', alt: 'The Workshop Tools app on a phone: Carry on with the stud wall left this morning (7 studs, cut each to 2324), then the tools in three groups with a small drawing each.' },
+  stud: { src: '/images/tools/workshop/screen-stud-fb359b7d.jpg', alt: 'The stud wall tool: the answer first, 7 studs cut to 2324 for a 3600 by 2400 wall with the timber, sheets and noggins, then the wall drawn to scale.' },
+  stairs: { src: '/images/tools/workshop/screen-stairs-5304eb3f.jpg', alt: 'Picture frame panelling up the stairs: 12 frames at a 41.6 degree pitch, the frame size and mitres, then the wall drawn opened out flat.' },
+  calc: { src: '/images/tools/workshop/screen-calc-89fdcad9.jpg', alt: 'The calculator with big keys: 2,400 minus 18 times 2 comes to 2,364, with VAT, waste and square metre keys above.' },
+  og: '/images/tools/workshop/og-f7e8dfbc.jpg',
   w: 780,
   h: 1688,
 };
@@ -21,7 +21,7 @@ export const APP_ICON = '/images/tools/workshop/icon-192.png';
 // The ten tiles on the app's home screen, in its order, with a line more than the tile has room for.
 export const APP_TOOLS: { name: string; line: string }[] = [
   { name: 'Unit sizes', line: 'Doors, shelves, hanging rail and full height for a wardrobe or cupboard, from the outside sizes.' },
-  { name: 'Door hinge positions', line: 'Hinge centres that miss every shelf, marked from the top or the bottom of the door.' },
+  { name: 'Door hinges', line: 'Hinge centres that miss every shelf, marked from the top or the bottom of the door.' },
   { name: 'Drawer runners', line: 'Where each pair of runners goes and the size of every drawer box and front.' },
   { name: 'Wall panelling', line: 'Picture frames on walls and up the stairs, or a batten grid: every mark, cut and mitre.' },
   { name: 'Flooring', line: 'Packs to order, the number of rows and how wide the last row comes out, room by room.' },

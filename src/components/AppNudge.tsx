@@ -25,7 +25,7 @@ export default function AppNudge({
         href={APP_PAGE}
         className={`group grid grid-cols-[64px_minmax(0,1fr)] items-center gap-4 overflow-hidden rounded-sm border border-line-strong bg-mount p-4 transition-colors hover:border-accent sm:grid-cols-[120px_minmax(0,1fr)_auto] sm:gap-5 sm:p-5 md:p-6 ${className}`}
       >
-        <span className="relative block aspect-[390/520] overflow-hidden rounded-[10px] border-[4px] border-ink bg-[#f2efe7] sm:rounded-[14px] sm:border-[5px]">
+        <span className="relative block aspect-[390/520] overflow-hidden rounded-[10px] border-[4px] border-ink bg-[#f1f2ef] sm:rounded-[14px] sm:border-[5px]">
           <Image src={APP_SCREENS.home.src} alt="" fill sizes="120px" className="object-cover object-top" />
         </span>
         <span className="min-w-0">

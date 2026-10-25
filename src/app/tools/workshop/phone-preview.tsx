@@ -11,7 +11,7 @@ export default function PhonePreview() {
   return (
     <figure className="mx-auto w-full max-w-[300px]">
       <div className="rounded-[40px] bg-ink p-[9px] shadow-[0_24px_48px_-20px_rgba(22,25,28,0.45)]">
-        <div className="relative aspect-[390/844] overflow-hidden rounded-[31px] bg-[#f2efe7]">
+        <div className="relative aspect-[390/844] overflow-hidden rounded-[31px] bg-[#f1f2ef]">
           {live ? (
             <iframe src={APP_OPEN} title="Workshop Tools, working" className="absolute inset-0 h-full w-full border-0" />
           ) : (

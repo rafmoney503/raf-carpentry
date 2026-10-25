@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#f2efe7',
+  themeColor: '#f1f2ef',
 };
 
 export default async function WorkshopAppPage() {

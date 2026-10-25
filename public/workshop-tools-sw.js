@@ -2,14 +2,15 @@
    on site: the app page, its scripts, styles and fonts, and the icons. Nothing else on the website passes
    through here. The page tells it which files it loaded (src/lib/workshop-tools/install.ts keepOffline). */
 
-const CACHE = 'workshop-tools-v1';
+const CACHE = 'workshop-tools-v2';
 const APP = '/tools/workshop/app';
 const PAGE = '/tools/workshop';
 const KEEP = [
   APP,
   '/workshop-tools.webmanifest',
-  '/fonts/workshop/archivo-latin-wght.woff2',
-  '/fonts/workshop/jetbrains-mono-latin-wght.woff2',
+  '/fonts/workshop/bricolage-grotesque-latin.woff2',
+  '/fonts/workshop/geist-latin.woff2',
+  '/fonts/workshop/geist-mono-latin.woff2',
   '/images/tools/workshop/icon-192.png',
   '/images/tools/workshop/icon-512.png',
   '/images/tools/workshop/apple-touch-icon.png',
