@@ -56,4 +56,4 @@ On a 2400 ceiling both work. The 236 frame gives you more IKEA storage and less 
 
 The wardrobe planner in the brief on [Plan your project](/how-it-works) does these sums for you. Pick IKEA PAX built in, type your wall width and ceiling height, and the Height step shows both options drawn to scale, with the top box or the infill and every size marked. Rough sizes are fine: I measure properly on the free visit.
 
-Next: [how to work out the widths and fillers](/blog/fitting-ikea-pax-wall-to-wall). Or, if you are still deciding, [PAX or made to measure?](/blog/ikea-pax-or-made-to-measure-wardrobe)
+Next: [how to work out the widths and fillers](/blog/fitting-ikea-pax-wall-to-wall). Or, if you are still deciding, [PAX or made to measure?](/blog/ikea-pax-or-made-to-measure-wardrobe) Already designed it in IKEA's planner? [Where to find your design code](/blog/where-to-find-your-ikea-pax-design-code).

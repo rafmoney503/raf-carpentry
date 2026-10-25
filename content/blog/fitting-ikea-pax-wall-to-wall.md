@@ -58,4 +58,4 @@ A PAX frame is 58 cm deep before the doors. Measure the alcove's depth to the wa
 
 The wardrobe planner in the brief on [Plan your project](/how-it-works) has a Fill my wall button that does exactly this. Pick IKEA PAX built in, type your wall width, and it picks the frames, shows the fillers at each end and draws it all to scale. You can add, remove or swap frames and watch the fillers change. Rough sizes are fine: I measure properly on the free visit.
 
-Want to see one finished? [A five-door PAX wardrobe in Finchley](/blog/pax-wardrobe-finchley).
+Already designed it in IKEA's PAX planner? Send me the design code instead: [where to find it](/blog/where-to-find-your-ikea-pax-design-code). Want to see one finished? [A five-door PAX wardrobe in Finchley](/blog/pax-wardrobe-finchley).

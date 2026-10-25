@@ -15,7 +15,7 @@ import { areaPages } from './areas';
      posts ChatGPT sends people to), a PAX post the other PAX guides.
    Anywhere else the card shows a job someone really looked at lately, as before. */
 
-export const PAX_GUIDES = ['ikea-pax-or-made-to-measure-wardrobe', 'ikea-pax-height-for-your-ceiling', 'fitting-ikea-pax-wall-to-wall'];
+export const PAX_GUIDES = ['ikea-pax-or-made-to-measure-wardrobe', 'ikea-pax-height-for-your-ceiling', 'fitting-ikea-pax-wall-to-wall', 'where-to-find-your-ikea-pax-design-code'];
 const TRADE_PAGES = ['/tools', '/tips', '/cabinetos', '/sketchup'];
 const TRADE_CATEGORIES = /^(sketchup|cabinetos)$/i;
 const WARDROBE_PAGES = ['/services/fitted-wardrobes', '/designs/wardrobes'];

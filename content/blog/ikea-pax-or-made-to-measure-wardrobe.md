@@ -49,4 +49,4 @@ The wall at the top of this post is both. IKEA PAX frames stand either side of a
 
 The brief on [Plan your project](/how-it-works) has a wardrobe planner with a switch at the top: Made to measure or IKEA PAX built in. Type your wall width and ceiling height and it draws either one to scale, fillers and all, so you can flick between them. Rough sizes are fine. I measure properly on the free visit, and nothing is cut until you have signed off the drawing.
 
-Going the PAX way? Read [which PAX height fits your ceiling](/blog/ikea-pax-height-for-your-ceiling) next.
+Going the PAX way? Read [which PAX height fits your ceiling](/blog/ikea-pax-height-for-your-ceiling) next. Already designed it in IKEA's planner? [Where to find your design code](/blog/where-to-find-your-ikea-pax-design-code), and how to send it to me.

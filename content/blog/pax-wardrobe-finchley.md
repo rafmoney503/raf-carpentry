@@ -41,4 +41,4 @@ Every photo of this wardrobe is on the [job page](/portfolio/pax-wardrobe-finchl
 
 You can also [turn the 3D model round](/portfolio/pax-wardrobe-finchley#in-3d) there. It is drawn in SketchUp at standard IKEA PAX sizes, not measured, and it comes apart to show the frames and the fillers.
 
-Planning your own? Start with [which PAX height fits your ceiling](/blog/ikea-pax-height-for-your-ceiling), then [fitting PAX wall to wall](/blog/fitting-ikea-pax-wall-to-wall). Still deciding? [PAX or a made-to-measure wardrobe](/blog/ikea-pax-or-made-to-measure-wardrobe).
+Planning your own? Start with [which PAX height fits your ceiling](/blog/ikea-pax-height-for-your-ceiling), then [fitting PAX wall to wall](/blog/fitting-ikea-pax-wall-to-wall). Still deciding? [PAX or a made-to-measure wardrobe](/blog/ikea-pax-or-made-to-measure-wardrobe). Already designed it in IKEA's planner? [Where to find your design code](/blog/where-to-find-your-ikea-pax-design-code).

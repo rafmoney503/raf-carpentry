@@ -44,3 +44,5 @@ Open the doors and it is all IKEA inside: easy to get parts for, and easy to cha
 [See every photo of this job](/portfolio/loft-wardrobes-palmers-green), including the planner drawing next to the finished wardrobe.
 
 There is also a [3D model of it](/portfolio/loft-wardrobes-palmers-green#in-3d) on the job page, drawn in SketchUp. Turn it round, open it up or take it apart.
+
+Designed yours in IKEA's planner too? [Where to find the design code](/blog/where-to-find-your-ikea-pax-design-code), and how to send it to me.
