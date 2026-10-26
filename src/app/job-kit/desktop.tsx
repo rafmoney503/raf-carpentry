@@ -25,9 +25,10 @@ export const useWide = () =>
   );
 
 /* The places in the sidebar, in their sections. */
-export type SideId = 'home' | 'diary' | 'current' | 'inbox' | 'whatsapp' | 'timeline' | 'board' | 'designs' | 'library' | 'stats' | 'kit' | 'posts' | 'social' | 'settings';
+export type SideId = 'home' | 'personal' | 'diary' | 'current' | 'inbox' | 'whatsapp' | 'timeline' | 'board' | 'designs' | 'library' | 'stats' | 'kit' | 'posts' | 'social' | 'settings';
 const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string; icon?: IconName }[] }[] = [
   { sec: 'todo', items: [{ id: 'home', title: 'Today' }] },
+  { sec: 'personal', label: 'Personal', items: [{ id: 'personal', title: 'Personal to do', icon: 'home' }] },
   {
     sec: 'customers',
     label: 'Customers',
@@ -69,6 +70,7 @@ const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string;
 /* Which place a screen belongs to, for the highlight. */
 export function sideOf(name: string, from?: string): SideId | undefined {
   if (name === 'home') return 'home';
+  if (name === 'personal') return 'personal';
   if (name === 'diary' || (name === 'sm8' && from === 'diary')) return 'diary';
   if (name === 'board' || (name === 'sm8' && from === 'board')) return 'board';
   if (['current', 'sm8', 'customer', 'enquiry'].includes(name)) return 'current';

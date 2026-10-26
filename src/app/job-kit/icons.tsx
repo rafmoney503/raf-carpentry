@@ -1,9 +1,17 @@
 /* Small line icons for the Job Kit's sections, drawn like the site's sketches (round ends, one weight), so each
    card on the Today screen and each line in the Today list shows where it goes. Decorative: the text says it. */
 
-export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note';
+export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note' | 'home';
 
 const PATHS: Record<IconName, React.ReactNode> = {
+  // a house with a tick on its door: the personal to do, home and life away from work
+  home: (
+    <>
+      <path d="M3.5 11.2 12 4l8.5 7.2" />
+      <path d="M6 9.4v10.6h12V9.4" />
+      <path d="M9.4 14.6l1.9 1.9 3.4-3.6" strokeWidth="1.7" />
+    </>
+  ),
   // a sheet with its corner folded: a file in a job's diary (PDF, drawing)
   file: (
     <>

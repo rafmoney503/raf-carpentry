@@ -13,12 +13,14 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
    colour key and in Settings (localStorage raf_jobkit_tint, '0' = off).
    Job timeline (19 Oct 2026): a sixth section, olive green, for the Gantt chart of the jobs going ahead.
    WhatsApp (19 Oct 2026): a seventh, its dot and edges in WhatsApp's own bright green (--sec-mark) so it can't be
-   mistaken for the teal and olive ones, its words in a darker green that reads on white. */
+   mistaken for the teal and olive ones, its words in a darker green that reads on white.
+   Personal (26 Oct 2026): an eighth, slate blue, for the personal to do (personal.tsx), kept apart from work. */
 
-export type SecId = 'todo' | 'customers' | 'whatsapp' | 'timeline' | 'designs' | 'website' | 'photos';
+export type SecId = 'todo' | 'personal' | 'customers' | 'whatsapp' | 'timeline' | 'designs' | 'website' | 'photos';
 
 export const SECTIONS: { id: SecId; name: string; what: string }[] = [
   { id: 'todo', name: 'To do', what: 'What needs doing now.' },
+  { id: 'personal', name: 'Personal', what: 'Your own to do: home and life, apart from work.' },
   { id: 'customers', name: 'Customers', what: 'Diary, Current jobs, Inbox, emails and texts.' },
   { id: 'whatsapp', name: 'WhatsApp', what: 'Chats brought in, sent to ServiceM8 with their photos.' },
   { id: 'timeline', name: 'Job timeline', what: 'Gantt chart and the clients board.' },
@@ -29,6 +31,7 @@ export const SECTIONS: { id: SecId; name: string; what: string }[] = [
 
 /* Which section a screen belongs to. */
 export function secOfScreen(name: string): SecId | undefined {
+  if (name === 'personal') return 'personal';
   if (['diary', 'current', 'sm8', 'enquiry', 'customer', 'inbox', 'email'].includes(name)) return 'customers';
   if (['designs', 'design', 'new-design', 'library'].includes(name)) return 'designs';
   if (name === 'timeline' || name === 'board') return 'timeline';

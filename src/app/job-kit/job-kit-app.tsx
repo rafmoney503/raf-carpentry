@@ -88,11 +88,14 @@ import { LIST_SCREENS, PickNote, Sidebar, sideOf, useWide, type SideId } from '.
 import { onApplied, onSync, startSync, syncNow, syncSoon, syncWords, type SyncState } from './sync';
 import { reloadFor, safeToReload, watchVersion } from './update';
 import { fetchSocial, newComments, savedSocial, SOCIAL_FRESH, socialKey, socialLine, socialProblem, socialTodayLine, SocialView, type Social } from './social';
+import { PersonalToday, PersonalView, usePersonalToday } from './personal';
+import { startChores } from './chores-store';
 import './job-kit.css';
 
 type Tab = SectionId | 'notes' | 'send';
 type Screen =
   | { name: 'home' }
+  | { name: 'personal' } // the personal to do: home and life, apart from work (personal.tsx)
   | { name: 'new'; from?: string; design?: string } // design: started from a design request ("Start the Job Kit for it")
   | { name: 'kit' } // the Job Kit jobs on their own (a computer's sidebar; on the phone they're on Today)
   | { name: 'job'; id: string; tab: Tab }
@@ -208,7 +211,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-blog', 'stats-page', 'kit', 'social'].includes(s.name)) return s;
+    if (s && ['home', 'personal', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-blog', 'stats-page', 'kit', 'social'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -241,6 +244,7 @@ export type Done = Record<string, { slug: string; title: string }>;
 export default function JobKitApp({ done = {}, posts = [], models = [], kinds = [] }: { done?: Done; posts?: Pack[]; models?: LibraryJob[]; kinds?: KindCount[] }) {
   const [ready, setReady] = useState(false);
   const wide = useWide(); // a computer: the desktop layout (desktop.tsx)
+  const personalNow = usePersonalToday(); // the personal to do's count in the computer's sidebar
   const colourKey = useColourKey(ready);
   const [tint, setTint] = useTint();
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -536,6 +540,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     wake();
     // in step with the other device (phone or computer): see sync.ts
     const stopSync = startSync();
+    const stopChores = startChores(); // the personal to do's own list: see chores-store.ts
     const offVersion = watchVersion(setUpdate);
     const offSync = onSync(setSync);
     const offApplied = onApplied((kinds) => {
@@ -550,6 +555,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
       offStatus();
       offChange();
       stopSync();
+      stopChores();
       offVersion();
       offSync();
       offApplied();
@@ -934,7 +940,10 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 onOpen={(id) => go({ name: 'job', id, tab: 'before' })}
                 onSettings={() => go({ name: 'settings' })}
                 onStats={() => go({ name: 'stats' })}
+                onPersonal={() => go({ name: 'personal' })}
               />
+            ) : screen.name === 'personal' ? (
+              <PersonalView />
             ) : screen.name === 'new' ? (
               <NewJob
                 key={screen.design ?? screen.from ?? 'new'}
@@ -1398,6 +1407,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         inbox: freshUnread(inbox).length,
         whatsapp: waChats.filter((c) => !c.sends.length).length,
         social: newComments(social).length,
+        personal: personalNow.due.length,
       }
     : {};
   return (
@@ -1604,6 +1614,7 @@ function Home({
   onOpen,
   onSettings,
   onStats,
+  onPersonal,
 }: {
   jobs: Job[];
   items: Item[];
@@ -1640,8 +1651,10 @@ function Home({
   onOpen: (id: string) => void;
   onSettings: () => void;
   onStats: () => void;
+  onPersonal: () => void;
 }) {
   const { standalone, ios } = useStandalone();
+  const personal = usePersonalToday();
   const wide = useWide(); // a computer: no home-screen advice, and the boxes in columns
   // the last Website stats kept on this phone (stats.tsx), read straight from storage
   const webLine = useSyncExternalStore(noSubscribe, statsLine, () => 'Visitors, pages and heatmaps of rafcarpentry.com');
@@ -1725,6 +1738,10 @@ function Home({
             </button>
           ) : null}
         </div>
+      </HomeBand>
+
+      <HomeBand sec="personal" icon="home" label="Personal" right={personal.due.length ? `${personal.due.length} today` : personal.list.length ? 'Nothing today' : undefined}>
+        <PersonalToday onOpen={onPersonal} />
       </HomeBand>
 
       <HomeBand sec="customers" icon="person" label="Customers" right="ServiceM8">

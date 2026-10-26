@@ -43,11 +43,12 @@
 .jk-sec-timeline { --sec: #587a14; --sec-soft: rgb(88 122 20 / 0.1); }
 /* the dot, edge and top line: the section's own colour, unless it says otherwise (WhatsApp); set on every section
    so a WhatsApp screen's green doesn't reach the other sections' dots */
-.jk-sec-todo, .jk-sec-customers, .jk-sec-timeline, .jk-sec-designs, .jk-sec-website, .jk-sec-photos { --sec-mark: var(--sec); }
+.jk-sec-todo, .jk-sec-personal, .jk-sec-customers, .jk-sec-timeline, .jk-sec-designs, .jk-sec-website, .jk-sec-photos { --sec-mark: var(--sec); }
 .jk-sec-whatsapp { --sec: #0f7b3e; --sec-soft: rgb(37 211 102 / 0.13); --sec-mark: var(--color-whatsapp); }
 .jk-sec-designs { --sec: #6a45b8; --sec-soft: rgb(106 69 184 / 0.1); }
 .jk-sec-website { --sec: #a35a00; --sec-soft: rgb(163 90 0 / 0.1); }
 .jk-sec-photos { --sec: #b0345a; --sec-soft: rgb(176 52 90 / 0.09); }
+.jk-sec-personal { --sec: #3b5a80; --sec-soft: rgb(59 90 128 / 0.1); }
 .jk-sec-ink { color: var(--sec, var(--color-accent)); }
 
 /* the line under the top bar in the screen's section colour */
@@ -98,7 +99,7 @@
 /* Coloured backgrounds (on unless switched off, sections.tsx useTint): the screen, its top bar, the Today boxes and
    each To do line washed in their section's colour; cards and boxes stay white on it */
 .jk.jk-tint { --jk-bg: var(--color-paper); background-color: var(--jk-bg); }
-.jk.jk-tint.jk-sec-customers, .jk.jk-tint.jk-sec-whatsapp, .jk.jk-tint.jk-sec-timeline, .jk.jk-tint.jk-sec-designs, .jk.jk-tint.jk-sec-website, .jk.jk-tint.jk-sec-photos {
+.jk.jk-tint.jk-sec-personal, .jk.jk-tint.jk-sec-customers, .jk.jk-tint.jk-sec-whatsapp, .jk.jk-tint.jk-sec-timeline, .jk.jk-tint.jk-sec-designs, .jk.jk-tint.jk-sec-website, .jk.jk-tint.jk-sec-photos {
   --jk-bg: color-mix(in srgb, var(--sec) 11%, var(--color-paper));
 }
 .jk.jk-tint .jk-top { background-color: var(--jk-bg); }
@@ -269,3 +270,15 @@
 
 /* the Design library's cards side by side */
 .jk-desk .jk-lib-list { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+
+/* Personal to do (personal.tsx, 26 Oct 2026): a square tick box in the section's colour, filled when ticked; a ticked
+   line fades out before it moves to its next date */
+.jk-check {
+  display: grid; place-items: center; width: 24px; height: 24px; border-radius: 2px; color: transparent;
+  border: 2px solid var(--sec, var(--color-accent)); background: var(--color-mount); transition: background-color 0.15s ease, transform 0.15s ease;
+}
+.jk-check.on { background: var(--sec, var(--color-accent)); color: var(--color-on-accent); }
+button:active > .jk-check { transform: scale(0.9); }
+.jk-chore-going { animation: jk-chore-go 0.26s ease forwards; }
+@keyframes jk-chore-go { 60% { opacity: 1; } to { opacity: 0.25; } }
+@media (prefers-reduced-motion: reduce) { .jk-check { transition: none; } .jk-chore-going { animation: none; } }
