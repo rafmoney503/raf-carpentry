@@ -11,6 +11,7 @@ import type { Job } from './store';
 import { clock, post, problemText } from './sm8-post';
 import { EmailBox } from './mail';
 import { JobNotes } from './job-notes';
+import { GoodnotesBox } from './goodnotes';
 import { PropertyBox } from './property-box';
 import { methodsFrom, PaidNote, PaymentForm, type NewPayment } from './payments';
 import { CustomerSearch, indexClients, personName, SameCustomer, type Client, type Clients } from './customers';
@@ -35,7 +36,17 @@ export type Sm8 = { jobs: CurrentJob[]; at: number; bookings?: Booking[] | null;
    (Job timeline), and progressAt when that was set. */
 export type Marks = Record<
   string,
-  { quoteSentAt?: number; hidden?: boolean; mailSeen?: string; reviewAskedAt?: number; progress?: number; progressAt?: number; visitsDone?: string[] }
+  {
+    quoteSentAt?: number;
+    hidden?: boolean;
+    mailSeen?: string;
+    reviewAskedAt?: number;
+    progress?: number;
+    progressAt?: number;
+    visitsDone?: string[];
+    gn?: string[]; // Goodnotes notebooks linked to the job by hand (their paths in OneDrive), goodnotes.tsx
+    gnSent?: Record<string, string>; // notebook path -> the version (last changed) put on the ServiceM8 job
+  }
 >;
 
 /* Bookings marked Done in the Job Kit (19 Oct 2026, Raf: 'when visit is set add also done button that clears the
@@ -1191,6 +1202,8 @@ export function CurrentView({
       </section>
 
       <JobNotes job={job} staff={staff} />
+
+      <GoodnotesBox job={job} marks={marks} onMark={onMark} />
 
       {extra}
 

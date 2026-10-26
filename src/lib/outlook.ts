@@ -113,17 +113,23 @@ async function getToken(): Promise<{ value: string; roles: string[] }> {
 
 /* The token says which permissions were granted: without admin consent it has none, and Graph would only say
    'Access is denied', so check first and say which step is missing. */
-function need(roles: string[], what: 'read' | 'send') {
+type Need = 'read' | 'send' | 'files';
+const NEEDS: Record<Need, { ok: string[]; name: string }> = {
+  read: { ok: ['Mail.ReadWrite', 'Mail.Read'], name: 'Mail.ReadWrite' },
+  send: { ok: ['Mail.Send'], name: 'Mail.Send' },
+  // the mailbox's OneDrive, for Goodnotes' backups (src/lib/goodnotes.ts)
+  files: { ok: ['Files.Read.All', 'Files.ReadWrite.All', 'Sites.Read.All', 'Sites.ReadWrite.All'], name: 'Files.Read.All' },
+};
+function need(roles: string[], what: Need) {
   if (!roles.length) return; // a token we can't read (or a test): let Graph decide
-  const ok = what === 'read' ? roles.some((r) => r === 'Mail.ReadWrite' || r === 'Mail.Read') : roles.includes('Mail.Send');
-  if (!ok) throw new OutlookError('outlook-consent', 403, `${what === 'read' ? 'Mail.ReadWrite' : 'Mail.Send'} isn’t granted (the app has: ${roles.join(', ') || 'nothing'})`);
+  if (!roles.some((r) => NEEDS[what].ok.includes(r))) throw new OutlookError('outlook-consent', 403, `${NEEDS[what].name} isn’t granted (the app has: ${roles.join(', ') || 'nothing'})`);
 }
 
 /* ---------- Graph ---------- */
 
 type GraphInit = { method?: string; body?: unknown; text?: boolean; html?: boolean; raw?: boolean };
 
-async function graph<T>(path: string, init: GraphInit = {}, what: 'read' | 'send' = 'read', again = true): Promise<T> {
+async function graph<T>(path: string, init: GraphInit = {}, what: Need = 'read', again = true): Promise<T> {
   const t = await getToken();
   need(t.roles, what);
   const headers: Record<string, string> = { Authorization: `Bearer ${t.value}` };
@@ -389,3 +395,6 @@ export async function reply(id: string, text: string, signOff: string, send: boo
   }
   return { to, subject, draft: false, at: new Date().toISOString() };
 }
+
+/* The mailbox's OneDrive (Goodnotes' auto-backup, src/lib/goodnotes.ts): app-only with Files.Read.All. */
+export const driveGraph = <T>(path: string, raw = false) => graph<T>(`/drive${path}`, { raw }, 'files');
