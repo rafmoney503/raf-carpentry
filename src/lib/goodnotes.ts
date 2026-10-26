@@ -8,10 +8,13 @@ import { numberOf, type Notebook } from './goodnotes-match';
    permissions → Files.Read.All, then Grant admin consent). Nothing here writes to OneDrive. */
 
 const FOLDER = () => (process.env.GOODNOTES_FOLDER || 'Goodnotes').replace(/^\/+|\/+$/g, '');
+/* Only notebooks in this Goodnotes folder are work (26 Oct 2026, Raf: 'only the ones I use for work'): everything else
+   Goodnotes backs up is left alone. Found at any level under the backup folder. */
+const WORK = () => (process.env.GOODNOTES_WORK_FOLDER || 'Clients').trim().toLowerCase();
 const MAX_FOLDERS = 60;
 const MAX_DEPTH = 4;
 
-export type GnCode = 'gn-secret' | 'gn-consent' | 'gn-no-drive' | 'gn-no-folder' | 'gn-not-set-up' | 'gn-busy' | 'gn-error' | 'gn-gone' | 'gn-too-big';
+export type GnCode = 'gn-secret' | 'gn-consent' | 'gn-no-drive' | 'gn-no-folder' | 'gn-no-work' | 'gn-not-set-up' | 'gn-busy' | 'gn-error' | 'gn-gone' | 'gn-too-big';
 export class GnError extends Error {
   constructor(
     public code: GnCode,
@@ -55,14 +58,16 @@ async function children(path: string): Promise<GItem[]> {
 
 let kept: { at: number; list: Notebook[] } | null = null;
 
-/* Every PDF under the backup folder, a few folders deep. Kept a minute, so opening jobs one after another doesn't ask
+/* Every PDF in the work folder (Clients) of the backup, and its folders. Other folders are only looked into far enough
+   to find it, and nothing in them is kept or shown. Kept a minute, so opening jobs one after another doesn't ask
    Microsoft each time. */
 export async function notebooks(fresh = false): Promise<Notebook[]> {
   if (!fresh && kept && Date.now() - kept.at < 60_000) return kept.list;
   const root = FOLDER();
   const list: Notebook[] = [];
-  const queue: { path: string; rel: string; depth: number }[] = [{ path: root, rel: '', depth: 0 }];
+  const queue: { path: string; rel: string; depth: number; work: boolean }[] = [{ path: root, rel: '', depth: 0, work: false }];
   let folders = 0;
+  let found = false;
   try {
     while (queue.length && folders < MAX_FOLDERS) {
       const f = queue.shift()!;
@@ -70,8 +75,11 @@ export async function notebooks(fresh = false): Promise<Notebook[]> {
       for (const it of await children(f.path)) {
         const rel = f.rel ? `${f.rel}/${it.name}` : it.name;
         if (it.folder) {
-          if (f.depth < MAX_DEPTH) queue.push({ path: `${f.path}/${it.name}`, rel, depth: f.depth + 1 });
-        } else if (/\.pdf$/i.test(it.name) || it.file?.mimeType === 'application/pdf') {
+          const work = f.work || it.name.trim().toLowerCase() === WORK();
+          if (work && !f.work) found = true;
+          // inside the work folder: a few levels; outside it: only far enough to find it
+          if (f.depth < (work ? MAX_DEPTH : 2)) queue.push({ path: `${f.path}/${it.name}`, rel, depth: f.depth + 1, work });
+        } else if (f.work && (/\.pdf$/i.test(it.name) || it.file?.mimeType === 'application/pdf')) {
           const name = it.name.replace(/\.pdf$/i, '');
           list.push({ id: it.id, name, path: rel.replace(/\.pdf$/i, ''), size: it.size ?? 0, at: it.lastModifiedDateTime ?? '', number: numberOf(name) });
         }
@@ -80,6 +88,7 @@ export async function notebooks(fresh = false): Promise<Notebook[]> {
   } catch (e) {
     throw asGn(e);
   }
+  if (!found) throw new GnError('gn-no-work', 404, WORK());
   kept = { at: Date.now(), list };
   return list;
 }

@@ -81,6 +81,8 @@ function gnProblem(error?: string, detail?: string): string {
       return 'info@rafcarpentry.com has no OneDrive yet. Open onedrive.com signed in as info@ once to set it up, or check the Microsoft 365 plan includes OneDrive.';
     case 'gn-no-folder':
       return 'No Goodnotes folder in OneDrive yet. On the iPad: Goodnotes, Settings, Cloud & Backup, Auto Backup, OneDrive (signed in as info@), format PDF, and Increase Auto Backup frequency.';
+    case 'gn-no-work':
+      return 'Goodnotes is backing up, but there’s no Clients folder yet. In Goodnotes make a folder called Clients and move your work notebooks into it: only those show here.';
     case 'gn-secret':
       return problemText('outlook-secret', detail);
     case 'gn-not-set-up':
@@ -410,7 +412,7 @@ export function GoodnotesBox({ job, marks, onMark }: { job: CurrentJob; marks: M
         </button>
       </div>
       <p className="mt-1 text-[14px] leading-snug text-muted">
-        {job.number ? `Notebooks named ${job.number} first, from the iPad by OneDrive.` : 'Notebooks from the iPad by OneDrive.'}
+        {job.number ? `Notebooks in your Clients folder named ${job.number} first.` : 'Notebooks in your Clients folder.'}
         {s.at && !s.error ? ` Checked ${ago(new Date(s.at).toISOString())}.` : ''}
       </p>
 
@@ -464,7 +466,7 @@ export function GoodnotesBox({ job, marks, onMark }: { job: CurrentJob; marks: M
         </ul>
       ) : s.at && !s.error ? (
         <p className="mt-3 text-[14.5px] leading-snug" data-gn-none>
-          No notebook for this job yet. In Goodnotes, start a notebook’s name with <b className="font-semibold">{job.number || 'the job number'}</b>
+          No notebook for this job yet. In Goodnotes’ Clients folder, start a notebook’s name with <b className="font-semibold">{job.number || 'the job number'}</b>
           {job.number ? ` (e.g. “${job.number} ${job.name.split(' ').slice(-1)[0] || 'client'}”)` : ''} and it shows here a minute or two after you write.
         </p>
       ) : null}
