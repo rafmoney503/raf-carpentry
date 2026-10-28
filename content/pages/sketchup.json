@@ -21,7 +21,7 @@
     },
     {
       "title": "Precision Planning",
-      "description": "Every measurement is accurate. Export dimensions directly to your cut list or Cabinetos.",
+      "description": "Every measurement is accurate. With my extension, units are drawn board by board at their cut sizes and go straight to CabinetOS for the cut list.",
       "icon": "📐"
     },
     {
@@ -30,6 +30,59 @@
       "icon": "💰"
     }
   ],
+  "extensionKicker": "My extension for SketchUp",
+  "extensionTitle": "Draw a wardrobe ",
+  "extensionTitleAccent": "in a minute.",
+  "extensionBody": "CabinetOS Units is the extension I made for SketchUp. Pick a unit, type the sizes and it's drawn board by board, at the sizes CabinetOS cuts. When the design is right, send it to CabinetOS and the cut list, board layout and price are ready.",
+  "extensionSteps": [
+    "Pick a unit and type the sizes: wardrobes, units under a sloped ceiling, chests of drawers, alcove units and more",
+    "Every board is its own part at its cut size, the doors open and the drawers slide out, so the client sees the inside",
+    "Send it to CabinetOS for the cut list, the board layout and the price, ready for the cutting company"
+  ],
+  "extensionImage": "/images/sketchup/extension/run-99d57889.svg",
+  "extensionImageAlt": "An angled unit under a slope, a wardrobe with its doors open and a chest of drawers with a drawer out, drawn by the extension",
+  "extensionPanelImage": "/images/sketchup/extension/panel-9c853db1.webp",
+  "extensionPanelAlt": "The extension's panel in SketchUp: a 1000 mm wardrobe with its front, side and sizes",
+  "extensionCaption": "Drawn by the extension, and its panel in SketchUp",
+  "extensionUnitsTitle": "Every CabinetOS unit, drawn at one scale",
+  "extensionUnits": [
+    {
+      "name": "Wardrobe",
+      "image": "/images/sketchup/extension/unit-wardrobe-bdee28ff.svg"
+    },
+    {
+      "name": "Wardrobe with top box",
+      "image": "/images/sketchup/extension/unit-combined-a8ecc440.svg"
+    },
+    {
+      "name": "Under a slope",
+      "image": "/images/sketchup/extension/unit-angled-4f5eccdf.svg"
+    },
+    {
+      "name": "Chest of drawers",
+      "image": "/images/sketchup/extension/unit-chest-8648fa7c.svg"
+    },
+    {
+      "name": "Wall unit",
+      "image": "/images/sketchup/extension/unit-wall-07f97203.svg"
+    },
+    {
+      "name": "TV unit",
+      "image": "/images/sketchup/extension/unit-tv-ddb3a65c.svg"
+    },
+    {
+      "name": "Alcove unit",
+      "image": "/images/sketchup/extension/unit-alcove-64ef0295.svg"
+    },
+    {
+      "name": "Night stand",
+      "image": "/images/sketchup/extension/unit-nightstand-6ecaff8b.svg"
+    }
+  ],
+  "extensionButtonLabel": "See the extension",
+  "extensionButtonUrl": "https://www.cabinetos.co.uk/sketchup-extension",
+  "extensionNote": "Included in CabinetOS Pro, Studio and Enterprise, and in the 14-day free trial. SketchUp 2017 or newer, Windows and Mac.",
+  "extensionTrademark": "SketchUp is a trademark of Trimble Inc. CabinetOS Units is made by Rafal Solutions Ltd and is not affiliated with or endorsed by Trimble.",
   "comparisonTitle": "3D Designs ",
   "comparisonTitleAccent": "vs Real Builds",
   "comparisonSubtitle": "See how my SketchUp models translate into finished projects. Every detail planned digitally, then built to perfection.",

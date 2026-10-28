@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { readPageJson } from '@/lib/pages';
 import { Container, MountedImage, SectionHeading } from '@/components/ui';
@@ -19,6 +20,22 @@ type SketchupPageData = {
   benefitsSectionTitle: string;
   benefitsSectionTitleAccent: string;
   benefits: { title: string; description: string; icon: string }[];
+  extensionKicker?: string;
+  extensionTitle?: string;
+  extensionTitleAccent?: string;
+  extensionBody?: string;
+  extensionSteps?: string[];
+  extensionImage?: string;
+  extensionImageAlt?: string;
+  extensionPanelImage?: string;
+  extensionPanelAlt?: string;
+  extensionCaption?: string;
+  extensionUnitsTitle?: string;
+  extensionUnits?: { name: string; image: string }[];
+  extensionButtonLabel?: string;
+  extensionButtonUrl?: string;
+  extensionNote?: string;
+  extensionTrademark?: string;
   comparisonTitle: string;
   comparisonTitleAccent: string;
   comparisonSubtitle: string;
@@ -46,7 +63,7 @@ type SketchupPageData = {
 
 export const metadata = pageMeta({
   title: 'Why I draw every job in SketchUp | Raf Carpentry',
-  description: 'Every job is drawn in SketchUp first, so you see exactly what you are getting before a single board is ordered. Plans from real jobs, and how to learn SketchUp with me.',
+  description: 'Every job is drawn in SketchUp first, so you see exactly what you are getting before a single board is ordered. My extension for drawing units fast, plans from real jobs, and how to learn SketchUp with me.',
   path: '/sketchup',
 });
 
@@ -119,6 +136,8 @@ export default function SketchUpPage() {
           </div>
         </Container>
       </section>
+
+      {d.extensionTitle ? <ExtensionSection d={d} /> : null}
 
       <div id="compare" />
       <Container className="py-20 md:py-28">
@@ -206,5 +225,90 @@ export default function SketchUpPage() {
         </Container>
       </section>
     </>
+  );
+}
+
+/* The CabinetOS Units extension for SketchUp (its own page is on cabinetos.co.uk/sketchup-extension). The drawings are
+   the extension's own parts, copied from cabinetos-site public/sketchup (made by its scripts/sketchup-page/render.cjs)
+   with the edges in ink; the unit drawings share one height on paper, so shown at one height they are at one scale. */
+function ExtensionSection({ d }: { d: SketchupPageData }) {
+  const units = d.extensionUnits ?? [];
+  return (
+    <section id="extension" className="border-b border-line">
+      <Container className="py-20 md:py-28">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-12 md:gap-6">
+          <div className="md:col-span-5">
+            {d.extensionKicker ? <p className="kicker">{d.extensionKicker}</p> : null}
+            <SectionHeading className="mt-3">
+              {d.extensionTitle}
+              {d.extensionTitleAccent ? <span className="text-accent">{d.extensionTitleAccent}</span> : null}
+            </SectionHeading>
+            {d.extensionBody ? <p className="mt-5 max-w-[48ch] text-[17px] leading-relaxed text-muted">{d.extensionBody}</p> : null}
+            {d.extensionSteps?.length ? (
+              <ol className="mt-8 border-t border-line-strong">
+                {d.extensionSteps.map((pt, i) => (
+                  <li key={pt} className="grid grid-cols-[2.5rem_1fr] gap-2 border-b border-line py-3.5">
+                    <span className="font-mono text-[13px] leading-[1.6] text-accent">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="text-[16px] leading-snug text-ink">{pt}</span>
+                  </li>
+                ))}
+              </ol>
+            ) : null}
+            <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
+              {d.extensionButtonUrl ? (
+                <a href={d.extensionButtonUrl} target="_blank" rel="noopener" className="btn btn-primary">
+                  {d.extensionButtonLabel || 'See the extension'} <span aria-hidden="true">↗</span>
+                </a>
+              ) : null}
+              <Link href="/cabinetos" className="link-more">
+                What CabinetOS does <span aria-hidden="true">→</span>
+              </Link>
+            </div>
+            {d.extensionNote ? <p className="mt-4 max-w-[44ch] text-[14.5px] text-muted">{d.extensionNote}</p> : null}
+          </div>
+
+          {d.extensionImage ? (
+            <figure className="md:col-span-6 md:col-start-7 md:self-center">
+              <div className={`grid gap-3 ${d.extensionPanelImage ? 'grid-cols-[93fr_54fr]' : 'grid-cols-1'}`}>
+                <div className="mount">
+                  <div className="relative aspect-[2510/2707] bg-white">
+                    <Image src={d.extensionImage} alt={d.extensionImageAlt ?? ''} fill unoptimized sizes="(max-width: 768px) 60vw, 380px" className="object-contain p-3" />
+                  </div>
+                </div>
+                {d.extensionPanelImage ? (
+                  <div className="mount">
+                    <div className="relative h-full min-h-[120px] bg-white">
+                      <Image src={d.extensionPanelImage} alt={d.extensionPanelAlt ?? ''} fill sizes="(max-width: 768px) 36vw, 220px" className="object-contain" />
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+              {d.extensionCaption ? <figcaption className="mt-4 font-mono text-[13px] text-faint">{d.extensionCaption}</figcaption> : null}
+            </figure>
+          ) : null}
+        </div>
+
+        {units.length ? (
+          <div className="mt-16 md:mt-20">
+            {d.extensionUnitsTitle ? <h3 className="text-[20px] font-[620] leading-tight">{d.extensionUnitsTitle}</h3> : null}
+            <div className="mount mt-5">
+              <div className="overflow-x-auto bg-white" data-no-pull>
+                <ul className="flex w-max min-w-full items-end justify-between gap-6 px-5 pb-4 pt-6">
+                  {units.map((u) => (
+                    <li key={u.image} className="flex shrink-0 flex-col items-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- line drawings at one height, so their widths keep one scale */}
+                      <img src={u.image} alt={u.name} loading="lazy" className="h-[150px] w-auto lg:h-[170px] xl:h-[230px]" />
+                      <span className="mt-3 w-0 min-w-full border-t border-line-strong pt-2 text-center font-mono text-[12px] leading-snug text-muted">{u.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {d.extensionTrademark ? <p className="mt-10 max-w-[90ch] text-[12.5px] leading-relaxed text-faint">{d.extensionTrademark}</p> : null}
+      </Container>
+    </section>
   );
 }

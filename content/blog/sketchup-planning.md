@@ -38,3 +38,7 @@ If you're a carpenter thinking about learning SketchUp, start with the free vers
 ## The Bottom Line
 
 SketchUp isn't just a nice-to-have — it's a competitive advantage. Clients trust you more when they can see exactly what you're building. And you'll save time, materials, and stress on every single project.
+
+## Now I draw the units with my own extension
+
+Since writing this, I've made an extension for SketchUp: CabinetOS Units. I pick a unit, type the sizes and it's drawn board by board, at the sizes CabinetOS cuts, with doors that open and drawers that slide out. When the design is right, I send it to CabinetOS for the cut list and board layout. [See how it works](/sketchup#extension).
