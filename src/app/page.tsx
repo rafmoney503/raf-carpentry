@@ -19,6 +19,7 @@ import ServiceStack from '@/components/ServiceStack';
 import WipeCover from '@/components/WipeCover';
 import TiltShot from '@/components/TiltShot';
 import DeviceTrio from '@/components/DeviceTrio';
+import ExtensionTeaser from '@/components/ExtensionTeaser';
 import { areaPageLinks, getNearJobs } from '@/lib/areas';
 import { businessJsonLd, jsonLd, pageMeta } from '@/lib/seo';
 import './home.css';
@@ -286,6 +287,8 @@ export default function HomePage() {
             <Link className="link-more" href="/cabinetos">
               {d.appLinkLabel} <span aria-hidden="true">→</span>
             </Link>
+            {/* CabinetOS Units, my extension for SketchUp (28 Oct 2026) */}
+            <ExtensionTeaser className="app-ext" />
           </div>
           <figure className="app-shot reveal">
             <TiltShot className="app-tilt">

@@ -4,6 +4,7 @@ import { readPageJson } from './pages';
 import { portfolioChips } from './portfolio-chips';
 import { getAllProjects } from './projects';
 import { PLANNER_HREF, PLANNER_IMAGE, PLANNER_IMAGE_SQUARE } from './planner-picture';
+import { EXTENSION_HREF, EXTENSION_STILL_SQUARE, EXTENSION_STILL_WIDE } from './extension-clip';
 import { getServices, jobsFor } from './services';
 
 /* What each main menu item shows when the mouse rests on it (computer) or its + is tapped (phone menu):
@@ -92,15 +93,17 @@ export function getMenuPanels(): Record<string, MenuPanel> {
       cta: 'Open the page',
       tagsTitle: 'On this page',
       tags: [
+        { label: 'My SketchUp extension', href: '/sketchup#extension' },
         { label: 'Real jobs, in 3D', href: '/sketchup#in-3d' },
         { label: 'Benefits for carpenters', href: '/sketchup#benefits' },
-        { label: 'My SketchUp extension', href: '/sketchup#extension' },
         { label: '3D designs vs real builds', href: '/sketchup#compare' },
         ...(jobs.some((j) => j.planSale?.buyUrl || j.planSale?.freeDownload) ? [{ label: 'Plans from real jobs', href: '/sketchup#plans' }] : []),
         { label: 'Learn SketchUp with me', href: '/sketchup#learn' },
         { label: 'Get a 3D design', href: '/sketchup#get-a-design' },
       ],
       image: designs[2] ? { src: designs[2].model.poster.src, alt: '', caption: `${designs[2].title}, in 3D`, contain: true } : undefined,
+      // My extension for SketchUp (28 Oct 2026, Raf: 'more prominent and more visual and be seen')
+      feature: { href: EXTENSION_HREF, src: EXTENSION_STILL_WIDE, square: EXTENSION_STILL_SQUARE, kicker: 'New · for SketchUp', title: 'My extension: draw a wardrobe in a minute', line: 'Units built board by board, then sent to CabinetOS for the cut list.' },
     },
     '/cabinetos': {
       href: '/cabinetos',
@@ -112,6 +115,7 @@ export function getMenuPanels(): Record<string, MenuPanel> {
       tags: [
         { label: 'App screens', href: '/cabinetos#screens' },
         { label: 'How it works', href: '/cabinetos#features' },
+        { label: 'My SketchUp extension', href: '/cabinetos#sketchup' },
         { label: 'Pencil and paper, or the app', href: '/cabinetos#compare' },
         { label: 'How it works out the sizes', href: '/cabinetos#sizes' },
         { label: 'Questions', href: '/cabinetos#faq' },
