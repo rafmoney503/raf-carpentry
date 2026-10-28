@@ -266,7 +266,7 @@ function ExtensionSection({ d }: { d: SketchupPageData }) {
             <div className="xt-stage">
               <div className="xt-stage-clip">
                 <div className="xt-frame">
-                  <div className="relative aspect-[960/1020] overflow-hidden">
+                  <div className="relative aspect-[960/1048] overflow-hidden">
                     <Image src={EXTENSION_STILL} alt={EXTENSION_ALT} fill sizes="(max-width: 1024px) 90vw, 560px" className="object-cover" />
                     <PlannerClip {...EXTENSION_CLIP} />
                     <span className="xt-tag">SketchUp · CabinetOS Units</span>

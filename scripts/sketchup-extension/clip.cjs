@@ -16,6 +16,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 const sharp = require('sharp');
+const { foldInfo, foldedPart } = require('./fold.cjs');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const DIR = path.resolve(ROOT, '..', 'cabinetos-site', 'sketchup-plugin', 'rb', 'cabinetos_angled');
@@ -49,6 +50,7 @@ const out = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : 1 - Math.pow(1 - t, 3));
 
 // A part at its place: open f (door swing or drawer slide, as the extension moves them), plus a drop or slide-in.
 function prism(pt, f, dz, dy) {
+  if (pt.move && pt.move.fold) pt = foldedPart(pt, pt.move.fold, f); // the angled unit's folding pair (fold.cjs)
   const o = pt.origin, X = pt.xAxis, Y = pt.yAxis, Z = v.cross(X, Y);
   const at = (q, w) => v.add(o, v.add(v.mul(X, q[0]), v.add(v.mul(Y, q[1]), v.mul(Z, w))));
   let front = pt.poly.map((q) => at(q, 0)), back = pt.poly.map((q) => at(q, pt.thickness));
@@ -152,6 +154,9 @@ const units = [
   { r: ok({ unitType: 'chest', widthMm: 800, heightMm: 900, front: 'drawers', drawerCount: 4, worktop: true }), dx: 1700, w: 800 },
 ];
 
+// The angled unit's two doors fold together, the small one hinged to the big one (scripts/sketchup-extension/fold.cjs).
+(() => { const info = foldInfo(units[0].r.parts); if (info) { info.leaf.move.fold = info; info.main.move.fold = info; } })();
+
 // The build order of a unit's boards, as you'd put it together: plinth, bottom, sides, top, back, shelves and
 // rail, runner boards, the drawers (box and front together), worktop; the doors come on last.
 const RANK = { plinth: 0, carcass: 1, back: 3, shelf: 4, hardware: 4, drawer_support: 5, drawer_box: 6, drawer_front: 6, worktop: 8, door: 9 };
@@ -181,7 +186,14 @@ const T0 = 0.35, STEP = 0.075, DUR = 0.42;
 steps.forEach((s, i) => { s.t = T0 + i * STEP; });
 const built = steps[steps.length - 1].t + DUR;
 const CLOSE = [built + 0.15, built + 0.95]; // the doors swing shut
-const OPEN = [CLOSE[1] + 0.9, CLOSE[1] + 1.75]; // the wardrobe opens and a drawer comes out
+// The angled unit's folding pair: it comes in folded open and folds shut once that unit is built (before the
+// wardrobe's doors come in beside it), then, with everything shut, folds open and shut again on its own.
+const angDoorT = Math.max(...steps.filter((s) => s.ui === 0 && s.kind === 'door').map((s) => s.t));
+const ANG_SHUT = [angDoorT + DUR + 0.05, angDoorT + DUR + 0.7];
+const FOLD = [CLOSE[1] + 0.45, CLOSE[1] + 1.3, CLOSE[1] + 2.0, CLOSE[1] + 2.75]; // open, opened, shutting, shut
+const fold = (t) => (t < ANG_SHUT[0] ? 1 : t < ANG_SHUT[1] ? 1 - ease((t - ANG_SHUT[0]) / (ANG_SHUT[1] - ANG_SHUT[0]))
+  : t < FOLD[0] ? 0 : t < FOLD[1] ? ease((t - FOLD[0]) / (FOLD[1] - FOLD[0])) : t < FOLD[2] ? 1 : 1 - ease((t - FOLD[2]) / (FOLD[3] - FOLD[2])));
+const OPEN = [FOLD[3] + 0.35, FOLD[3] + 1.2]; // the wardrobe opens and a drawer comes out
 const FADE = [OPEN[1] + 1.5, OPEN[1] + 2.0];
 const TOTAL = FADE[1] + 0.25;
 const dimAt = (t) => ease((t - CLOSE[1] + 0.1) / 0.5);
@@ -198,7 +210,8 @@ function state(t) {
       let f = 0, dz = 0, dy = 0;
       if (s.kind === 'drop') dz = 320 * (1 - out(p));
       if (s.kind === 'slide') dy = 520 * (1 - out(p));
-      if (s.kind === 'door') {
+      if (s.kind === 'door' && s.ui === 0 && pt.move.fold) f = fold(t);
+      else if (s.kind === 'door') {
         f = 1 - ease((t - CLOSE[0]) / (CLOSE[1] - CLOSE[0]));
         if (isOpener(pt, s.ui)) f = Math.max(f, ease((t - OPEN[0]) / (OPEN[1] - OPEN[0])));
       } else if (isOpener(pt, s.ui)) f = 0.75 * ease((t - OPEN[0]) / (OPEN[1] - OPEN[0]));
@@ -262,11 +275,11 @@ async function make(shape) {
   if (process.env.PEEK) {
     const box = bounds(null), W = 720, H = Math.round((W * (box[3] - box[1])) / (box[2] - box[0]));
     fs.mkdirSync(process.env.PEEK, { recursive: true });
-    for (const t of [0.6, 1.5, 2.5, 3.5, 4.5, built, CLOSE[1], OPEN[1], FADE[0] + 0.25]) {
+    for (const t of [0.6, 1.5, ANG_SHUT[0] - 0.1, (ANG_SHUT[0] + ANG_SHUT[1]) / 2, 2.5, 3.5, built, CLOSE[1], (FOLD[0] + FOLD[1]) / 2, FOLD[1] + 0.2, OPEN[1], FADE[0] + 0.25]) {
       const fade = 1 - ease((t - FADE[0]) / (FADE[1] - FADE[0]));
       await sharp(Buffer.from(frame(state(t), box, W, H, fade, dimAt(t)))).png().toFile(path.join(process.env.PEEK, `t${t.toFixed(2)}.png`));
     }
-    console.log('steps', steps.length, 'built', built.toFixed(2), 'total', TOTAL.toFixed(2));
+    console.log('steps', steps.length, 'built', built.toFixed(2), 'angled shuts', ANG_SHUT.map((x) => x.toFixed(2)).join('-'), 'wardrobe doors from', Math.min(...steps.filter((s) => s.ui === 1 && s.kind === 'door').map((s) => s.t)).toFixed(2), 'fold', FOLD.map((x) => x.toFixed(2)).join(' '), 'total', TOTAL.toFixed(2));
     return;
   }
   fs.mkdirSync(OUT, { recursive: true });
