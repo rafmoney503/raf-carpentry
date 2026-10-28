@@ -9,6 +9,7 @@ import Sketch from '@/app/how-it-works/sketches';
 import PlannerTeaser from '@/components/PlannerTeaser';
 import { TradeNudge } from '@/components/AlsoByMe';
 import AppNudge from '@/components/AppNudge';
+import ExtensionTeaser from '@/components/ExtensionTeaser';
 
 type ToolEntry = {
   name: string;
@@ -54,11 +55,13 @@ export default function ToolsPage() {
       </PageHeader>
 
       <Container className="pb-8">
-        {/* Teasers for the wardrobe planner, the Workshop Tools app, the free calculator, the workshop tips and Workshop Games */}
+        {/* Teasers for the wardrobe planner, the Workshop Tools app, my SketchUp extension, the free calculator, the workshop tips and Workshop Games */}
         <div className="mb-12 grid grid-cols-1 gap-4 md:mb-16 lg:grid-cols-2">
           <PlannerTeaser variant="feature" className="lg:col-span-2" />
           {/* the Workshop Tools app for phones (25 Oct 2026) */}
           <AppNudge variant="card" className="lg:col-span-2" />
+          {/* CabinetOS Units, my extension for SketchUp (28 Oct 2026) */}
+          <ExtensionTeaser variant="feature" className="lg:col-span-2" />
           <Link
             href="/calculator"
             className="group grid grid-cols-1 items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent sm:grid-cols-[minmax(0,1fr)_auto] md:p-6"

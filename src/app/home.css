@@ -90,6 +90,7 @@
 .home .app-copy { grid-column: 1 / span 5; }
 .home .app-copy .kicker { margin-bottom: 20px; }
 .home .app-copy .link-more { margin-top: 32px; }
+.home .app-ext { margin-top: 28px; }
 .home .app-shot { grid-column: 6 / span 7; margin: 0; container-type: inline-size; }
 
 /* The same app on a computer, a tablet and a phone (src/components/DeviceTrio.tsx). Every size is in cqw of

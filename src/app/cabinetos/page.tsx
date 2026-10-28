@@ -6,6 +6,8 @@ import AppScreens, { type AppScreen } from '@/components/AppScreens';
 import Compare from './compare';
 import Sizes, { type SizesRule } from './sizes';
 import { TradeNudge } from '@/components/AlsoByMe';
+import ExtensionTeaser from '@/components/ExtensionTeaser';
+import { EXTENSION_PAGE } from '@/lib/extension-clip';
 
 function imageSrc(v: unknown): string {
   if (typeof v === 'string' && v.trim()) return v;
@@ -142,6 +144,13 @@ export default function Cabinetos() {
               ))}
             </ol>
           </div>
+        </Container>
+      </section>
+
+      {/* CabinetOS Units, my extension for SketchUp (28 Oct 2026): its own page, with the download, is on cabinetos.co.uk */}
+      <section id="sketchup" aria-label="CabinetOS Units, my extension for SketchUp" className="pt-20 md:pt-28">
+        <Container>
+          <ExtensionTeaser variant="feature" href={EXTENSION_PAGE} external />
         </Container>
       </section>
 

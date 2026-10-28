@@ -31,6 +31,7 @@
     }
   ],
   "extensionKicker": "My extension for SketchUp",
+  "extensionHeroLink": "My extension for SketchUp: draw a wardrobe in a minute",
   "extensionTitle": "Draw a wardrobe ",
   "extensionTitleAccent": "in a minute.",
   "extensionBody": "CabinetOS Units is the extension I made for SketchUp. Pick a unit, type the sizes and it's drawn board by board, at the sizes CabinetOS cuts. When the design is right, send it to CabinetOS and the cut list, board layout and price are ready.",
@@ -39,11 +40,9 @@
     "Every board is its own part at its cut size, the doors open and the drawers slide out, so the client sees the inside",
     "Send it to CabinetOS for the cut list, the board layout and the price, ready for the cutting company"
   ],
-  "extensionImage": "/images/sketchup/extension/run-99d57889.svg",
-  "extensionImageAlt": "An angled unit under a slope, a wardrobe with its doors open and a chest of drawers with a drawer out, drawn by the extension",
   "extensionPanelImage": "/images/sketchup/extension/panel-9c853db1.webp",
   "extensionPanelAlt": "The extension's panel in SketchUp: a 1000 mm wardrobe with its front, side and sizes",
-  "extensionCaption": "Drawn by the extension, and its panel in SketchUp",
+  "extensionCaption": "Built by the extension, board by board, from its own parts. Its panel on the right.",
   "extensionUnitsTitle": "Every CabinetOS unit, drawn at one scale",
   "extensionUnits": [
     {

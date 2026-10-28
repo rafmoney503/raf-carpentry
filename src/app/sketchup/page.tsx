@@ -5,6 +5,9 @@ import { Container, MountedImage, SectionHeading } from '@/components/ui';
 import PlanCard from '@/components/project/PlanCard';
 import ScreenGrid from '@/components/project/ScreenGrid';
 import ModelGallery, { type GalleryItem } from '@/components/project/ModelGallery';
+import PlannerClip from '@/components/PlannerClip';
+import { EXTENSION_ALT, EXTENSION_CLIP, EXTENSION_STILL } from '@/lib/extension-clip';
+import '@/components/extension.css';
 import { formatMonth, getAllProjects, isPlanReady } from '@/lib/projects';
 import { pageMeta } from '@/lib/seo';
 
@@ -21,12 +24,11 @@ type SketchupPageData = {
   benefitsSectionTitleAccent: string;
   benefits: { title: string; description: string; icon: string }[];
   extensionKicker?: string;
+  extensionHeroLink?: string;
   extensionTitle?: string;
   extensionTitleAccent?: string;
   extensionBody?: string;
   extensionSteps?: string[];
-  extensionImage?: string;
-  extensionImageAlt?: string;
   extensionPanelImage?: string;
   extensionPanelAlt?: string;
   extensionCaption?: string;
@@ -83,6 +85,13 @@ export default function SketchUpPage() {
       <Container className="pb-20 pt-12 md:pb-28 md:pt-20">
         <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-12 md:gap-6">
           <div className="md:col-span-6">
+            {d.extensionTitle && d.extensionHeroLink ? (
+              <a href="#extension" className="group mb-6 inline-flex max-w-full items-center gap-2.5 rounded-sm border border-line-strong bg-mount py-1.5 pl-1.5 pr-3 text-[14.5px] font-[560] leading-snug transition-colors hover:border-accent">
+                <span className="flex-none rounded-[2px] bg-accent px-1.5 py-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-on-accent">New</span>
+                <span className="min-w-0">{d.extensionHeroLink}</span>
+                <span aria-hidden="true" className="flex-none text-accent transition-transform group-hover:translate-y-0.5">↓</span>
+              </a>
+            ) : null}
             <h1 className="font-display text-[40px] font-[680] leading-[1.04] tracking-[-0.03em] md:text-[58px]">
               {d.heroTitle}
               <span className="text-accent">{d.heroTitleAccent}</span>
@@ -99,6 +108,8 @@ export default function SketchUpPage() {
           </figure>
         </div>
       </Container>
+
+      {d.extensionTitle ? <ExtensionSection d={d} /> : null}
 
       {models.length > 0 ? (
         <section id="in-3d" className="border-t border-line">
@@ -136,8 +147,6 @@ export default function SketchUpPage() {
           </div>
         </Container>
       </section>
-
-      {d.extensionTitle ? <ExtensionSection d={d} /> : null}
 
       <div id="compare" />
       <Container className="py-20 md:py-28">
@@ -228,71 +237,91 @@ export default function SketchUpPage() {
   );
 }
 
-/* The CabinetOS Units extension for SketchUp (its own page is on cabinetos.co.uk/sketchup-extension). The drawings are
-   the extension's own parts, copied from cabinetos-site public/sketchup (made by its scripts/sketchup-page/render.cjs)
-   with the edges in ink; the unit drawings share one height on paper, so shown at one height they are at one scale. */
+/* CabinetOS Units, my extension for SketchUp (its own page is on cabinetos.co.uk/sketchup-extension), straight under
+   the opening as a dark blueprint band (28 Oct 2026, Raf: 'more prominent and more visual and be seen'): the units
+   building themselves board by board (src/lib/extension-clip.ts, made from the extension's own parts) with its panel
+   beside them. The unit drawings are the extension's own parts too, copied from cabinetos-site public/sketchup (made by
+   its scripts/sketchup-page/render.cjs) with the edges in ink; they share one height on paper, so shown at one height
+   they are at one scale. */
 function ExtensionSection({ d }: { d: SketchupPageData }) {
   const units = d.extensionUnits ?? [];
   return (
-    <section id="extension" className="border-b border-line">
-      <Container className="py-20 md:py-28">
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-12 md:gap-6">
-          <div className="md:col-span-5">
-            {d.extensionKicker ? <p className="kicker">{d.extensionKicker}</p> : null}
-            <SectionHeading className="mt-3">
+    <section id="extension" className="xt relative">
+      <Container className="py-16 md:py-24">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:gap-x-6 lg:gap-y-0">
+          <div className="lg:col-span-5 lg:row-start-1">
+            {d.extensionKicker ? (
+              <p className="xt-new">
+                <b>New</b> {d.extensionKicker}
+              </p>
+            ) : null}
+            <h2 className="mt-4 font-display text-[36px] font-[680] leading-[1.04] tracking-[-0.03em] md:text-[50px]">
               {d.extensionTitle}
-              {d.extensionTitleAccent ? <span className="text-accent">{d.extensionTitleAccent}</span> : null}
-            </SectionHeading>
-            {d.extensionBody ? <p className="mt-5 max-w-[48ch] text-[17px] leading-relaxed text-muted">{d.extensionBody}</p> : null}
+              {d.extensionTitleAccent ? <span className="xt-hi">{d.extensionTitleAccent}</span> : null}
+            </h2>
+            {d.extensionBody ? <p className="xt-sub mt-5 max-w-[48ch] text-[17px] leading-relaxed">{d.extensionBody}</p> : null}
+          </div>
+
+          <figure className="lg:col-span-7 lg:col-start-6 lg:row-span-2 lg:row-start-1 lg:pl-6">
+            <div className="xt-stage">
+              <div className="xt-stage-clip">
+                <div className="xt-frame">
+                  <div className="relative aspect-[960/1020] overflow-hidden">
+                    <Image src={EXTENSION_STILL} alt={EXTENSION_ALT} fill sizes="(max-width: 1024px) 90vw, 560px" className="object-cover" />
+                    <PlannerClip {...EXTENSION_CLIP} />
+                    <span className="xt-tag">SketchUp · CabinetOS Units</span>
+                  </div>
+                </div>
+              </div>
+              {d.extensionPanelImage ? (
+                <div className="xt-stage-panel">
+                  <div className="xt-frame">
+                    <p className="xt-panel-bar" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                      <span className="ml-1">CabinetOS Units</span>
+                    </p>
+                    <div className="relative aspect-[880/1640]">
+                      <Image src={d.extensionPanelImage} alt={d.extensionPanelAlt ?? ''} fill sizes="180px" className="object-contain" />
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            {d.extensionCaption ? <figcaption className="xt-sub mt-4 font-mono text-[13px]">{d.extensionCaption}</figcaption> : null}
+          </figure>
+
+          <div className="lg:col-span-5 lg:row-start-2 lg:self-start lg:pt-8">
             {d.extensionSteps?.length ? (
-              <ol className="mt-8 border-t border-line-strong">
+              <ol className="xt-rule border-t">
                 {d.extensionSteps.map((pt, i) => (
-                  <li key={pt} className="grid grid-cols-[2.5rem_1fr] gap-2 border-b border-line py-3.5">
-                    <span className="font-mono text-[13px] leading-[1.6] text-accent">{String(i + 1).padStart(2, '0')}</span>
-                    <span className="text-[16px] leading-snug text-ink">{pt}</span>
+                  <li key={pt} className="xt-rule grid grid-cols-[2.5rem_1fr] gap-2 border-b py-3.5">
+                    <span className="xt-hi font-mono text-[13px] leading-[1.6]">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="text-[16px] leading-snug">{pt}</span>
                   </li>
                 ))}
               </ol>
             ) : null}
             <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
               {d.extensionButtonUrl ? (
-                <a href={d.extensionButtonUrl} target="_blank" rel="noopener" className="btn btn-primary">
+                <a href={d.extensionButtonUrl} target="_blank" rel="noopener" className="btn xt-btn gap-2">
                   {d.extensionButtonLabel || 'See the extension'} <span aria-hidden="true">↗</span>
                 </a>
               ) : null}
-              <Link href="/cabinetos" className="link-more">
+              <Link href="/cabinetos" className="xt-link">
                 What CabinetOS does <span aria-hidden="true">→</span>
               </Link>
             </div>
-            {d.extensionNote ? <p className="mt-4 max-w-[44ch] text-[14.5px] text-muted">{d.extensionNote}</p> : null}
+            {d.extensionNote ? <p className="xt-sub mt-4 max-w-[44ch] text-[14.5px]">{d.extensionNote}</p> : null}
           </div>
-
-          {d.extensionImage ? (
-            <figure className="md:col-span-6 md:col-start-7 md:self-center">
-              <div className={`grid gap-3 ${d.extensionPanelImage ? 'grid-cols-[93fr_54fr]' : 'grid-cols-1'}`}>
-                <div className="mount">
-                  <div className="relative aspect-[2510/2707] bg-white">
-                    <Image src={d.extensionImage} alt={d.extensionImageAlt ?? ''} fill unoptimized sizes="(max-width: 768px) 60vw, 380px" className="object-contain p-3" />
-                  </div>
-                </div>
-                {d.extensionPanelImage ? (
-                  <div className="mount">
-                    <div className="relative h-full min-h-[120px] bg-white">
-                      <Image src={d.extensionPanelImage} alt={d.extensionPanelAlt ?? ''} fill sizes="(max-width: 768px) 36vw, 220px" className="object-contain" />
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-              {d.extensionCaption ? <figcaption className="mt-4 font-mono text-[13px] text-faint">{d.extensionCaption}</figcaption> : null}
-            </figure>
-          ) : null}
         </div>
 
         {units.length ? (
           <div className="mt-16 md:mt-20">
             {d.extensionUnitsTitle ? <h3 className="text-[20px] font-[620] leading-tight">{d.extensionUnitsTitle}</h3> : null}
-            <div className="mount mt-5">
-              <div className="overflow-x-auto bg-white" data-no-pull>
+            <div className="xt-frame mt-5 !p-0">
+              <div className="overflow-x-auto rounded-[2px] bg-white" data-no-pull>
                 <ul className="flex w-max min-w-full items-end justify-between gap-6 px-5 pb-4 pt-6">
                   {units.map((u) => (
                     <li key={u.image} className="flex shrink-0 flex-col items-center">
@@ -307,7 +336,7 @@ function ExtensionSection({ d }: { d: SketchupPageData }) {
           </div>
         ) : null}
 
-        {d.extensionTrademark ? <p className="mt-10 max-w-[90ch] text-[12.5px] leading-relaxed text-faint">{d.extensionTrademark}</p> : null}
+        {d.extensionTrademark ? <p className="xt-sub mt-10 max-w-[90ch] text-[12.5px] leading-relaxed opacity-80">{d.extensionTrademark}</p> : null}
       </Container>
     </section>
   );
