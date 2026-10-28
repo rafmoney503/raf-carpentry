@@ -224,17 +224,17 @@ class Component extends DCLogic {
         intro: ['Straight edge', 'Cross the bench gap on a steel rule, one bearing wide. Steady hands. At the end, hold it level for a second and a half.'] }
     ];
     this.WOOD = {
-      birch: { name: 'Birch ply', base: '#e4cb9c', grain: 'rgba(150,104,52,', wall: '#a8784a', light: true, f: 0.9, roll: 1050 },
-      pine: { name: 'Pine board', base: '#e8c47f', grain: 'rgba(168,104,40,', wall: '#9e6a36', light: true, f: 0.9, roll: 900 },
-      mdfw: { name: 'White MDF door', base: '#ecebe6', grain: null, wall: '#b4aea2', light: true, f: 1.0, roll: 1250 },
-      oak: { name: 'Oak worktop', base: '#c99a62', grain: 'rgba(104,64,26,', wall: '#7c532e', light: true, f: 0.8, roll: 700 },
-      walnut: { name: 'Walnut drawer side', base: '#6f4a34', grain: 'rgba(30,16,8,', wall: '#3c2618', light: false, f: 0.55, roll: 620 },
-      ply: { name: 'Workshop floor ply', base: '#d6b888', grain: 'rgba(140,98,52,', wall: '#93683f', light: true, f: 0.9, roll: 950 },
-      mdfn: { name: 'MDF cabinet back', base: '#c9b38d', grain: null, wall: '#8a7553', light: true, f: 1.0, roll: 1150 },
-      phen: { name: 'Router table top', base: '#3a3330', grain: null, wall: '#1d1917', light: false, f: 0.5, roll: 1400 },
-      beech: { name: 'Beech workbench', base: '#d8ad78', grain: 'rgba(150,94,44,', wall: '#8b5f35', light: true, f: 0.85, roll: 850 }
+      birch: { name: 'Birch ply', base: '#e4cb9c', grain: 'rgba(150,104,52,', wall: '#a8784a', light: true, f: 0.9 },
+      pine: { name: 'Pine board', base: '#e8c47f', grain: 'rgba(168,104,40,', wall: '#9e6a36', light: true, f: 0.9 },
+      mdfw: { name: 'White MDF door', base: '#ecebe6', grain: null, wall: '#b4aea2', light: true, f: 1.0 },
+      oak: { name: 'Oak worktop', base: '#c99a62', grain: 'rgba(104,64,26,', wall: '#7c532e', light: true, f: 0.8 },
+      walnut: { name: 'Walnut drawer side', base: '#6f4a34', grain: 'rgba(30,16,8,', wall: '#3c2618', light: false, f: 0.55 },
+      ply: { name: 'Workshop floor ply', base: '#d6b888', grain: 'rgba(140,98,52,', wall: '#93683f', light: true, f: 0.9 },
+      mdfn: { name: 'MDF cabinet back', base: '#c9b38d', grain: null, wall: '#8a7553', light: true, f: 1.0 },
+      phen: { name: 'Router table top', base: '#3a3330', grain: null, wall: '#1d1917', light: false, f: 0.5 },
+      beech: { name: 'Beech workbench', base: '#d8ad78', grain: 'rgba(150,94,44,', wall: '#8b5f35', light: true, f: 0.85 }
     };
-    this.R = 8; this.CUP = 17.5; this.ACC = 3000; this.GRIP = 0.92; this.MAXV = 700;
+    this.R = 8; this.CUP = 17.5; this.ACC = 3000; this.GRIP = 0.92; this.MAXV = 700; this.NEAR = 170;
     const saved = this.readSaved();
     this.soundOn = this.soundPref();
     this.state = { li: saved.lv - 1, phase: 'intro', mode: 'none', sound: this.soundOn, stageScale: 1, hud: { t: 0, got: 0, drops: 0, hold: 0, deg: '0.0', level: true }, toast: '', toastOn: false, res: null, stars: saved.stars, best: saved.best };
@@ -261,7 +261,7 @@ class Component extends DCLogic {
     };
     this.kUp = (e) => { const k = this.keyName(e.key); if (k) this.keys[k] = false; };
     this.start = () => {
-      this.ac(); this.startRoll();
+      this.ac(); this.startWhine();
       if (this.mode === 'tilt') { this.zeroNow(true); this.go(); return; }
       if (this.mode === 'drag') { this.go(); return; }
       const D = window.DeviceOrientationEvent;
@@ -327,7 +327,7 @@ class Component extends DCLogic {
     clearTimeout(this._toastT);
     this._gone = true;
     this.quiet();
-    try { if (this.roll) this.roll.s.stop(); if (this.whine) this.whine.o.stop(); } catch (e) {}
+    try { if (this.whine) this.whine.o.stop(); } catch (e) {}
   }
 
   // ---------- saved progress (shared with the Boards screen) ----------
@@ -832,51 +832,33 @@ class Component extends DCLogic {
     s.buffer = b; f.type = o.type || 'bandpass'; f.frequency.value = o.f || 1500; f.Q.value = o.q || 1; g.gain.value = o.vol || 0.1;
     s.connect(f).connect(g).connect(c.destination); s.start(t);
   }
-  startRoll() {
-    const c = this.ac(); if (!c || this.roll) return;
-    // the rumble: the bearing's weight on the board, low and quiet
-    const n = c.sampleRate * 2, b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
-    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-    const s = c.createBufferSource(); s.buffer = b; s.loop = true;
-    const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 140; f.Q.value = 0.8;
-    const g = c.createGain(); g.gain.value = 0; s.connect(f).connect(g).connect(c.destination); s.start();
-    // the clicks over the grain: four short taps, played through one filter tuned to the wood
-    const tf = c.createBiquadFilter(); tf.type = 'bandpass'; tf.frequency.value = 2400; tf.Q.value = 1.2; tf.connect(c.destination);
-    const ticks = [0, 1, 2, 3].map(() => {
-      const m = Math.floor(c.sampleRate * 0.007), tb = c.createBuffer(1, m, c.sampleRate), td = tb.getChannelData(0);
-      for (let i = 0; i < m; i++) td[i] = (Math.random() * 2 - 1) * Math.exp(-i / (c.sampleRate * 0.0011));
-      return tb;
-    });
-    this.roll = { s: s, f: f, g: g, tf: tf, ticks: ticks, dist: 0 };
+  startWhine() {
+    const c = this.ac(); if (!c || this.whine) return;
+    // the router cutters' whine (board 9), quiet until the bearing comes near one
     const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 190; const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1100; const og = c.createGain(); og.gain.value = 0;
     o.connect(lp).connect(og).connect(c.destination); o.start(); this.whine = { o: o, g: og };
   }
   sounds(dt) {
-    if (!this.roll || !this._c) return;
-    const c = this._c, g = this.g, r = this.roll, now = c.currentTime, on = this.soundOn && !document.hidden, wd = this.WOOD[g.L.wood];
-    const sp = g.phase === 'play' ? Math.hypot(g.v.x, g.v.y) : 0, k = Math.min(1, sp / this.MAXV);
-    let rum = on ? 0.16 * k : 0, rf = 110 + 280 * k, tv = 0.05 + 0.2 * k, gap = 9, tf = wd.roll * 2.4;
-    if (g.zone === 'dust') { rum *= 0.5; rf *= 0.7; tv *= 0.35; gap = 5; tf *= 0.45; }
-    else if (g.zone === 'oil') { rum *= 0.8; tv *= 0.45; gap = 16; }
-    r.g.gain.setTargetAtTime(rum, now, 0.03); r.f.frequency.setTargetAtTime(rf, now, 0.05); r.tf.frequency.setTargetAtTime(tf, now, 0.05);
-    // a click each time it rolls over a grain line: slow ticks at a crawl, a fast patter at speed
-    if (on && sp > 25) {
-      r.dist += sp * (dt || 0); let n = 0;
-      while (r.dist >= gap && n < 8) { r.dist -= gap; n++; }
-      if (n === 8) r.dist = 0;
-      for (let i = 0; i < n; i++) {
-        const src = c.createBufferSource(), v = c.createGain();
-        src.buffer = r.ticks[(Math.random() * r.ticks.length) | 0];
-        src.playbackRate.value = 0.85 + Math.random() * 0.3;
-        v.gain.value = tv * (0.55 + Math.random() * 0.45);
-        src.connect(v).connect(r.tf); src.start(now + 0.004 + (i / n) * (dt || 0));
-      }
-    } else r.dist = 0;
+    const g = this.g; if (!g) return;
+    // no rolling sound: the bearing rolls quietly, and beeps like a parking sensor once it's near the hinge cup,
+    // slow at the edge (NEAR from the cup) and faster and higher the closer it gets
+    if (g.phase === 'play' && this.soundOn && !document.hidden) {
+      const d = Math.hypot(g.L.home[0] - g.p.x, g.L.home[1] - g.p.y), inner = this.CUP - 4, near = this.NEAR;
+      if (d < near) {
+        const q = Math.max(0, Math.min(1, 1 - (d - inner) / (near - inner))), now = performance.now();
+        if (!this.nearBeep || now >= this.nearBeep) {
+          this.tone(520 + 260 * q, 0.045, { vol: 0.06 + 0.04 * q });
+          this.nearBeep = now + 70 + 330 * Math.pow(1 - q, 1.3);
+        }
+      } else this.nearBeep = 0;
+    } else this.nearBeep = 0;
+    if (!this.whine || !this._c) return;
+    const c = this._c, now = c.currentTime, on = this.soundOn && !document.hidden;
     let w = 0;
     if (on && g.L.cutters && g.phase !== 'intro') { w = 0.006; g.L.cutters.forEach((cu) => { const q = this.cutPos(cu, g.clock); const d = Math.hypot(q[0] - g.p.x, q[1] - g.p.y); w = Math.max(w, 0.006 + Math.max(0, 1 - d / 110) * 0.05); }); }
     this.whine.g.gain.setTargetAtTime(w, now, 0.06); this.whine.o.frequency.setTargetAtTime(180 + 25 * Math.sin(g.clock * 9), now, 0.05);
   }
-  quiet() { try { const c = this._c; if (!c) return; if (this.roll) this.roll.g.gain.setTargetAtTime(0, c.currentTime, 0.02); if (this.whine) this.whine.g.gain.setTargetAtTime(0, c.currentTime, 0.02); } catch (e) {} }
+  quiet() { try { const c = this._c; if (!c) return; if (this.whine) this.whine.g.gain.setTargetAtTime(0, c.currentTime, 0.02); } catch (e) {} }
   knock(v) { const vol = Math.min(0.26, 0.05 + v / 1400); this.tone(560, 0.05, { type: 'triangle', to: 230, vol: vol }); this.noise(0.03, { f: 2400, q: 1.2, vol: vol * 0.6 }); }
   tink() { this.tone(2350, 0.08, { vol: 0.12 }); this.tone(3150, 0.12, { vol: 0.1, at: 0.05 }); }
   scratch() { this.noise(0.09, { f: 3800, q: 0.7, vol: 0.07, type: 'highpass' }); }
