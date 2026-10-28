@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import SocialIcon from '@/components/SocialIcon';
-import { BOOKING_URL, EMAIL, whatsappUrl } from '@/lib/site';
+import { EMAIL, whatsappUrl } from '@/lib/site';
 import AddressFinder, { type Address } from './address-finder';
 import { clearJobFromLink, jobUrl, useJobFromLink, type JobRef } from './job-from-link';
 import { kindsIn, kindWords, type KindCount } from '@/lib/design-kinds';
@@ -942,12 +942,6 @@ export default function BriefBuilder({
               </div>
             </div>
           )}
-          {at === LAST && !sent ? (
-            <p className="mt-4 text-sm leading-relaxed text-muted">
-              Rather book a visit straight away?{' '}
-              <a href={BOOKING_URL} target="_blank" rel="noopener" className="font-medium text-accent hover:underline">Book online</a>.
-            </p>
-          ) : null}
           {at > 0 || what.length ? (
             <button type="button" onClick={reset} className="mt-3 font-mono text-[12px] text-faint transition-colors hover:text-ink">
               Start again
