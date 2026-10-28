@@ -14,7 +14,7 @@ import { AddIcon, MenuIcon, ShareIcon } from '../workshop/install-panel';
 
 const meta = pageMeta({
   title: 'Workshop Games: free carpentry games for your phone | Raf Carpentry',
-  description: 'Four free games about timber, nails and tape measures: Measure Up, Sheet Saver, Timber Stack and Nail Pop. New tapes and a new board every day, real sizes, no adverts, and they play with no signal.',
+  description: 'Five free games about timber, nails, tape measures and keeping things level: Measure Up, Sheet Saver, Timber Stack, Nail Pop and Level Best. New tapes and a new board every day, real sizes, no adverts, and they play with no signal.',
   path: '/tools/games',
   ownImage: true,
 });
@@ -31,6 +31,7 @@ const SHOTS: Record<string, { src: string; alt: string }> = {
   sheet: GAMES_SCREENS.sheet,
   stack: GAMES_SCREENS.stack,
   nail: GAMES_SCREENS.nail,
+  level: GAMES_SCREENS.level,
 };
 
 const IPHONE = [
@@ -45,10 +46,11 @@ const ANDROID = [
 ];
 
 const FAQ = [
-  { q: 'Is it really free?', a: 'Yes. All four games, every level, with no sign-up and no adverts.' },
+  { q: 'Is it really free?', a: 'Yes. All five games, every level, with no sign-up and no adverts.' },
   { q: 'Are the sizes real?', a: 'They are the sizes I work to: a 1981 mm door, a 900 mm worktop, a 2440 x 1220 sheet of ply, 47 mm sawn timber. The From my jobs pack in Measure Up is taken from things I have built.' },
   { q: 'What changes every day?', a: 'Measure Up has five new tapes and Sheet Saver a new board at midnight, London time, the same for everyone. Measure Up gets harder through the week: by the weekend more is hidden and the grid goes.' },
   { q: 'Does it work with no signal?', a: 'Yes, once the games have been opened with signal. They keep a copy on the phone, so they play in a loft, on the Tube or on a site with no reception.' },
+  { q: 'How does Level Best know which way I tilt?', a: 'It reads the phone’s motion sensor. An iPhone asks once whether the games may use motion: tap Allow. Turn on rotation lock so the screen stays upright. On a computer, drag the board or use the arrow keys.' },
   { q: 'Where are my scores kept?', a: 'On your phone only: your stars, your best stack and your Measure Up streak. Nothing is sent anywhere. Share sends a link with the one score you chose to share.' },
   { q: 'Who made them?', a: 'Me, Raf, a carpenter in London. Something for the tea break, about the things I measure, cut and fix every day.' },
 ];
@@ -86,7 +88,7 @@ export default async function WorkshopGamesPage() {
               Workshop <span className="text-accent">Games</span>
             </h1>
             <p className="mt-4 max-w-[54ch] text-[17px] leading-relaxed text-muted">
-              Four short games about timber, nails and tape measures, with real sizes. Five new tapes and a new board every day, the same for everyone, so you can see who measures best.
+              Five short games about timber, nails, tape measures and keeping things level, with real sizes. Five new tapes and a new board every day, the same for everyone, so you can see who measures best.
             </p>
             <ul className="mt-5 grid max-w-[560px] gap-x-6 gap-y-1.5 text-[15.5px] text-ink sm:grid-cols-2">
               {POINTS.map((t) => (
@@ -106,16 +108,16 @@ export default async function WorkshopGamesPage() {
 
       <section id="games" className="border-t border-line">
         <Container className="py-14 md:py-20">
-          <h2 className="font-display text-[30px] font-[650] leading-[1.06] tracking-[-0.025em] md:text-[40px]">Four games</h2>
+          <h2 className="font-display text-[30px] font-[650] leading-[1.06] tracking-[-0.025em] md:text-[40px]">Five games</h2>
           <p className="mt-3 max-w-[60ch] text-[16px] leading-relaxed text-muted">A minute or two each, with sounds you can turn off. Every one has levels to work through and stars to earn.</p>
-          <ul className="mt-9 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 sm:gap-y-10 lg:grid-cols-4">
+          <ul className="mt-9 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2 sm:gap-y-10 lg:grid-cols-5 lg:gap-x-5">
             {GAMES.map((g) => (
               // on a phone the picture sits beside the words, from sm up above them
               <li key={g.id} className="grid grid-cols-[108px_minmax(0,1fr)] items-start gap-4 sm:flex sm:flex-col sm:gap-0">
                 <a href={`${GAMES_OPEN}#/${g.id}`} className="group block sm:w-full" aria-label={`Play ${g.name}`}>
                   <div className="mount p-[6px] sm:p-[10px]">
                     <div className="relative aspect-[390/600] overflow-hidden bg-[#121518]">
-                      <Image src={SHOTS[g.id].src} alt={SHOTS[g.id].alt} fill sizes="(min-width: 1024px) 24vw, (min-width: 640px) 46vw, 108px" className="object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]" />
+                      <Image src={SHOTS[g.id].src} alt={SHOTS[g.id].alt} fill sizes="(min-width: 1024px) 19vw, (min-width: 640px) 46vw, 108px" className="object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]" />
                     </div>
                   </div>
                 </a>

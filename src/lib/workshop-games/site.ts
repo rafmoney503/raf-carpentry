@@ -11,23 +11,28 @@ export const GAMES_OPEN = '/tools/games/app';
 export const GAMES_SHORT = 'rafcarpentry.com/games';
 const SITE = 'https://www.rafcarpentry.com';
 
-export type GameId = 'measure' | 'sheet' | 'stack' | 'nail';
+export type GameId = 'measure' | 'sheet' | 'stack' | 'nail' | 'level';
 
 export const GAMES: { id: GameId; name: string; daily?: boolean; line: string; levels: string }[] = [
   { id: 'measure', name: 'Measure Up', daily: true, line: 'Part of a door, a worktop or a sheet of ply is hidden. Pull the tape up to where you think it ends, then see how close you were.', levels: 'Five new tapes every day, harder by the weekend, plus four practice packs' },
   { id: 'sheet', name: 'Sheet Saver', daily: true, line: 'Fit every part on one 2440 x 1220 board. Turn them, mind the grain, leave room for the saw.', levels: 'A new board every day, plus 30 boards to work through' },
   { id: 'stack', name: 'Timber Stack', line: 'Drop each board on the one below. What hangs over is cut off, so the stack gets narrower. How high can you go?', levels: '10 levels from seat height to ten metres, plus a free stack' },
   { id: 'nail', name: 'Nail Pop', line: 'Nails pop up across the floor, the decking, the loft. Knock them flush before they squeak, and leave the screws alone.', levels: '9 levels, from a hallway floor to the whole house' },
+  { id: 'level', name: 'Level Best', line: 'Tilt the phone to roll a steel bearing round the board, past knot holes, cutters and magnets, into the brass hinge cup. Then hold the phone level to seat it.', levels: '10 boards, from an offcut to a steel rule across the bench gap' },
 ];
 
 export const NAIL_LEVELS = ['Hallway floor', 'Garden decking', 'Loft boarding', 'Stair treads', 'Fence panels', 'Shed at night', 'Roof battens', 'Pallet rush', 'The whole house'];
+// Level Best (27 Oct 2026, Raf: 'a game where you have to balance the phone and the ball on screen goes right left top')
+export const LEVEL_BOARDS = ['Offcut', 'Knotty pine', 'Hinge holes', 'Worktop', 'Dovetails', 'Pegboard', 'Sawdust', 'Magnetic catches', 'Router table', 'Straight edge'];
 export const MEASURE_PACKS: Record<string, string> = { doors: 'Doors and rooms', kitchen: 'Kitchens and wardrobes', sheets: 'Sheets and boards', jobs: 'From my jobs' };
 
 export type Score =
   | { g: 'stack'; n: number; h: number }
   | { g: 'nail'; n: number; lv: number }
   | { g: 'measure'; m: number; d?: string; p?: string; res: number[] }
-  | { g: 'sheet'; b: number; t: number; n: number };
+  | { g: 'sheet'; b: number; t: number; n: number }
+  // t in tenths of a second, s the stars (1 to 3)
+  | { g: 'level'; b: number; t: number; s: number };
 
 const int = (v: unknown, lo: number, hi: number): number | null => {
   const n = typeof v === 'number' ? v : typeof v === 'string' && /^\d{1,7}$/.test(v) ? Number(v) : NaN;
@@ -59,6 +64,10 @@ export function readScore(q: Record<string, unknown>): Score | null {
     const b = int(q.b, 1, 99999), t = int(q.t, 0, 359999), n = int(q.n, 1, 99);
     return b == null || t == null || n == null ? null : { g, b, t, n };
   }
+  if (g === 'level') {
+    const b = int(q.b, 1, LEVEL_BOARDS.length), t = int(q.t, 1, 359999), st = int(q.s, 1, 3);
+    return b == null || t == null || st == null ? null : { g, b, t, s: st };
+  }
   return null;
 }
 
@@ -68,6 +77,7 @@ export function scoreQuery(s: Score): string {
   if (s.g === 'nail') { q.set('n', String(s.n)); q.set('lv', String(s.lv)); }
   if (s.g === 'measure') { q.set('m', String(s.m)); if (s.d) q.set('d', s.d); else if (s.p) q.set('p', s.p); q.set('r', s.res.join('.')); }
   if (s.g === 'sheet') { q.set('b', String(s.b)); q.set('t', String(s.t)); q.set('n', String(s.n)); }
+  if (s.g === 'level') { q.set('b', String(s.b)); q.set('t', String(s.t)); q.set('s', String(s.s)); }
   return q.toString();
 }
 
@@ -92,6 +102,8 @@ export function dayLabel(key: string): string {
 }
 
 export const clock = (secs: number) => `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+// tenths of a second as '0:18.4', as Level Best shows its time
+export const tenths = (t: number) => `${clock(Math.floor(t / 10))}.${t % 10}`;
 export const metres = (mm: number) => (mm / 1000).toFixed(2) + ' m';
 const thousands = (n: number) => n.toLocaleString('en-GB');
 // the same squares as the game's result card: five for spot on (5 mm or less), one for over 150 mm off
@@ -135,6 +147,17 @@ export function scoreWords(s: Score): { game: string; title: string; sub: string
       play: s.d ? 'Play today’s tapes' : `Play ${what}`,
     };
   }
+  if (s.g === 'level') {
+    const name = LEVEL_BOARDS[s.b - 1];
+    const stars = `${s.s} star${s.s === 1 ? '' : 's'}`;
+    return {
+      game: 'Level Best',
+      title: `Board ${s.b} in ${tenths(s.t)}`,
+      sub: `Level Best, board ${s.b}: ${name}. Tilt the phone to roll the bearing home, then hold it level. ${stars}.`,
+      message: `I rolled the bearing home on board ${s.b} of Level Best (${name}) in ${tenths(s.t)}, ${stars}. Can you beat it?`,
+      play: `Play board ${s.b}`,
+    };
+  }
   const daily = s.b > 30;
   const board = daily ? `today’s board (${s.b})` : `board ${s.b}`;
   const isToday = daily && s.b === dailyBoard();
@@ -155,28 +178,32 @@ export function playHref(s: Score | null, src = 'beat'): string {
   if (s.g === 'nail') q.set('play', `nail:${s.lv}`);
   if (s.g === 'measure') q.set('play', `measure:${s.d ? 'daily' : s.p}`);
   if (s.g === 'sheet') q.set('play', `sheet:${s.b > 30 ? 'daily' : s.b}`);
+  if (s.g === 'level') q.set('play', `level:${s.b}`);
   return `${GAMES_OPEN}?${q.toString()}#/${s.g}`;
 }
 
 /* ?play=<game>:<level> on the app's address: the level picked before the game opens (each game reads its own). */
 export function playKey(v: string | null): { key: string; value: string } | null {
-  const m = /^(stack|nail|measure|sheet):([a-z0-9]{1,12})$/.exec(v || '');
+  const m = /^(stack|nail|measure|sheet|level):([a-z0-9]{1,12})$/.exec(v || '');
   if (!m) return null;
   const [, g, lv] = m;
   if (g === 'stack' && /^(0|[1-9]|10)$/.test(lv)) return { key: 'raf_games_level_stack', value: lv };
   if (g === 'nail' && Number(lv) >= 1 && Number(lv) <= NAIL_LEVELS.length) return { key: 'raf_games_level_nail', value: lv };
   if (g === 'measure' && (lv === 'daily' || MEASURE_PACKS[lv])) return { key: 'raf_games_level_measure', value: lv };
   if (g === 'sheet' && (lv === 'daily' || (Number(lv) >= 1 && Number(lv) <= 30))) return { key: 'raf_games_level_sheet', value: lv };
+  if (g === 'level' && /^([1-9]|10)$/.test(lv)) return { key: 'raf_games_level_level', value: lv };
   return null;
 }
 
-/* Stills of the app for its page (taken from the app with Playwright as an iPhone 13, 25 Oct 2026; 780 x 1688). */
+/* Stills of the app for its page (taken from the app with Playwright as an iPhone 13, 25 Oct 2026, home and Level Best
+   27 Oct 2026; 780 x 1688). */
 export const GAMES_SCREENS = {
-  home: { src: '/images/tools/games/screen-home-22a164ea.jpg', alt: 'Workshop Games on a phone: today’s Measure Up and Sheet Saver at the top, then all four games.' },
+  home: { src: '/images/tools/games/screen-home-eae6e783.jpg', alt: 'Workshop Games on a phone: today’s Measure Up and Sheet Saver at the top, then all five games.' },
   stack: { src: '/images/tools/games/screen-stack-5829dee0.jpg', alt: 'Timber Stack: nine boards stacked past seat height, the tape measure up the side reading 470 mm.' },
   nail: { src: '/images/tools/games/screen-nail-825ad045.jpg', alt: 'Nail Pop, level 1: old oak floorboards with nails popping up to knock back in.' },
   measure: { src: '/images/tools/games/screen-measure-9a78ef25.jpg', alt: 'Measure Up: how tall is a metric door? The top is hidden and the tape is ready to pull up.' },
   sheet: { src: '/images/tools/games/screen-sheet-69874f41.jpg', alt: 'Sheet Saver, daily board 112: an empty 2440 by 1220 board and six parts to fit on it.' },
+  level: { src: '/images/tools/games/screen-level-5364dfef.jpg', alt: 'Level Best, board 1: a steel bearing rolling across a birch ply offcut between the walls, one brass screw picked up, the hinge cup waiting at the top.' },
   og: '/images/tools/games/og-de504ef0.jpg',
   w: 780,
   h: 1688,

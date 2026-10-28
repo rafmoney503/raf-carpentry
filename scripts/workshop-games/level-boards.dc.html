@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Level Best boards</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&amp;family=Geist:wght@400..700&amp;family=Geist+Mono:wght@400..600&amp;display=swap">
+<style>
+body{margin:0}
+.mono{font-family:'Geist Mono',ui-monospace,monospace}
+a{text-decoration:none;color:inherit}
+@keyframes ll-deny{0%,100%{background:rgba(27,32,37,.94)}30%{background:rgba(255,138,91,.28)}}
+@keyframes ll-pulse{0%,100%{box-shadow:0 0 0 0 rgba(181,230,85,.55)}50%{box-shadow:0 0 0 6px rgba(181,230,85,0)}}
+.ll-card{transition:border-color .12s ease}
+a:hover .ll-card{border-color:rgba(181,230,85,.7) !important}
+.ll-shake .ll-card{animation:ll-deny .5s ease-out}
+.ll-now{animation:ll-pulse 1.8s ease-in-out infinite}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; box-sizing: border-box; padding: 6px 16px 14px; background-color: #121518; background-image: linear-gradient(rgba(127,155,255,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(127,155,255,0.12) 1px, transparent 1px); background-size: 80px 80px; color: #f4f1ea; font-family: Geist, system-ui, sans-serif; overflow: hidden; user-select: none; -webkit-user-select: none">
+
+  <header style="display: flex; align-items: center; gap: 6px; height: 50px">
+    <a href="#/" aria-label="Back to the games" style="width: 44px; height: 44px; margin-left: -10px; display: grid; place-items: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+    </a>
+    <div style="flex: 1">
+      <div class="mono" style="font-size: 10.5px; letter-spacing: 0.12em; color: #b5e655">LEVEL BEST</div>
+      <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 20px; font-weight: 760; letter-spacing: -0.02em">Ten boards</div>
+    </div>
+    <div style="text-align: right">
+      <div class="mono" style="font-size: 10.5px; color: #a3abb3">STARS</div>
+      <div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 18px; font-weight: 760"><span style="color: #f2c94c">★</span> {{ total }} <span style="font-size: 13px; color: #a3abb3">/ 30</span></div>
+    </div>
+  </header>
+
+  <p style="margin: 6px 0 0; font-size: 12.5px; line-height: 1.4; color: #a3abb3">Each board is a real piece of work. A star on one opens the next: seat the bearing, get all three screws, beat the par time.</p>
+
+  <div style="position: absolute; left: 16px; top: 106px; width: 358px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+    <sc-for list="{{ cards }}" as="c" hint-placeholder-count="10">
+      <a href="#/level" onClick="{{ c.go }}" aria-label="{{ c.aria }}" class="{{ c.cls }}" style="display: block; border-radius: 11px">
+        <span class="ll-card" style="position: relative; display: flex; flex-direction: column; height: 128px; box-sizing: border-box; padding: 9px 9px 9px 94px; border-radius: 11px; background: rgba(27,32,37,0.94); border: 1px solid {{ c.border }}; opacity: {{ c.op }}">
+          <span style="display: flex; justify-content: space-between; align-items: baseline">
+            <span class="mono" style="font-size: 16px; font-weight: 700; color: {{ c.numC }}">{{ c.num }}</span>
+            <span style="font-size: 12px; letter-spacing: 1px; color: #f2c94c">{{ c.stars }}</span>
+          </span>
+          <span style="margin-top: 4px; font-size: 14px; font-weight: 650; line-height: 1.2">{{ c.name }}</span>
+          <span class="mono" style="margin-top: 4px; font-size: 10px; line-height: 1.35; color: {{ c.tagC }}">{{ c.tag }}</span>
+          <span class="mono" style="margin-top: auto; font-size: 10.5px; color: {{ c.bestC }}">{{ c.best }}</span>
+        </span>
+      </a>
+    </sc-for>
+  </div>
+  <canvas ref="{{ setCv }}" width="716" height="1344" aria-hidden="true" style="position: absolute; left: 16px; top: 106px; width: 358px; height: 672px; pointer-events: none"></canvas>
+
+  <div style="position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #a3abb3">
+    <span>Best times stay on this phone.</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.LEVELS = [
+      { n: 1, name: 'Offcut', tag: 'Learn the tilt', wood: 'birch', grain: 'v', par: 22, hold: 0.8,
+        start: [44, 466], home: [56, 66],
+        walls: [[10, 380, 240, 14], [108, 256, 240, 14], [10, 132, 240, 14]],
+        holes: [], screws: [[304, 458], [60, 326], [300, 200]], checks: [],
+        labels: [[44, 496, 'START']],
+        intro: ['Roll the bearing home', 'Tilt the phone and the steel bearing rolls. Pick up the three brass screws, drop it in the hinge cup, then hold the phone level to seat it.'] },
+      { n: 2, name: 'Knotty pine', tag: 'Knot holes', wood: 'pine', grain: 'v', par: 26, hold: 0.8,
+        start: [40, 470], home: [304, 52],
+        walls: [[10, 360, 200, 14], [150, 200, 198, 14]],
+        holes: [{ c: [150, 446, 15], k: 'knot' }, { c: [104, 284, 15], k: 'knot' }, { c: [236, 318, 13], k: 'knot' }, { c: [86, 120, 16], k: 'knot' }, { c: [176, 152, 12], k: 'knot' }, { c: [256, 96, 14], k: 'knot' }],
+        screws: [[318, 470], [40, 250], [176, 60]], checks: [[290, 300], [60, 170]],
+        labels: [[150, 482, 'DEAD KNOT']],
+        intro: ['Mind the knots', 'Pine has dead knots that drop out and leave holes. Roll over one and it goes back to the last pencil mark.'] },
+      { n: 3, name: 'Hinge holes', tag: 'Only one cup is home', wood: 'mdfw', grain: null, par: 26, hold: 0.8,
+        start: [300, 470], home: [327, 52],
+        walls: [[70, 400, 278, 14], [10, 240, 278, 14], [70, 100, 278, 14]],
+        holes: [{ c: [31, 456, 17.5], k: 'hinge' }, { c: [327, 310, 17.5], k: 'hinge' }, { c: [31, 166, 17.5], k: 'hinge' }],
+        screws: [[180, 462], [180, 330], [180, 180]], checks: [[44, 330], [310, 180], [44, 56]],
+        dims: [[10, 490, 31, 490, '21'], [309.5, 343, 344.5, 343, '35']],
+        labels: [[100, 502, 'HINGE CUPS, 21 FROM THE EDGE', 'l']],
+        intro: ['Only the brass cup is home', 'Hinge cups are drilled 21 mm in from the door edge. Drop into a plain one and it goes back to the pencil mark.'] },
+      { n: 4, name: 'Worktop', tag: 'Slippy oil, cut-outs', wood: 'oak', grain: 'v', par: 28, hold: 0.8,
+        start: [40, 466], home: [310, 56],
+        walls: [[10, 380, 220, 14], [250, 150, 98, 14]],
+        holes: [{ rect: [110, 190, 140, 110], k: 'sink' }, { rect: [130, 40, 96, 60], k: 'hob' }],
+        zones: [{ rect: [10, 300, 240, 80], k: 'oil' }, { rect: [10, 164, 100, 136], k: 'oil' }],
+        screws: [[320, 470], [40, 232], [178, 132]], checks: [[300, 340], [60, 120]],
+        labels: [[180, 249, 'SINK CUT-OUT', 'c', 'l'], [178, 74, 'HOB', 'c', 'l'], [130, 346, 'OILED']],
+        intro: ['Oiled worktop', 'Fresh worktop oil is slippy: the bearing hardly slows on it. The sink and hob cut-outs go right through.'] },
+      { n: 5, name: 'Dovetails', tag: 'Angled walls, quick walnut', wood: 'walnut', grain: 'h', par: 18, hold: 0.8,
+        start: [304, 482], home: [300, 50],
+        walls: [{ poly: [[10, 418], [260, 402], [260, 458], [10, 442]] }, { poly: [[348, 318], [98, 302], [98, 358], [348, 342]] }, { poly: [[10, 218], [260, 202], [260, 258], [10, 242]] }, { poly: [[348, 118], [98, 102], [98, 158], [348, 142]] }],
+        holes: [], screws: [[44, 392], [322, 284], [44, 176]], checks: [],
+        labels: [[150, 496, 'DOVETAILS, WALNUT']],
+        intro: ['Through the dovetails', 'Angled walls throw the bearing about, and walnut is quick. Along the grain it is quicker still.'] },
+      { n: 6, name: 'Pegboard', tag: 'Fifty holes', wood: 'birch', grain: 'v', par: 30, hold: 0.8,
+        start: [26, 494], home: [309, 50], noHomeLabel: true,
+        walls: [[120, 282, 64, 10], [222, 140, 10, 60]],
+        grid: { xs: [49, 101, 153, 205, 257, 309], ys: [50, 102, 154, 206, 258, 310, 362, 414, 466], r: 11, k: 'peg', skip: [[309, 50], [153, 362], [257, 206], [101, 102]] },
+        holes: [], screws: [[153, 362], [257, 206], [101, 102]], checks: [[24, 284], [333, 232]],
+        labels: [],
+        intro: ['Pegboard', 'Fifty holes, each gap just wider than the bearing. Get close to a hole and it pulls the bearing in, so keep to the middle of the gaps.'] },
+      { n: 7, name: 'Sawdust', tag: 'Slow heaps, quick grain', wood: 'ply', grain: 'v', par: 26, hold: 0.8,
+        start: [40, 470], home: [306, 60],
+        walls: [[10, 330, 230, 14], [118, 180, 230, 14]],
+        holes: [{ c: [150, 262, 10], k: 'dog' }, { c: [96, 110, 10], k: 'dog' }],
+        zones: [{ c: [120, 430, 46], k: 'dust' }, { c: [236, 262, 44], k: 'dust' }, { c: [200, 92, 48], k: 'dust' }],
+        screws: [[304, 470], [40, 262], [200, 30]], checks: [[300, 280], [56, 150]],
+        labels: [[120, 496, 'SAWDUST SLOWS IT'], [200, 412, 'ALONG THE GRAIN: QUICKER', 'l']],
+        intro: ['Sweep-up day', 'Sawdust heaps drag the bearing to a crawl. It runs quicker along the grain than across it. Two bench dog holes are waiting.'] },
+      { n: 8, name: 'Magnetic catches', tag: 'Magnets grab steel', wood: 'mdfn', grain: null, par: 28, hold: 0.8,
+        start: [40, 466], home: [306, 56],
+        walls: [[10, 360, 240, 14], [108, 210, 240, 14]],
+        holes: [{ c: [200, 288, 26], k: 'grommet' }, { c: [120, 118, 26], k: 'grommet' }],
+        magnets: [[200, 446], [70, 296], [244, 150]],
+        screws: [[310, 470], [44, 252], [200, 36]], checks: [[312, 320], [50, 180]],
+        labels: [[200, 472, 'MAGNETIC CATCH'], [200, 332, 'CABLE GROMMET']],
+        intro: ['Magnetic catches', 'The bearing is steel, so the door catches grab it. Tilt harder to pull it free, and keep it out of the cable grommets.'] },
+      { n: 9, name: 'Router table', tag: 'Moving cutters', wood: 'phen', grain: null, par: 24, hold: 0.8,
+        start: [60, 476], home: [56, 56],
+        walls: [[10, 270, 200, 14]],
+        slots: [[24, 380, 334, 380], [24, 190, 334, 190]],
+        cutters: [{ a: [34, 380], b: [324, 380], r: 13, T: 2.6, ph: 0 }, { a: [34, 190], b: [324, 190], r: 13, T: 2.0, ph: 0.5 }],
+        holes: [], screws: [[322, 452], [300, 326], [40, 232]], checks: [[250, 330], [290, 232]],
+        labels: [[180, 502, 'ROUTER TABLE, MIND THE CUTTERS']],
+        intro: ['Router table', 'Two cutters run along their slots. Wait for a gap and go behind them. Touch one and it goes back to the pencil mark.'] },
+      { n: 10, name: 'Straight edge', tag: 'Cross on the rule', wood: 'beech', grain: 'v', par: 34, hold: 1.5,
+        start: [300, 476], home: [310, 56],
+        walls: [],
+        holes: [{ rect: [10, 240, 338, 80], k: 'gap' }, { c: [70, 420, 10], k: 'dog' }, { c: [180, 430, 10], k: 'dog' }, { c: [290, 400, 10], k: 'dog' }, { c: [90, 150, 10], k: 'dog' }, { c: [250, 110, 10], k: 'dog' }],
+        bridges: [[166, 236, 26, 88]],
+        zones: [{ c: [60, 470, 34], k: 'dust' }],
+        magnets: [[300, 180]],
+        slots: [[24, 60, 244, 60]],
+        cutters: [{ a: [34, 60], b: [230, 60], r: 13, T: 2.4, ph: 0.25 }],
+        screws: [[40, 452], [179, 280], [60, 36]], checks: [[179, 346], [179, 214]],
+        labels: [[88, 284, 'MIND THE GAP', 'c', 'l'], [272, 284, 'ONE RULE WIDE', 'c', 'l']],
+        intro: ['Straight edge', 'Cross the bench gap on a steel rule, one bearing wide. Steady hands. At the end, hold it level for a second and a half.'] }
+    ];
+    this.WOOD = {
+      birch: { name: 'Birch ply', base: '#e4cb9c', grain: 'rgba(150,104,52,', wall: '#a8784a', light: true, f: 0.9, roll: 1050 },
+      pine: { name: 'Pine board', base: '#e8c47f', grain: 'rgba(168,104,40,', wall: '#9e6a36', light: true, f: 0.9, roll: 900 },
+      mdfw: { name: 'White MDF door', base: '#ecebe6', grain: null, wall: '#b4aea2', light: true, f: 1.0, roll: 1250 },
+      oak: { name: 'Oak worktop', base: '#c99a62', grain: 'rgba(104,64,26,', wall: '#7c532e', light: true, f: 0.8, roll: 700 },
+      walnut: { name: 'Walnut drawer side', base: '#6f4a34', grain: 'rgba(30,16,8,', wall: '#3c2618', light: false, f: 0.55, roll: 620 },
+      ply: { name: 'Workshop floor ply', base: '#d6b888', grain: 'rgba(140,98,52,', wall: '#93683f', light: true, f: 0.9, roll: 950 },
+      mdfn: { name: 'MDF cabinet back', base: '#c9b38d', grain: null, wall: '#8a7553', light: true, f: 1.0, roll: 1150 },
+      phen: { name: 'Router table top', base: '#3a3330', grain: null, wall: '#1d1917', light: false, f: 0.5, roll: 1400 },
+      beech: { name: 'Beech workbench', base: '#d8ad78', grain: 'rgba(150,94,44,', wall: '#8b5f35', light: true, f: 0.85, roll: 850 }
+    };
+    this.state = { stars: {}, best: {}, cur: 1, all: false, shake: 0 };
+    this.setCv = (el) => { this.cv = el; if (el) this.drawThumbs(); };
+  }
+  load() {
+    try {
+      this.setState({
+        stars: JSON.parse(localStorage.getItem('raf_games_stars_level') || '{}') || {},
+        best: JSON.parse(localStorage.getItem('raf_games_best_level') || '{}') || {},
+        cur: parseInt(localStorage.getItem('raf_games_level_level') || '1', 10) || 1,
+        all: localStorage.getItem('raf_games_open_all') === '1',
+      });
+    } catch (e) {}
+  }
+  componentDidMount() {
+    this.load();
+    this.onStore = () => this.load(); this.onVis = () => { if (!document.hidden) this.load(); };
+    window.addEventListener('storage', this.onStore); document.addEventListener('visibilitychange', this.onVis); window.addEventListener('focus', this.onStore);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => this.drawThumbs());
+    this.drawThumbs();
+  }
+  componentDidUpdate() { this.drawThumbs(); }
+  componentWillUnmount() { window.removeEventListener('storage', this.onStore); document.removeEventListener('visibilitychange', this.onVis); window.removeEventListener('focus', this.onStore); }
+  isOpen(n) { const st = this.state; return st.all || n === 1 || (st.stars[n - 1] || 0) > 0; }
+  ac() { try { if (!this._c) { const A = window.AudioContext || window.webkitAudioContext; if (!A) return null; this._c = new A(); } if (this._c.state === 'suspended') this._c.resume(); return this._c; } catch (e) { return null; } }
+  tone(f, d, o) { o = o || {}; try { if (localStorage.getItem('raf_games_sound') === '0') return; } catch (e) {} const c = this.ac(); if (!c) return; const t = c.currentTime + (o.at || 0), osc = c.createOscillator(), g = c.createGain(); osc.type = o.type || 'sine'; osc.frequency.setValueAtTime(f, t); if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t + d); g.gain.setValueAtTime(o.vol || 0.2, t); g.gain.exponentialRampToValueAtTime(0.0008, t + d); osc.connect(g).connect(c.destination); osc.start(t); osc.stop(t + d + 0.05); }
+  polyOf(w) { return Array.isArray(w) ? [[w[0], w[1]], [w[0] + w[2], w[1]], [w[0] + w[2], w[1] + w[3]], [w[0], w[1] + w[3]]] : w.poly; }
+  holesOf(L) {
+    const out = (L.holes || []).slice();
+    if (L.grid) { const G = L.grid; G.ys.forEach((y) => G.xs.forEach((x) => { if (!(G.skip || []).some((s) => s[0] === x && s[1] === y)) out.push({ c: [x, y, G.r], k: G.k }); })); }
+    return out;
+  }
+  drawThumbs() {
+    const cv = this.cv; if (!cv) return;
+    const x = cv.getContext('2d'); x.setTransform(2, 0, 0, 2, 0, 0); x.clearRect(0, 0, 358, 672);
+    this.LEVELS.forEach((L, i) => {
+      const col = i % 2, row = Math.floor(i / 2), ox = col * 183 + 9, oy = row * 136 + 9, s = 110 / 520, wd = this.WOOD[L.wood], open = this.isOpen(L.n);
+      x.save(); x.translate(ox, oy); x.globalAlpha = open ? 1 : 0.42;
+      x.beginPath(); x.rect(0, 0, 358 * s, 110); x.clip(); x.scale(s, s);
+      x.fillStyle = wd.base; x.fillRect(0, 0, 358, 520);
+      if (wd.grain) { let a = L.n * 977; const r = () => { a = (a * 16807) % 2147483647; return a / 2147483647; }; x.strokeStyle = wd.grain + '0.22)'; x.lineWidth = 3; for (let k = 0; k < 16; k++) { const p = r() * (L.grain === 'h' ? 520 : 358); x.beginPath(); if (L.grain === 'h') { x.moveTo(0, p); x.bezierCurveTo(120, p + 8, 240, p - 8, 358, p); } else { x.moveTo(p, 0); x.bezierCurveTo(p + 8, 170, p - 8, 350, p, 520); } x.stroke(); } }
+      (L.zones || []).forEach((z) => { x.fillStyle = z.k === 'oil' ? 'rgba(70,32,8,0.3)' : 'rgba(250,236,204,0.9)'; x.beginPath(); if (z.rect) x.rect(z.rect[0], z.rect[1], z.rect[2], z.rect[3]); else x.arc(z.c[0], z.c[1], z.c[2], 0, 6.2832); x.fill(); });
+      (L.slots || []).forEach((sl) => { x.strokeStyle = 'rgba(0,0,0,0.6)'; x.lineWidth = 12; x.lineCap = 'round'; x.beginPath(); x.moveTo(sl[0], sl[1]); x.lineTo(sl[2], sl[3]); x.stroke(); x.lineCap = 'butt'; });
+      this.holesOf(L).forEach((h) => { x.fillStyle = '#0b0b0c'; x.beginPath(); if (h.rect) x.rect(h.rect[0], h.rect[1], h.rect[2], h.rect[3]); else x.arc(h.c[0], h.c[1], h.c[2], 0, 6.2832); x.fill(); });
+      (L.bridges || []).forEach((b) => { x.fillStyle = '#d6dadd'; x.fillRect(b[0], b[1], b[2], b[3]); });
+      (L.magnets || []).forEach((m) => { x.fillStyle = '#b7bec4'; x.fillRect(m[0] - 11, m[1] - 6, 22, 12); });
+      (L.cutters || []).forEach((cu) => { x.fillStyle = '#ff8a5b'; x.beginPath(); x.arc((cu.a[0] + cu.b[0]) / 2, cu.a[1], cu.r, 0, 6.2832); x.fill(); });
+      x.fillStyle = wd.wall; L.walls.forEach((w) => { const p = this.polyOf(w); x.beginPath(); p.forEach((q, j) => (j ? x.lineTo(q[0], q[1]) : x.moveTo(q[0], q[1]))); x.closePath(); x.fill(); });
+      x.fillStyle = wd.wall; x.beginPath(); x.rect(0, 0, 358, 520); x.rect(10, 10, 338, 500); x.fill('evenodd');
+      L.screws.forEach((sc) => { x.fillStyle = '#e0b44e'; x.beginPath(); x.arc(sc[0], sc[1], 9, 0, 6.2832); x.fill(); });
+      x.fillStyle = '#d4a64a'; x.beginPath(); x.arc(L.home[0], L.home[1], 17.5, 0, 6.2832); x.fill();
+      x.strokeStyle = wd.light ? '#4d8a0c' : '#b5e655'; x.lineWidth = 7; x.beginPath(); x.arc(L.home[0], L.home[1], 27, 0, 6.2832); x.stroke();
+      x.fillStyle = '#eef1f3'; x.strokeStyle = 'rgba(0,0,0,0.5)'; x.lineWidth = 3; x.beginPath(); x.arc(L.start[0], L.start[1], 12, 0, 6.2832); x.fill(); x.stroke();
+      x.restore();
+      x.strokeStyle = 'rgba(244,241,234,0.18)'; x.lineWidth = 1; x.strokeRect(ox + 0.5, oy + 0.5, 358 * s - 1, 109);
+    });
+  }
+  renderVals() {
+    const st = this.state;
+    const fmt = (s) => { const m = Math.floor(s / 60), ss = Math.floor(s % 60); return m + ':' + (ss < 10 ? '0' : '') + ss + '.' + Math.floor((s * 10) % 10); };
+    const go = (L, open) => (e) => {
+      if (!open) {
+        if (e) e.preventDefault();
+        this.tone(110, 0.15, { type: 'sawtooth', vol: 0.1 }); this.tone(104, 0.18, { type: 'sawtooth', vol: 0.1, at: 0.17 });
+        this.setState({ shake: 0 }); setTimeout(() => this.setState({ shake: L.n }), 16); return;
+      }
+      try { localStorage.setItem('raf_games_level_level', String(L.n)); } catch (x) {}
+      this.tone(560, 0.05, { type: 'triangle', to: 230, vol: 0.16 });
+    };
+    const cards = this.LEVELS.map((L) => {
+      const open = this.isOpen(L.n), s = st.stars[L.n] || 0, b = st.best[L.n];
+      return {
+        num: (L.n < 10 ? '0' : '') + L.n, name: L.name,
+        stars: open ? '★★★'.slice(0, s) + '☆☆☆'.slice(0, 3 - s) : '',
+        tag: open ? L.tag : 'Needs a star on ' + (L.n - 1), tagC: open ? '#a3abb3' : '#7d858d',
+        best: b ? 'BEST ' + fmt(b) : open ? 'PAR ' + Math.floor(L.par / 60) + ':' + (L.par % 60 < 10 ? '0' : '') + (L.par % 60) : '',
+        bestC: b ? '#b5e655' : '#7d858d',
+        numC: open ? '#b5e655' : '#5d636a',
+        border: st.cur === L.n ? '#b5e655' : s === 3 ? 'rgba(111,207,151,0.6)' : 'rgba(244,241,234,0.12)', op: open ? 1 : 0.5,
+        cls: (st.cur === L.n ? 'll-now' : '') + (st.shake === L.n ? ' ll-shake' : ''),
+        aria: 'Board ' + L.n + ', ' + L.name + (open ? ', ' + s + ' of 3 stars' : ', locked'),
+        go: go(L, open),
+      };
+    });
+    return {
+      cards: cards, setCv: this.setCv,
+      total: this.LEVELS.reduce((a, L) => a + (st.stars[L.n] || 0), 0),
+    };
+  }
+}
+</script>
+</body>
+</html>

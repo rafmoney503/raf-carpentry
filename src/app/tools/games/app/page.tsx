@@ -7,7 +7,7 @@ import GamesApp from './games-app';
 
 export const metadata: Metadata = {
   title: 'Workshop Games | Raf Carpentry',
-  description: 'Four free games about timber, nails and tape measures: Measure Up, Sheet Saver, Timber Stack and Nail Pop. New ones every day, and they work with no signal.',
+  description: 'Five free games about timber, nails, tape measures and keeping things level: Measure Up, Sheet Saver, Timber Stack, Nail Pop and Level Best. New ones every day, and they work with no signal.',
   alternates: { canonical: '/tools/games' },
   robots: { index: false, follow: true },
   manifest: '/workshop-games.webmanifest',

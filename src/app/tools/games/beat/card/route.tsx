@@ -109,7 +109,31 @@ function sheetArt(n: number) {
   return svgUrl(s, 420, 420);
 }
 
-const artOf = (s: Score) => (s.g === 'stack' ? stackArt(s.n) : s.g === 'nail' ? nailArt() : s.g === 'measure' ? measureArt(s.res) : sheetArt(s.n));
+function levelArt(stars: number) {
+  // a birch board seen from above: the bearing's route round the walls (pencil, dashed) into the brass hinge cup,
+  // and under it the bubble sitting level
+  const lime = '#b5e655';
+  let s = `<rect x="30" y="20" width="360" height="300" rx="6" fill="#5a3d24"/><rect x="42" y="32" width="336" height="276" rx="2" fill="#e4cb9c"/>`;
+  for (let i = 0; i < 14; i++) {
+    const x = 50 + i * 24 + ((i * 7) % 9);
+    s += `<path d="M${x} 32 C${x + 6} 120 ${x - 6} 220 ${x} 308" stroke="rgba(150,104,52,0.22)" stroke-width="2" fill="none"/>`;
+  }
+  s += `<rect x="42" y="118" width="230" height="16" fill="#a8784a"/><rect x="148" y="214" width="230" height="16" fill="#a8784a"/>`;
+  s += `<circle cx="236" cy="250" r="14" fill="#0b0b0c"/><circle cx="160" cy="196" r="13" fill="#0b0b0c"/>`;
+  s += `<path d="M340 282 H112 Q90 282 90 260 V192 Q90 170 112 170 H300 Q324 170 324 148 V112" stroke="${C.blue}" stroke-width="4" stroke-dasharray="10 9" fill="none" stroke-linecap="round"/>`;
+  s += `<circle cx="326" cy="80" r="30" fill="none" stroke="${lime}" stroke-width="7"/><circle cx="326" cy="80" r="22" fill="#d4a64a" stroke="#1a140c" stroke-width="2"/><circle cx="326" cy="80" r="14" fill="#3b2a0c"/>`;
+  s += `<circle cx="326" cy="80" r="11" fill="#c9d0d6"/><circle cx="322" cy="76" r="4" fill="#ffffff"/>`;
+  [[190, 282], [220, 170], [324, 140]].forEach(([x, y], i) => {
+    const got = i < stars;
+    s += `<circle cx="${x}" cy="${y}" r="9" fill="${got ? 'none' : '#e0b44e'}" stroke="${got ? 'rgba(22,25,28,0.35)' : '#9a6d1e'}" stroke-width="2"${got ? ' stroke-dasharray="4 4"' : ''}/>`;
+  });
+  s += `<rect x="60" y="352" width="300" height="48" rx="24" fill="rgba(181,230,85,0.18)" stroke="${C.ink}" stroke-width="3"/>`;
+  s += `<path d="M186 360 V392 M234 360 V392" stroke="${C.ink}" stroke-width="3" opacity="0.6"/><circle cx="210" cy="376" r="15" fill="${lime}"/><circle cx="205" cy="371" r="5" fill="#ffffff" opacity="0.8"/>`;
+  return svgUrl(s, 420, 420);
+}
+
+const artOf = (s: Score) =>
+  s.g === 'stack' ? stackArt(s.n) : s.g === 'nail' ? nailArt() : s.g === 'measure' ? measureArt(s.res) : s.g === 'level' ? levelArt(s.s) : sheetArt(s.n);
 
 const R_LOGO = svgUrl(
   `<circle cx="500" cy="500" r="500" fill="${C.ink}"/><g transform="translate(${500 - (R_MARK.w * 0.62) / 2} ${500 - (R_MARK.h * 0.62) / 2}) scale(0.62)"><path d="${R_MARK.stem}" fill="#16191c"/><path d="${R_MARK.bowl}" fill="#16191c"/></g>`,
@@ -124,7 +148,7 @@ export async function GET(req: Request) {
   const s = readScore(q);
   const [display, body, mono] = await Promise.all([font('Bricolage-650.ttf'), font('Geist-450.ttf'), font('GeistMono-400.ttf')]);
   const w = s ? scoreWords(s) : null;
-  const title = w ? w.title : 'Four games about timber, nails and tape';
+  const title = w ? w.title : 'Five games from the workshop';
   const size = title.length <= 20 ? 86 : title.length <= 30 ? 72 : 58;
 
   const png = new ImageResponse(
@@ -161,7 +185,7 @@ export async function GET(req: Request) {
               </div>
             ) : (
               <div style={{ display: 'flex', marginTop: 24, fontFamily: 'Body', fontSize: 28, lineHeight: 1.35, color: C.muted, maxWidth: 600 }}>
-                {w ? w.sub : 'Measure Up, Sheet Saver, Timber Stack and Nail Pop. Free, on your phone.'}
+                {w ? w.sub : 'Measure Up, Sheet Saver, Timber Stack, Nail Pop and Level Best. Free, on your phone.'}
               </div>
             )}
           </div>

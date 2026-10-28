@@ -2,7 +2,7 @@
   "id": "/tools/games/app",
   "name": "Workshop Games by Raf Carpentry",
   "short_name": "Workshop Games",
-  "description": "Four free games about timber, nails and tape measures: Measure Up, Sheet Saver, Timber Stack and Nail Pop. New ones every day, and they work with no signal.",
+  "description": "Five free games about timber, nails, tape measures and keeping things level: Measure Up, Sheet Saver, Timber Stack, Nail Pop and Level Best. New ones every day, and they work with no signal.",
   "start_url": "/tools/games/app?utm_source=pwa-games",
   "scope": "/tools/games",
   "display": "standalone",

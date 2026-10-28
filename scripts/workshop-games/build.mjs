@@ -35,6 +35,8 @@ export const SCREENS = {
   'measure/packs': { file: 'measure-packs.dc.html', mode: 'scroll' },
   sheet: { file: 'sheet.dc.html', mode: 'contain' },
   'sheet/boards': { file: 'sheet-boards.dc.html', mode: 'scroll' },
+  level: { file: 'level.dc.html', mode: 'fill' },
+  'level/boards': { file: 'level-boards.dc.html', mode: 'scroll' },
 };
 
 const MODE_CSS = {

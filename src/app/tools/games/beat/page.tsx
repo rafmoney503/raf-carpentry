@@ -17,7 +17,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const s = readScore(flat(await searchParams));
   const w = s ? scoreWords(s) : null;
   const title = w ? `${w.title}. Can you beat it? | Workshop Games` : 'Workshop Games: can you beat it? | Raf Carpentry';
-  const description = w ? w.message.split('\n')[0] : 'Four free games about timber, nails and tape measures, from Raf Carpentry in London.';
+  const description = w ? w.message.split('\n')[0] : 'Five free games about timber, nails, tape measures and keeping things level, from Raf Carpentry in London.';
   const q = s ? scoreQuery(s) : '';
   const image = { url: `${GAMES_PAGE}/beat/card${q ? `?${q}` : ''}`, width: 1200, height: 630, alt: w ? `${w.game}: ${w.title}` : 'Workshop Games' };
   return {
@@ -58,7 +58,7 @@ export default async function BeatPage({ searchParams }: Props) {
             )}
           </h1>
           <p className="mt-4 max-w-[52ch] text-[17px] leading-relaxed text-muted">
-            {w ? w.sub : 'Four short games about timber, nails and tape measures, with a new board and new tapes every day.'}
+            {w ? w.sub : 'Five short games about timber, nails, tape measures and keeping things level, with a new board and new tapes every day.'}
           </p>
           {game ? <p className="mt-3 max-w-[52ch] text-[15.5px] leading-relaxed text-muted">{game.line}</p> : null}
           <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -66,7 +66,7 @@ export default async function BeatPage({ searchParams }: Props) {
               {w ? w.play : 'Play the games'} <span aria-hidden="true">→</span>
             </a>
             <Link href={GAMES_PAGE} className="btn btn-ghost">
-              All four games
+              All five games
             </Link>
           </div>
           <p className="mt-5 max-w-[52ch] font-mono text-[12.5px] leading-relaxed text-faint">
