@@ -23,10 +23,15 @@ export default function AddressFinder({
   value,
   onChange,
   inputClass,
+  required = false,
+  invalid = false,
 }: {
   value: Address;
   onChange: (a: Address) => void;
   inputClass: string;
+  /** The postcode is needed (the brief's Where is it? step) and, with invalid, missing. */
+  required?: boolean;
+  invalid?: boolean;
 }) {
   const [list, setList] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
@@ -151,7 +156,10 @@ export default function AddressFinder({
         <div className="mt-1 flex gap-2">
           <input
             id={`${listId}-pc`}
-            className={`${inputClass} uppercase placeholder:normal-case`}
+            className={`${inputClass} uppercase placeholder:normal-case ${invalid ? 'border-accent ring-2 ring-accent/20' : ''}`}
+            aria-required={required || undefined}
+            aria-invalid={invalid || undefined}
+            data-postcode
             placeholder="Start typing, e.g. N3 2"
             value={value.postcode}
             onChange={(e) => onPostcode(e.target.value)}

@@ -217,7 +217,7 @@ export default function RecentDesign() {
     <aside
       aria-label={item.label}
       data-card-kind={item.stat === 'app' ? 'app' : item.stat === 'recent' ? 'recent' : 'post'}
-      className={`fixed bottom-[calc(max(16px,env(safe-area-inset-bottom))+68px)] left-4 z-40 w-[min(360px,calc(100vw-32px))] transition duration-300 motion-reduce:transition-none print:hidden md:bottom-[84px] md:left-6 ${open ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0'}`}
+      className={`fixed bottom-[calc(max(16px,env(safe-area-inset-bottom))+72px)] left-4 z-40 w-[min(360px,calc(100vw-32px))] transition duration-300 motion-reduce:transition-none print:hidden md:bottom-[92px] md:left-6 ${open ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0'}`}
       onPointerEnter={() => (hold.current = true)}
       onPointerLeave={() => (hold.current = false)}
       onFocus={() => (hold.current = true)}

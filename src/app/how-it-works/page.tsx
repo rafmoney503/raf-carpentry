@@ -197,14 +197,16 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Brief builder */}
-      <section id="brief" className="scroll-mt-20 border-t border-line bg-raised">
-        <Container className="py-14 md:py-20">
+      {/* The Get my free quote button lands here (/how-it-works#brief): html's scroll-padding-top already clears the
+          menu, so no scroll margin of its own, and less space above on phones so the first question shows. */}
+      <section id="brief" className="border-t border-line bg-raised">
+        <Container className="pb-14 pt-9 md:py-20">
           <div className="max-w-[60ch]">
             <p className="kicker">Takes two minutes</p>
             <SectionHeading className="mt-3">{d.briefHeading}</SectionHeading>
             <p className="mt-4 text-[16px] leading-relaxed text-muted">{d.briefIntro}</p>
           </div>
-          <div className="mt-10">
+          <div className="mt-7 md:mt-10">
             <BriefBuilder
               options={{ what: d.briefWhat, room: d.briefRoom, uses: d.briefUses, material: d.briefMaterial, finish: d.briefFinish, timing: d.briefTiming, budget: d.briefBudget, parking: d.briefParking, photoTips: d.briefPhotoTips }}
               jobs={jobs}

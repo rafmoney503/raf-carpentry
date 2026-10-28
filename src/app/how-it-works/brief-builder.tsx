@@ -53,26 +53,84 @@ function Chips({ options, value, onPick, multi = false, label, icon }: { options
   );
 }
 
-function Field({ n, title, hint, children }: { n: number; title: string; hint?: string; children: React.ReactNode }) {
+const input =
+  'h-12 w-full rounded-sm border border-line-strong bg-mount px-3 text-[16px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20';
+
+/* The brief runs in three steps, one question to a screen (28 Oct 2026, Raf: people didn't know what to do,
+   and 'make sure that people read all information through so they can give me most information I need').
+   Sizes, a photo and the postcode can't be skipped (each says why), nor the name, mobile and email; the rest
+   are optional. The message, the planners and every way of sending are as before; the send buttons only come
+   on the last screen, after the answers have been checked. */
+const PARTS = ['Your project', 'Your space', 'You'] as const;
+type ScreenKey = 'what' | 'room' | 'size' | 'material' | 'photos' | 'where' | 'when' | 'details' | 'send';
+const SCREENS: { key: ScreenKey; part: 0 | 1 | 2; label: string }[] = [
+  { key: 'what', part: 0, label: 'What' },
+  { key: 'room', part: 0, label: 'Room and use' },
+  { key: 'size', part: 0, label: 'Size' },
+  { key: 'material', part: 0, label: 'Material and finish' },
+  { key: 'photos', part: 1, label: 'Photos' },
+  { key: 'where', part: 1, label: 'Address' },
+  { key: 'when', part: 2, label: 'When and budget' },
+  { key: 'details', part: 2, label: 'Your details' },
+  { key: 'send', part: 2, label: 'Check and send' },
+];
+const LAST = SCREENS.length - 1;
+type Need = '' | 'what' | 'size' | 'photos' | 'where' | 'name' | 'mobile' | 'email';
+
+/* Step 1 of 3 and a bar in three parts, each filling as its questions are answered. */
+function Progress({ at }: { at: number }) {
+  const part = SCREENS[at].part;
   return (
-    <fieldset className="border-t border-line py-6 first:border-t-0 first:pt-0">
-      <legend className="sr-only">{title}</legend>
-      <p className="flex items-baseline gap-3">
-        <span className="font-mono text-[13px] text-accent">{String(n).padStart(2, '0')}</span>
-        <span className="text-[17px] font-[620] text-ink" aria-hidden="true">{title}</span>
-        {hint ? <span className="font-mono text-[12px] text-faint">{hint}</span> : null}
+    <div data-brief-progress>
+      <p className="font-mono text-[13px] text-accent" data-step-label>
+        Step {part + 1} of 3 · {PARTS[part]}
       </p>
-      {children}
-    </fieldset>
+      <div className="mt-2.5 grid grid-cols-3 gap-1.5" role="progressbar" aria-label="Your brief" aria-valuemin={1} aria-valuemax={3} aria-valuenow={part + 1} aria-valuetext={`Step ${part + 1} of 3, ${PARTS[part]}`}>
+        {PARTS.map((p, i) => {
+          const mine = SCREENS.flatMap((s, j) => (s.part === i ? [j] : []));
+          const done = i < part ? 1 : i > part ? 0 : (mine.indexOf(at) + 1) / mine.length;
+          return (
+            <div key={p} className="min-w-0">
+              <div className="h-1.5 overflow-hidden rounded-full bg-ink/10">
+                <div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${done * 100}%` }} />
+              </div>
+              <p className={`mt-1.5 truncate font-mono text-[11.5px] ${i === part ? 'text-ink' : 'text-faint'}`}>
+                {i + 1} {p}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
-const input =
-  'h-12 w-full rounded-sm border border-line-strong bg-mount px-3 text-[16px] text-ink placeholder:text-faint focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20';
+/* One question: the heading (focused when its screen opens), whether it's needed and why, or what's missing. */
+function Ask({ id, title, tag, why, err, children }: { id: ScreenKey; title: string; tag?: string; why?: string; err?: string; children?: React.ReactNode }) {
+  return (
+    <div role="group" aria-labelledby={`brief-${id}-q`} data-screen={id}>
+      <h3 id={`brief-${id}-q`} tabIndex={-1} className="font-display text-[25px] font-[650] leading-[1.15] tracking-[-0.02em] outline-none md:text-[30px]">
+        {title}
+      </h3>
+      {why ? (
+        <p className={`mt-2.5 flex items-start gap-2.5 text-[14.5px] leading-snug ${err ? 'font-medium text-accent' : 'text-muted'}`} data-why={id} data-need={err ? id : undefined} aria-live="polite">
+          <span className="mt-px flex-none rounded-[2px] border border-accent/50 px-1.5 py-px font-mono text-[11px] uppercase tracking-[0.06em] text-accent">Needed</span>
+          <span>{err || why}</span>
+        </p>
+      ) : tag ? (
+        <p className="mt-2 font-mono text-[12.5px] text-faint">{tag}</p>
+      ) : null}
+      {children}
+    </div>
+  );
+}
 
 type Sent = 'whatsapp' | 'email' | 'copy' | 'direct';
 type Photo = { id: string; blob: Blob; thumb: string };
 const MAX_PHOTOS = 10;
+
+/* How long the page has been open (bots send in under a few seconds). */
+const msSince = (t: number) => Date.now() - t;
 
 /* POST that retries once after a short wait when the line drops or the server is busy. */
 async function post(url: string, body: BodyInit, json = true): Promise<Response> {
@@ -120,7 +178,12 @@ export default function BriefBuilder({
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [email, setEmail] = useState('');
-  const [need, setNeed] = useState<'' | 'name' | 'mobile' | 'email'>('');
+  const [need, setNeed] = useState<Need>('');
+  // Which screen of the brief is showing, and whether they've reached Check and send (then Next goes back there).
+  const [at, setAt] = useState(0);
+  const [reachedEnd, setReachedEnd] = useState(false);
+  const moved = useRef(false);
+  const stepsRef = useRef<HTMLDivElement>(null);
   const mobileRef = useRef<HTMLInputElement>(null);
   // Photos for "Send to Raf": made smaller on the phone (no GPS or other hidden data), kept only in this page.
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -211,8 +274,6 @@ export default function BriefBuilder({
   // For "Designs like yours": an IKEA PAX wardrobe counts as that material, as when it was a Material chip.
   const materialFor = useMemo(() => (wardrobeOn && wb.build === 'pax' ? [...material, 'IKEA PAX built in'] : material), [wardrobeOn, wb.build, material]);
 
-  const filled = [what.length, room.length, uses.length, material.length, finish.length, hasSize, name.trim(), timing, budget].filter(Boolean).length;
-
   // Some choices contain commas ("MDF only, no paint"), so several picks are joined with " + ".
   const join = (list: string[]) => list.join(' + ');
 
@@ -257,18 +318,69 @@ export default function BriefBuilder({
 
   const mailto = `mailto:${EMAIL}?subject=${encodeURIComponent(`My project brief${what.length ? `: ${what.join(' + ')}` : ''}`.slice(0, 120))}&body=${encodeURIComponent(message.replace('I will send photos of the space next.', 'Photos of the space attached.'))}`;
 
-  // Raf needs at least a name: stop the send and point at the box instead.
-  // Name, mobile and email are all needed (Raf, 22 Oct 2026): stop the send and point at the first one missing.
+  // Name, mobile and email are all needed (Raf, 22 Oct 2026); so are the sizes, a photo and the postcode (28 Oct 2026).
   const goodMobile = mobile.replace(/\D/g, '').length >= 10;
   const goodEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
+  const goodPostcode = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i.test(addr.postcode.trim());
+  const sizeOk = Number(size.w) >= 10 && Number(size.h) >= 10;
   const missing: '' | 'name' | 'mobile' | 'email' = !name.trim() ? 'name' : !goodMobile ? 'mobile' : !goodEmail ? 'email' : '';
+  const problem = (k: ScreenKey): Need =>
+    k === 'what' ? (what.length ? '' : 'what')
+      : k === 'size' ? (sizeOk ? '' : 'size')
+        : k === 'photos' ? (photos.length ? '' : 'photos')
+          : k === 'where' ? (goodPostcode ? '' : 'where')
+            : k === 'details' ? missing
+              : '';
+  // Put the cursor where the answer goes (or on the first choice).
+  const focusNeed = (n: Need) => {
+    window.setTimeout(() => {
+      const box = stepsRef.current;
+      const el: HTMLElement | null | undefined =
+        n === 'name' ? nameRef.current
+          : n === 'mobile' ? mobileRef.current
+            : n === 'email' ? emailRef.current
+              : n === 'size' ? box?.querySelector<HTMLInputElement>(`[data-size="${!(Number(size.w) >= 10) ? 'w' : 'h'}"]`)
+                : n === 'where' ? box?.querySelector<HTMLInputElement>('[data-postcode]')
+                  : n === 'photos' ? box?.querySelector<HTMLElement>('[data-add-photos]')
+                    : n === 'what' ? box?.querySelector<HTMLElement>('[data-screen="what"] button[aria-pressed]')
+                      : null;
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el?.focus({ preventScroll: true });
+    }, 30);
+  };
+  const go = (i: number) => {
+    moved.current = true;
+    setNeed('');
+    setAt(i);
+    if (i === LAST) setReachedEnd(true);
+  };
+  const next = () => {
+    const p = problem(SCREENS[at].key);
+    if (p) {
+      setNeed(p);
+      focusNeed(p);
+      return;
+    }
+    go(reachedEnd ? LAST : Math.min(LAST, at + 1));
+  };
+  // A new screen: bring its top into view (if the page has scrolled away from it) and put focus on the question.
+  useEffect(() => {
+    if (!moved.current) return;
+    const box = stepsRef.current;
+    if (!box) return;
+    const top = box.getBoundingClientRect().top;
+    if (top < 72 || top > window.innerHeight * 0.45) box.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    document.getElementById(`brief-${SCREENS[at].key}-q`)?.focus({ preventScroll: true });
+  }, [at]);
+  // Before anything is sent: every needed answer is there, or that screen opens with what's missing.
   const gate = (e?: { preventDefault: () => void }) => {
-    if (!missing) return true;
+    const bad = SCREENS.findIndex((s) => problem(s.key));
+    if (bad < 0) return true;
     e?.preventDefault();
-    setNeed(missing);
-    const ref = missing === 'name' ? nameRef : missing === 'mobile' ? mobileRef : emailRef;
-    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    ref.current?.focus({ preventScroll: true });
+    const p = problem(SCREENS[bad].key);
+    go(bad);
+    setNeed(p);
+    focusNeed(p);
     return false;
   };
 
@@ -324,7 +436,7 @@ export default function BriefBuilder({
           liked: likedHrefs,
           photos: photos.length,
           company: trap.current?.value ?? '',
-          ms: Date.now() - openedAt.current,
+          ms: msSince(openedAt.current),
         }),
       );
       const j = (await r.json().catch(() => ({}))) as { ok?: boolean; token?: string; error?: string };
@@ -366,16 +478,68 @@ export default function BriefBuilder({
   const reset = () => {
     setWhat([]); setRoom([]); setUses([]); setMaterial([]); setFinish([]);
     setSize({ w: '', h: '', d: '' }); setName(''); setAddr({ line1: '', area: '', postcode: '' }); setParking([]); setAccess('');
-    setTiming(''); setBudget(''); setNotes(''); setNeed(''); setSent(null);
+    setTiming(''); setBudget(''); setNotes(''); setNeed(''); setSent(null); setReachedEnd(false); go(0);
     setWb({ build: null, pax: null, mto: null }); wbAsked.current = false; setIkeaCode('');
     setMobile(''); setEmail(''); setPhotos([]); setPhotoNote(''); setSendError(''); setDirect(null);
   };
 
+
+  const key = SCREENS[at].key;
+  // What's missing on this screen, while it still is.
+  const errFor = (n: Need, text: string) => (need === n && problem(key) === n ? text : undefined);
+  const nextLabel = reachedEnd
+    ? 'Back to check and send'
+    : at === LAST - 1
+      ? 'Check and send'
+      : SCREENS[at + 1].part !== SCREENS[at].part
+        ? `Next: ${PARTS[SCREENS[at + 1].part]}`
+        : 'Next';
+  // Each answer in a line, for the Check and send screen.
+  const summary = (k: ScreenKey): string => {
+    switch (k) {
+      case 'what':
+        return [join(what), wardrobeOn && buildWords ? `wardrobe: ${buildWords}` : ''].filter(Boolean).join(', ');
+      case 'room':
+        return [join(room), join(uses)].filter(Boolean).join(' · ');
+      case 'size':
+        return sizeOk ? `${size.w} wide x ${size.h} high${size.d ? ` x ${size.d} deep` : ''} (mm)` : '';
+      case 'material':
+        return [join(material), join(finish)].filter(Boolean).join(' · ');
+      case 'photos':
+        return photos.length ? `${photos.length} ${photos.length === 1 ? 'photo' : 'photos'}` : '';
+      case 'where':
+        return [addressText, join(parking), access.trim()].filter(Boolean).join(' · ');
+      case 'when':
+        return [timing, budget].filter(Boolean).join(' · ');
+      case 'details':
+        return [name.trim(), mobile.trim(), email.trim(), notes.trim() ? 'and a note' : ''].filter(Boolean).join(' · ');
+      default:
+        return '';
+    }
+  };
+  const smallMm = (v: string) => Boolean(v) && Number(v) > 0 && Number(v) < 400;
+  const label = 'font-mono text-[12px] text-faint';
+  const camera = (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
+      <rect x="1.5" y="4" width="15" height="11" rx="1.5" />
+      <path d="M6 4l1.2-2h3.6L12 4" />
+      <circle cx="9" cy="9.5" r="2.7" />
+    </svg>
+  );
+
   return (
     <div className="grid grid-cols-1 gap-10 md:grid-cols-12 md:gap-6">
-      <form className="md:col-span-7" onSubmit={(e) => e.preventDefault()} aria-label="Project brief">
-        {job ? (
-          <div className="mb-6 flex items-center gap-3.5 rounded-sm border border-accent/40 bg-mount p-2.5 pr-3">
+      <form
+        className="min-w-0 md:col-span-7"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (at < LAST) next();
+        }}
+        aria-label="Project brief"
+        noValidate
+      >
+        {at === 0 && job ? (
+          <div className="mb-4 flex items-center gap-3.5 rounded-sm border border-accent/40 bg-mount p-2.5 pr-3">
             <span className="relative h-14 w-14 flex-none overflow-hidden rounded-[2px] bg-raised">
               <Image src={job.cover} alt="" fill sizes="56px" className="object-cover" />
             </span>
@@ -388,8 +552,8 @@ export default function BriefBuilder({
             </button>
           </div>
         ) : null}
-        {liked.length ? (
-          <section aria-label="Things you saved" className="mb-6 rounded-sm border border-line-strong bg-mount p-3.5">
+        {at === 0 && liked.length ? (
+          <section aria-label="Things you saved" className="mb-4 rounded-sm border border-line-strong bg-mount p-3.5">
             <p className="flex items-center gap-2 text-[16px] font-[620] text-ink">
               <span className="text-accent"><Heart on /></span>
               Things you saved ({liked.length})
@@ -418,221 +582,329 @@ export default function BriefBuilder({
             </ul>
           </section>
         ) : null}
-        <Field n={1} title="What is it?" hint="pick any">
-          <Chips label="What is it?" options={options.what} value={what} onPick={toggle(setWhat)} multi icon={whatIcon} />
-          {wardrobeOn ? <WardrobeCard wb={wb} size={size} uses={uses} onBuild={pickBuild} onOpen={openPlanner} code={ikeaCode} onCode={setIkeaCode} /> : null}
-          {/* A nudge to the Designs in 3D page for what they picked; opens in a new tab so the brief stays filled in. */}
-          {(() => {
-            const slugs = new Set(what.flatMap((w) => kindsIn(w).map((k) => k.slug)));
-            const show = designKinds.filter((k) => slugs.has(k.slug));
-            return show.length ? (
-              <>
-                <p className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[15px]">
-                  {show.map((k) => (
-                    <a key={k.slug} href={`/designs/${k.slug}`} target="_blank" rel="noopener" className="link-more">
-                      See {k.count} {kindWords(k)} in 3D <span aria-hidden="true">→</span>
-                    </a>
+
+        <div ref={stepsRef} className="rounded-sm border border-line-strong bg-mount p-5 shadow-[0_24px_48px_-36px_rgb(22_25_28/0.45)] sm:p-7 md:p-8" data-brief-steps data-at={key}>
+          <Progress at={at} />
+          <div className="mt-7">
+            {key === 'what' ? (
+              <Ask
+                id="what"
+                title="What would you like made?"
+                why="Tap all that fit. Not on the list? Pick Something else."
+                err={errFor('what', 'Pick at least one to carry on. Not on the list? Pick Something else.')}
+              >
+                <Chips label="What would you like made?" options={options.what} value={what} onPick={toggle(setWhat)} multi icon={whatIcon} />
+                {wardrobeOn ? <WardrobeCard wb={wb} size={size} uses={uses} onBuild={pickBuild} onOpen={openPlanner} code={ikeaCode} onCode={setIkeaCode} /> : null}
+                {/* A nudge to the Designs in 3D page for what they picked; opens in a new tab so the brief stays filled in. */}
+                {(() => {
+                  const slugs = new Set(what.flatMap((w) => kindsIn(w).map((k) => k.slug)));
+                  const show = designKinds.filter((k) => slugs.has(k.slug));
+                  return show.length ? (
+                    <>
+                      <p className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-[15px]">
+                        {show.map((k) => (
+                          <a key={k.slug} href={`/designs/${k.slug}`} target="_blank" rel="noopener" className="link-more">
+                            See {k.count} {kindWords(k)} in 3D <span aria-hidden="true">→</span>
+                          </a>
+                        ))}
+                      </p>
+                      <p className="mt-1.5 text-[13.5px] leading-snug text-faint">Tap Save on any you like and they come into this brief.</p>
+                    </>
+                  ) : null;
+                })()}
+              </Ask>
+            ) : null}
+
+            {key === 'room' ? (
+              <Ask id="room" title="Which room, and what is it for?" tag="Optional · tap all that fit">
+                <p className={`${label} mt-5`}>Room</p>
+                <Chips label="Which room?" options={options.room} value={room} onPick={toggle(setRoom)} multi />
+                <p className={`${label} mt-6`}>What it’s for</p>
+                <Chips label="What is it for?" options={options.uses} value={uses} onPick={toggle(setUses)} multi />
+              </Ask>
+            ) : null}
+
+            {key === 'size' ? (
+              <Ask
+                id="size"
+                title="Roughly how big is the space?"
+                why="Width and height, so I know the size of the job before I come. Rough is fine: I measure properly on the free visit."
+                err={errFor('size', 'Add the width and height in mm to carry on. A 2.4 metre wall is 2400.')}
+              >
+                <div className="mt-5 grid grid-cols-3 gap-2">
+                  {(['w', 'h', 'd'] as const).map((k) => (
+                    <label key={k} className="block min-w-0">
+                      <span className={label}>{k === 'w' ? 'Width' : k === 'h' ? 'Height' : 'Depth'}</span>
+                      <input
+                        className={`${input} mt-1 ${need === 'size' && k !== 'd' && !(Number(size[k]) >= 10) ? 'border-accent ring-2 ring-accent/20' : ''}`}
+                        inputMode="numeric"
+                        placeholder={k === 'w' ? '2400' : k === 'h' ? '2500' : '600'}
+                        value={size[k]}
+                        data-size={k}
+                        aria-required={k !== 'd' || undefined}
+                        aria-invalid={need === 'size' && k !== 'd' && !(Number(size[k]) >= 10) ? true : undefined}
+                        onChange={(e) => setSize((s) => ({ ...s, [k]: e.target.value.replace(/[^0-9]/g, '').slice(0, 5) }))}
+                      />
+                    </label>
                   ))}
+                </div>
+                <p className="mt-2 font-mono text-[12px] text-faint">
+                  In mm{smallMm(size.w) || smallMm(size.h) ? <span className="text-accent">: 2.4 metres is 2400</span> : '. Depth if you know it.'}
                 </p>
-                <p className="mt-1.5 text-[13.5px] leading-snug text-faint">Tap Save on any you like and they come into this brief.</p>
-              </>
-            ) : null;
-          })()}
-        </Field>
-        <Field n={2} title="Which room?" hint="pick any">
-          <Chips label="Which room?" options={options.room} value={room} onPick={toggle(setRoom)} multi />
-        </Field>
-        <Field n={3} title="What is it for?" hint="pick any">
-          <Chips label="What is it for?" options={options.uses} value={uses} onPick={toggle(setUses)} multi />
-        </Field>
-        <Field n={4} title="Rough size" hint="mm, if you have it">
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {(['w', 'h', 'd'] as const).map((k) => (
-              <label key={k} className="block">
-                <span className="font-mono text-[12px] text-faint">{k === 'w' ? 'Width' : k === 'h' ? 'Height' : 'Depth'}</span>
-                <input
-                  className={`${input} mt-1`}
-                  inputMode="numeric"
-                  placeholder={k === 'w' ? '2400' : k === 'h' ? '2500' : '600'}
-                  value={size[k]}
-                  onChange={(e) => setSize((s) => ({ ...s, [k]: e.target.value.replace(/[^0-9]/g, '').slice(0, 5) }))}
-                />
-              </label>
-            ))}
-          </div>
-        </Field>
-        <Field n={5} title="Material" hint="pick any">
-          {wardrobeOn && wb.build === 'pax' ? (
-            <p className="mt-2 text-[13.5px] leading-snug text-muted" data-pax-material-note>Your PAX frames come from IKEA. Pick the material for what I make: the top boxes, fillers and any made-to-measure doors.</p>
-          ) : null}
-          <Chips label="Material" options={options.material} value={material} onPick={toggle(setMaterial)} multi />
-        </Field>
-        <Field n={6} title="Finish" hint="pick any">
-          <Chips label="Finish" options={options.finish} value={finish} onPick={toggle(setFinish)} multi />
-        </Field>
-        <Field n={7} title="Your details and parking" hint="name, mobile and email needed">
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <label className="block">
-              <span className="font-mono text-[12px] text-faint">Name</span>
-              <input
-                ref={nameRef}
-                className={`${input} mt-1 ${need === 'name' && !name.trim() ? 'border-accent ring-2 ring-accent/20' : ''}`}
-                placeholder="Your name"
-                value={name}
-                onChange={(e) => { setName(e.target.value.slice(0, 80)); setNeed(''); }}
-                autoComplete="name"
-                aria-required="true"
-                aria-invalid={need === 'name' && !name.trim() ? true : undefined}
-                aria-describedby="brief-name-note"
-              />
-            </label>
-            <label className="block">
-              <span className="font-mono text-[12px] text-faint">Mobile</span>
-              <input
-                ref={mobileRef}
-                className={`${input} mt-1 ${need === 'mobile' && !goodMobile ? 'border-accent ring-2 ring-accent/20' : ''}`}
-                type="tel"
-                inputMode="tel"
-                placeholder="So I can call you back"
-                value={mobile}
-                onChange={(e) => { setMobile(e.target.value.replace(/[^\d+ ()-]/g, '').slice(0, 20)); setNeed(''); }}
-                autoComplete="tel"
-                aria-required="true"
-                aria-invalid={need === 'mobile' && !goodMobile ? true : undefined}
-                aria-describedby="brief-name-note"
-              />
-            </label>
-            <label className="block sm:col-span-2">
-              <span className="font-mono text-[12px] text-faint">Email</span>
-              <input
-                ref={emailRef}
-                className={`${input} mt-1 ${need === 'email' && !goodEmail ? 'border-accent ring-2 ring-accent/20' : ''}`}
-                type="email"
-                inputMode="email"
-                placeholder="For your quote and the 3D drawing"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value.replace(/\s/g, '').slice(0, 120)); setNeed(''); }}
-                autoComplete="email"
-                aria-required="true"
-                aria-invalid={need === 'email' && !goodEmail ? true : undefined}
-                aria-describedby="brief-name-note"
-              />
-            </label>
-          </div>
-          {/* People never see this box; bots fill it in, and their brief goes nowhere. */}
-          <input ref={trap} type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute -left-[9999px] h-px w-px opacity-0" />
-          <p id="brief-name-note" className={`mt-2 text-[13px] leading-snug ${need && missing ? 'font-medium text-accent' : 'text-faint'}`} data-need={need && missing ? missing : undefined}>
-            {need && missing === 'name'
-              ? 'Add your name, then send.'
-              : need && missing === 'mobile'
-                ? 'Add your mobile (10 digits or more), then send.'
-                : need && missing === 'email'
-                  ? 'Add your email, then send.'
-                  : 'All three needed, so I can reply the way that suits you. Only sent to me; nothing is kept on this website.'}
-          </p>
-          <div className="mt-4">
-            <AddressFinder value={addr} onChange={setAddr} inputClass={input} />
-            <p className="mt-2 text-[13px] leading-snug text-faint">To prepare your quote I may check public records for the property, like its energy certificate and planning history.</p>
-          </div>
-          <p className="mt-3 font-mono text-[12px] text-faint">Parking</p>
-          <Chips label="Parking" options={options.parking} value={parking} onPick={toggle(setParking)} multi />
-          <label className="mt-3 block">
-            <span className="sr-only">Anything else about parking or access</span>
-            <input
-              className={input}
-              placeholder="Anything else? e.g. 3rd floor, no lift; bay behind the shop"
-              value={access}
-              onChange={(e) => setAccess(e.target.value.slice(0, 160))}
-            />
-          </label>
-        </Field>
-        <Field n={8} title="When?">
-          <Chips label="When?" options={options.timing} value={timing} onPick={one(setTiming, timing)} />
-        </Field>
-        <Field n={9} title="Rough budget">
-          <Chips label="Rough budget" options={options.budget} value={budget} onPick={one(setBudget, budget)} />
-        </Field>
-        <Field n={10} title="Your photos" hint={photos.length ? `${photos.length} added` : 'up to 10'}>
-          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-            {options.photoTips.map((t, i) => (
-              <li key={i} className="flex items-start gap-3 rounded-sm border border-line bg-mount px-3.5 py-3 text-[14.5px] leading-snug text-ink">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true" className="mt-px flex-none text-accent">
-                  <rect x="1.5" y="4" width="15" height="11" rx="1.5" />
-                  <path d="M6 4l1.2-2h3.6L12 4" />
-                  <circle cx="9" cy="9.5" r="2.7" />
-                </svg>
-                {t}
-              </li>
-            ))}
-          </ul>
-          <div className="mt-4">
-            <input ref={fileRef} type="file" accept="image/*" multiple className="sr-only" id="brief-photos" onChange={(e) => addPhotos(e.target.files)} />
-            {photos.length || adding ? (
-              <ul className="mb-3 grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label="Your photos">
-                {photos.map((p, i) => (
-                  <li key={p.id} className="relative aspect-square overflow-hidden rounded-[2px] border border-line bg-raised">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={p.thumb} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => setPhotos((cur) => cur.filter((x) => x.id !== p.id))}
-                      aria-label={`Remove photo ${i + 1}`}
-                      className="absolute right-1 top-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-ink/75 text-on-accent"
-                    >
-                      <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" /></svg>
-                    </button>
-                  </li>
-                ))}
-                {Array.from({ length: adding }).map((_, i) => (
-                  <li key={`adding-${i}`} className="flex aspect-square items-center justify-center rounded-[2px] border border-dashed border-line-strong font-mono text-[11px] text-faint">
-                    Adding
-                  </li>
-                ))}
-              </ul>
+                <p className="mt-4 text-[14.5px]">
+                  <a href="/tips#measure-skirting-to-skirting" target="_blank" rel="noopener" className="link-more">
+                    How I’d measure it <span aria-hidden="true">↗</span>
+                  </a>
+                </p>
+              </Ask>
             ) : null}
-            {photos.length < MAX_PHOTOS ? (
-              <label htmlFor="brief-photos" className="btn btn-ghost btn-sm cursor-pointer gap-2">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
-                  <rect x="1.5" y="4" width="15" height="11" rx="1.5" />
-                  <path d="M6 4l1.2-2h3.6L12 4" />
-                  <circle cx="9" cy="9.5" r="2.7" />
-                </svg>
-                {photos.length ? 'Add more photos' : 'Add photos'}
-              </label>
+
+            {key === 'material' ? (
+              <Ask id="material" title="Any material or finish in mind?" tag="Optional · not sure is fine">
+                {wardrobeOn && wb.build === 'pax' ? (
+                  <p className="mt-3 text-[13.5px] leading-snug text-muted" data-pax-material-note>Your PAX frames come from IKEA. Pick the material for what I make: the top boxes, fillers and any made-to-measure doors.</p>
+                ) : null}
+                <p className={`${label} mt-5`}>Material</p>
+                <Chips label="Material" options={options.material} value={material} onPick={toggle(setMaterial)} multi />
+                <p className={`${label} mt-6`}>Finish</p>
+                <Chips label="Finish" options={options.finish} value={finish} onPick={toggle(setFinish)} multi />
+              </Ask>
             ) : null}
-            {photoNote ? <p className="mt-2 text-[13.5px] font-medium text-accent" role="status">{photoNote}</p> : null}
+
+            {key === 'photos' ? (
+              <Ask
+                id="photos"
+                title="Add a photo or two of the space"
+                why="At least one, so I can see the walls, sockets and pipes before I come."
+                err={errFor('photos', adding ? 'Your photos are still going in. One moment.' : 'Add at least one photo to carry on.')}
+              >
+                <ul className="mt-5 grid gap-2 sm:grid-cols-2">
+                  {options.photoTips.map((t, i) => (
+                    <li key={i} className="flex items-start gap-3 rounded-sm border border-line bg-paper px-3.5 py-3 text-[14.5px] leading-snug text-ink">
+                      <span className="mt-px flex-none text-accent">{camera}</span>
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-4">
+                  <input ref={fileRef} type="file" accept="image/*" multiple className="sr-only" id="brief-photos" tabIndex={-1} onChange={(e) => addPhotos(e.target.files)} />
+                  {photos.length || adding ? (
+                    <ul className="mb-3 grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label="Your photos">
+                      {photos.map((p, i) => (
+                        <li key={p.id} className="relative aspect-square overflow-hidden rounded-[2px] border border-line bg-raised">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={p.thumb} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setPhotos((cur) => cur.filter((x) => x.id !== p.id))}
+                            aria-label={`Remove photo ${i + 1}`}
+                            className="absolute right-1 top-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-ink/75 text-on-accent"
+                          >
+                            <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" /></svg>
+                          </button>
+                        </li>
+                      ))}
+                      {Array.from({ length: adding }).map((_, i) => (
+                        <li key={`adding-${i}`} className="flex aspect-square items-center justify-center rounded-[2px] border border-dashed border-line-strong font-mono text-[11px] text-faint">
+                          Adding
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {photos.length < MAX_PHOTOS ? (
+                    photos.length || adding ? (
+                      <button type="button" data-add-photos onClick={() => fileRef.current?.click()} className="btn btn-ghost btn-sm gap-2">
+                        {camera}
+                        Add more photos
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        data-add-photos
+                        onClick={() => fileRef.current?.click()}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          addPhotos(e.dataTransfer.files);
+                        }}
+                        className={`flex w-full flex-col items-center justify-center gap-1.5 rounded-sm border-2 border-dashed bg-paper px-4 py-7 text-center transition-colors hover:border-accent ${need === 'photos' ? 'border-accent' : 'border-line-strong'}`}
+                      >
+                        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-on-accent [&_svg]:h-5 [&_svg]:w-5">{camera}</span>
+                        <span className="text-[16px] font-semibold text-ink">Add photos</span>
+                        <span className="text-[13.5px] text-muted">From your camera or gallery, up to {MAX_PHOTOS}</span>
+                      </button>
+                    )
+                  ) : null}
+                  {photoNote ? <p className="mt-2 text-[13.5px] font-medium text-accent" role="status">{photoNote}</p> : null}
+                </div>
+                <p className="mt-4 text-[14px] leading-relaxed text-muted">
+                  They go with your brief when you press <span className="font-medium text-ink">Send to Raf</span> at the end. On WhatsApp, add them in the chat after you send; by email, attach them.
+                </p>
+              </Ask>
+            ) : null}
+
+            {key === 'where' ? (
+              <Ask
+                id="where"
+                title="Where is the job?"
+                why="Your postcode, so I know how far you are and can plan the visit."
+                err={errFor('where', addr.postcode.trim() ? 'That postcode looks short. Add the whole postcode, both halves.' : 'Add your postcode to carry on.')}
+              >
+                <div className="mt-5">
+                  <AddressFinder value={addr} onChange={(a) => { setAddr(a); }} inputClass={input} required invalid={need === 'where' && !goodPostcode} />
+                  <p className="mt-2 text-[13px] leading-snug text-faint">To prepare your quote I may check public records for the property, like its energy certificate and planning history.</p>
+                </div>
+                <p className={`${label} mt-5`}>Parking</p>
+                <Chips label="Parking" options={options.parking} value={parking} onPick={toggle(setParking)} multi />
+                <label className="mt-3 block">
+                  <span className="sr-only">Anything else about parking or access</span>
+                  <input
+                    className={input}
+                    placeholder="Anything else? e.g. 3rd floor, no lift; bay behind the shop"
+                    value={access}
+                    onChange={(e) => setAccess(e.target.value.slice(0, 160))}
+                  />
+                </label>
+              </Ask>
+            ) : null}
+
+            {key === 'when' ? (
+              <Ask id="when" title="When would you like it, and roughly what budget?" tag="Optional · helps me plan">
+                <p className={`${label} mt-5`}>When</p>
+                <Chips label="When?" options={options.timing} value={timing} onPick={one(setTiming, timing)} />
+                <p className={`${label} mt-6`}>Rough budget</p>
+                <Chips label="Rough budget" options={options.budget} value={budget} onPick={one(setBudget, budget)} />
+              </Ask>
+            ) : null}
+
+            {key === 'details' ? (
+              <Ask
+                id="details"
+                title="Who should I reply to?"
+                why="Name, mobile and email, so I can reply the way that suits you. Only sent to me; nothing is kept on this website."
+                err={
+                  errFor('name', 'Add your name to carry on.') ??
+                  errFor('mobile', 'Add your mobile (10 digits or more) to carry on.') ??
+                  errFor('email', 'Add your email to carry on.')
+                }
+              >
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <label className="block">
+                    <span className={label}>Name</span>
+                    <input
+                      ref={nameRef}
+                      className={`${input} mt-1 ${need === 'name' && !name.trim() ? 'border-accent ring-2 ring-accent/20' : ''}`}
+                      placeholder="Your name"
+                      value={name}
+                      onChange={(e) => { setName(e.target.value.slice(0, 80)); setNeed(''); }}
+                      autoComplete="name"
+                      aria-required="true"
+                      aria-invalid={need === 'name' && !name.trim() ? true : undefined}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className={label}>Mobile</span>
+                    <input
+                      ref={mobileRef}
+                      className={`${input} mt-1 ${need === 'mobile' && !goodMobile ? 'border-accent ring-2 ring-accent/20' : ''}`}
+                      type="tel"
+                      inputMode="tel"
+                      placeholder="So I can call you back"
+                      value={mobile}
+                      onChange={(e) => { setMobile(e.target.value.replace(/[^\d+ ()-]/g, '').slice(0, 20)); setNeed(''); }}
+                      autoComplete="tel"
+                      aria-required="true"
+                      aria-invalid={need === 'mobile' && !goodMobile ? true : undefined}
+                    />
+                  </label>
+                  <label className="block sm:col-span-2">
+                    <span className={label}>Email</span>
+                    <input
+                      ref={emailRef}
+                      className={`${input} mt-1 ${need === 'email' && !goodEmail ? 'border-accent ring-2 ring-accent/20' : ''}`}
+                      type="email"
+                      inputMode="email"
+                      placeholder="For your quote and the 3D drawing"
+                      value={email}
+                      onChange={(e) => { setEmail(e.target.value.replace(/\s/g, '').slice(0, 120)); setNeed(''); }}
+                      autoComplete="email"
+                      aria-required="true"
+                      aria-invalid={need === 'email' && !goodEmail ? true : undefined}
+                    />
+                  </label>
+                </div>
+                {/* People never see this box; bots fill it in, and their brief goes nowhere. */}
+                <input ref={trap} type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute -left-[9999px] h-px w-px opacity-0" />
+                <label className="mt-6 block">
+                  <span className={label}>Anything else? (optional)</span>
+                  <textarea
+                    className={`${input} mt-1 h-28 resize-y py-2.5`}
+                    placeholder="Sloping ceiling, a boiler on the wall, a colour you have in mind..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value.slice(0, 600))}
+                  />
+                </label>
+              </Ask>
+            ) : null}
+
+            {key === 'send' ? (
+              <Ask id="send" title={sent ? 'Your brief' : 'Check it and send'}>
+                <p className="mt-2.5 text-[15px] leading-snug text-muted">
+                  {sent === 'direct' ? 'It’s with me. Here is what you sent.' : 'Here is everything you told me. Change anything, then send it.'}
+                </p>
+                <ul className="mt-5 border-t border-line" data-check-list>
+                  {SCREENS.slice(0, LAST).map((s, i) => {
+                    const v = summary(s.key);
+                    return (
+                      <li key={s.key} className="flex items-start gap-3 border-b border-line py-3">
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-mono text-[12px] text-faint">{s.label}</span>
+                          <span className={`block break-words text-[15px] leading-snug ${v ? 'text-ink' : 'text-faint'}`}>{v || 'Skipped'}</span>
+                        </span>
+                        {sent === 'direct' ? null : (
+                          <button type="button" onClick={() => go(i)} className="flex-none rounded-sm px-1.5 py-1 font-mono text-[12.5px] text-accent transition-colors hover:text-accent-hover hover:underline" aria-label={`Change ${s.label.toLowerCase()}`}>
+                            Change
+                          </button>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+                <p className="mt-4 text-[14px] text-muted md:hidden">Your message and the send buttons are just below.</p>
+              </Ask>
+            ) : null}
           </div>
-          <p className="mt-3 text-[14px] leading-relaxed text-muted">
-            They go with your brief when you press <span className="font-medium text-ink">Send to Raf</span>. On WhatsApp, add them in the chat after you send; by email, attach them.
-          </p>
-        </Field>
-        <Field n={11} title="Anything else?" hint="optional">
-          <label className="mt-3 block">
-            <span className="sr-only">Anything else</span>
-            <textarea
-              className={`${input} h-28 resize-y py-2.5`}
-              placeholder="Sloping ceiling, a boiler on the wall, a colour you have in mind..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value.slice(0, 600))}
-            />
-          </label>
-        </Field>
+
+          {at < LAST ? (
+            <div className="mt-8 flex items-center gap-3 border-t border-line pt-6">
+              {at > 0 ? (
+                <button type="button" onClick={() => go(at - 1)} className="btn btn-ghost gap-2" data-back>
+                  <span aria-hidden="true">←</span> Back
+                </button>
+              ) : null}
+              <button type="submit" className="btn btn-primary flex-1 gap-2 sm:ml-auto sm:flex-none" data-next>
+                {nextLabel} <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          ) : sent === 'direct' ? null : (
+            <div className="mt-6">
+              <button type="button" onClick={() => go(at - 1)} className="btn btn-ghost gap-2" data-back>
+                <span aria-hidden="true">←</span> Back
+              </button>
+            </div>
+          )}
+        </div>
       </form>
       <WardrobeWindow open={wbOpen} onClose={() => setWbOpen(false)} wb={wb} setWb={setWb} size={size} setSize={setSize} uses={uses} onInsidePicked={insidePicked} />
 
-      {/* The message as it will arrive */}
-      <aside className="md:col-span-5" aria-label="Your message">
-        {/* Stays in view while the form is filled in; once sent, the card makes it too tall to stick, so it scrolls normally. */}
+      {/* The message as it will arrive: beside the questions on a computer, building up as they go; on a phone
+          only on the last screen, with the ways to send it. */}
+      <aside className={`min-w-0 md:col-span-5 ${at === LAST ? '' : 'hidden md:block'}`} aria-label="Your message" data-brief-aside>
+        {/* Stays in view while the brief is filled in; once sent, the card makes it too tall to stick, so it scrolls normally. */}
         <div className={sent ? '' : 'md:sticky md:top-28'}>
-          <div className="flex items-baseline justify-between">
-            <p className="font-mono text-[13px] text-faint">Your message</p>
-            <p className="font-mono text-[13px] text-faint" aria-live="polite">{filled} of 9 filled</p>
-          </div>
-          <div className="mt-2 h-1 rounded-full bg-raised-2" aria-hidden="true">
-            <div className="h-1 rounded-full bg-accent transition-[width] duration-300" style={{ width: `${(filled / 9) * 100}%` }} />
-          </div>
+          <p className="font-mono text-[13px] text-faint">Your message</p>
           {sent ? (
-            <div ref={nextRef} className="mt-4 scroll-mt-24">
+            <div ref={nextRef} className="mt-3 scroll-mt-24">
               <WhatHappensNext how={sent} photoTips={options.photoTips} designTotal={designTotal} direct={direct} picks={picks} />
               <button type="button" onClick={() => setShowMsg((v) => !v)} aria-expanded={showMsg} className="mt-3 font-mono text-[12.5px] text-faint transition-colors hover:text-ink">
                 {showMsg ? 'Hide my message' : 'Show my message'}
@@ -640,10 +912,12 @@ export default function BriefBuilder({
             </div>
           ) : null}
           {!sent || showMsg ? (
-            <pre className="mt-4 min-h-[220px] whitespace-pre-wrap break-words rounded-sm border border-line-strong bg-mount p-5 font-mono text-[13.5px] leading-relaxed text-ink">{message}</pre>
+            <pre className={`mt-3 whitespace-pre-wrap break-words rounded-sm border border-line-strong bg-mount p-5 font-mono text-[13.5px] leading-relaxed text-ink ${at === LAST ? 'min-h-[220px]' : 'max-h-[60vh] overflow-auto opacity-80'}`}>{message}</pre>
           ) : null}
-          {/* Once it has gone straight to Raf, the other ways to send are hidden so it can't arrive twice. */}
-          {sent === 'direct' ? null : (
+          {at < LAST ? (
+            <p className="mt-3 text-[13.5px] leading-snug text-faint">It builds up as you answer. You check it and send it at the end.</p>
+          ) : sent === 'direct' ? null : (
+            /* Once it has gone straight to Raf, the other ways to send are hidden so it can't arrive twice. */
             <div className="mt-4 grid gap-2.5">
               <button type="button" onClick={sendDirect} disabled={Boolean(sending)} aria-describedby="send-direct-note" className="btn btn-primary w-full gap-2.5 disabled:opacity-80">
                 {sending
@@ -668,16 +942,13 @@ export default function BriefBuilder({
               </div>
             </div>
           )}
-          {sent ? null : (
+          {at === LAST && !sent ? (
             <p className="mt-4 text-sm leading-relaxed text-muted">
               Rather book a visit straight away?{' '}
               <a href={BOOKING_URL} target="_blank" rel="noopener" className="font-medium text-accent hover:underline">Book online</a>.
             </p>
-          )}
-          {need && missing ? (
-            <p className="mt-3 text-sm font-medium text-accent" role="alert">Add your {missing} in step 07 first.</p>
           ) : null}
-          {filled > 0 || notes ? (
+          {at > 0 || what.length ? (
             <button type="button" onClick={reset} className="mt-3 font-mono text-[12px] text-faint transition-colors hover:text-ink">
               Start again
             </button>
