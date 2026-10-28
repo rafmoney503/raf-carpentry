@@ -49,6 +49,7 @@ const PAGES: { title: string; href: string; sub: string; words: string }[] = [
   { title: 'My Work', href: '/portfolio', sub: 'Every job with photos and steps', words: 'portfolio jobs work photos projects gallery' },
   { title: 'Services', href: '/services', sub: 'What I build and fit', words: 'services build fit carpenter joiner' },
   { title: 'SketchUp', href: '/sketchup', sub: 'Drawing every build in 3D first', words: 'sketchup 3d drawing plans models learn course' },
+  { title: 'SketchUp extension', href: '/sketchup#extension', sub: 'CabinetOS Units: draw units in SketchUp, send them to CabinetOS', words: 'sketchup extension plugin plug in add on ruby rbz units wardrobe cabinet carcass draw fast quick component components opencutlist cabinetos cut list cutlist board layout' },
   { title: 'CabinetOS', href: '/cabinetos', sub: 'My cutting list app for cabinet makers', words: 'cabinetos app cut list cutlist cutting board optimise optimisation cabinet maker software' },
   { title: 'Workshop calculator', href: '/calculator', sub: 'Sums in mm, how many fit on a board', words: 'calculator calc mm sums maths board sheet 2440 1220 inches' },
   { title: 'Workshop tips', href: '/tips', sub: 'For carpenters and DIYers', words: 'tips tricks diy how to advice' },
