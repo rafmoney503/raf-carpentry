@@ -2131,7 +2131,7 @@ class Component extends DCLogic {
       phen: { name: 'Router table top', base: '#3a3330', grain: null, wall: '#1d1917', light: false, f: 0.5, roll: 1400 },
       beech: { name: 'Beech workbench', base: '#d8ad78', grain: 'rgba(150,94,44,', wall: '#8b5f35', light: true, f: 0.85, roll: 850 }
     };
-    this.R = 8; this.CUP = 17.5; this.ACC = 2400;
+    this.R = 8; this.CUP = 17.5; this.ACC = 3000; this.GRIP = 0.92; this.MAXV = 700;
     const saved = this.readSaved();
     this.soundOn = this.soundPref();
     this.state = { li: saved.lv - 1, phase: 'intro', mode: 'none', sound: this.soundOn, stageScale: 1, hud: { t: 0, got: 0, drops: 0, hold: 0, deg: '0.0', level: true }, toast: '', toastOn: false, res: null, stars: saved.stars, best: saved.best };
@@ -2345,24 +2345,24 @@ class Component extends DCLogic {
     this.tilt.x += (tx - this.tilt.x) * k; this.tilt.y += (ty - this.tilt.y) * k;
     g.clock += dt;
     if (g.phase === 'play' || g.phase === 'cup') g.t += dt;
-    if (g.phase === 'play') { for (let i = 0; i < 4; i++) this.sub(dt / 4); this.after(dt); }
+    if (g.phase === 'play') { const n = Math.max(4, Math.ceil(dt * 240)); for (let i = 0; i < n; i++) this.sub(dt / n); this.after(dt); }
     else if (g.phase === 'cup') this.cupStep(dt);
     else if (g.phase === 'fall') { g.fallT += dt; if (g.fallT > 0.8) this.respawn(); }
     g.parts = g.parts.filter((p) => { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= Math.exp(-dt * 3); p.vy = p.vy * Math.exp(-dt * 3) + (p.grav || 0) * dt; p.rot = (p.rot || 0) + (p.spin || 0) * dt; p.life -= dt; return p.life > 0; });
     g.floats = g.floats.filter((f) => { f.y -= 26 * dt; f.life -= dt; return f.life > 0; });
-    this.sounds();
+    this.sounds(dt);
   }
   sub(h) {
     const g = this.g, L = g.L, wd = this.WOOD[L.wood], R = this.R, p = g.p, v = g.v;
     const cl = (a) => Math.max(-25, Math.min(25, a)) * Math.PI / 180;
     let ax = this.ACC * Math.sin(cl(this.tilt.x)), ay = this.ACC * Math.sin(cl(this.tilt.y));
-    let f = wd.f; g.zone = null;
+    let f = wd.f * this.GRIP; g.zone = null;
     (L.zones || []).forEach((z) => { if (this.inZone(z, p.x, p.y)) { f = z.k === 'dust' ? 5.5 : 0.14; g.zone = z.k; } });
     const ga = L.grain === 'v' ? [1.45, 0.7] : L.grain === 'h' ? [0.7, 1.45] : [1, 1];
     let fx = f * ga[0], fy = f * ga[1];
     (L.magnets || []).forEach((m) => {
       const dx = m[0] - p.x, dy = m[1] - p.y, d = Math.hypot(dx, dy);
-      if (d < 64 && d > 0.5) { const s = 620 * Math.pow(1 - d / 64, 1.6); ax += dx / d * s; ay += dy / d * s; if (d < 9) { fx += 9; fy += 9; } }
+      if (d < 64 && d > 0.5) { const s = 760 * Math.pow(1 - d / 64, 1.6); ax += dx / d * s; ay += dy / d * s; if (d < 9) { fx += 9; fy += 9; } }
     });
     for (const hl of g.holes) if (hl.c) {
       const dx = hl.c[0] - p.x, dy = hl.c[1] - p.y, d = Math.hypot(dx, dy);
@@ -2370,7 +2370,7 @@ class Component extends DCLogic {
     }
     v.x += ax * h; v.y += ay * h;
     v.x *= Math.exp(-fx * h); v.y *= Math.exp(-fy * h);
-    const sp = Math.hypot(v.x, v.y); if (sp > 560) { v.x *= 560 / sp; v.y *= 560 / sp; }
+    const sp = Math.hypot(v.x, v.y), mx = this.MAXV; if (sp > mx) { v.x *= mx / sp; v.y *= mx / sp; }
     p.x += v.x * h; p.y += v.y * h;
     for (const s of g.segs) {
       const ex = s[2] - s[0], ey = s[3] - s[1], l2 = ex * ex + ey * ey;
@@ -2731,22 +2731,44 @@ class Component extends DCLogic {
   }
   startRoll() {
     const c = this.ac(); if (!c || this.roll) return;
-    const n = c.sampleRate * 2, b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0); let last = 0;
-    for (let i = 0; i < n; i++) { const w = Math.random() * 2 - 1; last = (last + 0.04 * w) / 1.04; d[i] = last * 3 + w * 0.18; }
+    // the rumble: the bearing's weight on the board, low and quiet
+    const n = c.sampleRate * 2, b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
     const s = c.createBufferSource(); s.buffer = b; s.loop = true;
-    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 0.9;
+    const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 140; f.Q.value = 0.8;
     const g = c.createGain(); g.gain.value = 0; s.connect(f).connect(g).connect(c.destination); s.start();
-    this.roll = { s: s, f: f, g: g };
+    // the clicks over the grain: four short taps, played through one filter tuned to the wood
+    const tf = c.createBiquadFilter(); tf.type = 'bandpass'; tf.frequency.value = 2400; tf.Q.value = 1.2; tf.connect(c.destination);
+    const ticks = [0, 1, 2, 3].map(() => {
+      const m = Math.floor(c.sampleRate * 0.007), tb = c.createBuffer(1, m, c.sampleRate), td = tb.getChannelData(0);
+      for (let i = 0; i < m; i++) td[i] = (Math.random() * 2 - 1) * Math.exp(-i / (c.sampleRate * 0.0011));
+      return tb;
+    });
+    this.roll = { s: s, f: f, g: g, tf: tf, ticks: ticks, dist: 0 };
     const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 190; const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1100; const og = c.createGain(); og.gain.value = 0;
     o.connect(lp).connect(og).connect(c.destination); o.start(); this.whine = { o: o, g: og };
   }
-  sounds() {
+  sounds(dt) {
     if (!this.roll || !this._c) return;
-    const c = this._c, g = this.g, now = c.currentTime, on = this.soundOn && !document.hidden;
-    const sp = g.phase === 'play' ? Math.hypot(g.v.x, g.v.y) : 0;
-    let vol = on ? Math.min(0.2, (sp / 560) * 0.22) : 0, fr = this.WOOD[g.L.wood].roll;
-    if (g.zone === 'dust') { vol *= 0.45; fr *= 0.5; } else if (g.zone === 'oil') fr *= 1.3;
-    this.roll.g.gain.setTargetAtTime(vol, now, 0.04); this.roll.f.frequency.setTargetAtTime(fr * (0.8 + sp / 1400), now, 0.08);
+    const c = this._c, g = this.g, r = this.roll, now = c.currentTime, on = this.soundOn && !document.hidden, wd = this.WOOD[g.L.wood];
+    const sp = g.phase === 'play' ? Math.hypot(g.v.x, g.v.y) : 0, k = Math.min(1, sp / this.MAXV);
+    let rum = on ? 0.16 * k : 0, rf = 110 + 280 * k, tv = 0.05 + 0.2 * k, gap = 9, tf = wd.roll * 2.4;
+    if (g.zone === 'dust') { rum *= 0.5; rf *= 0.7; tv *= 0.35; gap = 5; tf *= 0.45; }
+    else if (g.zone === 'oil') { rum *= 0.8; tv *= 0.45; gap = 16; }
+    r.g.gain.setTargetAtTime(rum, now, 0.03); r.f.frequency.setTargetAtTime(rf, now, 0.05); r.tf.frequency.setTargetAtTime(tf, now, 0.05);
+    // a click each time it rolls over a grain line: slow ticks at a crawl, a fast patter at speed
+    if (on && sp > 25) {
+      r.dist += sp * (dt || 0); let n = 0;
+      while (r.dist >= gap && n < 8) { r.dist -= gap; n++; }
+      if (n === 8) r.dist = 0;
+      for (let i = 0; i < n; i++) {
+        const src = c.createBufferSource(), v = c.createGain();
+        src.buffer = r.ticks[(Math.random() * r.ticks.length) | 0];
+        src.playbackRate.value = 0.85 + Math.random() * 0.3;
+        v.gain.value = tv * (0.55 + Math.random() * 0.45);
+        src.connect(v).connect(r.tf); src.start(now + 0.004 + (i / n) * (dt || 0));
+      }
+    } else r.dist = 0;
     let w = 0;
     if (on && g.L.cutters && g.phase !== 'intro') { w = 0.006; g.L.cutters.forEach((cu) => { const q = this.cutPos(cu, g.clock); const d = Math.hypot(q[0] - g.p.x, q[1] - g.p.y); w = Math.max(w, 0.006 + Math.max(0, 1 - d / 110) * 0.05); }); }
     this.whine.g.gain.setTargetAtTime(w, now, 0.06); this.whine.o.frequency.setTargetAtTime(180 + 25 * Math.sin(g.clock * 9), now, 0.05);
