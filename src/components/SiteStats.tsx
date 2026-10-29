@@ -13,7 +13,7 @@ import { goalOf, statsOff, type Tap } from '@/lib/site-stats';
    the Job Kit (an iframe), robots, anyone who opted out on /privacy (raf_stats_off, also set on Raf's phone by the
    Job Kit) and browsers sending Global Privacy Control. Words typed into boxes are never read. */
 
-const PRIVATE = /^\/(job-kit|admin|editor|api|review\/send)(\/|$)/;
+const PRIVATE = /^\/(job-kit|admin|editor|api|review\/send|pots)(\/|$)/;
 const ROBOT = /bot|crawl|spider|slurp|headless|lighthouse|pagespeed|prerender/i;
 const ACTIVE_MS = 15_000;
 const MAX_TAPS = 50;
