@@ -10,7 +10,8 @@
      logic), so a short Safari screen still plays at full width.
    - contain: the whole 390 x 844 screen is scaled to fit (Sheet Saver, whose parts are dragged across all of it).
    - scroll: the screen keeps its size (scaled down only on phones narrower than 390) and the page scrolls (home and
-     the level screens).
+     the level screens). A screen drawn taller than 844 tells the page its height with this.setScreenHeight(h) (the
+     home screen: 920 in the browser, where the 'Keep it on your phone' card shows under the six games).
    The app page sets --fit, --fs and --h on the box round each screen.
 
    After changing a screen: edit the .dc.html here (or copy it from the canvas and redo the app changes), then
@@ -37,6 +38,7 @@ export const SCREENS = {
   'sheet/boards': { file: 'sheet-boards.dc.html', mode: 'scroll' },
   level: { file: 'level.dc.html', mode: 'fill' },
   'level/boards': { file: 'level-boards.dc.html', mode: 'scroll' },
+  diff: { file: 'diff.dc.html', mode: 'fill' },
 };
 
 const MODE_CSS = {

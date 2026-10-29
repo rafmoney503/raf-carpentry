@@ -123,7 +123,7 @@ export default function ToolsPage() {
             <div>
               <p className="font-mono text-[13px] text-accent">Free games</p>
               <h2 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Workshop Games</h2>
-              <p className="mt-1 text-[15px] text-muted">Measure Up, Sheet Saver, Timber Stack, Nail Pop and Level Best. New tapes and a new board every day, with real sizes.</p>
+              <p className="mt-1 text-[15px] text-muted">Measure Up, Sheet Saver, Timber Stack, Nail Pop, Level Best and Find the Difference. New tapes, a new board and a new job every day, with real sizes.</p>
             </div>
             <div className="flex items-center gap-5">
               <div className="w-[64px] sm:w-[76px]">

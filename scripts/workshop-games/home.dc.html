@@ -23,11 +23,12 @@ a{color:#f4f1ea;text-decoration:none}a:hover{color:#ffffff}
 @keyframes wg-part{0%{opacity:0;transform:translateY(-8px)}10%,84%{opacity:1;transform:none}100%{opacity:0}}
 @keyframes wg-roll{0%,6%{transform:translate(86px,46px)}22%{transform:translate(10px,46px)}32%{transform:translate(10px,27px)}52%{transform:translate(84px,27px)}62%{transform:translate(84px,7px)}80%,100%{transform:translate(5.5px,4.5px)}}
 @keyframes wg-cup{0%,78%{opacity:.35}86%{opacity:1}100%{opacity:.35}}
+@keyframes wg-snag{0%,38%{opacity:0;transform:scale(1.9)}50%{opacity:1;transform:scale(1)}88%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
 @keyframes wg-pulse{0%,100%{box-shadow:0 0 0 0 rgba(242,201,76,.55)}50%{box-shadow:0 0 0 6px rgba(242,201,76,0)}}
 @media (prefers-reduced-motion: reduce){.art *{animation:none !important}}
 </style>
 </helmet>
-<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 10px; background-color: #121518; background-image: linear-gradient(rgba(127,155,255,0.13) 1px, transparent 1px), linear-gradient(90deg, rgba(127,155,255,0.13) 1px, transparent 1px), linear-gradient(rgba(127,155,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(127,155,255,0.05) 1px, transparent 1px); background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px; color: #f4f1ea; font-family: Geist, system-ui, sans-serif; overflow: hidden">
+<div style="width: 390px; height: {{ homeH }}px; box-sizing: border-box; padding: 18px 18px 16px; display: flex; flex-direction: column; gap: 10px; background-color: #121518; background-image: linear-gradient(rgba(127,155,255,0.13) 1px, transparent 1px), linear-gradient(90deg, rgba(127,155,255,0.13) 1px, transparent 1px), linear-gradient(rgba(127,155,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(127,155,255,0.05) 1px, transparent 1px); background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px; color: #f4f1ea; font-family: Geist, system-ui, sans-serif; overflow: hidden">
 
   <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px">
     <div>
@@ -152,6 +153,36 @@ a{color:#f4f1ea;text-decoration:none}a:hover{color:#ffffff}
         <div style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: #a3abb3">{{ levelLine }}</div>
       </div>
     </a>
+    <a href="#/diff" onClick="{{tap}}" class="tile" style="grid-column: 1 / -1; display: flex; align-items: stretch; border-radius: 12px; overflow: hidden; background: #1b2025; border: 1px solid rgba(37,71,208,0.85)">
+      <div class="art" aria-hidden="true" style="position: relative; flex: none; width: 128px; height: 68px; background: #0e1114; border-right: 1px solid rgba(244,241,234,0.1)">
+        <div style="position: absolute; left: 8px; top: 8px; width: 54px; height: 52px; border-radius: 4px; background: #e8e3d9; overflow: hidden">
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: #b98b5d"></div>
+          <div style="position: absolute; left: 6px; top: 9px; width: 13px; height: 33px; background: #8fa58a"></div>
+          <div style="position: absolute; left: 20px; top: 9px; width: 13px; height: 33px; background: #8fa58a"></div>
+          <div style="position: absolute; left: 16px; top: 22px; width: 2px; height: 7px; background: #c9a24a"></div>
+          <div style="position: absolute; left: 21px; top: 22px; width: 2px; height: 7px; background: #c9a24a"></div>
+          <div style="position: absolute; left: 37px; top: 11px; width: 12px; height: 10px; background: #bcd6e6; box-shadow: 0 0 0 2px #2a2d31"></div>
+          <div style="position: absolute; left: 3px; top: 3px; width: 11px; height: 4px; border-radius: 1px; background: #2547d0"></div>
+        </div>
+        <div style="position: absolute; left: 66px; top: 8px; width: 54px; height: 52px; border-radius: 4px; background: #e8e3d9; overflow: hidden">
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: #b98b5d"></div>
+          <div style="position: absolute; left: 6px; top: 9px; width: 13px; height: 33px; background: #8fa58a"></div>
+          <div style="position: absolute; left: 20px; top: 9px; width: 13px; height: 33px; background: #8fa58a"></div>
+          <div style="position: absolute; left: 16px; top: 22px; width: 2px; height: 7px; background: #c9a24a"></div>
+          <div style="position: absolute; left: 21px; top: 22px; width: 2px; height: 7px; background: #23272c"></div>
+          <div style="position: absolute; left: 37px; top: 11px; width: 12px; height: 10px; background: #bcd6e6; box-shadow: 0 0 0 2px #2a2d31"></div>
+          <div style="position: absolute; left: 3px; top: 3px; width: 11px; height: 4px; border-radius: 1px; background: #16191c"></div>
+          <div style="position: absolute; left: 13px; top: 17px; width: 13px; height: 13px; border-radius: 50%; border: 2px solid #b5e655; box-shadow: 0 0 0 1.5px rgba(22,25,28,0.6); animation: wg-snag 2.8s ease-out infinite"></div>
+        </div>
+      </div>
+      <div style="flex: 1; min-width: 0; padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; gap: 3px">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px">
+          <span style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 18px; font-weight: 750; letter-spacing: -0.02em; white-space: nowrap">Find the Difference</span>
+          <sc-if value="{{ diffNew }}" hint-placeholder-val="{{ true }}"><span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; color: #8ea6ff">NEW</span></sc-if>
+        </div>
+        <div style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: #a3abb3">{{ diffLine }}</div>
+      </div>
+    </a>
   </div>
 
   <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px">
@@ -206,6 +237,7 @@ class Component extends DCLogic {
       stackStars: sum(this.read('raf_games_stars_stack', {}), 10), stackBest: Number(this.read('raf_games_stack_best', 0)) || 0,
       nailStars: sum(this.read('raf_games_stars_nail', {}), 9), sheetAll: sum(sheetStars, 40),
       levelStars: sum(this.read('raf_games_stars_level', {}), 10),
+      diffStars: sum(this.read('raf_games_stars_diff', {}), 60), diffDay: (this.read('raf_games_diff_days', {}) || {})[board],
       muPacks: Object.keys(this.read('raf_games_stars_measure', {}) || {}).filter((k) => !/_best$/.test(k) && k !== 'daily').length,
     };
   }
@@ -239,7 +271,12 @@ class Component extends DCLogic {
       : os === 'ios-other' ? 'Open this page in Safari, tap Share, then Add to Home Screen.'
       : os === 'android' ? (st.instCan ? 'Install it for free. Plays with no signal.' : 'Open the browser menu, then Install app.')
       : st.instCan ? 'Install it on this computer, or open rafcarpentry.com/games on your phone.' : 'Open rafcarpentry.com/games on your phone and add it to your home screen.';
+    // six games and the 'Keep it on your phone' card are taller than the 844 the screen was drawn at: in the browser
+    // the screen is 920 high (the page scrolls), once installed (no card) it is 844 again; the page is told the height
+    const homeH = st.instStandalone ? 844 : 920;
+    if (homeH !== this._hSent && typeof this.setScreenHeight === 'function') { this._hSent = homeH; queueMicrotask(() => this.setScreenHeight(homeH)); }
     return {
+      homeH: homeH,
       todayLabel: 'TODAY · ' + D.label.toUpperCase(),
       muState: D.mu ? 'DONE · ' + D.mu.total + ' MM' : '5 SIZES',
       streakBars: D.bars.map((on) => ({ c: on ? '#16191c' : 'rgba(22,25,28,0.25)' })),
@@ -252,6 +289,8 @@ class Component extends DCLogic {
       sheetLine: D.sheetAll ? '★ ' + D.sheetAll + ' / 90 · 30 boards' : '30 boards + a daily',
       levelLine: D.levelStars ? '★ ' + D.levelStars + ' / 30 · 10 boards' : 'Tilt the phone · 10 boards',
       levelNew: !D.levelStars,
+      diffLine: D.diffDay ? (D.diffDay.found >= (D.diffDay.n || 5) ? 'Today’s job done' : 'Today’s job ' + D.diffDay.found + ' of ' + (D.diffDay.n || 5)) + (D.diffStars ? ' · ★ ' + D.diffStars + ' / 180' : '') : D.diffStars ? 'New job today · ★ ' + D.diffStars + ' / 180' : 'Spot the snags · 60 levels',
+      diffNew: !D.diffStars && !D.diffDay,
       showInstall: !st.instStandalone, canInstall: !!st.instCan, installLine: line,
       install: () => { if (st.instCan && typeof this.installPrompt === 'function') this.installPrompt(); },
       soundOn: this.state.sound,

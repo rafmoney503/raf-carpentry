@@ -11,7 +11,7 @@ export const GAMES_OPEN = '/tools/games/app';
 export const GAMES_SHORT = 'rafcarpentry.com/games';
 const SITE = 'https://www.rafcarpentry.com';
 
-export type GameId = 'measure' | 'sheet' | 'stack' | 'nail' | 'level';
+export type GameId = 'measure' | 'sheet' | 'stack' | 'nail' | 'level' | 'diff';
 
 export const GAMES: { id: GameId; name: string; daily?: boolean; line: string; levels: string }[] = [
   { id: 'measure', name: 'Measure Up', daily: true, line: 'Part of a door, a worktop or a sheet of ply is hidden. Pull the tape up to where you think it ends, then see how close you were.', levels: 'Five new tapes every day, harder by the weekend, plus four practice packs' },
@@ -19,11 +19,16 @@ export const GAMES: { id: GameId; name: string; daily?: boolean; line: string; l
   { id: 'stack', name: 'Timber Stack', line: 'Drop each board on the one below. What hangs over is cut off, so the stack gets narrower. How high can you go?', levels: '10 levels from seat height to ten metres, plus a free stack' },
   { id: 'nail', name: 'Nail Pop', line: 'Nails pop up across the floor, the decking, the loft. Knock them flush before they squeak, and leave the screws alone.', levels: '9 levels, from a hallway floor to the whole house' },
   { id: 'level', name: 'Level Best', line: 'Tilt the phone to roll a steel bearing round the board, past knot holes, cutters and magnets, into the brass hinge cup. Then hold the phone level to seat it.', levels: '10 boards, from an offcut to a steel rule across the bench gap' },
+  { id: 'diff', name: 'Find the Difference', daily: true, line: 'The drawing the customer signed off, and the job as fitted. Spot every snag before the clock runs out and they walk in.', levels: 'A new job every day, plus 60 levels in six rooms of the house' },
 ];
 
 export const NAIL_LEVELS = ['Hallway floor', 'Garden decking', 'Loft boarding', 'Stair treads', 'Fence panels', 'Shed at night', 'Roof battens', 'Pallet rush', 'The whole house'];
 // Level Best (27 Oct 2026, Raf: 'a game where you have to balance the phone and the ball on screen goes right left top')
 export const LEVEL_BOARDS = ['Offcut', 'Knotty pine', 'Hinge holes', 'Worktop', 'Dovetails', 'Pegboard', 'Sawdust', 'Magnetic catches', 'Router table', 'Straight edge'];
+// Find the Difference (29 Oct 2026, Raf: 'add to games merge'): ten levels a room, 60 in all
+export const DIFF_CHAPTERS = ['Bedrooms', 'Living rooms', 'Kitchens', 'Home offices', 'Hallways', 'The whole house'];
+export const DIFF_LEVELS = DIFF_CHAPTERS.length * 10;
+export const diffRoom = (l: number) => DIFF_CHAPTERS[Math.max(0, Math.min(DIFF_CHAPTERS.length - 1, Math.floor((l - 1) / 10)))];
 export const MEASURE_PACKS: Record<string, string> = { doors: 'Doors and rooms', kitchen: 'Kitchens and wardrobes', sheets: 'Sheets and boards', jobs: 'From my jobs' };
 
 export type Score =
@@ -32,7 +37,9 @@ export type Score =
   | { g: 'measure'; m: number; d?: string; p?: string; res: number[] }
   | { g: 'sheet'; b: number; t: number; n: number }
   // t in tenths of a second, s the stars (1 to 3)
-  | { g: 'level'; b: number; t: number; s: number };
+  | { g: 'level'; b: number; t: number; s: number }
+  // l the level (0 for a daily job), d the daily job's number, f snags found of n, t seconds, s the stars (0 if not all found)
+  | { g: 'diff'; l: number; d: number; f: number; n: number; t: number; s: number };
 
 const int = (v: unknown, lo: number, hi: number): number | null => {
   const n = typeof v === 'number' ? v : typeof v === 'string' && /^\d{1,7}$/.test(v) ? Number(v) : NaN;
@@ -68,6 +75,15 @@ export function readScore(q: Record<string, unknown>): Score | null {
     const b = int(q.b, 1, LEVEL_BOARDS.length), t = int(q.t, 1, 359999), st = int(q.s, 1, 3);
     return b == null || t == null || st == null ? null : { g, b, t, s: st };
   }
+  if (g === 'diff') {
+    const l = int(q.l ?? 0, 0, DIFF_LEVELS), n = int(q.n, 5, 7), t = int(q.t, 0, 999), st = int(q.s ?? 0, 0, 3);
+    const d = l === 0 ? int(q.d, 1, 99999) : 0;
+    const f = n == null ? null : int(q.f, 0, n);
+    if (l == null || d == null || n == null || f == null || t == null || st == null) return null;
+    if (st > 0 && f < n) return null;
+    if (f === n && st === 0) return null;
+    return { g, l, d, f, n, t, s: st };
+  }
   return null;
 }
 
@@ -78,6 +94,7 @@ export function scoreQuery(s: Score): string {
   if (s.g === 'measure') { q.set('m', String(s.m)); if (s.d) q.set('d', s.d); else if (s.p) q.set('p', s.p); q.set('r', s.res.join('.')); }
   if (s.g === 'sheet') { q.set('b', String(s.b)); q.set('t', String(s.t)); q.set('n', String(s.n)); }
   if (s.g === 'level') { q.set('b', String(s.b)); q.set('t', String(s.t)); q.set('s', String(s.s)); }
+  if (s.g === 'diff') { if (s.l) q.set('l', String(s.l)); else q.set('d', String(s.d)); q.set('f', String(s.f)); q.set('n', String(s.n)); q.set('t', String(s.t)); q.set('s', String(s.s)); }
   return q.toString();
 }
 
@@ -158,6 +175,31 @@ export function scoreWords(s: Score): { game: string; title: string; sub: string
       play: `Play board ${s.b}`,
     };
   }
+  if (s.g === 'diff') {
+    const all = s.f === s.n, stars = `${s.s} star${s.s === 1 ? '' : 's'}`;
+    if (s.l) {
+      const room = diffRoom(s.l);
+      return {
+        game: 'Find the Difference',
+        title: all ? `Level ${s.l} in ${clock(s.t)}` : `${s.f} of ${s.n} snags on level ${s.l}`,
+        sub: `Find the Difference, level ${s.l}: ${room}. ${s.n} snags between the drawing the customer signed off and the job as fitted.${all ? ` ${stars}.` : ''}`,
+        message: all
+          ? `I found all ${s.n} snags on level ${s.l} of Find the Difference (${room}) in ${clock(s.t)}, ${stars}. Can you beat it?`
+          : `I found ${s.f} of ${s.n} snags on level ${s.l} of Find the Difference (${room}) before the customer walked in. Can you beat it?`,
+        play: `Play level ${s.l}`,
+      };
+    }
+    const job = s.d === dailyBoard() ? `today’s job (${s.d})` : `daily job ${s.d}`;
+    return {
+      game: 'Find the Difference',
+      title: all ? `All ${s.n} snags in ${clock(s.t)}` : `${s.f} of ${s.n} snags found`,
+      sub: `Find the Difference, daily job ${s.d}: the same room and the same snags for everyone that day.`,
+      message: all
+        ? `I found all ${s.n} snags on ${job} in Find the Difference, in ${clock(s.t)}. Can you beat it?`
+        : `I found ${s.f} of ${s.n} snags on ${job} in Find the Difference before the customer walked in. Can you beat it?`,
+      play: 'Play today’s job',
+    };
+  }
   const daily = s.b > 30;
   const board = daily ? `today’s board (${s.b})` : `board ${s.b}`;
   const isToday = daily && s.b === dailyBoard();
@@ -179,12 +221,13 @@ export function playHref(s: Score | null, src = 'beat'): string {
   if (s.g === 'measure') q.set('play', `measure:${s.d ? 'daily' : s.p}`);
   if (s.g === 'sheet') q.set('play', `sheet:${s.b > 30 ? 'daily' : s.b}`);
   if (s.g === 'level') q.set('play', `level:${s.b}`);
+  if (s.g === 'diff') q.set('play', `diff:${s.l || 'daily'}`);
   return `${GAMES_OPEN}?${q.toString()}#/${s.g}`;
 }
 
 /* ?play=<game>:<level> on the app's address: the level picked before the game opens (each game reads its own). */
 export function playKey(v: string | null): { key: string; value: string } | null {
-  const m = /^(stack|nail|measure|sheet|level):([a-z0-9]{1,12})$/.exec(v || '');
+  const m = /^(stack|nail|measure|sheet|level|diff):([a-z0-9]{1,12})$/.exec(v || '');
   if (!m) return null;
   const [, g, lv] = m;
   if (g === 'stack' && /^(0|[1-9]|10)$/.test(lv)) return { key: 'raf_games_level_stack', value: lv };
@@ -192,18 +235,20 @@ export function playKey(v: string | null): { key: string; value: string } | null
   if (g === 'measure' && (lv === 'daily' || MEASURE_PACKS[lv])) return { key: 'raf_games_level_measure', value: lv };
   if (g === 'sheet' && (lv === 'daily' || (Number(lv) >= 1 && Number(lv) <= 30))) return { key: 'raf_games_level_sheet', value: lv };
   if (g === 'level' && /^([1-9]|10)$/.test(lv)) return { key: 'raf_games_level_level', value: lv };
+  if (g === 'diff' && (lv === 'daily' || /^[1-9]\d?$/.test(lv)) && (lv === 'daily' || Number(lv) <= DIFF_LEVELS)) return { key: 'raf_games_level_diff', value: lv };
   return null;
 }
 
 /* Stills of the app for its page (taken from the app with Playwright as an iPhone 13, 25 Oct 2026, home and Level Best
    27 Oct 2026; 780 x 1688). */
 export const GAMES_SCREENS = {
-  home: { src: '/images/tools/games/screen-home-eae6e783.jpg', alt: 'Workshop Games on a phone: today’s Measure Up and Sheet Saver at the top, then all five games.' },
+  home: { src: '/images/tools/games/screen-home-25774d0e.jpg', alt: 'Workshop Games on a phone: today’s Measure Up and Sheet Saver at the top, then all six games.' },
   stack: { src: '/images/tools/games/screen-stack-5829dee0.jpg', alt: 'Timber Stack: nine boards stacked past seat height, the tape measure up the side reading 470 mm.' },
   nail: { src: '/images/tools/games/screen-nail-825ad045.jpg', alt: 'Nail Pop, level 1: old oak floorboards with nails popping up to knock back in.' },
   measure: { src: '/images/tools/games/screen-measure-9a78ef25.jpg', alt: 'Measure Up: how tall is a metric door? The top is hidden and the tape is ready to pull up.' },
   sheet: { src: '/images/tools/games/screen-sheet-69874f41.jpg', alt: 'Sheet Saver, daily board 112: an empty 2440 by 1220 board and six parts to fit on it.' },
   level: { src: '/images/tools/games/screen-level-5364dfef.jpg', alt: 'Level Best, board 1: a steel bearing rolling across a birch ply offcut between the walls, one brass screw picked up, the hinge cup waiting at the top.' },
+  diff: { src: '/images/tools/games/screen-diff-47736dc0.jpg', alt: 'Find the Difference, level 1: the bedroom drawing the customer signed off above the wardrobe as fitted, two snags ringed and three still to find.' },
   og: '/images/tools/games/og-de504ef0.jpg',
   w: 780,
   h: 1688,

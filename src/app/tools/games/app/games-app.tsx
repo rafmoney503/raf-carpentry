@@ -49,6 +49,8 @@ export default function GamesApp() {
   const appRef = useRef<HTMLDivElement>(null);
   const [fit, setFit] = useState(1);
   const [cramped, setCramped] = useState(false);
+  // a scrolling screen can say it is taller than the 844 it was drawn at (the home screen with six games)
+  const [screenH, setScreenH] = useState<number | null>(null);
   const toastT = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const say = useCallback((text: string) => {
@@ -79,6 +81,7 @@ export default function GamesApp() {
     }
     const read = () => {
       setScreen(screenOf(location.hash));
+      setScreenH(null);
       appRef.current?.scrollTo(0, 0);
     };
     read();
@@ -116,6 +119,7 @@ export default function GamesApp() {
       for (const k of ['_c', '_ac']) {
         Object.defineProperty(inst, k, { configurable: true, get: () => audio, set: (v) => { audio = v; } });
       }
+      inst.setScreenHeight = (h: number) => setScreenH(h >= 600 && h <= 2000 ? h : null);
       inst.shareScore = (p: Record<string, unknown>) => {
         const s = readScore(p);
         if (!s) return;
@@ -149,7 +153,7 @@ export default function GamesApp() {
   );
 
   // --fit: how much a contain or scroll screen is scaled; --fs: a game on a phone narrower than 390 (see build.mjs)
-  const vars = { '--fit': String(fit), '--fs': String(Math.min(1, fit)), '--h': `${Math.round(844 * fit)}px` } as React.CSSProperties;
+  const vars = { '--fit': String(fit), '--fs': String(Math.min(1, fit)), '--h': `${Math.round((screenH || 844) * fit)}px` } as React.CSSProperties;
 
   return (
     <div ref={appRef} className="wg-app" data-mode={mode}>

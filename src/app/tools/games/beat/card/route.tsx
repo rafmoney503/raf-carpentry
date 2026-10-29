@@ -132,8 +132,47 @@ function levelArt(stars: number) {
   return svgUrl(s, 420, 420);
 }
 
+function diffArt(f: number, n: number) {
+  // the drawing the customer signed off over the job as fitted, a bedroom the way the game draws one: the snags
+  // found ringed in lime, the ones missed in red, and under them a dot for each snag
+  const lime = '#b5e655', red = '#ff6b4a';
+  const room = (y: number, fitted: boolean) => {
+    let s = `<rect x="30" y="${y}" width="360" height="168" rx="10" fill="#e8e3d9"/>`;
+    s += `<path d="M30 ${y + 132} H390 V${y + 158} Q390 ${y + 168} 380 ${y + 168} H40 Q30 ${y + 168} 30 ${y + 158} Z" fill="#b98b5d"/>`;
+    // the wardrobe: two doors on a plinth (the plinth left off as fitted)
+    s += `<rect x="66" y="${y + 14}" width="156" height="${fitted ? 118 : 110}" fill="#7f9479"/><rect x="70" y="${y + 18}" width="72" height="104" fill="#8fa58a"/><rect x="146" y="${y + 18}" width="72" height="104" fill="#8fa58a"/>`;
+    if (!fitted) s += `<rect x="70" y="${y + 124}" width="148" height="8" fill="#56685a"/>`;
+    // the handles: brass on the drawing, one black as fitted
+    s += `<rect x="134" y="${y + 58}" width="4" height="24" rx="2" fill="#c9a24a"/><rect x="150" y="${y + 58}" width="4" height="24" rx="2" fill="${fitted ? '#23272c' : '#c9a24a'}"/>`;
+    // a picture on the wall, its hills gone as fitted
+    s += `<rect x="252" y="${y + 26}" width="62" height="46" fill="#2a2d31"/><rect x="257" y="${y + 31}" width="52" height="36" fill="#bcd6e6"/>`;
+    if (!fitted) s += `<path d="M257 ${y + 67} L274 ${y + 50} L288 ${y + 60} L296 ${y + 54} L309 ${y + 67} Z" fill="#6f9a6a"/>`;
+    // the lamp, its shade another colour as fitted
+    s += `<path d="M352 ${y + 132} V${y + 66}" stroke="#2b2f35" stroke-width="3"/><path d="M338 ${y + 66} H366 L360 ${y + 44} H344 Z" fill="${fitted ? '#e6b955' : '#2547d0'}"/>`;
+    // a plant, and as fitted a tape measure left on the floor
+    s += `<path d="M262 ${y + 132} L266 ${y + 110} H286 L290 ${y + 132} Z" fill="#c4733a"/><path d="M276 ${y + 110} C268 ${y + 96} 262 ${y + 92} 258 ${y + 86} M276 ${y + 110} C280 ${y + 94} 290 ${y + 90} 296 ${y + 84}" stroke="#5d7f6a" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+    if (fitted) s += `<rect x="304" y="${y + 140}" width="22" height="18" rx="4" fill="#f2c94c" stroke="#16191c" stroke-width="2"/><rect x="326" y="${y + 152}" width="22" height="4" fill="#f2c94c"/>`;
+    // the tag on each: blue on the drawing, dark with lime as fitted
+    s += `<rect x="40" y="${y + 10}" width="${fitted ? 18 : 22}" height="8" rx="2" fill="${fitted ? '#16191c' : '#2547d0'}"/>`;
+    if (fitted) s += `<rect x="43" y="${y + 13}" width="12" height="2" fill="${lime}"/>`;
+    return s;
+  };
+  let s = room(14, false) + room(202, true);
+  const spots: [number, number, number, number][] = [[144, 272, 18, 20], [146, 330, 84, 12], [283, 251, 38, 32], [352, 258, 22, 20], [326, 352, 30, 18]];
+  const ok = Math.min(spots.length, f);
+  spots.forEach(([x, y, rx, ry], i) => {
+    if (i >= ok && f >= n) return;
+    const got = i < ok;
+    s += `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="none" stroke="rgba(22,25,28,0.6)" stroke-width="7"${got ? '' : ' stroke-dasharray="8 6"'}/>`;
+    s += `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="none" stroke="${got ? lime : red}" stroke-width="4"${got ? '' : ' stroke-dasharray="8 6"'}/>`;
+  });
+  const gap = 26, x0 = 210 - ((n - 1) * gap) / 2;
+  for (let i = 0; i < n; i++) s += `<circle cx="${x0 + i * gap}" cy="402" r="8" fill="${i < f ? lime : red}"/>`;
+  return svgUrl(s, 420, 420);
+}
+
 const artOf = (s: Score) =>
-  s.g === 'stack' ? stackArt(s.n) : s.g === 'nail' ? nailArt() : s.g === 'measure' ? measureArt(s.res) : s.g === 'level' ? levelArt(s.s) : sheetArt(s.n);
+  s.g === 'stack' ? stackArt(s.n) : s.g === 'nail' ? nailArt() : s.g === 'measure' ? measureArt(s.res) : s.g === 'level' ? levelArt(s.s) : s.g === 'diff' ? diffArt(s.f, s.n) : sheetArt(s.n);
 
 const R_LOGO = svgUrl(
   `<circle cx="500" cy="500" r="500" fill="${C.ink}"/><g transform="translate(${500 - (R_MARK.w * 0.62) / 2} ${500 - (R_MARK.h * 0.62) / 2}) scale(0.62)"><path d="${R_MARK.stem}" fill="#16191c"/><path d="${R_MARK.bowl}" fill="#16191c"/></g>`,
@@ -148,7 +187,7 @@ export async function GET(req: Request) {
   const s = readScore(q);
   const [display, body, mono] = await Promise.all([font('Bricolage-650.ttf'), font('Geist-450.ttf'), font('GeistMono-400.ttf')]);
   const w = s ? scoreWords(s) : null;
-  const title = w ? w.title : 'Five games from the workshop';
+  const title = w ? w.title : 'Six games from the workshop';
   const size = title.length <= 20 ? 86 : title.length <= 30 ? 72 : 58;
 
   const png = new ImageResponse(
@@ -185,7 +224,7 @@ export async function GET(req: Request) {
               </div>
             ) : (
               <div style={{ display: 'flex', marginTop: 24, fontFamily: 'Body', fontSize: 28, lineHeight: 1.35, color: C.muted, maxWidth: 600 }}>
-                {w ? w.sub : 'Measure Up, Sheet Saver, Timber Stack, Nail Pop and Level Best. Free, on your phone.'}
+                {w ? w.sub : 'Measure Up, Sheet Saver, Timber Stack, Nail Pop, Level Best and Find the Difference. Free, on your phone.'}
               </div>
             )}
           </div>
