@@ -3,13 +3,15 @@
   "short_name": "Money pots",
   "description": "Rafal Solutions Ltd: what to put aside, what you can spend, and every deadline.",
   "id": "/pots",
-  "start_url": "/pots?go=1",
+  "start_url": "/pots",
   "scope": "/pots",
-  "display": "browser",
-  "background_color": "#22c88c",
-  "theme_color": "#22c88c",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eef0ec",
+  "theme_color": "#eef0ec",
   "icons": [
-    { "src": "/images/money-pots/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/images/money-pots/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/images/money-pots/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/images/money-pots/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/images/money-pots/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
