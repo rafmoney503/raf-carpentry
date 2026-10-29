@@ -7,6 +7,8 @@ export default function PotsLauncher() {
   const [going, setGoing] = useState(false);
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has('go')) {
+      // the address is only known in the browser; this swaps the words for "Opening…" while it leaves
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setGoing(true);
       window.location.replace(APP_URL);
       return;
