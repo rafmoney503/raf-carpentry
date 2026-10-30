@@ -93,7 +93,7 @@ body{margin:0}
   --bp:#12246a; --bp-deep:#0a1641; --bp-grid:rgba(170,192,255,.10); --bp-grid2:rgba(170,192,255,.045);
   --bp-ink:#eef2ff; --bp-dim:rgba(226,232,255,.72); --bp-faint:rgba(226,232,255,.5); --bp-line:rgba(226,232,255,.32);
   --mint:#5fe3a1; --coral:#ff8a78;
-  --p-vat:#2547d0; --p-ct:#6a45b8; --p-paye:#9a4a2f; --p-garages:#a35a00; --p-materials:#587a14; --p-dividends:#17736e; --p-rest:#6a7076;
+  --p-vat:#2547d0; --p-ct:#6a45b8; --p-paye:#9a4a2f; --p-garages:#a35a00; --p-materials:#587a14; --p-dividends:#17736e; --p-rest:#6a7076; --p-sa:#3b5a80;
   --on-pot:#ffffff;
   --late:#b3261e; --late-bg:#fbe9e7; --ok:#1d7a3a; --ok-bg:#e5f1e7; --note-bg:#fdf3e1; --note-ink:#6b4500;
   --shadow:0 1px 0 rgba(20,23,26,.04), 0 8px 24px rgba(20,23,26,.06);
@@ -106,7 +106,7 @@ body{margin:0}
     --paper:#0e1114; --mount:#161a1e; --raised:#1f2429; --ink:#e8e9e5; --muted:#a9afb5; --faint:#8d949b;
     --line:#262b31; --line-strong:#39404a; --accent:#7f98ff; --accent-hover:#a3b4ff; --on-accent:#0c1022;
     --bp:#0f1f57; --bp-deep:#070f2e;
-    --p-vat:#7f98ff; --p-ct:#ae90f3; --p-paye:#e2906f; --p-garages:#e3a44c; --p-materials:#a6cb62; --p-dividends:#4fc4ba; --p-rest:#8d949b;
+    --p-vat:#7f98ff; --p-ct:#ae90f3; --p-paye:#e2906f; --p-garages:#e3a44c; --p-materials:#a6cb62; --p-dividends:#4fc4ba; --p-rest:#8d949b; --p-sa:#8fb0d8;
     --on-pot:#0c1022;
     --late:#ff8f85; --late-bg:#3a1d1b; --ok:#72d28c; --ok-bg:#16301f; --note-bg:#30260f; --note-ink:#f0c879;
     --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.35);
@@ -117,7 +117,7 @@ body{margin:0}
   --paper:#0e1114; --mount:#161a1e; --raised:#1f2429; --ink:#e8e9e5; --muted:#a9afb5; --faint:#8d949b;
   --line:#262b31; --line-strong:#39404a; --accent:#7f98ff; --accent-hover:#a3b4ff; --on-accent:#0c1022;
   --bp:#0f1f57; --bp-deep:#070f2e;
-  --p-vat:#7f98ff; --p-ct:#ae90f3; --p-paye:#e2906f; --p-garages:#e3a44c; --p-materials:#a6cb62; --p-dividends:#4fc4ba; --p-rest:#8d949b;
+  --p-vat:#7f98ff; --p-ct:#ae90f3; --p-paye:#e2906f; --p-garages:#e3a44c; --p-materials:#a6cb62; --p-dividends:#4fc4ba; --p-rest:#8d949b; --p-sa:#8fb0d8;
   --on-pot:#0c1022;
   --late:#ff8f85; --late-bg:#3a1d1b; --ok:#72d28c; --ok-bg:#16301f; --note-bg:#30260f; --note-ink:#f0c879;
   --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.35);
@@ -386,6 +386,15 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
 .hmrc-tot div{border:1px solid var(--line);border-radius:2px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .hmrc-tot span{font-size:calc(12px * var(--fz));color:var(--faint);display:flex;align-items:center;gap:6px}
 .hmrc-tot b{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-weight:600;font-size:calc(16px * var(--fz))}
+.sa-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sa-num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-weight:500;font-size:calc(34px * var(--fz));letter-spacing:-.03em;line-height:1}
+.sa-num.late{color:var(--late)}
+.sa-num.done{color:var(--ok)}
+.sa-when{font-size:calc(14px * var(--fz));color:var(--muted)}
+.sa-plan{font-size:calc(14px * var(--fz));margin:8px 0 0;padding:8px 10px;background:var(--raised);border-radius:2px}
+.sa-plan b{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.sa-sub{font-size:calc(12.5px * var(--fz));color:var(--faint);margin-top:8px}
+.sa-box{display:flex;flex-direction:column;gap:10px;margin-top:12px}
 .he .ref{grid-column:2 / 4;font-family:var(--font-mono);font-size:calc(12px * var(--fz));color:var(--muted);overflow-wrap:anywhere}
 
 /* ---------- rules ---------- */
@@ -483,6 +492,10 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
           <div class="card-head"><h2 id="payhmrc-h">Pay HMRC</h2><span class="small">Links and references</span></div>
           <div class="todo" id="payhmrc"></div>
           <p class="small"><a href="https://www.tax.service.gov.uk/business-account" target="_blank" rel="noopener">Your HMRC business tax account</a>: what's owed and what's been paid.</p>
+        </section>
+        <section class="card" aria-labelledby="sa-h" id="sa-card" hidden>
+          <div class="card-head"><h2 id="sa-h">Your Self Assessment</h2><span class="small">You, not the company</span></div>
+          <div id="sa"></div>
         </section>
       </div>
     </div>
@@ -904,18 +917,19 @@ const POTS = [
   {k:'rest', name:'Free to spend'},
 ];
 const ORDER = ['vat','materials','garages','paye','ct','dividends','rest'];
-const potName = k => (POTS.find(p => p.k === k) || {}).name || k;
+const potName = k => (POTS.find(p => p.k === k) || {}).name || (k === 'sa' ? 'Self Assessment (you)' : k);
 const col = k => `var(--p-${k})`;
 const HMRC = {
   vat:  {name:'HMRC VAT', sort:'08 32 00', acct:'11963155', url:'https://www.gov.uk/pay-vat'},
   ct:   {name:'HMRC Cumbernauld', sort:'08 32 10', acct:'12001039', url:'https://www.gov.uk/pay-corporation-tax/approve-a-payment-through-your-online-bank-account'},
   paye: {name:'HMRC Cumbernauld', sort:'08 32 10', acct:'12001039', url:'https://www.gov.uk/pay-paye-tax'},
+  sa:   {name:'HMRC Cumbernauld', sort:'08 32 10', acct:'12001039', url:'https://www.gov.uk/pay-self-assessment-tax-bill'},
 };
 const VAT_START = '2026-06-01';
 const DEFAULTS = {
   vatRate:8.5, vatLater:9.5, vatFrom:'2027-06-01', vrn:'', vatFirstEnd:'',
   materialsPct:15, garagesMonthly:0, payeMonthly:0, payeQuarterly:false, payeRef:'',
-  ct:19, dividendsPct:50, yearEnd:'', ctRef:'', ctRefFor:'', ctRefChecked:'', ctAmount:null, ctAmountFor:'', cisContractors:'', csDate:'06-11', csFiled:'', buffer:500, weeklyLimit:0, bank:null,
+  ct:19, dividendsPct:50, yearEnd:'', ctRef:'', ctRefFor:'', ctRefChecked:'', sa:null, ctAmount:null, ctAmountFor:'', cisContractors:'', csDate:'06-11', csFiled:'', buffer:500, weeklyLimit:0, bank:null,
 };
 
 /* ---------- state ---------- */
@@ -1132,7 +1146,7 @@ function labelOf(e) {
   return e.type === 'cis' ? 'CIS job' : e.type === 'other' ? 'Other income' : 'Customer job';
 }
 /* What an HMRC payment was for, from its period. */
-const HMRC_POTS = ['vat', 'ct', 'paye'];
+const HMRC_POTS = ['vat', 'ct', 'paye', 'sa'];
 function forOf(e) {
   if (!e.period) return '';
   if (e.pot === 'vat') { const st = addDays(addMonths(e.period, -3), 1); return `${MONTHS[parse(st).getMonth()].slice(0, 3)} to ${MONTHS[parse(e.period).getMonth()].slice(0, 3)} ${e.period.slice(0, 4)}`; }
@@ -1142,6 +1156,7 @@ function forOf(e) {
 }
 function refOf(e) {
   if (e.ref) return e.ref;
+  if (e.pot === 'sa') return (S.sa && S.sa.ref) || '';
   if (e.pot === 'vat') return S.vrn || '';
   if (e.pot === 'paye' && e.bill === 'paye') return S.payeRef || '';
   return '';
@@ -1459,9 +1474,49 @@ function renderPayHmrc() {
   }).join(''));
 }
 
+/* ---------- your own Self Assessment (personal, not the company's pots) ---------- */
+function saInfo() {
+  const sa = S.sa; if (!sa || !(sa.owed >= 0) || !sa.due) return null;
+  const pays = entries.filter(e => e.kind === 'out' && e.pot === 'sa').sort((a, b) => (b.date || '').localeCompare(a.date || '') || String(b.at || '').localeCompare(String(a.at || '')));
+  const since = pays.filter(e => (e.date || '') >= (sa.asOf || ''));
+  const paidSince = r2(since.reduce((a, e) => a + (e.amount || 0), 0));
+  const left = r2(Math.max(0, sa.owed - paidSince));
+  const n = daysTo(sa.due); const t = parse(today()), d = parse(sa.due);
+  const months = Math.max(1, (d.getFullYear() * 12 + d.getMonth()) - (t.getFullYear() * 12 + t.getMonth()));
+  const weeks = Math.max(1, Math.ceil(n / 7));
+  return {sa, pays, paidSince, left, n, months, weeks, perMonth: r2(left / months), perWeek: r2(left / weeks)};
+}
+let saEdit = false;
+function renderSa() {
+  const i = saInfo(); $('sa-card').hidden = !i; if (!i) return;
+  const {sa, pays, paidSince, left, n} = i;
+  const late = left > 0.004 && n < 0, done = left <= 0.004;
+  const when = done ? 'Cleared. Nothing left to pay.' : late ? `was due ${fd(sa.due, {year:true})} · ${-n} days late` : `left to pay by ${fd(sa.due, {year:true})} · ${inWhen(n)}`;
+  const plan = done ? '' : late ? `<p class="sa-plan">Pay it now: interest runs every day, and HMRC adds 5% of what's unpaid 30 days after the deadline.</p>` : `<p class="sa-plan">Put aside about <b>${fm(i.perMonth)}</b> a month (<b>${fm(i.perWeek)}</b> a week) from your own money and it's clear by ${fd(sa.due, {wd:false})}.</p>`;
+  const sub = `HMRC showed ${fm(sa.owed)} on ${fd(sa.asOf, {wd:false, year:true})}${paidSince ? `; ${fm(paidSince)} paid since` : ''}.`;
+  const list = pays.slice(0, 4).map(e => `${fd(e.date, {wd:false})} ${fm(e.amount)}`).join(' · ');
+  const bank = HMRC.sa; const ref = sa.ref || '';
+  const key = 'pay-sa';
+  const edit = saEdit ? `<div class="paidrow"><div class="pound"><i>£</i><input inputmode="decimal" aria-label="What HMRC shows you owe" id="sa-owed" value="${r2(left).toFixed(2)}"></div><button type="button" class="btn sm" data-sasave ${canWrite ? '' : 'disabled'}>Save</button><button type="button" class="btn sm ghost" data-saedit>Cancel</button></div><p class="hint">Type what HMRC's page shows you owe now. Payments from today on come off it, as HMRC takes up to 7 days to show them.</p>` : '';
+  setHTML($('sa'), `<div class="sa-top"><div class="sa-num${late ? ' late' : done ? ' done' : ''}">${fm(left)}</div></div>
+    <p class="sa-when">${esc(when)}</p>${plan}
+    <p class="sa-sub">${esc(sub)}${list ? ` Paid: ${esc(list)}.` : ''}</p>
+    <div class="sa-box">
+      <div class="paidrow"><div class="pound"><i>£</i><input inputmode="decimal" aria-label="Amount paid to Self Assessment" id="sa-amt"></div><button type="button" class="btn sm" data-sapaid ${canWrite ? '' : 'disabled'}>I've paid some</button><button type="button" class="btn sm ghost" data-saedit>${saEdit ? 'Close' : 'HMRC shows a new amount'}</button></div>
+      ${edit}
+      <details class="ti" data-key="${key}"${openItems.has(key) ? ' open' : ''}><summary><span class="ti-main"><b>Pay Self Assessment</b><small class="mono">${esc(ref ? `Ref ${ref}` : 'Reference missing')}</small></span><span class="ti-amt"></span><span class="chev" aria-hidden="true"></span></summary><div class="ti-body"><div class="paybox">
+        <div class="actions"><a class="btn primary" href="${bank.url}" target="_blank" rel="noopener">Pay Self Assessment on gov.uk</a></div>
+        <p class="small">From your own account, not the company's. HMRC's page fills in its own details. Or a normal transfer:</p>
+        <dl class="bank">${copyRow('Name', bank.name)}${copyRow('Sort code', bank.sort)}${copyRow('Account', bank.acct)}${copyRow('Reference', ref)}</dl>
+        ${ref ? `<p class="check good">Your 10-digit UTR and K, 11 characters. Right for every Self Assessment payment.</p>` : ''}
+        <p class="small">If the bill includes a payment on account for next year, a second one is due 31 July. Sanjay can tell you.</p>
+      </div></div></details>
+    </div>`);
+}
+
 /* ---------- render all ---------- */
 function renderAll() {
-  renderHero(); renderTodo(); renderPotsJars(); renderComing(); renderPayHmrc(); renderPreview(); renderHistory(); renderOutHint();
+  renderHero(); renderTodo(); renderPotsJars(); renderComing(); renderPayHmrc(); renderSa(); renderPreview(); renderHistory(); renderOutHint();
 }
 function renderOutPots() {
   $('out-pot').innerHTML = POTS.map(p => `<label><input type="radio" name="opot" value="${p.k}"${p.k === 'materials' ? ' checked' : ''}><span><i class="dot" style="--c:${col(p.k)}"></i>${p.name}</span></label>`).join('');
@@ -1544,6 +1599,21 @@ document.addEventListener('click', async ev => {
     for (const e of todo) { const patch = {}; which.forEach(k => { if (e.split && e.split[k]) patch[k] = true; }); try { await store.patch(e.id, {moved: patch}); } catch { break; } }
     return;
   }
+  if (el.dataset.saedit != null) { saEdit = !saEdit; renderSa(); if (saEdit) { const x = $('sa-owed'); x && x.focus(); } return; }
+  if (el.dataset.sasave != null && canWrite) {
+    const a = num(($('sa-owed') || {}).value);
+    if (!(a >= 0) || !S.sa) { const x = $('sa-owed'); x && x.focus(); return; }
+    S = {...S, sa: {...S.sa, owed: r2(a), asOf: today()}}; saEdit = false; renderAll(); store.settings(); toast(`Self Assessment: ${fm(a)} owed, from HMRC today`);
+    return;
+  }
+  if (el.dataset.sapaid != null && canWrite) {
+    const inp = $('sa-amt'); const a = num(inp && inp.value);
+    if (!(a > 0)) { inp && inp.focus(); return; }
+    el.disabled = true;
+    try { await store.add({id: newId(today()), kind:'out', pot:'sa', date: today(), amount: r2(a), note: 'Self Assessment paid', ref: (S.sa && S.sa.ref) || undefined, at: new Date().toISOString()}); toast(`Recorded ${fm(a)} paid to Self Assessment`); }
+    catch { el.disabled = false; }
+    return;
+  }
   if (el.dataset.paid != null && canWrite) {
     const k = el.dataset.paid, period = el.dataset.period;
     const inp = document.querySelector(`[data-paidamt="${CSS.escape(k + period)}"]`);
@@ -1620,7 +1690,7 @@ function stateText() {
   const cis = r2(entries.reduce((a, e) => a + (e.cisTaken || 0), 0));
   const sp = spendInfo();
   const spendLine = sp.bank ? `YOU CAN SPEND ${sp.weekLeft != null ? 'THIS WEEK ' : ''}${fm(Math.max(0, sp.can))}${sp.can <= 0 ? ' (STOP: under the line)' : ''}. Starling on ${sp.bank.date || sp.bank.at}: main ${fm(sp.bank.main)}; Spaces ${POTS.filter(p => p.k !== 'rest').map(p => `${p.name} ${fm((sp.bank.spaces || {})[p.k] || 0)}${sp.short[p.k] ? ` (short ${fm(sp.short[p.k])})` : ''}`).join(', ')}; still to move into Spaces ${fm(sp.toFund)}; cushion ${fm(sp.buffer)}${sp.weekLeft != null ? `; weekly limit ${fm(S.weeklyLimit)}, spent this week ${fm(sp.spentWeek)}` : ''}.` : `YOU CAN SPEND: unknown until he gives his Starling balances (main account and each Space). Cushion ${fm(sp.buffer)}.`;
-  return `${spendLine}\n\nPOTS (what each Starling Space should hold)\n${pots}\n\nDEADLINES\n${dl}\n\nCIS taken off his jobs so far, for Sanjay to claim back: ${fm(cis)}\n\nAPP SETTINGS\nmaterials ${S.materialsPct}% of each payment; garages ${fm(S.garagesMonthly)} a month (3 garages, £376.60 a quarter each); PAYE ${S.payeMonthly ? fm(S.payeMonthly) + ' a month' : 'monthly amount not set yet'}; corporation tax ${S.ct}% of profit; dividends ${S.dividendsPct}% of what's left after tax; VAT ${vatRateOn(today())}% flat rate; first VAT quarter ends ${S.vatFirstEnd || 'not set'}; PAYE reference ${S.payeRef || 'not set'}; corporation tax reference ${S.ctRef || 'not set'}\n\nLATEST ENTRIES (newest first)\n${recent || 'none yet'}`;
+  return `${spendLine}\n\nPOTS (what each Starling Space should hold)\n${pots}\n\nDEADLINES\n${dl}\n\n${(() => { const i = saInfo(); return i ? `HIS OWN SELF ASSESSMENT (personal, self-employed, not the company; paid from his own money; pot "sa", not one of the company pots): ${fm(i.left)} left of ${fm(i.sa.owed)} HMRC showed on ${i.sa.asOf}, due ${i.sa.due} (${i.n} days); about ${fm(i.perMonth)} a month to clear it; reference ${i.sa.ref || 'not set'}; pay HMRC Cumbernauld 08-32-10 12001039.\n\n` : ''; })()}CIS taken off his jobs so far, for Sanjay to claim back: ${fm(cis)}\n\nAPP SETTINGS\nmaterials ${S.materialsPct}% of each payment; garages ${fm(S.garagesMonthly)} a month (3 garages, £376.60 a quarter each); PAYE ${S.payeMonthly ? fm(S.payeMonthly) + ' a month' : 'monthly amount not set yet'}; corporation tax ${S.ct}% of profit; dividends ${S.dividendsPct}% of what's left after tax; VAT ${vatRateOn(today())}% flat rate; first VAT quarter ends ${S.vatFirstEnd || 'not set'}; PAYE reference ${S.payeRef || 'not set'}; corporation tax reference ${S.ctRef || 'not set'}\n\nLATEST ENTRIES (newest first)\n${recent || 'none yet'}`;
 }
 
 function rulesTurn() {
@@ -1647,6 +1717,7 @@ How the app works:
 - What he can spend = Starling main account, minus what the Spaces are still short of, minus his cushion (and never more than his weekly limit if he set one). When he asks "what can I spend", give that one number first. If it's 0 or below, tell him straight: stop spending.
 - When he sends a screenshot of Starling, read the main account and each Space balance and call set_bank_balances (this is the one thing you may record from a photo, because that's why he sent it). Match his Space names to the pots as best you can and say which you matched. Then give "You can spend" and what to move.
 - When he says he spent money on himself or anything else ("spent £60 on fuel"), record it with add_money_out from rest (Free to spend) and tell him what's left.
+- His own Self Assessment (as a self-employed person, not the company) has its own card. When he says he paid some, record it with add_money_out pot "sa". It comes from his own money, so it never touches the company pots or "what he can spend". Reference: his UTR followed by K.
 - Neither of you is an accountant: give the figures and what to do, and say to check with Sanjay where it needs his accounts (final tax, dividends, director's loan). Dividends can only come from profit after tax that Sanjay has confirmed.
 
 Today is ${fd(today(), {year:true})}. The app right now:
@@ -1675,14 +1746,15 @@ function makeTools(acts) {
         return out;
       }},
     {name:'add_money_out', description:'Record money paid out of a pot, e.g. materials bought, garage rent, a dividend taken. Returns the pot balance after.',
-      inputSchema:{type:'object', properties:{pot:{type:'string', enum:POTS.map(p => p.k)}, amount:{type:'number'}, date:{type:'string', description:'YYYY-MM-DD, default today'}, note:{type:'string'}}, required:['pot','amount']},
+      inputSchema:{type:'object', properties:{pot:{type:'string', enum:[...POTS.map(p => p.k), 'sa'], description:'sa = his own Self Assessment, paid from his own money'}, amount:{type:'number'}, date:{type:'string', description:'YYYY-MM-DD, default today'}, note:{type:'string'}}, required:['pot','amount']},
       async execute(i) {
-        guard(); const amount = Number(i.amount); const pot = POTS.some(p => p.k === i.pot) ? i.pot : null;
+        guard(); const amount = Number(i.amount); const pot = POTS.some(p => p.k === i.pot) || (i.pot === 'sa' && S.sa) ? i.pot : null;
         if (!pot || !(amount > 0)) throw new Error('Need a pot and an amount over 0.');
         const date = dateOr(i.date); say(`Taking ${fm(amount)} out of ${potName(pot)}…`);
         const e = {id:newId(date), kind:'out', pot, date, amount:r2(amount), note:String(i.note || '').slice(0, 120), at:new Date().toISOString(), by:'claude'};
         await store.add(e);
         acts.push({label:`Took ${fm(amount)} out of ${potName(pot)}`, undo:{t:'del', id:e.id}});
+        if (pot === 'sa') { const si = saInfo(); return {pot:potName(pot), leftToPay: si ? si.left : null, due: S.sa.due}; }
         return {pot:potName(pot), balanceAfter:r2(totals()[pot].bal)};
       }},
     {name:'mark_bill_paid', description:'Mark a VAT, corporation tax or PAYE bill as paid, with bill and period exactly as shown in DEADLINES [bill=..., period=...]. Takes the money out of that pot (a corporation tax year nothing was put aside for comes out of Free to spend). Use amount 0 with already_paid true when it was paid before and he just confirms it.',
