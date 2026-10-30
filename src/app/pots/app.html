@@ -382,6 +382,11 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
 .he .note{grid-column:2 / 4;font-size:calc(12.5px * var(--fz));color:var(--faint)}
 .he .tools{grid-column:2 / 4;display:flex;gap:8px;flex-wrap:wrap}
 .empty{color:var(--faint);font-size:calc(14px * var(--fz))}
+.hmrc-tot{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px;margin-bottom:12px}
+.hmrc-tot div{border:1px solid var(--line);border-radius:2px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.hmrc-tot span{font-size:calc(12px * var(--fz));color:var(--faint);display:flex;align-items:center;gap:6px}
+.hmrc-tot b{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-weight:600;font-size:calc(16px * var(--fz))}
+.he .ref{grid-column:2 / 4;font-family:var(--font-mono);font-size:calc(12px * var(--fz));color:var(--muted);overflow-wrap:anywhere}
 
 /* ---------- rules ---------- */
 .rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px 18px}
@@ -480,6 +485,11 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
 
   <main class="view" id="v-history" hidden>
     <div class="page-title"><h1>History</h1><p>Everything you've added, newest first.</p></div>
+    <section class="card" aria-labelledby="hmrc-h" id="hmrc-card" hidden>
+      <div class="card-head"><h2 id="hmrc-h">Paid to HMRC</h2><span class="small" id="hmrc-sub"></span></div>
+      <div class="hmrc-tot" id="hmrc-tot"></div>
+      <div id="hmrc"></div>
+    </section>
     <section class="card" aria-labelledby="hist-h">
       <div class="card-head"><h2 id="hist-h">What's been added</h2><span class="small" id="hist-sub"></span></div>
       <div id="history"></div>
@@ -1109,12 +1119,47 @@ const copyRow = (label, val) => val ? `<dt>${label}</dt><dd>${esc(val)}</dd><dd 
 
 /* ---------- history ---------- */
 function labelOf(e) {
-  if (e.kind === 'out') return `Out of ${potName(e.pot)}`;
+  if (e.kind === 'out') return HMRC_POTS.includes(e.pot) ? `Paid to HMRC: ${potName(e.pot)}${e.period ? `, ${forOf(e)}` : ''}` : `Out of ${potName(e.pot)}`;
   if (e.kind === 'start') return e.title || 'Brought forward';
   return e.type === 'cis' ? 'CIS job' : e.type === 'other' ? 'Other income' : 'Customer job';
 }
+/* What an HMRC payment was for, from its period. */
+const HMRC_POTS = ['vat', 'ct', 'paye'];
+function forOf(e) {
+  if (!e.period) return '';
+  if (e.pot === 'vat') { const st = addDays(addMonths(e.period, -3), 1); return `${MONTHS[parse(st).getMonth()].slice(0, 3)} to ${MONTHS[parse(e.period).getMonth()].slice(0, 3)} ${e.period.slice(0, 4)}`; }
+  if (e.pot === 'ct') return `year to ${fd(e.period, {wd:false, year:true})}`;
+  if (e.pot === 'paye') { const due = parse(e.period); const to = new Date(due.getFullYear(), due.getMonth(), 5); const from = new Date(due.getFullYear(), due.getMonth() - 1, 6); return `${from.getDate()} ${MONTHS[from.getMonth()].slice(0, 3)} to ${to.getDate()} ${MONTHS[to.getMonth()].slice(0, 3)}`; }
+  return '';
+}
+function refOf(e) {
+  if (e.ref) return e.ref;
+  if (e.pot === 'vat') return S.vrn || '';
+  if (e.pot === 'paye' && e.bill === 'paye') return S.payeRef || '';
+  return '';
+}
+function renderHmrc() {
+  const list = entries.filter(e => e.kind === 'out' && HMRC_POTS.includes(e.pot)).sort((a, b) => (b.date || '').localeCompare(a.date || '') || String(b.at || '').localeCompare(String(a.at || '')));
+  $('hmrc-card').hidden = !list.length;
+  if (!list.length) return;
+  const total = r2(list.reduce((a, e) => a + (e.amount || 0), 0));
+  const first = list[list.length - 1].date;
+  $('hmrc-sub').textContent = `${fm(total)} since ${fd(first, {wd:false, year:true})}`;
+  setHTML($('hmrc-tot'), HMRC_POTS.map(k => { const ps = list.filter(e => e.pot === k); const sum = r2(ps.reduce((a, e) => a + (e.amount || 0), 0)); return `<div><span><i class="dot" style="--c:${col(k)}"></i>${potName(k)}</span><b>${fm(sum)}</b></div>`; }).join(''));
+  let html = '', month = '';
+  for (const e of list) {
+    const m = (e.date || '').slice(0, 7);
+    if (m !== month) { if (month) html += `</div>`; month = m; html += `<div class="hist-month"><div class="hm-head"><span>${MONTHS[Number(m.slice(5)) - 1]} ${m.slice(0, 4)}</span></div>`; }
+    const d = parse(e.date); const ds = `${d.toLocaleDateString('en-GB', {weekday:'short'})} ${d.getDate()}`;
+    const what = forOf(e); const ref = refOf(e);
+    html += `<div class="he"><span class="d">${ds}</span><span class="t">${esc(potName(e.pot))}${what ? `, ${esc(what)}` : ''}</span><span class="a">${fm(e.amount)}</span>${ref ? `<p class="ref">Ref ${esc(ref)}</p>` : ''}${e.note ? `<p class="note">${esc(e.note)}</p>` : ''}</div>`;
+  }
+  if (month) html += `</div>`;
+  setHTML($('hmrc'), html);
+}
 let armed = null, armTimer = 0;
 function renderHistory() {
+  renderHmrc();
   const list = entries.slice().sort((a, b) => (b.date || '').localeCompare(a.date || '') || String(b.at || '').localeCompare(String(a.at || '')));
   $('hist-sub').textContent = list.length ? `${list.length} ${list.length === 1 ? 'entry' : 'entries'}` : '';
   if (!list.length) { setHTML($('history'), `<p class="empty">${loaded ? 'Nothing yet. Add the next payment that lands in Starling, above.' : 'Loading…'}</p>`); return; }
