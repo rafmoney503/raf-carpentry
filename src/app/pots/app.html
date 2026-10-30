@@ -6,8 +6,8 @@
 <title>Money pots</title>
 <meta name="description" content="Rafal Solutions Ltd: what to put aside, what you can spend, and every deadline.">
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#eef0ec" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0e1114" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f1f2ef">
+<meta name="color-scheme" content="light">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Money pots">
@@ -40,43 +40,156 @@
 </head>
 <body>
 <style>
+/* Money calendar (30 Oct 2026, Raf picked B2 "Paper" of the mockups): the company's money as a calendar.
+   A header with text size and a The company / You switch; "Safe to spend" counting every Starling Space;
+   the Spaces in a row; then everything dated in one list: Late, Today, This week, then month by month.
+   Your own Self Assessment has its own view (#you). Paper, ink and blue like rafcarpentry.com, rounded. */
 html{--fz:1}
 body{margin:0}
-.hero-id{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}
-.fz{display:flex;gap:6px;flex:none}
-.fzb{min-width:50px;height:46px;padding:0 8px;border:1px solid var(--bp-line);background:rgba(255,255,255,.07);color:var(--bp-ink);border-radius:2px;font:700 19px/1 var(--font-display);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
-.fzb span{font-size:.85em;margin-left:1px}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* header */
+.top{display:flex;flex-direction:column;gap:12px;padding:4px 0 2px}
+.top-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.top-id{display:flex;flex-direction:column;gap:2px;min-width:0}
+.brand{font:700 calc(12px * min(var(--fz), 1.15))/1.3 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.top-name{font:800 calc(24px * var(--fz))/1.15 var(--font-display);letter-spacing:-.015em;margin:0}
+.sync{font:500 calc(12px * min(var(--fz), 1.15))/1.3 var(--font-body);color:var(--faint);display:flex;align-items:center;gap:7px}
+.sync::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--line-strong);flex:none}
+.sync[data-s="ok"]::before{background:var(--ok)}
+.sync[data-s="busy"]::before{background:var(--accent)}
+.sync[data-s="warn"]::before{background:var(--late)}
+.fz{display:flex;gap:8px;flex:none}
+.fzb{width:46px;height:46px;padding:0;border:1px solid var(--line);background:var(--mount);color:var(--ink);border-radius:12px;font:800 20px/1 var(--font-body);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 #fz-down{font-size:15px}
-.fzb:hover{border-color:var(--bp-ink);background:rgba(255,255,255,.14)}
+.fzb span{font-size:.85em;margin-left:1px}
+.fzb:hover{border-color:var(--ink)}
 .fzb:disabled{opacity:.35;cursor:default}
-@media (max-width:559px){ html[data-fz="150"] .jars{grid-template-columns:minmax(0,1fr)} }
-.board2.empty{height:auto;min-height:26px;padding:4px 10px;line-height:1.3}
-.hbtn{line-height:1.15;padding-block:6px}
-.brand{font-size:calc(11px * min(var(--fz), 1.15))!important}
-.hero-id .sync{white-space:normal}
-.hero-actions{grid-template-columns:repeat(2, minmax(0,1fr))}
-@media (max-width:440px){ html[data-fz="130"] .hero-actions, html[data-fz="150"] .hero-actions{grid-template-columns:minmax(0,1fr)} }
-.lock{position:fixed;inset:0;z-index:100;display:grid;place-items:center;overflow-y:auto;
-  padding:max(24px, env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));
-  color:var(--bp-ink);
-  background:
-    linear-gradient(var(--bp-grid) 1px, transparent 1px) 0 0 / 48px 48px,
-    linear-gradient(90deg, var(--bp-grid) 1px, transparent 1px) 0 0 / 48px 48px,
-    linear-gradient(var(--bp-grid2) 1px, transparent 1px) 0 0 / 12px 12px,
-    linear-gradient(90deg, var(--bp-grid2) 1px, transparent 1px) 0 0 / 12px 12px,
-    radial-gradient(120% 90% at 15% 0%, #1d3590 0%, transparent 60%),
-    linear-gradient(165deg, var(--bp) 0%, var(--bp-deep) 100%)}
+.whose{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;background:var(--raised);border-radius:14px;padding:4px}
+.whose a{min-height:46px;display:flex;align-items:center;justify-content:center;border-radius:10px;font:800 calc(15px * var(--fz))/1.2 var(--font-body);color:var(--ink);text-decoration:none;text-align:center;padding:4px 8px}
+.whose a[aria-current="page"]{background:var(--ink);color:var(--paper)}
+
+/* safe to spend */
+.gap{background:var(--mount);border:1px solid var(--line);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow)}
+.gap-label{font:700 calc(14px * var(--fz))/1.3 var(--font-body);color:var(--muted);letter-spacing:0}
+#gap-body{display:flex;flex-direction:column;gap:10px}
+.gap-num{font:800 calc(52px * min(var(--fz), 1.15))/1 var(--font-display);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.gap-num.none{font-size:calc(32px * var(--fz));color:var(--faint)}
+.gap-line{font-size:calc(17px * var(--fz));font-weight:700;line-height:1.35}
+.gap-line.bad{color:var(--late)}
+.gap-line.good{color:var(--ok)}
+.gap-bar{height:14px;border-radius:7px;background:var(--late-track);overflow:hidden;margin-top:2px}
+.gap-bar i{display:block;height:100%;background:var(--ok);border-radius:7px}
+.gap-legend{display:flex;justify-content:space-between;gap:12px;font-size:calc(14px * var(--fz));line-height:1.35}
+.gap-legend span{display:flex;flex-direction:column}
+.gap-legend .r{text-align:right}
+.gap-legend small{font-size:inherit;color:var(--muted)}
+.gap-legend b{font-variant-numeric:tabular-nums;color:var(--ok)}
+.gap-legend b.bad{color:var(--late)}
+.gap-when{font-size:calc(13px * var(--fz));color:var(--faint)}
+.gap-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:4px}
+.gap-actions .primary{grid-column:1 / -1}
+.gap-actions .btn{min-height:48px;white-space:normal;line-height:1.15;padding-block:6px}
+@media (max-width:440px){ html[data-fz="130"] .gap-actions, html[data-fz="150"] .gap-actions{grid-template-columns:minmax(0,1fr)} }
+.bankform{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;border-top:1px solid var(--line);padding-top:14px;margin:0}
+.bankform .actions{grid-column:1 / -1}
+
+/* spaces */
+.spc-sec{display:flex;flex-direction:column;gap:10px;min-width:0}
+.spc-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.spc-head h2{font-size:calc(19px * var(--fz))}
+.spc-head .small{display:flex;align-items:center;gap:8px}
+.spc-row{display:flex;gap:10px;overflow-x:auto;scroll-padding-inline:max(14px, env(safe-area-inset-left, 0px));margin:0 calc(-1 * max(14px, env(safe-area-inset-left, 0px)));padding:2px max(14px, env(safe-area-inset-left, 0px)) 6px;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.spc-row::-webkit-scrollbar{display:none}
+@media (min-width:700px){ .spc-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(calc(128px * var(--fz)),1fr));overflow:visible;margin:0;padding:0} }
+.spc{flex:0 0 calc(158px * min(var(--fz), 1.3));scroll-snap-align:start;text-align:left;background:var(--mount);border:2px solid var(--line);border-radius:16px;padding:14px;color:var(--ink);display:flex;flex-direction:column;gap:6px;cursor:pointer;font:inherit;min-width:0}
+.spc:hover{border-color:var(--line-strong)}
+.spc[aria-pressed="true"]{border-color:var(--accent)}
+.spc-name{font-size:calc(14px * var(--fz));font-weight:700;color:var(--muted);line-height:1.25}
+.spc-have{font:800 calc(22px * var(--fz))/1.1 var(--font-body);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.spc-bar{display:block;height:8px;border-radius:4px;background:var(--track);overflow:hidden}
+.spc-bar i{display:block;height:100%;background:var(--c)}
+.spc-st{font-size:calc(13px * var(--fz));font-weight:800;color:var(--c);line-height:1.25}
+.spc-detail{font-size:calc(15px * var(--fz));color:var(--soft);background:var(--raised);border-radius:14px;padding:12px 14px;line-height:1.45}
+.spc-empty{border:1px dashed var(--line-strong);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+
+/* the calendar */
+.cal{display:flex;flex-direction:column;gap:18px}
+.cgroup{display:flex;flex-direction:column;gap:10px}
+.glabel{font:800 calc(13px * var(--fz))/1.3 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--gc, var(--muted));margin:4px 0 0}
+.crow{display:grid;grid-template-columns:calc(58px * min(var(--fz), 1.15)) minmax(0,1fr);gap:12px;align-items:start}
+.cdate{background:var(--mount);border:1px solid var(--line);border-radius:12px;padding:6px 0;text-align:center;display:flex;flex-direction:column;line-height:1.15}
+.cdate small{font:800 calc(11px * min(var(--fz), 1.15)) var(--font-body);letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+.cdate b{font:800 calc(22px * min(var(--fz), 1.15))/1.15 var(--font-body);font-variant-numeric:tabular-nums}
+.cdate span{font:700 calc(12px * min(var(--fz), 1.15)) var(--font-body);opacity:.85}
+.cdate.today{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.cdate.late{background:var(--late-bg);border-color:var(--late-line);color:var(--late)}
+.cdate.done{background:var(--ok-bg);border-color:var(--ok-line);color:var(--ok)}
+.cdate.maybe{color:var(--faint);border-style:dashed}
+.ci{background:var(--mount);border:1px solid var(--line);border-radius:16px;min-width:0;display:block;color:var(--ink);text-decoration:none}
+.ci[open]{border-color:var(--accent)}
+.ci.dashed{border:2px dashed var(--line-strong)}
+.ci > summary,.ci.go{list-style:none;cursor:pointer}
+.ci > summary::-webkit-details-marker{display:none}
+.ci-s{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;min-height:58px}
+.ci-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.ci-t b{font-size:calc(17px * var(--fz));font-weight:800;line-height:1.25}
+.ci-t small{font-size:calc(14px * var(--fz));color:var(--muted);line-height:1.35}
+.ci-a{font:800 calc(17px * var(--fz))/1.25 var(--font-body);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.ci-a.late{color:var(--late)} .ci-a.ok{color:var(--ok)} .ci-a.expect{color:var(--expect)} .ci-a.you{color:var(--you)}
+.ci .chev{flex:none;margin-top:6px}
+.ci[open] .chev{transform:rotate(225deg) translate(-3px,-3px)}
+.ci.go .chev{transform:rotate(-45deg) translate(-2px,-2px)}
+.ci-body{border-top:1px solid var(--line2);padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px}
+html[data-fz="130"] .ci-s, html[data-fz="150"] .ci-s{flex-wrap:wrap}
+html[data-fz="130"] .ci-t, html[data-fz="150"] .ci-t{flex:1 1 70%}
+.cstep{background:var(--mount);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:10px;min-height:58px}
+.cstep.done{border-color:var(--ok-line)}
+.cstep.maybe{border-style:dashed;border-color:var(--line-strong)}
+.cstep.late{border-color:var(--late-line)}
+.allclear{display:flex;flex-direction:column;gap:4px;padding:14px;border:1px dashed var(--line-strong);border-radius:16px;color:var(--muted)}
+.allclear b{color:var(--ok);font:800 calc(18px * var(--fz)) var(--font-display)}
+.rows{display:flex;flex-direction:column}
+.rows div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line2);font-size:calc(15px * var(--fz))}
+.rows div:last-child{border-bottom:0}
+.rows span{display:flex;align-items:center;gap:8px;min-width:0}
+.rows b{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* the payment plan for a late bill */
+.plan{display:flex;flex-direction:column;gap:10px;background:var(--raised);border-radius:14px;padding:14px}
+.plan-l{font-size:calc(14px * var(--fz));font-weight:700;color:var(--muted)}
+.plan-top{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.plan-num{font:800 calc(32px * min(var(--fz), 1.15))/1.1 var(--font-display);font-variant-numeric:tabular-nums}
+.plan input[type="range"]{width:100%;height:44px;min-height:44px;padding:0;margin:0;border:0;background:none;box-shadow:none;accent-color:var(--accent)}
+.plan-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.plan-stats div{background:var(--mount);border-radius:12px;padding:10px 12px;min-width:0}
+.plan-stats small{display:block;font-size:calc(12px * var(--fz));font-weight:700;color:var(--muted)}
+.plan-stats b{font:800 calc(17px * var(--fz))/1.25 var(--font-body);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+html[data-fz="130"] .plan-stats, html[data-fz="150"] .plan-stats{grid-template-columns:minmax(0,1fr)}
+.plan-saved{background:var(--ok-bg);color:var(--ok);border-radius:12px;padding:10px 12px;font-size:calc(14px * var(--fz));font-weight:600}
+
+/* you */
+.you-card{background:var(--you-bg);border:1px solid var(--you-line);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:8px}
+.pill{align-self:flex-start;font:800 calc(13px * var(--fz))/1.2 var(--font-body);padding:5px 10px;border-radius:999px;background:var(--you);color:#fff}
+.you-label{font-size:calc(15px * var(--fz));font-weight:700;color:var(--you-ink)}
+.you-num{font:800 calc(52px * min(var(--fz), 1.15))/1 var(--font-display);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.you-num.late{color:var(--late)} .you-num.done{color:var(--ok)}
+.you-when{font-size:calc(16px * var(--fz))}
+.you-sub{font-size:calc(15px * var(--fz));font-weight:700;color:var(--you-ink)}
+.glabel.you{--gc:var(--you)}
+
+/* PIN screen */
+.lock{position:fixed;inset:0;z-index:100;display:grid;place-items:center;overflow-y:auto;background:var(--paper);color:var(--ink);
+  padding:max(24px, env(safe-area-inset-top, 0px)) max(20px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px))}
 .lock-card{width:min(340px, 100%);display:flex;flex-direction:column;align-items:stretch;gap:14px;text-align:center}
-.lock-card img{width:84px;height:84px;border-radius:19px;margin:0 auto 4px;box-shadow:0 14px 40px rgba(34,200,140,.35)}
-.lock-card h1{font-size:calc(34px * var(--fz));color:var(--bp-ink)}
-.lock-sub{font:500 calc(12px * var(--fz)) var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--bp-dim);margin-top:-8px}
+.lock-card img{width:84px;height:84px;border-radius:19px;margin:0 auto 4px;box-shadow:var(--shadow)}
+.lock-card h1{font-size:calc(34px * var(--fz))}
+.lock-sub{font:700 calc(12px * var(--fz)) var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:-8px}
 .lock-card .fld{text-align:left;margin-top:8px}
-.lock-card .fld > span{color:var(--bp-dim)}
-.lock-card input{background:rgba(255,255,255,.08);border-color:var(--bp-line);color:var(--bp-ink);font:500 calc(22px * var(--fz)) var(--font-mono);letter-spacing:.3em;text-align:center;min-height:54px}
-.lock-card input:focus{border-color:var(--mint);box-shadow:0 0 0 3px rgba(95,227,161,.25)}
-.lock-card .btn.primary{background:var(--mint);border-color:var(--mint);color:var(--bp-deep);min-height:50px;font-size:calc(16px * var(--fz))}
-.lock-msg{min-height:20px;font-size:calc(14px * var(--fz));color:var(--coral)}
-.lock-note{font-size:calc(12.5px * var(--fz));color:var(--bp-faint)}
+.lock-card input{font:500 calc(22px * var(--fz)) var(--font-mono);letter-spacing:.3em;text-align:center;min-height:54px}
+.lock-card .btn.primary{min-height:52px;font-size:calc(16px * var(--fz))}
+.lock-msg{min-height:20px;font-size:calc(14px * var(--fz));color:var(--late)}
+.lock-note{font-size:calc(13px * var(--fz));color:var(--faint)}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -88,40 +201,19 @@ body{margin:0}
    On a computer the to-do list and the jars sit side by side. Brand: rafcarpentry.com's
    paper, ink and blueprint blue, square 2px corners, Bricolage / Geist / Geist Mono. */
 :root{
-  --paper:#eef0ec; --mount:#fbfbf9; --raised:#e3e5df; --ink:#14171a; --muted:#4c5258; --faint:#62686e;
-  --line:#d9dbd5; --line-strong:#b7bab3; --accent:#2547d0; --accent-hover:#1b38ad; --on-accent:#ffffff;
-  --bp:#12246a; --bp-deep:#0a1641; --bp-grid:rgba(170,192,255,.10); --bp-grid2:rgba(170,192,255,.045);
-  --bp-ink:#eef2ff; --bp-dim:rgba(226,232,255,.72); --bp-faint:rgba(226,232,255,.5); --bp-line:rgba(226,232,255,.32);
-  --mint:#5fe3a1; --coral:#ff8a78;
-  --p-vat:#2547d0; --p-ct:#6a45b8; --p-paye:#9a4a2f; --p-garages:#a35a00; --p-materials:#587a14; --p-dividends:#17736e; --p-rest:#6a7076; --p-sa:#3b5a80;
+  --paper:#f1f2ef; --mount:#fbfbf9; --raised:#e6e7e2; --ink:#16191c; --muted:#4f555b; --faint:#5e646a; --soft:#2e3338;
+  --line:#d3d5cf; --line2:#dcded8; --line-strong:#b9bcb5; --track:#e0e2dc; --accent:#2547d0; --accent-hover:#1b38ad; --on-accent:#ffffff;
+  --p-vat:#2547d0; --p-ct:#6a45b8; --p-paye:#9a4a2f; --p-garages:#8a5a2b; --p-materials:#587a14; --p-dividends:#17736e; --p-rest:#6a7076; --p-sa:#3b5a80;
   --on-pot:#ffffff;
-  --late:#b3261e; --late-bg:#fbe9e7; --ok:#1d7a3a; --ok-bg:#e5f1e7; --note-bg:#fdf3e1; --note-ink:#6b4500;
+  --late:#b42318; --late-bg:#fbe9e7; --late-track:#f3d6d1; --late-line:#e3ada4; --ok:#17663a; --ok-bg:#ddefe3; --ok-line:#7db894;
+  --note-bg:#fdf3e1; --note-ink:#6b4500; --expect:#8a5300;
+  --you:#3b5a80; --you-bg:#e3eaf3; --you-line:#a9bcd3; --you-ink:#2f4a6b;
+  --r:12px;
   --shadow:0 1px 0 rgba(20,23,26,.04), 0 8px 24px rgba(20,23,26,.06);
   --font-display:"Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   --font-body:"Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono:"Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --paper:#0e1114; --mount:#161a1e; --raised:#1f2429; --ink:#e8e9e5; --muted:#a9afb5; --faint:#8d949b;
-    --line:#262b31; --line-strong:#39404a; --accent:#7f98ff; --accent-hover:#a3b4ff; --on-accent:#0c1022;
-    --bp:#0f1f57; --bp-deep:#070f2e;
-    --p-vat:#7f98ff; --p-ct:#ae90f3; --p-paye:#e2906f; --p-garages:#e3a44c; --p-materials:#a6cb62; --p-dividends:#4fc4ba; --p-rest:#8d949b; --p-sa:#8fb0d8;
-    --on-pot:#0c1022;
-    --late:#ff8f85; --late-bg:#3a1d1b; --ok:#72d28c; --ok-bg:#16301f; --note-bg:#30260f; --note-ink:#f0c879;
-    --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.35);
-    color-scheme:dark;
-  }
-}
-:root[data-theme="dark"]{
-  --paper:#0e1114; --mount:#161a1e; --raised:#1f2429; --ink:#e8e9e5; --muted:#a9afb5; --faint:#8d949b;
-  --line:#262b31; --line-strong:#39404a; --accent:#7f98ff; --accent-hover:#a3b4ff; --on-accent:#0c1022;
-  --bp:#0f1f57; --bp-deep:#070f2e;
-  --p-vat:#7f98ff; --p-ct:#ae90f3; --p-paye:#e2906f; --p-garages:#e3a44c; --p-materials:#a6cb62; --p-dividends:#4fc4ba; --p-rest:#8d949b; --p-sa:#8fb0d8;
-  --on-pot:#0c1022;
-  --late:#ff8f85; --late-bg:#3a1d1b; --ok:#72d28c; --ok-bg:#16301f; --note-bg:#30260f; --note-ink:#f0c879;
-  --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.35);
-  color-scheme:dark;
+  color-scheme:light;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -134,93 +226,25 @@ a{color:var(--accent)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .small{font-size:calc(13px * var(--fz));color:var(--muted)}
 .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
-.shell{max-width:1180px;margin:0 auto;padding-left:max(14px, env(safe-area-inset-left, 0px));padding-right:max(14px, env(safe-area-inset-right, 0px));padding-block:14px 120px}
+.shell{max-width:760px;margin:0 auto;padding-left:max(14px, env(safe-area-inset-left, 0px));padding-right:max(14px, env(safe-area-inset-right, 0px));padding-block:14px 120px}
 .view{display:flex;flex-direction:column;gap:16px}
 
-/* ---------- hero: the drawing ---------- */
-.hero{position:relative;overflow:hidden;color:var(--bp-ink);border-radius:2px;padding:18px 18px 16px;
-  background:
-    linear-gradient(var(--bp-grid) 1px, transparent 1px) 0 0 / 48px 48px,
-    linear-gradient(90deg, var(--bp-grid) 1px, transparent 1px) 0 0 / 48px 48px,
-    linear-gradient(var(--bp-grid2) 1px, transparent 1px) 0 0 / 12px 12px,
-    linear-gradient(90deg, var(--bp-grid2) 1px, transparent 1px) 0 0 / 12px 12px,
-    radial-gradient(120% 90% at 15% 0%, #1d3590 0%, transparent 60%),
-    linear-gradient(165deg, var(--bp) 0%, var(--bp-deep) 100%);
-  box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px}
-@media (min-width:700px){ .hero{padding:26px 28px 22px} }
-.hero::after{content:"";position:absolute;inset:8px;border:1px solid var(--bp-line);pointer-events:none;opacity:.5}
-.hero-top{display:flex;justify-content:space-between;align-items:center;gap:10px;position:relative;z-index:1}
-.brand{font-family:var(--font-mono);font-size:calc(11px * var(--fz));letter-spacing:.12em;text-transform:uppercase;color:var(--bp-dim)}
-.sync{font-family:var(--font-mono);font-size:calc(11px * var(--fz));color:var(--bp-faint);display:flex;align-items:center;gap:7px;white-space:nowrap}
-.sync::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--bp-faint)}
-.sync[data-s="ok"]::before{background:var(--mint);box-shadow:0 0 8px var(--mint)}
-.sync[data-s="busy"]::before{background:#9fb4ff}
-.sync[data-s="warn"]::before{background:var(--coral)}
-#hero-body{position:relative;z-index:1;display:flex;flex-direction:column;gap:6px}
-.hero-label{font-family:var(--font-mono);font-size:calc(12px * var(--fz));letter-spacing:.1em;text-transform:uppercase;color:var(--bp-dim)}
-.hero-num{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-weight:500;font-size:clamp(52px,15vw,96px);line-height:.95;letter-spacing:-.045em;color:var(--bp-ink)}
-.hero-num.pos{color:var(--mint);text-shadow:0 0 34px rgba(95,227,161,.35)}
-.hero-num.neg{color:var(--coral);text-shadow:0 0 34px rgba(255,138,120,.35)}
-.hero-num.none{color:var(--bp-faint)}
-.hero-sub{font-size:calc(14px * var(--fz));color:var(--bp-dim);max-width:56ch}
-.hero-sub.bad{color:var(--coral);font-weight:600}
-.board-wrap{display:flex;flex-direction:column;gap:6px;margin-top:10px}
-.dimline{position:relative;height:18px;display:flex;align-items:center;justify-content:center;min-width:120px;max-width:100%}
-.dimline::before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px solid var(--bp-line)}
-.dimline::after{content:"";position:absolute;inset:3px 0;border-left:1px solid var(--bp-ink);border-right:1px solid var(--bp-ink);opacity:.7}
-.dimline span{position:relative;background:var(--bp);padding:0 8px;font:500 calc(11.5px * var(--fz)) var(--font-mono);color:var(--bp-ink);white-space:nowrap;font-variant-numeric:tabular-nums}
-.board2{display:flex;height:26px;border:1px solid var(--bp-ink);background:rgba(255,255,255,.03);overflow:hidden}
-.board2 .seg{height:100%;min-width:3px;border-right:1px solid var(--bp-deep);transform-origin:left;animation:grow .9s cubic-bezier(.2,.8,.2,1) both}
-.board2 .seg:last-child{border-right:0}
-.seg.owed{background:repeating-linear-gradient(135deg, var(--coral) 0 2px, transparent 2px 7px)}
-.seg.cush{background:repeating-linear-gradient(45deg, rgba(226,232,255,.55) 0 2px, transparent 2px 7px)}
-.seg.yours{background:var(--mint)}
-.seg.gap{background:transparent;border:1px dashed var(--coral)}
-.board2.empty{border-style:dashed;border-color:var(--bp-line);align-items:center;justify-content:center;font:500 calc(11.5px * var(--fz)) var(--font-mono);color:var(--bp-faint);padding:0 10px;text-align:center}
-.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font:500 calc(12px * var(--fz)) var(--font-mono);color:var(--bp-dim);font-variant-numeric:tabular-nums}
-.legend span{display:inline-flex;align-items:center;gap:6px}
-.legend i{width:10px;height:10px;display:inline-block;border:1px solid var(--bp-ink)}
-.legend i.owed{background:repeating-linear-gradient(135deg, var(--coral) 0 2px, transparent 2px 5px)}
-.legend i.cush{background:repeating-linear-gradient(45deg, rgba(226,232,255,.6) 0 2px, transparent 2px 5px)}
-.legend i.yours{background:var(--mint)}
-.hero-status{display:flex;align-items:center;gap:8px;font-size:calc(14px * var(--fz));font-weight:600;color:var(--bp-ink);margin-top:4px}
-.hero-status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--mint);flex:none}
-.hero-status.bad::before{background:var(--coral);box-shadow:0 0 0 4px rgba(255,138,120,.18);animation:pulse 1.8s ease-in-out infinite}
-.hero-actions{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
-@media (min-width:560px){ .hero-actions{display:flex;flex-wrap:wrap} }
-.hbtn{font:600 calc(14.5px * var(--fz))/1 var(--font-body);border-radius:2px;min-height:46px;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;border:1px solid var(--bp-line);background:rgba(255,255,255,.05);color:var(--bp-ink)}
-.hbtn:hover{background:rgba(255,255,255,.12);border-color:var(--bp-ink)}
-.hbtn.primary{background:var(--bp-ink);color:var(--bp-deep);border-color:var(--bp-ink);grid-column:1 / -1}
-.hbtn.primary:hover{background:#fff}
-.hbtn svg{width:18px;height:18px}
-.bankform{position:relative;z-index:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;border-top:1px solid var(--bp-line);padding-top:14px;margin:0}
-.bankform .fld > span{color:var(--bp-dim)}
-.bankform input{background:rgba(255,255,255,.07);border-color:var(--bp-line);color:var(--bp-ink)}
-.bankform .pound i{color:var(--bp-faint)}
-.bankform .actions{grid-column:1 / -1}
-.bankform .small{color:var(--bp-dim)}
-.bankform .btn.primary{background:var(--bp-ink);border-color:var(--bp-ink);color:var(--bp-deep)}
-
-@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(255,138,120,.18)}50%{box-shadow:0 0 0 7px rgba(255,138,120,.05)}}
 @keyframes rise{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
-@media (prefers-reduced-motion: reduce){ .board2 .seg,.hero-status.bad::before,.jar::before,.sheet,.toast{animation:none!important;transition:none!important} }
+@media (prefers-reduced-motion: reduce){ .ti,.sheet,.toast{animation:none!important;transition:none!important} }
 
-.banner{background:var(--note-bg);color:var(--note-ink);border-radius:2px;padding:10px 12px;font-size:calc(14px * var(--fz))}
+.banner{background:var(--note-bg);color:var(--note-ink);border-radius:var(--r);padding:10px 12px;font-size:calc(14px * var(--fz))}
 
 /* ---------- today layout ---------- */
-.today-grid{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
-@media (min-width:980px){ .today-grid{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)} }
-.col{display:flex;flex-direction:column;gap:16px;min-width:0}
-.card{background:var(--mount);border:1px solid var(--line);border-radius:2px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0;box-shadow:var(--shadow)}
+.card{background:var(--mount);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0;box-shadow:var(--shadow)}
 @media (min-width:600px){ .card{padding:20px} }
 .card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.count{font:600 calc(12px * var(--fz)) var(--font-mono);border-radius:2px;padding:4px 8px;background:var(--raised);color:var(--muted)}
+.count{font:600 calc(12px * var(--fz)) var(--font-mono);border-radius:var(--r);padding:4px 8px;background:var(--raised);color:var(--muted)}
 .count.bad{background:var(--late);color:var(--mount)}
 
 /* ---------- do this now ---------- */
 .todo{display:flex;flex-direction:column;gap:8px}
-.ti{border:1px solid var(--line);border-left:4px solid var(--lc, var(--accent));border-radius:2px;background:var(--mount);animation:rise .35s ease both}
+.ti{border:1px solid var(--line);border-radius:14px;background:var(--mount);animation:rise .35s ease both}
+.ti[open]{border-color:var(--accent)}
 .ti.late{--lc:var(--late)} .ti.move{--lc:var(--ok)} .ti.soon{--lc:var(--accent)}
 .ti > summary{list-style:none;display:grid;grid-template-columns:minmax(0,1fr) auto 14px;align-items:center;gap:10px;padding:12px 12px 12px 14px;cursor:pointer;min-height:62px}
 .ti > summary::-webkit-details-marker{display:none}
@@ -233,20 +257,20 @@ a{color:var(--accent)}
 .chev{width:14px;height:14px;border-right:2px solid var(--faint);border-bottom:2px solid var(--faint);transform:rotate(45deg) translate(-3px,-3px);transition:transform .2s}
 .ti[open] .chev{transform:rotate(225deg) translate(-3px,-3px)}
 .ti-body{padding:0 14px 14px;display:flex;flex-direction:column;gap:10px;border-top:1px dashed var(--line);padding-top:12px}
-.alldone{display:flex;align-items:center;gap:12px;padding:14px;border:1px dashed var(--line-strong);border-radius:2px;color:var(--muted)}
+.alldone{display:flex;align-items:center;gap:12px;padding:14px;border:1px dashed var(--line-strong);border-radius:var(--r);color:var(--muted)}
 .alldone b{color:var(--ok);font-family:var(--font-display);font-size:calc(18px * var(--fz))}
 
 /* pay box */
 .paybox{display:flex;flex-direction:column;gap:10px}
-dl.bank{margin:0;display:grid;grid-template-columns:auto 1fr auto;border:1px solid var(--line);border-radius:2px;background:var(--paper)}
+dl.bank{margin:0;display:grid;grid-template-columns:auto 1fr auto;border:1px solid var(--line);border-radius:var(--r);background:var(--paper)}
 dl.bank dt,dl.bank dd{margin:0;padding:8px 10px;border-top:1px solid var(--line);font-size:calc(13.5px * var(--fz));display:flex;align-items:center}
 dl.bank dt{color:var(--faint);white-space:nowrap}
-dl.bank dd{font-family:var(--font-mono);font-variant-numeric:tabular-nums;word-break:break-all;min-width:0}
+dl.bank dd{font-family:var(--font-mono);font-variant-numeric:tabular-nums;overflow-wrap:anywhere;min-width:0}
 dl.bank dd.c{padding:4px 6px;justify-content:flex-end}
 dl.bank > :nth-child(-n+3){border-top:0}
-.copy{font:500 calc(12px * var(--fz)) var(--font-body);border:1px solid var(--line-strong);background:var(--mount);color:var(--ink);border-radius:2px;padding:5px 9px;cursor:pointer;min-height:32px}
+.copy{font:500 calc(12px * var(--fz)) var(--font-body);border:1px solid var(--line-strong);background:var(--mount);color:var(--ink);border-radius:var(--r);padding:5px 9px;cursor:pointer;min-height:32px}
 .copy.done{border-color:var(--ok);color:var(--ok)}
-.check{font-size:calc(13px * var(--fz));padding:8px 10px;border-radius:2px;line-height:1.45}
+.check{font-size:calc(13px * var(--fz));padding:8px 10px;border-radius:var(--r);line-height:1.45}
 .check.bad{background:var(--late-bg);color:var(--late)}
 .check.good{background:var(--ok-bg);color:var(--ok)}
 .check.info{background:var(--raised);color:var(--ink)}
@@ -257,32 +281,6 @@ dl.bank > :nth-child(-n+3){border-top:0}
 .mv:first-child{border-top:0}
 .mv .v{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-weight:500}
 
-/* ---------- jars ---------- */
-.jars{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-@media (min-width:560px) and (max-width:979px){ .jars{grid-template-columns:repeat(3,minmax(0,1fr))} }
-.jar{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:2px;background:var(--paper);padding:12px 12px 12px;min-height:118px;display:flex;flex-direction:column;gap:3px;isolation:isolate}
-.jar::before{content:"";position:absolute;left:0;right:0;bottom:0;height:var(--lvl,0%);background:color-mix(in srgb, var(--c) 17%, transparent);border-top:2px solid color-mix(in srgb, var(--c) 75%, transparent);z-index:-1;transition:height 1s cubic-bezier(.2,.8,.2,1)}
-.jar::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c)}
-.jar-top{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:calc(13px * var(--fz));font-weight:600;color:var(--muted);padding-left:4px}
-.jar-pct{font:500 calc(11px * var(--fz)) var(--font-mono);color:var(--faint)}
-.jar-num{font:500 calc(19px * var(--fz)) var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em;padding-left:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.jar-sub{font-size:calc(11.5px * var(--fz));color:var(--faint);line-height:1.35;padding-left:4px;margin-top:auto}
-.jar-sub .short{color:var(--late);font-weight:600}
-.jar.free{background:var(--mount);border-style:dashed}
-
-/* ---------- coming up ---------- */
-.coming{display:flex;flex-direction:column}
-.cu{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
-.cu:first-child{border-top:0}
-.cu-date{display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid var(--line-strong);border-radius:2px;padding:4px 0;background:var(--paper)}
-.cu-date b{font:600 calc(18px * var(--fz))/1 var(--font-mono)}
-.cu-date span{font:500 calc(10px * var(--fz)) var(--font-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin-top:2px}
-.cu-t{display:flex;flex-direction:column;min-width:0}
-.cu-t b{font-weight:600;font-size:calc(14px * var(--fz))}
-.cu-t small{font-size:calc(12px * var(--fz));color:var(--faint)}
-.cu-a{font:500 calc(14px * var(--fz)) var(--font-mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
-.cu-a small{display:block;font:400 calc(11px * var(--fz)) var(--font-body);color:var(--faint)}
-
 /* ---------- forms (sheet, rules) ---------- */
 form{display:flex;flex-direction:column;gap:14px;margin:0}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -290,7 +288,7 @@ form{display:flex;flex-direction:column;gap:14px;margin:0}
 .fld{display:flex;flex-direction:column;gap:5px;min-width:0}
 .fld > span{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted)}
 .fld em{font-style:normal;color:var(--faint);font-weight:400}
-input,select{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line-strong);border-radius:2px;padding:9px 10px;min-height:44px;width:100%;min-width:0;font-size:calc(16px * var(--fz))}
+input,select{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r);padding:9px 10px;min-height:44px;width:100%;min-width:0;font-size:calc(16px * var(--fz))}
 input:focus,select:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent)}
 input[type="date"]{font-family:var(--font-mono);font-size:calc(15px * var(--fz))}
 .pound{position:relative}
@@ -303,14 +301,14 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chips label{position:relative;cursor:pointer}
 .chips input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer;min-height:0}
-.chips span{display:flex;flex-direction:column;gap:1px;border:1px solid var(--line-strong);border-radius:2px;padding:8px 12px;background:var(--paper);min-height:44px;justify-content:center}
+.chips span{display:flex;flex-direction:column;gap:1px;border:1px solid var(--line-strong);border-radius:var(--r);padding:8px 12px;background:var(--paper);min-height:44px;justify-content:center}
 .chips span b{font-weight:600;font-size:calc(14px * var(--fz))}
 .chips span small{font-size:calc(12px * var(--fz));color:var(--faint)}
 .chips input:checked + span{border-color:var(--accent);background:color-mix(in srgb, var(--accent) 9%, var(--mount));box-shadow:inset 0 0 0 1px var(--accent)}
 .chips input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
 .chips.potpick span{flex-direction:row;align-items:center;gap:7px;padding:7px 11px}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--c);flex:none;display:inline-block}
-.btn{font:600 calc(15px * var(--fz))/1 var(--font-body);border-radius:2px;border:1px solid var(--line-strong);background:var(--mount);color:var(--ink);padding:0 16px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn{font:600 calc(15px * var(--fz))/1 var(--font-body);border-radius:var(--r);border:1px solid var(--line-strong);background:var(--mount);color:var(--ink);padding:6px 16px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;text-decoration:none;white-space:normal;text-align:center;line-height:1.2;max-width:100%}
 .btn:hover{border-color:var(--ink);color:var(--ink)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .btn.primary:hover{background:var(--accent-hover);border-color:var(--accent-hover);color:var(--on-accent)}
@@ -323,7 +321,7 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
 .msg.bad{color:var(--late)}
 
 /* live split inside the sheet */
-.split{display:flex;flex-direction:column;gap:12px;padding:14px;border:1px dashed var(--line-strong);border-radius:2px;background-color:var(--paper);background-image:linear-gradient(color-mix(in srgb, var(--accent) 7%, transparent) 1px, transparent 1px),linear-gradient(90deg, color-mix(in srgb, var(--accent) 7%, transparent) 1px, transparent 1px);background-size:12px 12px}
+.split{display:flex;flex-direction:column;gap:12px;padding:14px;border:1px dashed var(--line-strong);border-radius:var(--r);background-color:var(--paper);background-image:linear-gradient(color-mix(in srgb, var(--accent) 7%, transparent) 1px, transparent 1px),linear-gradient(90deg, color-mix(in srgb, var(--accent) 7%, transparent) 1px, transparent 1px);background-size:12px 12px}
 .split .tag{font-family:var(--font-mono);font-size:calc(11px * var(--fz));letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
 .dim{position:relative;height:16px;display:flex;align-items:center;justify-content:center}
 .dim::before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px solid var(--ink)}
@@ -339,8 +337,8 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
 .cut .why{color:var(--faint);font-size:calc(12.5px * var(--fz));padding-right:10px;width:100%}
 .cut .v{text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
 .cut .zero td,.cut .zero .v{color:var(--faint)}
-.warnline{background:var(--late-bg);color:var(--late);padding:8px 10px;border-radius:2px;font-size:calc(13px * var(--fz))}
-.noteline{background:var(--note-bg);color:var(--note-ink);padding:8px 10px;border-radius:2px;font-size:calc(13px * var(--fz))}
+.warnline{background:var(--late-bg);color:var(--late);padding:8px 10px;border-radius:var(--r);font-size:calc(13px * var(--fz))}
+.noteline{background:var(--note-bg);color:var(--note-ink);padding:8px 10px;border-radius:var(--r);font-size:calc(13px * var(--fz))}
 .tabs{display:flex;border-bottom:1px solid var(--line-strong)}
 .tabs button{font:700 calc(16px * var(--fz))/1 var(--font-display);background:none;border:0;color:var(--faint);padding:4px 2px 12px;margin-right:22px;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
@@ -348,24 +346,24 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
 /* ---------- sheet ---------- */
 .scrim{position:fixed;inset:0;background:rgba(8,12,24,.45);z-index:45;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:46;max-height:calc(100dvh - 36px - env(safe-area-inset-top, 0px));overflow-y:auto;background:var(--mount);border-top:1px solid var(--line-strong);box-shadow:0 -12px 40px rgba(0,0,0,.2);padding:14px max(16px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));display:flex;flex-direction:column;gap:14px;animation:sheetup .28s cubic-bezier(.2,.8,.2,1) both;-webkit-overflow-scrolling:touch}
-@media (min-width:760px){ .sheet{left:50%;right:auto;bottom:auto;top:50%;width:min(620px, calc(100vw - 40px));max-height:calc(100dvh - 60px);transform:translate(-50%,-50%);border:1px solid var(--line-strong);border-radius:2px;animation:fadein .2s ease both;padding:20px 24px} }
+@media (min-width:760px){ .sheet{left:50%;right:auto;bottom:auto;top:50%;width:min(620px, calc(100vw - 40px));max-height:calc(100dvh - 60px);transform:translate(-50%,-50%);border:1px solid var(--line-strong);border-radius:var(--r);animation:fadein .2s ease both;padding:20px 24px} }
 @keyframes sheetup{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
 @keyframes fadein{from{opacity:0}to{opacity:1}}
 .sheet-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.grab{width:40px;height:4px;border-radius:2px;background:var(--line-strong);margin:0 auto 2px}
+.grab{width:40px;height:4px;border-radius:var(--r);background:var(--line-strong);margin:0 auto 2px}
 @media (min-width:760px){ .grab{display:none} }
 
 /* ---------- dock ---------- */
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid;grid-template-columns:repeat(5,1fr);align-items:end;background:color-mix(in srgb, var(--mount) 92%, transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px))}
-@media (min-width:760px){ .dock{left:50%;right:auto;width:480px;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom, 0px));border:1px solid var(--line-strong);border-radius:2px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:6px 8px} }
+@media (min-width:760px){ .dock{left:50%;right:auto;width:480px;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom, 0px));border:1px solid var(--line-strong);border-radius:var(--r);box-shadow:0 10px 30px rgba(0,0,0,.18);padding:6px 8px} }
 .dock a,.dock button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;color:var(--faint);text-decoration:none;font:600 calc(11px * var(--fz)) var(--font-body);background:none;border:0;cursor:pointer;min-height:48px;justify-content:center}
 .dock svg{width:22px;height:22px}
 .dock a[aria-current="page"],.dock button.on{color:var(--accent)}
-.dock .dock-add{align-self:center;justify-self:center;width:58px;height:50px;min-height:0;background:var(--accent);color:var(--on-accent);border-radius:2px;box-shadow:0 6px 18px color-mix(in srgb, var(--accent) 40%, transparent);margin-top:-14px}
+.dock .dock-add{align-self:center;justify-self:center;width:58px;height:50px;min-height:0;background:var(--accent);color:var(--on-accent);border-radius:var(--r);box-shadow:0 6px 18px color-mix(in srgb, var(--accent) 40%, transparent);margin-top:-14px}
 .dock .dock-add svg{width:26px;height:26px}
 .dock .dock-add:hover{background:var(--accent-hover)}
 
-.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--paper);padding:12px 16px;border-radius:2px;font-size:calc(14px * var(--fz));font-weight:500;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:min(92vw, 520px);animation:rise .25s ease both}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--paper);padding:12px 16px;border-radius:var(--r);font-size:calc(14px * var(--fz));font-weight:500;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:min(92vw, 520px);animation:rise .25s ease both}
 
 /* ---------- history ---------- */
 .hist-month{display:flex;flex-direction:column}
@@ -383,7 +381,7 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
 .he .tools{grid-column:2 / 4;display:flex;gap:8px;flex-wrap:wrap}
 .empty{color:var(--faint);font-size:calc(14px * var(--fz))}
 .hmrc-tot{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px;margin-bottom:12px}
-.hmrc-tot div{border:1px solid var(--line);border-radius:2px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.hmrc-tot div{border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
 .hmrc-tot span{font-size:calc(12px * var(--fz));color:var(--faint);display:flex;align-items:center;gap:6px}
 .hmrc-tot b{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-weight:600;font-size:calc(16px * var(--fz))}
 .sa-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
@@ -391,7 +389,7 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
 .sa-num.late{color:var(--late)}
 .sa-num.done{color:var(--ok)}
 .sa-when{font-size:calc(14px * var(--fz));color:var(--muted)}
-.sa-plan{font-size:calc(14px * var(--fz));margin:8px 0 0;padding:8px 10px;background:var(--raised);border-radius:2px}
+.sa-plan{font-size:calc(14px * var(--fz));margin:8px 0 0;padding:8px 10px;background:var(--raised);border-radius:var(--r)}
 .sa-plan b{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
 .sa-sub{font-size:calc(12.5px * var(--fz));color:var(--faint);margin-top:8px}
 .sa-box{display:flex;flex-direction:column;gap:10px;margin-top:12px}
@@ -404,7 +402,7 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
 .fixed{font-size:calc(14px * var(--fz));padding:9px 0}
 .foot{font-size:calc(13px * var(--fz));color:var(--faint);display:flex;flex-direction:column;gap:6px;max-width:75ch}
 .page-title{display:flex;flex-direction:column;gap:2px;padding:6px 2px 0}
-.page-title h1{font-size:calc(30px * var(--fz))}
+.page-title h2{font-size:calc(30px * var(--fz))}
 .page-title p{color:var(--muted);font-size:calc(14px * var(--fz))}
 /* Ask Claude */
 .cstat{display:flex;align-items:center;gap:6px}
@@ -412,7 +410,7 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
 .cstat.ok::before{background:var(--ok)}
 .cstat.bad{color:var(--late)}
 .cstat.bad::before{background:var(--late)}
-.signin{border:1px solid var(--line-strong);border-left:4px solid var(--late);border-radius:2px;background:var(--mount);padding:14px;display:flex;flex-direction:column;gap:10px}
+.signin{border:1px solid var(--line-strong);border-left:4px solid var(--late);border-radius:var(--r);background:var(--mount);padding:14px;display:flex;flex-direction:column;gap:10px}
 .signin b{font-family:var(--font-display);font-size:calc(17px * var(--fz))}
 .bub .fix{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .chat{position:fixed;inset:0;z-index:50;background:var(--paper);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top, 0px)}
@@ -422,7 +420,7 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
 .chat-head h2{font-size:calc(18px * var(--fz))}
 .chat-head p{font-size:calc(12px * var(--fz));color:var(--faint)}
 .chat-log{flex:1;overflow-y:auto;padding:16px max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px));display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch}
-.bub{max-width:92%;border-radius:2px;padding:10px 12px;font-size:calc(14.5px * var(--fz));line-height:1.5;overflow-wrap:anywhere}
+.bub{max-width:92%;border-radius:var(--r);padding:10px 12px;font-size:calc(14.5px * var(--fz));line-height:1.5;overflow-wrap:anywhere}
 .bub p{margin:0 0 8px}.bub p:last-child{margin-bottom:0}
 .bub ul,.bub ol{margin:0 0 8px;padding-left:20px}.bub li{margin:2px 0}
 .bub.u{align-self:flex-end;background:var(--accent);color:var(--on-accent);white-space:pre-wrap}
@@ -431,78 +429,81 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
 .bub .think{color:var(--faint);font-family:var(--font-mono);font-size:calc(12.5px * var(--fz))}
 .bub .err{color:var(--late);font-size:calc(13px * var(--fz));margin-top:6px}
 .acts{display:flex;flex-direction:column;gap:6px;margin-top:8px}
-.act{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:calc(13px * var(--fz));background:var(--ok-bg);color:var(--ok);border-radius:2px;padding:6px 8px}
+.act{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:calc(13px * var(--fz));background:var(--ok-bg);color:var(--ok);border-radius:var(--r);padding:6px 8px}
 .act.undone{background:var(--raised);color:var(--faint);text-decoration:line-through}
-.act button{white-space:nowrap;flex:none;font:500 calc(12px * var(--fz)) var(--font-body);background:transparent;border:1px solid currentColor;color:inherit;border-radius:2px;padding:4px 8px;cursor:pointer;min-height:28px}
+.act button{white-space:nowrap;flex:none;font:500 calc(12px * var(--fz)) var(--font-body);background:transparent;border:1px solid currentColor;color:inherit;border-radius:var(--r);padding:4px 8px;cursor:pointer;min-height:28px}
 .starters{display:flex;flex-direction:column;gap:8px}
 .starters p{color:var(--muted);font-size:calc(14px * var(--fz))}
-.starters button{text-align:left;font:500 calc(14px * var(--fz)) var(--font-body);background:var(--mount);border:1px solid var(--line-strong);color:var(--ink);border-radius:2px;padding:10px 12px;cursor:pointer;min-height:44px}
+.starters button{text-align:left;font:500 calc(14px * var(--fz)) var(--font-body);background:var(--mount);border:1px solid var(--line-strong);color:var(--ink);border-radius:var(--r);padding:10px 12px;cursor:pointer;min-height:44px}
 .starters button:hover{border-color:var(--accent)}
 .chat-form{border-top:1px solid var(--line-strong);background:var(--mount);padding:10px max(12px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));display:flex;flex-direction:column;gap:8px}
 .chat-row{display:flex;gap:8px;align-items:flex-end}
-.chat-row textarea{flex:1;font:calc(16px * var(--fz))/1.4 var(--font-body);color:var(--ink);background:var(--paper);border:1px solid var(--line-strong);border-radius:2px;padding:10px;min-height:46px;max-height:160px;resize:none;min-width:0}
+.chat-row textarea{flex:1;font:calc(16px * var(--fz))/1.4 var(--font-body);color:var(--ink);background:var(--paper);border:1px solid var(--line-strong);border-radius:var(--r);padding:10px;min-height:46px;max-height:160px;resize:none;min-width:0}
 .chat-row textarea:focus{border-color:var(--accent);outline:none}
-.iconbtn{flex:none;width:46px;height:46px;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink);border-radius:2px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.iconbtn{flex:none;width:46px;height:46px;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink);border-radius:var(--r);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .iconbtn svg{width:20px;height:20px}
 .sendbtn{flex:none;min-height:46px}
 .attach{display:flex;gap:8px;flex-wrap:wrap}
-.attach span{display:inline-flex;align-items:center;gap:6px;background:var(--raised);border-radius:2px;padding:4px 4px 4px 8px;font-size:calc(12.5px * var(--fz))}
+.attach span{display:inline-flex;align-items:center;gap:6px;background:var(--raised);border-radius:var(--r);padding:4px 4px 4px 8px;font-size:calc(12.5px * var(--fz))}
 .attach button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:calc(16px * var(--fz));line-height:1;padding:2px 6px}
 .chat-note{font-size:calc(11.5px * var(--fz));color:var(--faint)}
 
 </style>
 
 <div class="shell">
+  <header class="top">
+    <div class="top-row">
+      <div class="top-id"><span class="brand">Rafal Solutions Ltd</span><h1 class="top-name">Money pots</h1><span class="sync" id="sync" data-s="busy" role="status">Opening…</span></div>
+      <div class="fz" role="group" aria-label="Text size"><button type="button" class="fzb" id="fz-down" aria-label="Smaller text">A<span aria-hidden="true">−</span></button><button type="button" class="fzb" id="fz-up" aria-label="Bigger text">A<span aria-hidden="true">+</span></button></div>
+    </div>
+    <nav class="whose" id="whose" aria-label="Whose money"><a href="#today" data-whose="today">The company</a><a href="#you" data-whose="you">You</a></nav>
+  </header>
+  <p class="banner" id="banner" hidden></p>
+
   <main class="view" id="v-today">
-    <section class="hero" aria-label="What you can spend">
-      <div class="hero-top"><div class="hero-id"><span class="brand">Rafal Solutions Ltd</span><span class="sync" id="sync" data-s="busy" role="status">Opening…</span></div><div class="fz" role="group" aria-label="Text size"><button type="button" class="fzb" id="fz-down" aria-label="Smaller text">A<span aria-hidden="true">−</span></button><button type="button" class="fzb" id="fz-up" aria-label="Bigger text">A<span aria-hidden="true">+</span></button></div></div>
-      <div id="hero-body"></div>
-      <div class="hero-actions">
-        <button type="button" class="hbtn primary" data-open="add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New payment</button>
-        <button type="button" class="hbtn" data-open="claude"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/></svg>Ask Claude</button>
-        <button type="button" class="hbtn" id="bank-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 10h18M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18M12 3l9 5H3z"/></svg>Balances</button>
+    <section class="gap" aria-labelledby="gap-h">
+      <h2 class="gap-label" id="gap-h">Safe to spend</h2>
+      <div id="gap-body"></div>
+      <div class="gap-actions">
+        <button type="button" class="btn primary" data-open="add"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New payment</button>
+        <button type="button" class="btn" data-open="claude">Ask Claude</button>
+        <button type="button" class="btn" id="bank-toggle" aria-controls="bank-form" aria-expanded="false">Balances</button>
       </div>
       <form class="bankform" id="bank-form" novalidate hidden>
-      <label class="fld"><span>Main account</span><div class="pound"><i>£</i><input id="bank-main" inputmode="decimal" autocomplete="off"></div></label>
-      <label class="fld"><span>VAT Space</span><div class="pound"><i>£</i><input data-space="vat" inputmode="decimal" autocomplete="off" placeholder="0"></div></label>
-      <label class="fld"><span>Corporation tax Space</span><div class="pound"><i>£</i><input data-space="ct" inputmode="decimal" autocomplete="off" placeholder="0"></div></label>
-      <label class="fld"><span>PAYE Space</span><div class="pound"><i>£</i><input data-space="paye" inputmode="decimal" autocomplete="off" placeholder="0"></div></label>
-      <label class="fld"><span>Garages Space</span><div class="pound"><i>£</i><input data-space="garages" inputmode="decimal" autocomplete="off" placeholder="0"></div></label>
-      <label class="fld"><span>Materials Space</span><div class="pound"><i>£</i><input data-space="materials" inputmode="decimal" autocomplete="off" placeholder="0"></div></label>
-      <label class="fld"><span>Dividends Space</span><div class="pound"><i>£</i><input data-space="dividends" inputmode="decimal" autocomplete="off" placeholder="0"></div></label>
-      <div class="actions"><button type="submit" class="btn primary sm" id="bank-save">Save balances</button><span class="small">No Space for a pot yet? Leave it at 0.</span></div>
-    </form>
+        <label class="fld"><span>Main account</span><div class="pound"><i>£</i><input id="bank-main" inputmode="decimal" autocomplete="off"></div></label>
+        <label class="fld"><span>Corporation tax Space</span><div class="pound"><i>£</i><input data-space="ct" inputmode="decimal" autocomplete="off" placeholder="0"></div></label>
+        <label class="fld"><span>VAT Space</span><div class="pound"><i>£</i><input data-space="vat" inputmode="decimal" autocomplete="off" placeholder="0"></div></label>
+        <label class="fld"><span>PAYE Space</span><div class="pound"><i>£</i><input data-space="paye" inputmode="decimal" autocomplete="off" placeholder="0"></div></label>
+        <label class="fld"><span>Garages Space</span><div class="pound"><i>£</i><input data-space="garages" inputmode="decimal" autocomplete="off" placeholder="0"></div></label>
+        <label class="fld"><span>Materials Space</span><div class="pound"><i>£</i><input data-space="materials" inputmode="decimal" autocomplete="off" placeholder="0"></div></label>
+        <label class="fld"><span>Dividends Space</span><div class="pound"><i>£</i><input data-space="dividends" inputmode="decimal" autocomplete="off" placeholder="0"></div></label>
+        <label class="fld"><span>Free to Spend Space</span><div class="pound"><i>£</i><input data-space="free" inputmode="decimal" autocomplete="off" placeholder="0"></div></label>
+        <div class="actions"><button type="submit" class="btn primary sm" id="bank-save">Save balances</button><span class="small">No Space for a pot? Leave it at 0. Other Spaces, like a house deposit, stay out.</span></div>
+      </form>
     </section>
-    <p class="banner" id="banner" hidden></p>
-    <div class="today-grid">
-      <section class="card" aria-labelledby="todo-h">
-        <div class="card-head"><h2 id="todo-h">Do this now</h2><span class="count" id="todo-count"></span></div>
-        <div class="todo" id="todo"></div>
-      </section>
-      <div class="col">
-        <section class="card" aria-labelledby="pots-h">
-          <div class="card-head"><h2 id="pots-h">Your pots</h2><span class="small" id="pots-sub">What each Starling Space should hold</span></div>
-          <div class="jars" id="pots"></div>
-        </section>
-        <section class="card" aria-labelledby="coming-h">
-          <div class="card-head"><h2 id="coming-h">Coming up</h2></div>
-          <div class="coming" id="coming"></div>
-        </section>
-        <section class="card" aria-labelledby="payhmrc-h">
-          <div class="card-head"><h2 id="payhmrc-h">Pay HMRC</h2><span class="small">Links and references</span></div>
-          <div class="todo" id="payhmrc"></div>
-          <p class="small"><a href="https://www.tax.service.gov.uk/business-account" target="_blank" rel="noopener">Your HMRC business tax account</a>: what's owed and what's been paid.</p>
-        </section>
-        <section class="card" aria-labelledby="sa-h" id="sa-card" hidden>
-          <div class="card-head"><h2 id="sa-h">Your Self Assessment</h2><span class="small">You, not the company</span></div>
-          <div id="sa"></div>
-        </section>
-      </div>
-    </div>
+
+    <section class="spc-sec" aria-labelledby="spc-h">
+      <div class="spc-head"><h2 id="spc-h">Your Spaces</h2><span class="small" id="spc-sub"></span></div>
+      <div id="spaces"></div>
+    </section>
+
+    <section aria-label="What's due, by date">
+      <div class="cal" id="cal"></div>
+    </section>
+
+    <section class="card" aria-labelledby="payhmrc-h">
+      <div class="card-head"><h2 id="payhmrc-h">Pay HMRC</h2><span class="small">Links and references</span></div>
+      <div class="todo" id="payhmrc"></div>
+      <p class="small"><a href="https://www.tax.service.gov.uk/business-account" target="_blank" rel="noopener">Your HMRC business tax account</a>: what's owed and what's been paid.</p>
+    </section>
+  </main>
+
+  <main class="view" id="v-you" hidden aria-label="You">
+    <div id="you" class="view"></div>
   </main>
 
   <main class="view" id="v-history" hidden>
-    <div class="page-title"><h1>History</h1><p>Everything you've added, newest first.</p></div>
+    <div class="page-title"><h2>History</h2><p>Everything you've added, newest first.</p></div>
     <section class="card" aria-labelledby="hmrc-h" id="hmrc-card" hidden>
       <div class="card-head"><h2 id="hmrc-h">Paid to HMRC</h2><span class="small" id="hmrc-sub"></span></div>
       <div class="hmrc-tot" id="hmrc-tot"></div>
@@ -515,7 +516,7 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
   </main>
 
   <main class="view" id="v-rules" hidden>
-    <div class="page-title"><h1>Rules</h1><p>How each payment is split, your limits, and HMRC references.</p></div>
+    <div class="page-title"><h2>Rules</h2><p>How each payment is split, your limits, and HMRC references.</p></div>
     <section class="card" id="rules">
       <div class="rgrid">
       <h3>VAT</h3>
@@ -997,11 +998,13 @@ function totals() {
     const sp = e.split || {};
     for (const k of Object.keys(sp)) { if (!t[k]) continue; const v = sp[k] || 0; t[k].in += v; if (k === 'rest' || (e.moved && e.moved[k])) t[k].moved += v; }
   }
-  for (const k in t) { t[k].bal = r2(t[k].in - t[k].out); t[k].toMove = r2(Math.max(0, t[k].in - t[k].moved - t[k].out)); }
+  // To move: what's not marked moved yet, less anything paid out of the pot beyond what was moved (paid from the main account).
+  for (const k in t) { t[k].bal = r2(t[k].in - t[k].out); t[k].toMove = r2(Math.max(0, (t[k].in - t[k].moved) - Math.max(0, t[k].out - t[k].moved))); }
   return t;
 }
 const sumVat = (from, to) => r2(entries.reduce((s, e) => (e.kind !== 'out' && e.date >= from && e.date <= to) ? s + ((e.split && e.split.vat) || 0) : s, 0));
-const paidFor = (bill, period) => r2(entries.reduce((s, e) => (e.kind === 'out' && e.bill === bill && e.period === period) ? s + (e.amount || 0) : s, 0));
+// A payment out of a tax pot with a period counts towards that period's bill even when it isn't tagged with the bill.
+const paidFor = (bill, period) => r2(entries.reduce((s, e) => (e.kind === 'out' && (e.bill === bill || (!e.bill && e.pot === bill)) && e.period === period) ? s + (e.amount || 0) : s, 0));
 
 /* ---------- reading the form ---------- */
 const inType = () => (document.querySelector('#in-type input:checked') || {}).value || 'customer';
@@ -1079,15 +1082,47 @@ function ctBill(t) {
   if (!c) return {k:'ct', unknown:true, title:'Corporation tax', per:'Needs your company year end'};
   const typed = S.ctAmount != null && S.ctAmountFor === c.end;
   const paid = paidFor('ct', c.end);
-  const amount = typed ? r2(S.ctAmount - paid) : t.ct.bal;
+  // The pot can also hold last year's bill (when HMRC's figure is in it): that part isn't this year's.
+  const amount = typed ? r2(S.ctAmount - paid) : r2(Math.max(0, t.ct.bal - prevCtLeft()));
   return {k:'ct', title:'Corporation tax', per:`Year to ${fd(c.end, {wd:false, year:true})}`, due:c.due, amount, period:c.end, estimate:!typed, paidSoFar:paid, info:c, amountNote: typed ? (paid ? `${fm(paid)} paid already` : "Sanjay's figure") : 'Pot so far, not the bill'};
+}
+/* A bill HMRC has given a figure for: a brought-forward entry tagged with bill and period (and its
+   interest a day, from HMRC's statement). Payments with the same bill and period come off it. */
+function knownBill(k, period) {
+  let amount = 0, day = 0, any = false;
+  for (const e of entries) if (e.kind === 'start' && e.bill === k && e.period === period) { any = true; amount += Number((e.split && e.split[k]) || e.amount || 0); day += Number(e.interestDay) || 0; }
+  return any ? {amount: r2(amount), interestDay: r2(day)} : null;
+}
+function prevCtLeft() {
+  const c = ctInfo(); if (!c) return 0;
+  const kb = knownBill('ct', c.prevEnd); if (!kb) return 0;
+  return Math.max(0, r2(kb.amount - paidFor('ct', c.prevEnd)));
 }
 function ctPrevBill() {
   const c = ctInfo(); if (!c) return null;
   const n = daysTo(c.prevDue);
+  const per = `Year to ${fd(c.prevEnd, {wd:false, year:true})}`;
+  const kb = knownBill('ct', c.prevEnd);
+  if (kb) {
+    const paid = paidFor('ct', c.prevEnd); const left = r2(kb.amount - paid);
+    if (left <= 0.004) return null;
+    return {k:'ct', prev:true, known:true, title:'Corporation tax', per, due:c.prevDue, amount:left, total:kb.amount, paidSoFar:paid, interestDay:kb.interestDay, period:c.prevEnd, amountNote: paid ? `${fm(paid)} paid already` : "HMRC's figure"};
+  }
   if (n > 0 || n < -365) return null;
   if (entries.some(e => e.kind === 'out' && e.bill === 'ct' && e.period === c.prevEnd)) return null;
-  return {k:'ct', prev:true, title:'Corporation tax', per:`Year to ${fd(c.prevEnd, {wd:false, year:true})}`, due:c.prevDue, amount:null, period:c.prevEnd, amountNote:'Ask Sanjay'};
+  return {k:'ct', prev:true, title:'Corporation tax', per, due:c.prevDue, amount:null, period:c.prevEnd, amountNote:'Ask Sanjay'};
+}
+/* A payment plan HMRC agreed for a late bill (S.ctPlan {period, monthly, first, at}). */
+function ctPlanOf(b) { const p = S.ctPlan; return p && b && b.prev && p.period === b.period && p.monthly > 0 && p.first ? p : null; }
+function planNext(b, p) {
+  const since = p.savedAt || `${p.at || p.first}T23:59:59.999Z`;
+  const n = entries.filter(e => e.kind === 'out' && e.bill === 'ct' && e.period === b.period && e.amount > 0 && String(e.at || `${e.date}T12:00:00Z`) > since).length;
+  return {due: addMonths(p.first, n), n: n + 1, of: n + Math.ceil(b.amount / p.monthly - 1e-9), amount: r2(Math.min(p.monthly, b.amount))};
+}
+function planSim(left, monthly, rate) {
+  let bal = r2(left), n = 0, interest = 0;
+  while (bal > 0.004 && n < 240) { const i = r2(bal * rate); interest += i; bal = r2(bal + i); bal = r2(bal - Math.min(monthly, bal)); n++; }
+  return {n, interest: r2(interest)};
 }
 function chBill() {
   const [mm, dd] = (S.csDate || '06-11').split('-').map(Number); const t = today(); const y = Number(t.slice(0, 4));
@@ -1269,30 +1304,48 @@ const store = {
 
 /* ---------- what you can spend ---------- */
 const allBills = () => [chBill(), ctPrevBill(), ...vatBills(), ctBill(totals()), payeBill()].filter(Boolean);
-function lateMoney() {
-  let sum = 0, unknown = 0;
-  for (const b of allBills()) {
-    if (b.unknown || b.running || daysTo(b.due) >= 0) continue;
-    if (b.k === 'ch') { sum += 50; continue; }
-    if (b.prev) { unknown++; continue; }
-    if (b.amount > 0.004 && !b.estimate) sum += b.amount;
-  }
-  return {sum: r2(sum), unknown};
-}
 const weekStart = d => addDays(d, -((parse(d).getDay() + 6) % 7));
+/* What you can spend (30 Oct 2026): every pound the company has (the main account and every Space, the
+   Free to Spend Space too) minus what the pots must hold minus the cushion. Spare money in a Space counts,
+   so the top line matches the total in Starling and moving money between Spaces never changes it. */
+const SPACES = ['vat','ct','paye','garages','materials','dividends'];
+/* The balances as typed, plus what's been added in the app since (money in lands in the main account and
+   moves into Spaces as it's marked Moved; a payment out comes out of its Space, or the main account), so
+   recording a payment or paying a bill never makes "Safe to spend" look better than it is. */
+function bankNow() {
+  const b = S.bank && typeof S.bank.main === 'number' ? S.bank : null; if (!b) return null;
+  const stamp = b.savedAt || `${b.at}T23:59:59.999Z`;
+  const sp = {...(b.spaces || {})}; let main = Number(b.main) || 0, n = 0;
+  for (const e of entries) {
+    if (!e.at || String(e.at) <= stamp) continue;
+    if (e.kind === 'in') {
+      n++; main += e.amount || 0;
+      for (const k of SPACES) if (e.moved && e.moved[k] && e.split && e.split[k]) { main -= e.split[k]; sp[k] = r2((Number(sp[k]) || 0) + e.split[k]); }
+    } else if (e.kind === 'out' && e.pot !== 'sa' && e.amount > 0) {
+      n++;
+      if (SPACES.includes(e.pot)) { const h = Math.max(0, Number(sp[e.pot]) || 0); const take = Math.min(h, e.amount); sp[e.pot] = r2(h - take); main -= e.amount - take; }
+      else main -= e.amount;
+    }
+  }
+  return {...b, main: r2(main), spaces: sp, since: n};
+}
 function spendInfo() {
-  const t = totals(); const spaces = POTS.filter(p => p.k !== 'rest');
-  const b = S.bank && typeof S.bank.main === 'number' ? S.bank : null;
+  const t = totals();
+  const b = bankNow();
   const buffer = Number(S.buffer) || 0;
-  const should = r2(spaces.reduce((a, p) => a + Math.max(0, t[p.k].bal), 0));
+  const need = r2(SPACES.reduce((a, k) => a + Math.max(0, t[k].bal), 0));
   const short = {}; let toFund = 0, inSpaces = 0;
-  if (b) for (const p of spaces) { const act = Number((b.spaces || {})[p.k]) || 0; inSpaces += act; const sh = Math.max(0, r2(t[p.k].bal - act)); short[p.k] = sh; toFund += sh; }
-  const safe = b ? r2(b.main - toFund - buffer) : null;
+  if (b) {
+    for (const k of SPACES) { const act = Number((b.spaces || {})[k]) || 0; inSpaces += act; const sh = Math.max(0, r2(t[k].bal - act)); short[k] = sh; toFund += sh; }
+    inSpaces += Number((b.spaces || {}).free) || 0;
+  }
+  const have = b ? r2(b.main + inSpaces) : null;
+  const safe = b ? r2(have - need - buffer) : null;
   const wk = weekStart(today());
   const spentWeek = r2(entries.filter(e => e.kind === 'out' && e.pot === 'rest' && e.date >= wk && e.date <= today()).reduce((a, e) => a + (e.amount || 0), 0));
   const weekLeft = S.weeklyLimit > 0 ? r2(S.weeklyLimit - spentWeek) : null;
   const can = safe == null ? null : (weekLeft == null ? safe : Math.min(safe, weekLeft));
-  return {should, inSpaces: r2(inSpaces), toFund: r2(toFund), short, safe, buffer, weekLeft, spentWeek, can, bank: b, age: b ? -daysTo(b.at) : null};
+  return {should: need, need, have, inSpaces: r2(inSpaces), toFund: r2(toFund), short, safe, buffer, weekLeft, spentWeek, can, bank: b, age: b ? -daysTo(b.at) : null};
 }
 function fillBank() {
   const b = S.bank || {}; $('bank-main').value = b.main != null ? b.main : '';
@@ -1311,7 +1364,9 @@ function penaltyNote(b) {
 }
 function payBody(b) {
   const rc = refCheck(b); const bank = HMRC[b.k];
-  const defPaid = b.amount != null && b.amount > 0 ? r2(b.amount).toFixed(2) : '';
+  const plan = ctPlanOf(b);
+  const defPaid = b.amount != null && b.amount > 0 ? r2(plan ? Math.min(plan.monthly, b.amount) : b.amount).toFixed(2) : '';
+  const fromRest = b.prev && !b.known;
   let extra = '';
   if (b.k === 'ct' && b.info) extra = `<div class="also"><span>Accounts to Companies House by ${fd(b.info.accounts, {year:true})}</span><span>Company tax return (CT600) by ${fd(b.info.ct600, {year:true})}. Sanjay files both.</span></div>`;
   if (b.k === 'paye') extra = `<div class="also"><span>${b.amount == null ? 'Amount not set: HMRC online, PAYE for employers, shows what is due. Put it in Rules or tell Claude. ' : ''}CIS taken off your jobs can be claimed against this: Sanjay sends an EPS to HMRC by the 19th.</span></div>`;
@@ -1323,7 +1378,7 @@ function payBody(b) {
     <p class="small">Or a normal transfer from Starling:</p>
     <dl class="bank">${copyRow('Name', bank.name)}${copyRow('Sort code', bank.sort)}${copyRow('Account', bank.acct)}${copyRow('Reference', rc.ref)}</dl>
     ${rc.html}${extra}
-    ${showPaid ? `<div class="paidrow"><div class="pound"><i>£</i><input inputmode="decimal" aria-label="Amount paid" data-paidamt="${b.k + b.period}" value="${defPaid}"></div><button type="button" class="btn sm" data-paid="${b.k}" data-period="${b.period}"${b.prev ? ' data-pot="rest"' : ''} ${canWrite ? '' : 'disabled'}>I've paid it</button>${b.prev ? `<button type="button" class="btn sm ghost" data-already="${b.k}" data-period="${b.period}" ${canWrite ? '' : 'disabled'}>It was already paid</button>` : ''}</div><p class="hint">${b.prev ? 'Nothing was put aside for it here, so it comes out of Free to spend.' : `Takes it out of the ${potName(b.k)} pot.`}</p>` : ''}
+    ${showPaid ? `<div class="paidrow"><div class="pound"><i>£</i><input inputmode="decimal" aria-label="Amount paid" data-paidamt="${b.k + b.period}" value="${defPaid}"></div><button type="button" class="btn sm" data-paid="${b.k}" data-period="${b.period}"${fromRest ? ' data-pot="rest"' : ''} ${canWrite ? '' : 'disabled'}>I've paid it</button>${fromRest ? `<button type="button" class="btn sm ghost" data-already="${b.k}" data-period="${b.period}" ${canWrite ? '' : 'disabled'}>It was already paid</button>` : ''}</div><p class="hint">${fromRest ? 'Nothing was put aside for it here, so it comes out of Free to spend.' : `Takes it out of the ${potName(b.k)} pot.`}</p>` : ''}
   </div>`;
 }
 function chBody(n) {
@@ -1335,107 +1390,233 @@ function moveBody(mv, t) {
   const rows = mv.map(p => `<div class="mv"><span class="dot" style="--c:${col(p.k)}"></span><span>${p.name} Space</span><span class="v">${fm(t[p.k].toMove)}</span><button type="button" class="btn sm" data-moved="${p.k}" ${canWrite ? '' : 'disabled'}>Moved</button></div>`).join('');
   return `<div>${rows}</div><div class="actions" style="justify-content:space-between"><span class="small">In Starling: one transfer from the main account into each Space, then tap Moved.</span>${mv.length > 1 ? `<button type="button" class="btn sm ghost" data-moved="all" ${canWrite ? '' : 'disabled'}>All moved</button>` : ''}</div>`;
 }
-function todoItems() {
-  const items = []; const t = totals();
+/* ---------- the calendar: everything dated, Late first ---------- */
+const MON3 = i => MONTHS[i].slice(0, 3);
+function vatSpan(end) { const st = addDays(addMonths(end, -3), 1); return `${MON3(parse(st).getMonth())} to ${MON3(parse(end).getMonth())}`; }
+let planPick = null, planFirst = '';
+function planDefault(b) { const p = ctPlanOf(b); if (p) return p.monthly; return Math.max(100, Math.min(planMax(b), Math.ceil(b.amount / 12 / 25) * 25)); }
+function planMax(b) { return Math.max(200, Math.min(1500, Math.ceil(b.amount / 25) * 25)); }
+function planRate(b) { return b.interestDay > 0 && b.total > 0 ? b.interestDay * 365 / 12 / b.total : 0; }
+function firstOfNextMonth() { const d = parse(today()); const f = isoOf(new Date(d.getFullYear(), d.getMonth() + 1, 1)); return daysTo(f) >= 14 ? f : isoOf(new Date(d.getFullYear(), d.getMonth() + 2, 1)); }
+function planFigures(b, monthly) {
+  const p = ctPlanOf(b); const first = planFirst || (p && p.first) || firstOfNextMonth();
+  const sim = planSim(b.amount, monthly, planRate(b));
+  const last = parse(addMonths(first, sim.n - 1));
+  const space = S.bank && S.bank.spaces ? Number(S.bank.spaces.ct) || 0 : null;
+  const stats = [
+    ['Payments', String(sim.n)],
+    ['Last one', `${MONTHS[last.getMonth()]} ${last.getFullYear()}`],
+    planRate(b) ? ['Interest, about', fm(Math.max(10, Math.round(sim.interest / 10) * 10))] : ['Interest', 'Not known'],
+    space != null ? ['Already in the Space', `${Math.floor(space / monthly)} month${Math.floor(space / monthly) === 1 ? '' : 's'}`] : ['First payment', fd(first)],
+  ];
+  const cur = ctBill(totals());
+  const note = cur && cur.amount > 0.004 ? `This year's corporation tax is building up too: ${fm(cur.amount)} so far, due ${fd(cur.due, {year:true})}. Keep putting that aside on top.` : '';
+  return {first, sim, stats, note};
+}
+function planStatsHtml(f) { return f.stats.map(([l, v]) => `<div><small>${esc(l)}</small><b>${esc(v)}</b></div>`).join(''); }
+function planBox(b) {
+  const p = ctPlanOf(b); const m = planPick != null ? planPick : planDefault(b); const f = planFigures(b, m);
+  return `<div class="plan" data-planbox>
+    ${p ? `<p class="plan-saved">Plan agreed with HMRC: ${fm(p.monthly)} a month from ${fd(p.first, {year:true})}.</p>` : ''}
+    <label class="plan-l" for="plan-m">${p ? 'Change the monthly payment' : 'Try a monthly payment for a plan'}</label>
+    <div class="plan-top"><b class="plan-num" id="plan-num">${fm(m)}</b><span class="small">a month</span></div>
+    <input id="plan-m" type="range" min="100" max="${planMax(b)}" step="25" value="${m}" aria-valuetext="${fm(m)} a month">
+    <div class="plan-stats" id="plan-stats">${planStatsHtml(f)}</div>
+    <p class="small" id="plan-note">${esc(f.note)}</p>
+    <label class="fld"><span>First payment</span><input type="date" id="plan-first" value="${f.first}" min="${today()}"></label>
+    <div class="actions">
+      <a class="btn" href="tel:03002003835">Call HMRC 0300 200 3835</a>
+      <button type="button" class="btn primary" data-plansave="${b.period}" ${canWrite ? '' : 'disabled'}>${p ? 'Save the change' : 'Save the plan HMRC agrees'}</button>
+      ${p ? `<button type="button" class="btn ghost" data-planclear ${canWrite ? '' : 'disabled'}>Take the plan off</button>` : ''}
+    </div>
+    <p class="hint">An estimate. HMRC's Payment Support Service agrees the real plan with you; save it here and each payment shows in the calendar.</p>
+  </div>`;
+}
+
+function calItems() {
+  const t = totals(); const sp = spendInfo(); const td = today(); const items = [];
+  const bankSp = sp.bank ? (sp.bank.spaces || {}) : null;
   for (const b of allBills()) {
     const key = b.k === 'ch' ? 'ch' : b.k + (b.period || 'x');
-    if (b.unknown && b.k === 'vat') { items.push({key, lvl:'late', order:-9999, title:'Which months is your first VAT return?', sub:'Check your Business Tax Account, then tap one', amt:'', body:`<div class="actions"><button type="button" class="btn sm" data-vatend="2026-08-31">June to August: ${fm(b.a)}, due 7 Oct</button><button type="button" class="btn sm" data-vatend="2026-09-30">June to September: ${fm(b.b)}, due 7 Nov</button></div>`}); continue; }
-    if (b.unknown && b.k === 'ct') { items.push({key, lvl:'soon', order:0, title:'Set the company year end', sub:'So the corporation tax dates are right', amt:'', body:`<label class="fld"><span>Company year end</span><select data-yearend>${yearEndOptions()}</select></label>`}); continue; }
+    if (b.unknown && b.k === 'vat') { items.push({key, due:null, title:'Which months is your first VAT return?', sub:'Check your Business Tax Account, then tap one', amt:'', body:`<div class="actions"><button type="button" class="btn sm" data-vatend="2026-08-31">June to August: ${fm(b.a)}, due 7 Oct</button><button type="button" class="btn sm" data-vatend="2026-09-30">June to September: ${fm(b.b)}, due 7 Nov</button></div>`}); continue; }
+    if (b.unknown && b.k === 'ct') { items.push({key, due:null, title:'Set the company year end', sub:'So the corporation tax dates are right', amt:'', body:`<label class="fld"><span>Company year end</span><select data-yearend>${yearEndOptions()}</select></label>`}); continue; }
     const n = daysTo(b.due);
     if (b.k === 'ch') {
-      if (n > 30) continue;
-      items.push({key, lvl: n < 0 ? 'late' : 'soon', order:n, title:'File the confirmation statement', sub: n < 0 ? `${-n} days late · £50 online · 10 minutes` : `Due ${fd(b.due)} (${inWhen(n)}) · £50 online`, amt:'£50', body:chBody(n)});
+      const body = n <= 30 ? chBody(n) : `<p class="small">Confirms the directors, the shareholders and the company's address, about 10 minutes online. You can file it from ${fd(b.sd, {year:true})}.${S.csFiled ? ` The last one was filed on ${fd(S.csFiled, {year:true})}.` : ''}</p>`;
+      items.push({key, due:b.due, title:'Confirmation statement', sub: n < 0 ? `${-n} days late · £50 online · 10 minutes` : 'Companies House · £50 online', amt:'£50', tone: n < 0 ? 'late' : '', body});
       continue;
     }
-    if (b.prev) { items.push({key, lvl:'late', order:n, title:"Last year's corporation tax", sub:`${b.per} · was due ${fd(b.due, {year:true})} · not marked paid`, amt:'?', body:`<p class="small">Ask Sanjay how much it was and whether it's been paid. Your HMRC online account shows it too (Corporation Tax, view account). If it's still owed, interest is adding up every day.</p>${payBody(b)}`}); continue; }
-    const paid = b.amount != null && b.amount <= 0.004 && !b.running && !b.estimate;
-    if (paid || b.running || b.estimate || n > 30) continue;
-    const late = n < 0; const pen = late ? penaltyNote(b) : '';
-    const title = b.k === 'vat' ? 'Pay the VAT' : b.k === 'ct' ? 'Pay corporation tax' : 'Pay PAYE';
-    const sub = late ? `${b.per} · ${-n} days late${pen ? ' · ' + pen : ''}` : `Due ${fd(b.due)} (${inWhen(n)}) · pay by ${fd(prevWorkingDay(b.due))}${b.k === 'paye' && b.amount == null ? ' · amount not set' : ''}`;
-    items.push({key, lvl: late ? 'late' : 'soon', order:n, title, sub, amt: b.amount == null ? '—' : fm(b.amount), body:payBody(b)});
-  }
-  const mv = POTS.filter(p => p.k !== 'rest' && t[p.k].toMove > 0.004);
-  if (mv.length) { const total = r2(mv.reduce((a, p) => a + t[p.k].toMove, 0)); items.push({key:'move', lvl:'move', order:0, title:`Move ${fm(total)} into your Spaces`, sub:mv.map(p => `${p.name} ${fm(t[p.k].toMove)}`).join(' · '), amt:fm(total), body:moveBody(mv, t)}); }
-  if (!S.bank || -daysTo(S.bank.at) > 7) items.push({key:'bank', lvl:'soon', order:1e6, title: S.bank ? 'Update your Starling balances' : "Tell me what's in Starling", sub: S.bank ? `Last done ${fd(S.bank.at)}. Keeps "You can spend" real.` : 'So "You can spend" is real money, not a guess', amt:'', body:`<p class="small">The main account and each Space. Takes a minute.</p><div class="actions"><button type="button" class="btn primary sm" data-bankopen>Type the balances</button>${sample && imgLimits ? `<button type="button" class="btn sm" data-claudebank>Send Claude a screenshot</button>` : ''}</div>`});
-  const rank = i => i.lvl === 'late' ? 0 : i.lvl === 'move' ? 1 : 2;
-  items.sort((a, b) => rank(a) - rank(b) || a.order - b.order);
-  return items;
-}
-function renderTodo() {
-  const items = todoItems(); const late = items.filter(i => i.lvl === 'late').length;
-  const c = $('todo-count'); c.textContent = items.length ? (late ? `${late} late` : `${items.length} to do`) : 'All clear'; c.classList.toggle('bad', late > 0);
-  if (!items.length) { setHTML($('todo'), `<div class="alldone"><b>All clear.</b><span>Nothing late, nothing to move. Just build.</span></div>`); return; }
-  setHTML($('todo'), items.map(i => `<details class="ti ${i.lvl}" data-key="${esc(i.key)}"${openItems.has(i.key) ? ' open' : ''}><summary><span class="ti-main"><b>${esc(i.title)}</b><small>${esc(i.sub)}</small></span><span class="ti-amt">${esc(i.amt)}</span><span class="chev" aria-hidden="true"></span></summary><div class="ti-body">${i.body}</div></details>`).join(''));
-}
-function renderComing() {
-  const keys = new Set(todoItems().map(i => i.key)); const out = [];
-  for (const b of allBills()) {
-    if (b.unknown) continue;
-    const key = b.k === 'ch' ? 'ch' : b.k + (b.period || 'x');
-    if (keys.has(key)) continue;
-    if (b.amount != null && b.amount <= 0.004 && !b.running && !b.estimate) continue;
-    out.push({due:b.due, title:titleOf(b), sub:b.k === 'ch' ? 'Companies House, every year' : b.per, amt:b.k === 'ch' ? '£50' : b.amount == null ? '' : fm(Math.max(0, b.amount)), note:b.running ? 'so far' : b.estimate ? 'in the pot' : ''});
+    if (b.prev && !b.known) { items.push({key, due:b.due, title:"Last year's corporation tax", sub:`${b.per} · was due ${fd(b.due, {year:true})} · not marked paid`, amt:'Ask Sanjay', tone:'late', body:`<p class="small">Ask Sanjay how much it was and whether it's been paid. Your HMRC online account shows it too (Corporation Tax, view account). If it's still owed, interest is adding up every day.</p>${payBody(b)}`}); continue; }
+    if (b.prev) {
+      const p = ctPlanOf(b);
+      const yr = b.per.replace(/^Year/, 'year');
+      if (p) {
+        const nx = planNext(b, p);
+        items.push({key, due:nx.due, title:'Corporation tax plan payment', sub:`${yr} · payment ${nx.n} of about ${nx.of} · ${fm(b.amount)} left in all`, amt:fm(nx.amount), tone: daysTo(nx.due) < 0 ? 'late' : '', body:`${payBody(b)}${planBox(b)}`});
+      } else {
+        items.push({key, due:b.due, title:`Corporation tax, ${yr}`, sub: n < 0 ? `Was due ${fd(b.due, {year:true})}${b.interestDay ? ` · about ${fm(b.interestDay)} a day interest` : ''}` : `Due ${fd(b.due, {year:true})}`, amt:fm(b.amount), tone: n < 0 ? 'late' : '', body:`${planBox(b)}${payBody(b)}`});
+      }
+      continue;
+    }
+    if (b.k === 'vat') {
+      if (!b.running && b.amount <= 0.004) continue;
+      const have = bankSp ? Number(bankSp.vat) || 0 : null;
+      const cover = have == null ? '' : have + 0.004 >= b.amount ? `${fm(have)} in the Space covers it` : `${fm(b.amount - have)} short in the Space`;
+      const sub = b.running ? `So far${cover ? ` · ${cover}` : ''}` : n < 0 ? `${-n} days late${penaltyNote(b) ? ' · ' + penaltyNote(b) : ''}` : `Pay by ${fd(prevWorkingDay(b.due))}${cover ? ` · ${cover}` : ''}`;
+      const tone = n < 0 ? 'late' : have != null && have + 0.004 >= b.amount ? 'ok' : '';
+      const note = b.running ? `<p class="small">The return runs to ${fd(b.period, {year:true})}, so it grows with each customer payment until then.</p>` : '';
+      items.push({key, due:b.due, title:`VAT return, ${vatSpan(b.period)}`, sub, amt:fm(b.amount), tone, body:`${note}${payBody(b)}`});
+      continue;
+    }
+    if (b.k === 'ct') {
+      if (!(b.amount > 0.004)) continue;
+      const body = b.estimate
+        ? `<p class="small">What the pot holds for this year so far, not the bill. Sanjay works out the real figure after the year end; it goes in Rules once he has it.</p><p class="small">Pay it by ${fd(b.due, {year:true})}.</p>`
+        : payBody(b);
+      items.push({key, due:b.due, title:'Corporation tax, this year', sub:`${b.per.replace(/^Year/, 'Year')} · ${b.estimate ? 'so far' : "Sanjay's figure"}`, amt:fm(b.amount), body});
+      continue;
+    }
+    if (b.k === 'paye') {
+      if (b.amount != null && b.amount <= 0.004) continue;
+      const set = `<div class="paidrow"><label class="fld" style="flex:1;min-width:160px"><span>PAYE a month, from your payroll</span><div class="pound"><i>£</i><input id="paye-amt" inputmode="decimal" autocomplete="off" value="${S.payeMonthly ? r2(S.payeMonthly).toFixed(2) : ''}" placeholder="0.00"></div></label><button type="button" class="btn sm" data-payeset ${canWrite ? '' : 'disabled'}>Save</button></div>`;
+      items.push({key, due:b.due, title:'PAYE', sub:`${b.per} · pay by ${fd(prevWorkingDay(b.due))}`, amt: b.amount == null ? 'Not set' : fm(b.amount), tone: b.amount == null ? 'expect' : '', body:`${set}${payBody(b)}`});
+      continue;
+    }
   }
   const c = ctInfo();
-  if (c) { out.push({due:c.accounts, title:'Accounts to Companies House', sub:`Year to ${fd(c.end, {wd:false, year:true})} · Sanjay files`, amt:'', note:''}); out.push({due:c.ct600, title:'Company tax return (CT600)', sub:`Year to ${fd(c.end, {wd:false, year:true})} · Sanjay files`, amt:'', note:''}); }
-  const list = out.filter(x => daysTo(x.due) >= 0).sort((a, b) => a.due < b.due ? -1 : a.due > b.due ? 1 : 0);
-  setHTML($('coming'), list.length ? list.map(x => { const d = parse(x.due); return `<div class="cu"><div class="cu-date"><b>${d.getDate()}</b><span>${MONTHS[d.getMonth()].slice(0, 3)}${d.getFullYear() !== new Date().getFullYear() ? ' ' + String(d.getFullYear()).slice(2) : ''}</span></div><div class="cu-t"><b>${esc(x.title)}</b><small>${esc(x.sub)} · ${inWhen(daysTo(x.due))}</small></div><div class="cu-a">${x.amt}${x.note ? `<small>${x.note}</small>` : ''}</div></div>`; }).join('') : '<p class="empty">Nothing else coming up.</p>');
-}
-
-/* ---------- pots as jars ---------- */
-function renderPotsJars() {
-  const t = totals(); const b = S.bank && S.bank.spaces ? S.bank : null; const m = today(); const mName = MONTHS[parse(m).getMonth()];
-  const html = POTS.map(p => {
-    const x = t[p.k];
-    if (p.k === 'rest') return `<div class="jar free" style="--c:${col(p.k)};--lvl:0%"><div class="jar-top"><span>${p.name}</span></div><div class="jar-num">${fm(x.bal)}</div><div class="jar-sub">Stays in the main account</div></div>`;
-    const should = Math.max(0, x.bal); let have, sub;
-    if (b) { have = Number(b.spaces[p.k]) || 0; const sh = r2(should - have); sub = sh > 0.004 ? `<span class="short">${fm(sh)} short</span><br>${fm(have)} in the Space` : `${fm(have)} in the Space`; }
-    else { have = Math.max(0, r2(x.moved - x.out)); sub = x.toMove > 0.004 ? `<span class="short">${fm(x.toMove)} to move</span>` : x.in ? 'All moved' : 'Nothing yet'; }
-    if (p.k === 'garages' || p.k === 'paye') { const want = p.k === 'garages' ? S.garagesMonthly : S.payeMonthly; if (!want) sub = 'Set the monthly amount in Rules'; else { const got = r2(monthSoFar(p.k, m)); sub += `<br>${mName}: ${got >= want ? 'covered' : `${fm(got)} of ${fm(want)}`}`; } }
-    const pct = should > 0 ? Math.max(0, Math.min(100, have / should * 100)) : (have > 0 ? 100 : 0);
-    return `<div class="jar" style="--c:${col(p.k)};--lvl:${pct.toFixed(1)}%"><div class="jar-top"><span>${p.name}</span><span class="jar-pct">${should > 0 ? Math.round(pct) + '%' : ''}</span></div><div class="jar-num">${fm(should)}</div><div class="jar-sub">${sub}</div></div>`;
-  }).join('');
-  setHTML($('pots'), html);
-  $('pots-sub').textContent = b ? `Filled to what's in each Space (${fd(b.at)})` : "Filled to what you've moved in";
-}
-
-/* ---------- hero ---------- */
-let heroCounted = false;
-function countUp(el, to) {
-  if (heroCounted) return; heroCounted = true;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !(to > 0)) return;
-  const t0 = performance.now(), dur = 950;
-  const step = now => { const k = Math.min(1, (now - t0) / dur); el.textContent = fm(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); else el.textContent = fm(to); };
-  requestAnimationFrame(step);
-}
-function renderHero() {
-  const s = spendInfo(); const items = todoItems(); const late = items.filter(i => i.lvl === 'late');
-  const status = late.length ? `${late.length} thing${late.length > 1 ? 's' : ''} late. ${late[0].title} first.` : items.some(i => i.lvl === 'move') ? 'Nothing late. Move the money into your Spaces.' : 'All clear. Nothing late.';
-  let num, cls, sub, subBad = false, board, legend = '';
-  if (!s.bank) {
-    num = '—'; cls = 'none'; sub = "Tell me what's in Starling, the main account and each Space, and this shows what you can really spend.";
-    board = `<div class="board2 empty">Your main account, cut into owed, cushion and yours</div>`;
-  } else {
-    const neg = s.can <= 0.004; cls = neg ? 'neg' : 'pos'; num = fm(Math.max(0, s.can));
-    if (neg) { subBad = true; sub = s.safe <= 0.004 ? `Stop. You're ${fm(-s.safe)} under the line. Spend nothing until money comes in.` : `This week's limit is used up. Back to ${fm(S.weeklyLimit)} on Monday.`; }
-    else sub = `From Starling on ${fd(s.bank.at)}${s.age > 7 ? `, ${s.age} days ago` : ''}${s.weekLeft != null ? ` · ${fm(s.spentWeek)} of your ${fm(S.weeklyLimit)} a week spent` : ''}`;
-    const owed = s.toFund, cush = s.buffer, yours = Math.max(0, r2(s.bank.main - owed - cush));
-    const total = Math.max(s.bank.main, owed + cush, 1); const gap = Math.max(0, r2(owed + cush - s.bank.main));
-    const seg = (c, v) => v > 0.004 ? `<div class="seg ${c}" style="flex:0 0 ${(v / total * 100).toFixed(3)}%"></div>` : '';
-    board = `<div class="dimline" style="width:${Math.max(30, Math.min(100, s.bank.main / total * 100)).toFixed(2)}%"><span>Main account ${fm(s.bank.main)}</span></div><div class="board2">${seg('owed', owed)}${seg('cush', cush)}${seg('yours', yours)}</div>`;
-    legend = `<div class="legend"><span><i class="owed"></i>Owed to Spaces ${fm(owed)}</span><span><i class="cush"></i>Cushion ${fm(cush)}</span><span><i class="yours"></i>Yours ${fm(yours)}</span>${gap ? `<span style="color:var(--coral)">Short ${fm(gap)}</span>` : ''}</div>`;
+  if (c) {
+    items.push({key:'accounts', due:c.accounts, title:'Accounts to Companies House', sub:`Year to ${fd(c.end, {wd:false, year:true})} · Sanjay files`, amt:'', body:`<p class="small">Nothing to pay. Sanjay sends them in. Late accounts cost £150 in the first month, more after.</p>`});
+    items.push({key:'ct600', due:c.ct600, title:'Company tax return (CT600)', sub:`Year to ${fd(c.end, {wd:false, year:true})} · Sanjay files`, amt:'', body:`<p class="small">Nothing extra to pay here: the tax itself is the corporation tax bill.</p>`});
   }
-  setHTML($('hero-body'), `<p class="hero-label">You can spend${s.weekLeft != null && s.bank ? ' this week' : ''}</p><div class="hero-num ${cls}" id="hero-num">${num}</div><p class="hero-sub${subBad ? ' bad' : ''}">${esc(sub)}</p><div class="board-wrap">${board}${legend}</div><p class="hero-status${late.length ? ' bad' : ''}">${esc(status)}</p>`);
-  if (s.bank && loaded) countUp($('hero-num'), Math.max(0, s.can));
+  const si = saInfo();
+  if (si && si.left > 0.004) items.push({key:'sa', due:si.sa.due, title:'Your Self Assessment', sub:'You, not the company · opens You', amt:fm(si.left), tone:'you', href:'#you'});
+
+  // today: what to do now, and what happened today
+  const mv = POTS.filter(p => p.k !== 'rest' && t[p.k].toMove > 0.004);
+  if (mv.length) { const total = r2(mv.reduce((a, p) => a + t[p.k].toMove, 0)); items.push({key:'move', due:null, task:true, title:`Move ${fm(total)} into your Spaces`, sub:mv.map(p => `${p.name} ${fm(t[p.k].toMove)}`).join(' · '), amt:fm(total), tone:'ok', body:moveBody(mv, t)}); }
+  if (!S.bank || -daysTo(S.bank.at) > 7) items.push({key:'bank', due:null, task:true, title: S.bank ? 'Update your Starling balances' : "Tell me what's in Starling", sub: S.bank ? `Last done ${fd(S.bank.at)}. Keeps "Safe to spend" real.` : 'So "Safe to spend" is real money, not a guess', amt:'', body:`<p class="small">The main account and each Space. Takes a minute.</p><div class="actions"><button type="button" class="btn primary sm" data-bankopen>Type the balances</button>${sample && imgLimits ? `<button type="button" class="btn sm" data-claudebank>Send Claude a screenshot</button>` : ''}</div>`});
+  const paidToday = entries.filter(e => e.kind === 'out' && ['vat','ct','paye'].includes(e.pot) && e.date === td && e.amount > 0);
+  if (paidToday.length) {
+    const total = r2(paidToday.reduce((a, e) => a + e.amount, 0));
+    const rows = paidToday.map(e => `<div><span><i class="dot" style="--c:${col(e.pot)}"></i>${esc(potName(e.pot))}${e.period ? `, ${esc(forOf(e))}` : ''}</span><b>${fm(e.amount)}</b></div>`).join('');
+    const own = entries.filter(e => e.kind === 'out' && e.pot === 'sa' && e.date === td);
+    items.push({key:'paidtoday', due:td, rec:true, title:'Paid to HMRC', sub:[...new Set(paidToday.map(e => potName(e.pot)))].join(', '), amt:fm(total), tone:'ok', body:`<div class="rows">${rows}</div>${own.length ? `<p class="small">Your own Self Assessment payment${own.length > 1 ? 's' : ''} today (${fm(own.reduce((a, e) => a + e.amount, 0))}) ${own.length > 1 ? 'are' : 'is'} under You.</p>` : ''}<p class="small">Everything paid to HMRC is in History.</p>`});
+  }
+  const inToday = entries.filter(e => e.kind === 'in' && e.date === td);
+  if (inToday.length) {
+    const total = r2(inToday.reduce((a, e) => a + (e.amount || 0), 0));
+    const rows = inToday.map(e => `<div><span>${esc(labelOf(e))}${e.note ? `, ${esc(e.note)}` : ''}</span><b>${fm(e.amount)}</b></div>`).join('');
+    items.push({key:'intoday', due:td, rec:true, title:'Money in', sub:`${inToday.length} payment${inToday.length > 1 ? 's' : ''}, split into the pots`, amt:fm(total), tone:'ok', body:`<div class="rows">${rows}</div><p class="small">The split for each is in History.</p>`});
+  }
+  return items;
+}
+
+let autoOpened = false;
+function renderCal() {
+  const items = calItems(); const td = today(); const y = parse(td).getFullYear();
+  const groups = new Map();
+  const put = (id, label, gc, it) => { if (!groups.has(id)) groups.set(id, {id, label, gc, items:[]}); groups.get(id).items.push(it); };
+  put('late', 'Late', 'var(--late)', null); put('today', `Today · ${fd(td)}`, 'var(--accent)', null); put('week', 'This week', '', null);
+  for (const it of items) {
+    const n = it.due ? daysTo(it.due) : 0;
+    if (n < 0) put('late', '', '', it);
+    else if (n === 0) put('today', '', '', it);
+    else if (n <= 7) put('week', '', '', it);
+    else { const d = parse(it.due); put(`m${it.due.slice(0, 7)}`, `${MONTHS[d.getMonth()]}${d.getFullYear() !== y ? ' ' + d.getFullYear() : ''}`, '', it); }
+  }
+  const order = [...groups.values()].map(g => ({...g, items:g.items.filter(Boolean)})).filter(g => g.items.length);
+  const rest = order.filter(g => g.id.startsWith('m')).sort((a, b) => a.id < b.id ? -1 : 1);
+  const list = [...order.filter(g => !g.id.startsWith('m')), ...rest];
+  for (const g of list) g.items.sort((a, b) => (b.task ? 1 : 0) - (a.task ? 1 : 0) || String(a.due || td).localeCompare(String(b.due || td)));
+  const late = list.find(g => g.id === 'late');
+  if (!autoOpened && loaded) { autoOpened = true; if (late && !openItems.size) { const f = late.items.find(i => !i.href); if (f) openItems.add(f.key); } }
+  const blk = (it, g) => {
+    const d = parse(it.due || td); const cls = g.id === 'late' ? 'late' : g.id === 'today' ? 'today' : '';
+    const top = g.id === 'late' ? 'Late' : d.toLocaleDateString('en-GB', {weekday:'short'});
+    return `<div class="cdate ${cls}" aria-hidden="true"><small>${top}</small><b>${d.getDate()}</b><span>${MON3(d.getMonth())}${d.getFullYear() !== y ? ' ' + String(d.getFullYear()).slice(2) : ''}</span></div>`;
+  };
+  const when = it => it.due ? `<span class="sr">${it.rec ? '' : daysTo(it.due) < 0 ? 'Was due ' : 'Due '}${fd(it.due, {year:true})}. </span>` : '';
+  const row = (it, g) => {
+    const inner = `<span class="ci-t"><b>${when(it)}${esc(it.title)}</b><small>${esc(it.sub)}</small></span>${it.amt ? `<span class="ci-a ${it.tone || ''}">${esc(it.amt)}</span>` : ''}<span class="chev" aria-hidden="true"></span>`;
+    if (it.href) return `<div class="crow">${blk(it, g)}<a class="ci go" href="${it.href}"><span class="ci-s">${inner}</span></a></div>`;
+    return `<div class="crow">${blk(it, g)}<details class="ci" data-key="${esc(it.key)}"${openItems.has(it.key) ? ' open' : ''}><summary class="ci-s">${inner}</summary><div class="ci-body">${it.body}</div></details></div>`;
+  };
+  let html = list.map(g => `<div class="cgroup"><h2 class="glabel"${g.gc ? ` style="--gc:${g.gc}"` : ''}>${esc(g.label)}</h2>${g.items.map(it => row(it, g)).join('')}</div>`).join('');
+  if (!late) html = `<div class="allclear"><b>Nothing late.</b><span>${items.some(i => i.task) ? 'Just the jobs under Today.' : 'Nothing to move, nothing overdue. Just build.'}</span></div>` + html;
+  if (!loaded && !entries.length) html = '<p class="empty">Loading…</p>';
+  setHTML($('cal'), html);
+}
+
+/* ---------- safe to spend ---------- */
+function renderGap() {
+  const s = spendInfo();
+  if (!s.bank) {
+    setHTML($('gap-body'), `<div class="gap-num none">Not known yet</div><p class="gap-line">Type your Starling balances, the main account and each Space, and this shows what you can really spend.</p>`);
+    return;
+  }
+  const neg = s.can <= 0.004; const needAll = r2(s.need + s.buffer);
+  const pct = needAll > 0 ? Math.max(0, Math.min(100, s.have / needAll * 100)) : 100;
+  const line = neg ? (s.safe <= 0.004 ? `Gap of ${fm(-s.safe)}. Spend nothing until money comes in.` : `This week's limit is used up. Back to ${fm(S.weeklyLimit)} on Monday.`) : `Yours to spend. The ${fm(s.buffer)} cushion stays put.`;
+  const when = `From Starling on ${fd(s.bank.at)}${s.age > 7 ? `, ${s.age} days ago` : ''}${s.bank.since ? `, plus the ${s.bank.since} ${s.bank.since === 1 ? 'entry' : 'entries'} added since` : ''}${s.weekLeft != null ? ` · ${fm(s.spentWeek)} of your ${fm(S.weeklyLimit)} a week spent` : ''}`;
+  setHTML($('gap-body'), `<div class="gap-num" id="gap-num">${fm(Math.max(0, s.can))}</div>
+    <p class="gap-line ${neg ? 'bad' : 'good'}">${esc(line)}</p>
+    <div class="gap-bar" role="img" aria-label="You have ${fm(s.have)} of the ${fm(needAll)} that tax, bills and the cushion need"><i style="width:${pct.toFixed(1)}%"></i></div>
+    <div class="gap-legend"><span><small>You have</small><b>${fm(s.have)}</b></span><span class="r"><small>Tax, bills and cushion</small><b class="${s.have + 0.004 >= needAll ? '' : 'bad'}">${fm(needAll)}</b></span></div>
+    <p class="gap-when">${esc(when)}</p>`);
+}
+
+/* ---------- the Spaces, in a row ---------- */
+let spSel = '', spPicked = false;
+function spaceCards() {
+  const t = totals(); const s = spendInfo(); const b = s.bank; const sp = (b && b.spaces) || {};
+  const out = [];
+  for (const k of SPACES) {
+    const need = Math.max(0, r2(t[k].bal));
+    const have = b ? Number(sp[k]) || 0 : Math.max(0, r2(t[k].moved - t[k].out));
+    if (need <= 0.004 && have <= 0.004 && t[k].toMove <= 0.004) continue;
+    const short = r2(need - have); let st, c;
+    if (!b) { st = t[k].toMove > 0.004 ? `${fm(t[k].toMove)} to move` : 'All moved'; c = t[k].toMove > 0.004 ? 'var(--expect)' : 'var(--ok)'; }
+    else if (short > 0.004) { st = `${fm(short)} short`; c = 'var(--late)'; }
+    else if (need > 0.004) { st = 'Covered'; c = 'var(--ok)'; }
+    else if (k === 'garages' && S.garagesMonthly && have + 0.004 >= S.garagesMonthly) { st = 'Next month covered'; c = 'var(--ok)'; }
+    else { st = `${fm(have)} spare`; c = 'var(--ok)'; }
+    const name = potName(k);
+    let d = b ? `${name} needs ${fm(need)} and has ${fm(have)}${short > 0.004 ? `, so it's ${fm(short)} short.` : have - need > 0.004 ? `: ${fm(have - need)} more than it needs.` : '.'}` : `${name} should hold ${fm(need)}.`;
+    if (k === 'ct') { const pl = prevCtLeft(); const cur = ctBill(t); if (pl > 0.004) d += ` That's last year's bill (${fm(pl)} left) and this year's so far (${fm(cur.amount || 0)}).`; if (b && short > 0.004) d += ' Fill it first when money comes in.'; }
+    if (k === 'vat') { const run = vatBills().find(x => x.running); if (run) d += ` The return due ${fd(run.due)} is ${fm(run.amount)} so far.`; }
+    if (k === 'garages' && S.garagesMonthly) d += ` ${fm(S.garagesMonthly)} a month is put aside from the first payments each month.`;
+    if (t[k].toMove > 0.004 && b) d += ` ${fm(t[k].toMove)} still to move in from the main account.`;
+    out.push({k, name, big: b ? have : need, pct: need > 0.004 ? Math.min(100, have / need * 100) : 100, st, c, d, rank: short > 0.004 && b ? 0 : 1});
+  }
+  out.sort((a, b2) => a.rank - b2.rank);
+  if (b) {
+    const free = Number(sp.free) || 0, rest = Math.max(0, r2(t.rest.bal));
+    if (free > 0.004 || rest > 0.004) out.push({k:'free', name:'Free to Spend', big:free, pct:100, st: rest > 0.004 ? `+ ${fm(rest)} in main` : 'Yours', c:'var(--faint)', d:`Free to Spend has ${fm(free)}${rest > 0.004 ? `, and ${fm(rest)} more is free in the main account` : ''}.${s.safe < 0 ? ' Leave it while the company is short.' : ''}`});
+    const moveAll = r2(SPACES.reduce((a, k) => a + Math.max(0, t[k].toMove), 0));
+    out.push({k:'main', name:'Main account', big:b.main, pct:100, st:'Day to day', c:'var(--faint)', d:`The main account has ${fm(b.main)}. Customer payments land here before they're split into the Spaces.${moveAll > 0.004 ? ` ${fm(moveAll)} of it still has to move into the Spaces.` : ''}`});
+  }
+  return out;
+}
+function renderSpaces() {
+  const b = S.bank && typeof S.bank.main === 'number' ? S.bank : null;
+  $('spc-sub').innerHTML = `${b ? `From Starling, ${esc(fd(b.at))}${(bankNow() || {}).since ? ' + since' : ''}` : 'Not checked yet'} <button type="button" class="btn sm ghost" data-bankopen>Update</button>`;
+  const cards = spaceCards();
+  if (!cards.length) { setHTML($('spaces'), `<div class="spc-empty"><p class="small">${b ? 'Nothing in the Spaces yet.' : "Type what's in Starling to see each Space against what its pot needs."}</p><button type="button" class="btn sm" data-bankopen>Type the balances</button></div>`); return; }
+  if (!spPicked || !cards.some(c => c.k === spSel)) spSel = cards[0].k;
+  const sel = cards.find(c => c.k === spSel);
+  setHTML($('spaces'), `<div class="spc-row" role="group" aria-label="Your Spaces">${cards.map(c => `<button type="button" class="spc" data-sp="${c.k}" aria-pressed="${c.k === spSel}" style="--c:${c.c}"><span class="spc-name">${esc(c.name)}</span><span class="spc-have">${fm(c.big)}</span><span class="spc-bar" aria-hidden="true"><i style="width:${c.pct.toFixed(1)}%"></i></span><span class="spc-st">${esc(c.st)}</span></button>`).join('')}</div>
+    <p class="spc-detail" role="status">${esc(sel.d)}${b ? '' : ' Type your Starling balances to see what is really in each Space.'}</p>`);
 }
 
 /* ---------- views, sheet, toast ---------- */
-const VIEWS = ['today', 'history', 'rules'];
+const VIEWS = ['today', 'you', 'history', 'rules'];
 function route() {
   let v = (location.hash || '').slice(1); if (!VIEWS.includes(v)) v = 'today';
   VIEWS.forEach(n => { $('v-' + n).hidden = n !== v; });
-  document.querySelectorAll('.dock [data-view]').forEach(a => { if (a.dataset.view === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  const dockOn = v === 'you' ? 'today' : v;
+  document.querySelectorAll('.dock [data-view]').forEach(a => { if (a.dataset.view === dockOn) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  $('whose').hidden = !(v === 'today' || v === 'you');
+  document.querySelectorAll('#whose [data-whose]').forEach(a => { if (a.dataset.whose === v) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   window.scrollTo(0, 0);
 }
 let sheetFrom = null;
@@ -1452,7 +1633,7 @@ function closeSheet() {
 }
 let toastT = 0;
 function toast(t) { const el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 4500); }
-function openBankForm() { const f = $('bank-form'); f.hidden = false; fillBank(); const go = () => f.scrollIntoView({block:'center', behavior:'smooth'}); if ((location.hash || '#today') !== '#today') { location.hash = '#today'; setTimeout(go, 120); } else go(); }
+function openBankForm() { const f = $('bank-form'); f.hidden = false; $('bank-toggle').setAttribute('aria-expanded', 'true'); fillBank(); const go = () => { f.scrollIntoView({block:'center', behavior:'smooth'}); $('bank-main').focus({preventScroll:true}); }; if ((location.hash || '#today') !== '#today') { location.hash = '#today'; setTimeout(go, 120); } else go(); }
 
 /* ---------- pay HMRC: links and references, always there ---------- */
 function renderPayHmrc() {
@@ -1487,36 +1668,59 @@ function saInfo() {
   return {sa, pays, paidSince, left, n, months, weeks, perMonth: r2(left / months), perWeek: r2(left / weeks)};
 }
 let saEdit = false;
-function renderSa() {
-  const i = saInfo(); $('sa-card').hidden = !i; if (!i) return;
+function monthEnd(y, m) { return isoOf(new Date(y, m + 1, 0)); }
+function renderYou() {
+  const i = saInfo();
+  if (!i) { setHTML($('you'), `<section class="card"><h2>Your own tax</h2><p class="small">Nothing set up here yet. Your Self Assessment as a self-employed person goes here, apart from the company.</p></section>`); return; }
   const {sa, pays, paidSince, left, n} = i;
   const late = left > 0.004 && n < 0, done = left <= 0.004;
-  const when = done ? 'Cleared. Nothing left to pay.' : late ? `was due ${fd(sa.due, {year:true})} · ${-n} days late` : `left to pay by ${fd(sa.due, {year:true})} · ${inWhen(n)}`;
-  const plan = done ? '' : late ? `<p class="sa-plan">Pay it now: interest runs every day, and HMRC adds 5% of what's unpaid 30 days after the deadline.</p>` : `<p class="sa-plan">Put aside about <b>${fm(i.perMonth)}</b> a month (<b>${fm(i.perWeek)}</b> a week) from your own money and it's clear by ${fd(sa.due, {wd:false})}.</p>`;
-  const sub = `HMRC showed ${fm(sa.owed)} on ${fd(sa.asOf, {wd:false, year:true})}${paidSince ? `; ${fm(paidSince)} paid since` : ''}.`;
-  const list = pays.slice(0, 4).map(e => `${fd(e.date, {wd:false})} ${fm(e.amount)}`).join(' · ');
+  const when = done ? 'Cleared. Nothing left to pay.' : late ? `Was due ${fd(sa.due, {year:true})} · ${-n} days late` : `by ${fd(sa.due, {year:true})} · ${inWhen(n)}`;
+  const sub = done ? '' : late ? "Pay it now: interest runs every day, and HMRC adds 5% of what's unpaid 30 days after the deadline." : `Or about ${fm(i.perWeek)} a week, put aside from your own money.`;
+  const d = parse(today()); const dy = d.getFullYear(), dm = d.getMonth();
+  const block = (iso, cls) => { const x = parse(iso); return `<div class="cdate ${cls || ''}" aria-hidden="true"><small>${x.toLocaleDateString('en-GB', {weekday:'short'})}</small><b>${x.getDate()}</b><span>${MON3(x.getMonth())}${x.getFullYear() !== dy ? ' ' + String(x.getFullYear()).slice(2) : ''}</span></div>`; };
+  const step = (iso, cls, title, small) => `<div class="crow">${block(iso, cls === 'maybe' ? 'maybe' : cls === 'done' ? 'done' : cls === 'late' ? 'late' : '')}<div class="cstep ${cls || ''}"><span class="ci-t"><b><span class="sr">${fd(iso, {year:true})}. </span>${esc(title)}</b><small>${esc(small)}</small></span></div></div>`;
+  let steps = pays.slice(0, 6).reverse().map(e => step(e.date, 'done', `Paid ${fm(e.amount)}`, e.note && !/^Self Assessment paid$/.test(e.note) ? e.note : 'Paid to HMRC'));
+  if (late) steps.push(step(today(), 'late', `Pay ${fm(left)} now`, `It was due ${fd(sa.due, {year:true})}`));
+  else if (!done) {
+    const k = i.months;
+    for (let j = 1; j <= k; j++) {
+      const last = j === k; const iso = last ? sa.due : monthEnd(dy, dm + j);
+      const a = last ? r2(left - i.perMonth * (k - 1)) : i.perMonth;
+      steps.push(step(iso, '', `Pay ${fm(a)}`, last ? `By ${fd(iso, {year:true})}, then it's clear` : `By ${fd(iso)}, from your own money`));
+    }
+  }
+  const poa = `${sa.due.slice(0, 4)}-07-31`;
+  if (!done && poa > sa.due) steps.push(step(poa, 'maybe', 'Maybe a payment on account', 'If the bill includes one, a second payment is due 31 July. Sanjay can tell you.'));
   const bank = HMRC.sa; const ref = sa.ref || '';
-  const key = 'pay-sa';
   const edit = saEdit ? `<div class="paidrow"><div class="pound"><i>£</i><input inputmode="decimal" aria-label="What HMRC shows you owe" id="sa-owed" value="${r2(left).toFixed(2)}"></div><button type="button" class="btn sm" data-sasave ${canWrite ? '' : 'disabled'}>Save</button><button type="button" class="btn sm ghost" data-saedit>Cancel</button></div><p class="hint">Type what HMRC's page shows you owe now. Payments from today on come off it, as HMRC takes up to 7 days to show them.</p>` : '';
-  setHTML($('sa'), `<div class="sa-top"><div class="sa-num${late ? ' late' : done ? ' done' : ''}">${fm(left)}</div></div>
-    <p class="sa-when">${esc(when)}</p>${plan}
-    <p class="sa-sub">${esc(sub)}${list ? ` Paid: ${esc(list)}.` : ''}</p>
-    <div class="sa-box">
-      <div class="paidrow"><div class="pound"><i>£</i><input inputmode="decimal" aria-label="Amount paid to Self Assessment" id="sa-amt"></div><button type="button" class="btn sm" data-sapaid ${canWrite ? '' : 'disabled'}>I've paid some</button><button type="button" class="btn sm ghost" data-saedit>${saEdit ? 'Close' : 'HMRC shows a new amount'}</button></div>
+  setHTML($('you'), `<section class="you-card" aria-labelledby="you-h">
+      <span class="pill">You, not the company</span>
+      <h2 class="you-label" id="you-h">Self Assessment left to pay</h2>
+      <div class="you-num${late ? ' late' : done ? ' done' : ''}" id="you-num">${fm(left)}</div>
+      <p class="you-when">${esc(when)}</p>
+      ${sub ? `<p class="you-sub">${esc(sub)}</p>` : ''}
+    </section>
+    <div class="cgroup"><h2 class="glabel you">Your plan to clear it</h2>${steps.join('')}</div>
+    <section class="card" aria-labelledby="sapaid-h">
+      <h2 id="sapaid-h">Paid some?</h2>
+      <div class="paidrow"><div class="pound"><i>£</i><input inputmode="decimal" aria-label="Amount paid to Self Assessment" id="sa-amt" placeholder="${done ? '0.00' : r2(Math.min(left, i.perMonth)).toFixed(2)}"></div><button type="button" class="btn primary sm" data-sapaid ${canWrite ? '' : 'disabled'}>I've paid it</button><button type="button" class="btn sm ghost" data-saedit>${saEdit ? 'Close' : 'HMRC shows a new amount'}</button></div>
       ${edit}
-      <details class="ti" data-key="${key}"${openItems.has(key) ? ' open' : ''}><summary><span class="ti-main"><b>Pay Self Assessment</b><small class="mono">${esc(ref ? `Ref ${ref}` : 'Reference missing')}</small></span><span class="ti-amt"></span><span class="chev" aria-hidden="true"></span></summary><div class="ti-body"><div class="paybox">
+      <p class="small">HMRC showed ${fm(sa.owed)} on ${fd(sa.asOf, {wd:false, year:true})}${paidSince ? `; ${fm(paidSince)} paid since` : ''}. Paying from your own account, it never touches the company's pots.</p>
+    </section>
+    <section class="card" aria-labelledby="sapay-h">
+      <h2 id="sapay-h">Pay Self Assessment</h2>
+      <div class="paybox">
         <div class="actions"><a class="btn primary" href="${bank.url}" target="_blank" rel="noopener">Pay Self Assessment on gov.uk</a></div>
         <p class="small">From your own account, not the company's. HMRC's page fills in its own details. Or a normal transfer:</p>
         <dl class="bank">${copyRow('Name', bank.name)}${copyRow('Sort code', bank.sort)}${copyRow('Account', bank.acct)}${copyRow('Reference', ref)}</dl>
-        ${ref ? `<p class="check good">Your 10-digit UTR and K, 11 characters. Right for every Self Assessment payment.</p>` : ''}
-        <p class="small">If the bill includes a payment on account for next year, a second one is due 31 July. Sanjay can tell you.</p>
-      </div></div></details>
-    </div>`);
+        ${ref ? `<p class="check good">Your 10-digit UTR and K, 11 characters. Right for every Self Assessment payment.</p>` : `<p class="check bad">Reference missing: your UTR and K, from HMRC's letter.</p>`}
+      </div>
+    </section>`);
 }
 
 /* ---------- render all ---------- */
 function renderAll() {
-  renderHero(); renderTodo(); renderPotsJars(); renderComing(); renderPayHmrc(); renderSa(); renderPreview(); renderHistory(); renderOutHint();
+  renderGap(); renderSpaces(); renderCal(); renderPayHmrc(); renderYou(); renderPreview(); renderHistory(); renderOutHint();
 }
 function renderOutPots() {
   $('out-pot').innerHTML = POTS.map(p => `<label><input type="radio" name="opot" value="${p.k}"${p.k === 'materials' ? ' checked' : ''}><span><i class="dot" style="--c:${col(p.k)}"></i>${p.name}</span></label>`).join('');
@@ -1599,7 +1803,24 @@ document.addEventListener('click', async ev => {
     for (const e of todo) { const patch = {}; which.forEach(k => { if (e.split && e.split[k]) patch[k] = true; }); try { await store.patch(e.id, {moved: patch}); } catch { break; } }
     return;
   }
-  if (el.dataset.saedit != null) { saEdit = !saEdit; renderSa(); if (saEdit) { const x = $('sa-owed'); x && x.focus(); } return; }
+  if (el.dataset.sp != null) { spSel = el.dataset.sp; spPicked = true; renderSpaces(); return; }
+  if (el.dataset.plansave != null && canWrite) {
+    const b = ctPrevBill(); if (!b || !b.known) return;
+    const m = planPick != null ? planPick : planDefault(b);
+    const first = ($('plan-first') && $('plan-first').value) || planFirst || firstOfNextMonth();
+    const keep = S.ctPlan && S.ctPlan.period === b.period ? S.ctPlan : null;
+    S = {...S, ctPlan: {period: b.period, monthly: r2(m), first, at: (keep && keep.at) || today(), savedAt: (keep && keep.savedAt) || new Date().toISOString()}};
+    planPick = null; planFirst = ''; renderAll(); store.settings(); toast(`Plan saved: ${fm(m)} a month from ${fd(first)}`);
+    return;
+  }
+  if (el.dataset.planclear != null && canWrite) { S = {...S, ctPlan: null}; planPick = null; planFirst = ''; renderAll(); store.settings(); toast('Plan taken off.'); return; }
+  if (el.dataset.payeset != null && canWrite) {
+    const a = num(($('paye-amt') || {}).value);
+    if (!(a >= 0)) { const x = $('paye-amt'); x && x.focus(); return; }
+    S = {...S, payeMonthly: r2(a)}; fillRules(); renderAll(); store.settings(); toast(a > 0 ? `PAYE: ${fm(a)} a month` : 'PAYE amount cleared');
+    return;
+  }
+  if (el.dataset.saedit != null) { saEdit = !saEdit; renderYou(); if (saEdit) { const x = $('sa-owed'); x && x.focus(); } return; }
   if (el.dataset.sasave != null && canWrite) {
     const a = num(($('sa-owed') || {}).value);
     if (!(a >= 0) || !S.sa) { const x = $('sa-owed'); x && x.focus(); return; }
@@ -1642,10 +1863,19 @@ document.addEventListener('click', async ev => {
   }
   if (el.dataset.showall != null) { showAll = true; renderHistory(); }
 });
-document.addEventListener('toggle', ev => { const d = ev.target; if (d.matches && d.matches('details.ti')) { if (d.open) openItems.add(d.dataset.key); else openItems.delete(d.dataset.key); } }, true);
+document.addEventListener('toggle', ev => { const d = ev.target; if (d.matches && d.matches('details.ti, details.ci')) { if (d.open) openItems.add(d.dataset.key); else openItems.delete(d.dataset.key); } }, true);
 document.addEventListener('change', ev => {
   const el = ev.target;
   if (el.matches('[data-yearend]') && canWrite) { S = {...S, yearEnd: el.value}; fillRules(); renderAll(); store.settings(); }
+});
+document.addEventListener('input', ev => {
+  const el = ev.target;
+  if (el.id !== 'plan-m' && el.id !== 'plan-first') return;
+  const b = ctPrevBill(); if (!b || !b.known) return;
+  if (el.id === 'plan-m') planPick = Number(el.value) || planDefault(b); else planFirst = el.value;
+  const m = planPick != null ? planPick : planDefault(b); const f = planFigures(b, m);
+  $('plan-num').textContent = fm(m); $('plan-m').setAttribute('aria-valuetext', `${fm(m)} a month`);
+  setHTML($('plan-stats'), planStatsHtml(f)); $('plan-note').textContent = f.note;
 });
 let ruleTimer = 0;
 const onRule = () => { clearTimeout(ruleTimer); ruleTimer = setTimeout(() => { if (!canWrite) return; S = readRules(); renderAll(); store.settings(); }, 600); };
@@ -1680,8 +1910,9 @@ function stateText() {
     if (b.unknown) return `${b.title}: ${b.per}`;
     const n = daysTo(b.due);
     const paid = b.amount != null && b.amount <= 0.004 && !b.running && !b.estimate;
-    const st = b.prev ? 'was due, NOT marked paid' : paid ? 'paid' : n < 0 ? `${-n} days LATE` : `due in ${n} days`;
-    const amt = b.k === 'ch' ? '£50 fee' : b.amount == null ? 'amount not known' : `${fm(Math.max(0, b.amount))}${b.estimate ? ' (what the pot holds, not the bill)' : b.running ? ' so far, quarter still running' : ''}`;
+    const plan = ctPlanOf(b); const nx = plan ? planNext(b, plan) : null;
+    const st = b.prev && !b.known ? 'was due, NOT marked paid' : plan ? `${n < 0 ? 'LATE, ' : ''}on an HMRC payment plan of ${fm(plan.monthly)} a month, next payment ${fm(nx.amount)} due ${fd(nx.due, {year:true})}` : paid ? 'paid' : n < 0 ? `${-n} days LATE` : `due in ${n} days`;
+    const amt = b.k === 'ch' ? '£50 fee' : b.amount == null ? 'amount not known' : `${fm(Math.max(0, b.amount))}${b.prev && b.known ? ` left of HMRC's ${fm(b.total)}${b.interestDay ? `, interest about ${fm(b.interestDay)} a day` : ''}` : b.estimate ? ' (what the pot holds for this year so far, not the bill)' : b.running ? ' so far, quarter still running' : ''}`;
     return `${b.title}${b.per ? ` (${b.per})` : ''}: ${amt}, due ${fd(b.due, {year:true})}, ${st}${b.period ? ` [bill=${b.k}, period=${b.period}]` : ''}`;
   }).join('\n');
   const recent = entries.slice().sort((a, b) => (b.date || '').localeCompare(a.date || '') || String(b.at || '').localeCompare(String(a.at || ''))).slice(0, 25).map(e => e.kind === 'out'
@@ -1689,7 +1920,7 @@ function stateText() {
     : `${e.date} ${labelOf(e)}${e.kind === 'in' ? ` ${fm(e.amount)}` : ''}: ${ORDER.filter(k => e.split && e.split[k]).map(k => `${potName(k)} ${fm(e.split[k])}`).join(', ') || 'nothing split'}${e.cisTaken ? `, CIS taken ${fm(e.cisTaken)}` : ''}${e.note ? ` (${e.note})` : ''}`).join('\n');
   const cis = r2(entries.reduce((a, e) => a + (e.cisTaken || 0), 0));
   const sp = spendInfo();
-  const spendLine = sp.bank ? `YOU CAN SPEND ${sp.weekLeft != null ? 'THIS WEEK ' : ''}${fm(Math.max(0, sp.can))}${sp.can <= 0 ? ' (STOP: under the line)' : ''}. Starling on ${sp.bank.date || sp.bank.at}: main ${fm(sp.bank.main)}; Spaces ${POTS.filter(p => p.k !== 'rest').map(p => `${p.name} ${fm((sp.bank.spaces || {})[p.k] || 0)}${sp.short[p.k] ? ` (short ${fm(sp.short[p.k])})` : ''}`).join(', ')}; still to move into Spaces ${fm(sp.toFund)}; cushion ${fm(sp.buffer)}${sp.weekLeft != null ? `; weekly limit ${fm(S.weeklyLimit)}, spent this week ${fm(sp.spentWeek)}` : ''}.` : `YOU CAN SPEND: unknown until he gives his Starling balances (main account and each Space). Cushion ${fm(sp.buffer)}.`;
+  const spendLine = sp.bank ? `SAFE TO SPEND ${sp.weekLeft != null ? 'THIS WEEK ' : ''}${fm(Math.max(0, sp.can))}${sp.can <= 0 ? ` (STOP: a gap of ${fm(-sp.safe)})` : ''}. Worked out as all company money ${fm(sp.have)} (main account and every Space, Free to Spend too) minus what the pots must hold ${fm(sp.need)} minus the cushion ${fm(sp.buffer)}. Starling on ${sp.bank.date || sp.bank.at}: main ${fm(sp.bank.main)}; Spaces ${POTS.filter(p => p.k !== 'rest').map(p => `${p.name} ${fm((sp.bank.spaces || {})[p.k] || 0)}${sp.short[p.k] ? ` (short ${fm(sp.short[p.k])})` : ''}`).join(', ')}, Free to Spend ${fm((sp.bank.spaces || {}).free || 0)}${sp.weekLeft != null ? `; weekly limit ${fm(S.weeklyLimit)}, spent this week ${fm(sp.spentWeek)}` : ''}.` : `SAFE TO SPEND: unknown until he gives his Starling balances (main account and each Space). Cushion ${fm(sp.buffer)}.`;
   return `${spendLine}\n\nPOTS (what each Starling Space should hold)\n${pots}\n\nDEADLINES\n${dl}\n\n${(() => { const i = saInfo(); return i ? `HIS OWN SELF ASSESSMENT (personal, self-employed, not the company; paid from his own money; pot "sa", not one of the company pots): ${fm(i.left)} left of ${fm(i.sa.owed)} HMRC showed on ${i.sa.asOf}, due ${i.sa.due} (${i.n} days); about ${fm(i.perMonth)} a month to clear it; reference ${i.sa.ref || 'not set'}; pay HMRC Cumbernauld 08-32-10 12001039.\n\n` : ''; })()}CIS taken off his jobs so far, for Sanjay to claim back: ${fm(cis)}\n\nAPP SETTINGS\nmaterials ${S.materialsPct}% of each payment; garages ${fm(S.garagesMonthly)} a month (3 garages, £376.60 a quarter each); PAYE ${S.payeMonthly ? fm(S.payeMonthly) + ' a month' : 'monthly amount not set yet'}; corporation tax ${S.ct}% of profit; dividends ${S.dividendsPct}% of what's left after tax; VAT ${vatRateOn(today())}% flat rate; first VAT quarter ends ${S.vatFirstEnd || 'not set'}; PAYE reference ${S.payeRef || 'not set'}; corporation tax reference ${S.ctRef || 'not set'}\n\nLATEST ENTRIES (newest first)\n${recent || 'none yet'}`;
 }
 
@@ -1714,8 +1945,9 @@ How the app works:
 - add_payment splits each payment in this order: VAT, materials, garages (topped up each month), PAYE (topped up each month), corporation tax on the profit (CIS jobs: covered by the CIS taken), dividends, the rest free to spend.
 - Paying HMRC: VAT to HMRC VAT, 08-32-00, 11963155, reference ${S.vrn || 'his VAT number'}. Corporation tax to HMRC Cumbernauld, 08-32-10, 12001039, with that year's 17-character reference (the 2 digits before the final A change each year; check in HMRC online)${S.ctRef && S.ctRefFor ? `: for the year to ${fd(S.ctRefFor, {wd:false, year:true})} it is ${S.ctRef}${S.ctRefChecked ? ', confirmed by HMRC' : ''}` : ''}. PAYE to HMRC Cumbernauld, 08-32-10, 12001039, reference ${S.payeRef || 'his Accounts Office reference (not set yet)'} (paying early or late add 4 digits: the last 2 digits of the year the tax year ends, then the tax month, e.g. 2707 for 6 Oct to 5 Nov 2026). Or gov.uk's pay pages, "approve a payment through your bank account", which fills in HMRC's details.
 - Penalties: VAT paid late, 3% on day 15, another 3% on day 30, then interest every day; late returns get points, 4 points = £200. Companies House accounts late: £150 under 1 month, £375 under 3, £750 under 6, £1,500 after, doubled if late two years running. Confirmation statement every year, due 14 days after the statement date, £50 online; ignoring it risks a fine and strike off. Corporation tax due 9 months and 1 day after the year end; the CT600 return within 12 months. PAYE due on the 22nd each month.
-- What he can spend = Starling main account, minus what the Spaces are still short of, minus his cushion (and never more than his weekly limit if he set one). When he asks "what can I spend", give that one number first. If it's 0 or below, tell him straight: stop spending.
-- When he sends a screenshot of Starling, read the main account and each Space balance and call set_bank_balances (this is the one thing you may record from a photo, because that's why he sent it). Match his Space names to the pots as best you can and say which you matched. Then give "You can spend" and what to move.
+- What he can spend ("Safe to spend") = all the company's money in Starling (the main account and every Space, including Free to Spend), minus what the pots must hold, minus his cushion (and never more than his weekly limit if he set one). When he asks "what can I spend", give that one number first. If it's 0 or below, tell him straight: stop spending.
+- A late bill can go on an HMRC payment plan (Payment Support Service 0300 200 3835). The app has a slider to try monthly amounts; once HMRC agrees one he saves it there and each payment shows in the calendar.
+- When he sends a screenshot of Starling, read the main account and each Space balance and call set_bank_balances (this is the one thing you may record from a photo, because that's why he sent it). Match his Space names to the pots as best you can (Free to Spend goes in free; a Space that isn't the company's, like a house deposit, stays out) and say which you matched. Then give "Safe to spend" and what to move.
 - When he says he spent money on himself or anything else ("spent £60 on fuel"), record it with add_money_out from rest (Free to spend) and tell him what's left.
 - His own Self Assessment (as a self-employed person, not the company) has its own card. When he says he paid some, record it with add_money_out pot "sa". It comes from his own money, so it never touches the company pots or "what he can spend". Reference: his UTR followed by K.
 - Neither of you is an accountant: give the figures and what to do, and say to check with Sanjay where it needs his accounts (final tax, dividends, director's loan). Dividends can only come from profit after tax that Sanjay has confirmed.
@@ -1764,7 +1996,8 @@ function makeTools(acts) {
         const amount = Math.max(0, Number(i.amount) || 0);
         if (!bill || !period) throw new Error('Need bill and period exactly as listed in DEADLINES.');
         if (!(amount > 0) && !i.already_paid) throw new Error('Need the amount paid, or already_paid true.');
-        const c = ctInfo(); const pot = (bill === 'ct' && c && period === c.prevEnd) || i.already_paid ? 'rest' : bill;
+        const c = ctInfo(); const known = bill === 'ct' && c && period === c.prevEnd && knownBill('ct', period);
+        const pot = i.already_paid || (bill === 'ct' && c && period === c.prevEnd && !known) ? 'rest' : bill;
         say('Marking it paid…');
         const title = bill === 'vat' ? 'VAT return paid' : bill === 'ct' ? `Corporation tax, year to ${fd(period, {wd:false, year:true})}${i.already_paid ? ': already paid' : ' paid'}` : 'PAYE paid';
         const e = {id:newId(today()), kind:'out', pot, bill, period, date:today(), amount:r2(amount), note:title, at:new Date().toISOString(), by:'claude'};
@@ -1794,14 +2027,14 @@ function makeTools(acts) {
         return 'Marked filed.';
       }},
     {name:'set_bank_balances', description:'Save what is in Starling right now: the main account and each Space. Returns what he can spend.',
-      inputSchema:{type:'object', properties:{main:{type:'number', description:'£ in the main account'}, vat:{type:'number'}, ct:{type:'number'}, paye:{type:'number'}, garages:{type:'number'}, materials:{type:'number'}, dividends:{type:'number'}}, required:['main']},
+      inputSchema:{type:'object', properties:{main:{type:'number', description:'£ in the main account'}, vat:{type:'number'}, ct:{type:'number'}, paye:{type:'number'}, garages:{type:'number'}, materials:{type:'number'}, dividends:{type:'number'}, free:{type:'number', description:'£ in the Free to Spend Space'}}, required:['main']},
       async execute(i) {
         guard(); const main = Number(i.main); if (!isFinite(main)) throw new Error('Need the main account balance.');
-        const prev = {bank:S.bank}; const spaces = {}; ['vat','ct','paye','garages','materials','dividends'].forEach(k => { const v = Number(i[k]); spaces[k] = isFinite(v) ? r2(v) : 0; });
+        const prev = {bank:S.bank}; const spaces = {}; ['vat','ct','paye','garages','materials','dividends','free'].forEach(k => { const v = Number(i[k]); spaces[k] = isFinite(v) ? r2(v) : 0; });
         say('Saving your balances…');
-        S = {...S, bank:{main:r2(main), spaces, at:today()}}; renderAll(); await store.settings();
+        S = {...S, bank:{main:r2(main), spaces, at:today(), savedAt:new Date().toISOString()}}; renderAll(); await store.settings();
         acts.push({label:`Starling balances saved: main ${fm(main)}`, undo:{t:'rule', prev}});
-        const sp = spendInfo(); return {youCanSpend: r2(Math.max(0, sp.can)), underTheLine: sp.can <= 0, stillToMoveIntoSpaces: sp.toFund, shortBySpace: sp.short, cushion: sp.buffer};
+        const sp = spendInfo(); return {safeToSpend: r2(Math.max(0, sp.can)), gap: sp.can <= 0 ? r2(-sp.safe) : 0, allCompanyMoney: sp.have, potsMustHold: sp.need, shortBySpace: sp.short, cushion: sp.buffer};
       }},
     {name:'set_rule', description:"Change a setting: garagesMonthly (£ a month), payeMonthly (£ a month), materialsPct, dividendsPct, ctAmount (Sanjay's corporation tax figure for the year that ended last 30 September), buffer (£ cushion always kept in the main account), weeklyLimit (£ he may spend a week from Free to spend, 0 = none).",
       inputSchema:{type:'object', properties:{name:{type:'string', enum:['garagesMonthly','payeMonthly','materialsPct','dividendsPct','ctAmount','buffer','weeklyLimit']}, value:{type:'number'}}, required:['name','value']},
@@ -1980,12 +2213,12 @@ async function startChat() {
   renderChat();
 }
 
-$('bank-toggle').addEventListener('click', () => { const f = $('bank-form'); f.hidden = !f.hidden; if (!f.hidden) { fillBank(); $('bank-main').focus(); } });
+$('bank-toggle').addEventListener('click', () => { const f = $('bank-form'); f.hidden = !f.hidden; $('bank-toggle').setAttribute('aria-expanded', String(!f.hidden)); if (!f.hidden) { fillBank(); $('bank-main').focus(); } });
 $('bank-form').addEventListener('submit', async ev => {
   ev.preventDefault(); if (!canWrite) return;
   const main = num($('bank-main').value); if (!isFinite(main)) { $('bank-main').focus(); return; }
   const spaces = {}; document.querySelectorAll('#bank-form [data-space]').forEach(i => { const v = num(i.value); spaces[i.dataset.space] = isFinite(v) ? r2(v) : 0; });
-  S = {...S, bank: {main: r2(main), spaces, at: today()}}; $('bank-form').hidden = true; heroCounted = false; renderAll(); store.settings(); toast('Balances saved.');
+  S = {...S, bank: {main: r2(main), spaces, at: today(), savedAt: new Date().toISOString()}}; $('bank-form').hidden = true; $('bank-toggle').setAttribute('aria-expanded', 'false'); renderAll(); store.settings(); toast('Balances saved.');
 });
 
 $('sheet-close').addEventListener('click', closeSheet);
