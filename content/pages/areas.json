@@ -92,6 +92,11 @@
       "name": "Hatfield",
       "lat": 51.7636,
       "lng": -0.2259
+    },
+    {
+      "name": "Turnpike Lane",
+      "lat": 51.5903,
+      "lng": -0.1028
     }
   ]
 }
