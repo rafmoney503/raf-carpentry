@@ -479,6 +479,11 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
           <div class="card-head"><h2 id="coming-h">Coming up</h2></div>
           <div class="coming" id="coming"></div>
         </section>
+        <section class="card" aria-labelledby="payhmrc-h">
+          <div class="card-head"><h2 id="payhmrc-h">Pay HMRC</h2><span class="small">Links and references</span></div>
+          <div class="todo" id="payhmrc"></div>
+          <p class="small"><a href="https://www.tax.service.gov.uk/business-account" target="_blank" rel="noopener">Your HMRC business tax account</a>: what's owed and what's been paid.</p>
+        </section>
       </div>
     </div>
   </main>
@@ -526,6 +531,7 @@ legend{font-size:calc(13px * var(--fz));font-weight:500;color:var(--muted);paddi
       <h3>Corporation tax and PAYE</h3>
       <label class="fld"><span>Company year end</span><select id="r-yearend"></select><small class="hint">On Companies House, or ask Sanjay.</small></label>
       <label class="fld"><span>Corporation tax payment reference</span><input id="r-ctref" autocomplete="off" spellcheck="false" placeholder="17 characters"></label>
+      <label class="fld"><span>That reference is for</span><select id="r-ctreffor"></select><small class="hint">Every company year has its own reference. A payment with another year's goes on the wrong year.</small></label>
       <label class="fld"><span id="r-ctamt-l">Sanjay's corporation tax figure</span><div class="pound"><i>£</i><input id="r-ctamt" inputmode="decimal" autocomplete="off" placeholder="empty = use the pot"></div></label>
       <label class="fld"><span>PAYE payment reference</span><input id="r-payeref" autocomplete="off" spellcheck="false" placeholder="Accounts Office reference"></label>
       <label class="fld"><span>You pay PAYE</span><select id="r-payeq"><option value="m">Every month (22nd)</option><option value="q">Every quarter (22 Jan, Apr, Jul, Oct)</option></select><small class="hint">Quarterly is allowed when it averages under £1,500 a month.</small></label>
@@ -909,7 +915,7 @@ const VAT_START = '2026-06-01';
 const DEFAULTS = {
   vatRate:8.5, vatLater:9.5, vatFrom:'2027-06-01', vrn:'', vatFirstEnd:'',
   materialsPct:15, garagesMonthly:0, payeMonthly:0, payeQuarterly:false, payeRef:'',
-  ct:19, dividendsPct:50, yearEnd:'', ctRef:'', ctAmount:null, ctAmountFor:'', cisContractors:'', csDate:'06-11', csFiled:'', buffer:500, weeklyLimit:0, bank:null,
+  ct:19, dividendsPct:50, yearEnd:'', ctRef:'', ctRefFor:'', ctRefChecked:'', ctAmount:null, ctAmountFor:'', cisContractors:'', csDate:'06-11', csFiled:'', buffer:500, weeklyLimit:0, bank:null,
 };
 
 /* ---------- state ---------- */
@@ -1103,6 +1109,8 @@ function refCheck(b) {
     const v = (S.ctRef || '').replace(/\s/g, '').toUpperCase();
     if (!v) return {ref:'', html:`<p class="check bad">Add the 17-character reference in Rules.</p>`};
     if (!CTREF.test(v)) return {ref:'', html:`<p class="check bad">This isn't the usual shape: 10-digit UTR, A001, two digits, A. Check it in your HMRC online account.</p>`};
+    if (S.ctRefFor && b.period && b.period !== S.ctRefFor) return {ref:'', html:`<p class="check bad">The reference in Rules is for the year to ${fd(S.ctRefFor, {wd:false, year:true})}. This bill is for the ${esc((b.per || 'another year').replace(/^Year/, 'year'))}, which has its own reference. Get it from HMRC (0300 200 3410) or Sanjay and put it in Rules.</p>`};
+    if (S.ctRefFor) return {ref:v, html:`<p class="check good">For the year to ${fd(S.ctRefFor, {wd:false, year:true})}${S.ctRefChecked ? `, confirmed by HMRC on ${fd(S.ctRefChecked, {wd:false, year:true})}` : ''}. Every year has its own, so check before paying a different year.</p>`};
     const n = Number(v.slice(14, 16));
     return {ref:v, html:`<p class="check info">Right shape. The <b class="mono">${v.slice(14, 16)}</b> means the company's ${ord(n)} accounting period, and it changes every year. Before paying, check in your HMRC online account (Corporation Tax, view account, accounting periods) that it's the one for the ${b.per ? esc(b.per.replace(/^Year/, 'year')) : 'year you are paying'}. With the wrong one the payment can land on the wrong year.</p>`};
   }
@@ -1201,7 +1209,8 @@ function fillRules() {
   set('r-gar', S.garagesMonthly || ''); set('r-paye', S.payeMonthly || ''); set('r-ct', S.ct); set('r-div', S.dividendsPct);
   const ye = $('r-yearend'); if (document.activeElement !== ye) { ye.innerHTML = yearEndOptions(); ye.value = S.yearEnd || ''; }
   set('r-buffer', S.buffer); set('r-week', S.weeklyLimit || '');
-  set('r-ctref', S.ctRef); set('r-payeref', S.payeRef); set('r-payeq', S.payeQuarterly ? 'q' : 'm');
+  set('r-ctref', S.ctRef); set('r-payeref', S.payeRef);
+  const rf = $('r-ctreffor'); if (document.activeElement !== rf) { const ci = ctInfo(); const ends = [...new Set([ci && ci.prevEnd, ci && ci.end, ci && ci.next, S.ctRefFor].filter(Boolean))].sort(); rf.innerHTML = `<option value="">Not sure which year</option>` + ends.map(v => `<option value="${v}">Year to ${fd(v, {wd:false, year:true})}</option>`).join(''); rf.value = S.ctRefFor || ''; } set('r-payeq', S.payeQuarterly ? 'q' : 'm');
   const c = ctInfo();
   $('r-ctamt-l').textContent = c ? `Sanjay's corporation tax for the year to ${fd(c.end, {wd:false, year:true})}` : "Sanjay's corporation tax figure";
   set('r-ctamt', (c && S.ctAmountFor === c.end && S.ctAmount != null) ? S.ctAmount : '');
@@ -1216,10 +1225,11 @@ function readRules() {
     materialsPct: Math.min(90, Math.max(0, n('r-mat', DEFAULTS.materialsPct))),
     garagesMonthly: Math.max(0, n('r-gar', 0)), payeMonthly: Math.max(0, n('r-paye', 0)),
     ct: Math.min(30, Math.max(0, n('r-ct', DEFAULTS.ct))), dividendsPct: Math.min(100, Math.max(0, n('r-div', DEFAULTS.dividendsPct))),
-    yearEnd: $('r-yearend').value, ctRef: $('r-ctref').value.replace(/\s/g, '').toUpperCase(), payeRef: $('r-payeref').value.trim(),
+    yearEnd: $('r-yearend').value, ctRef: $('r-ctref').value.replace(/\s/g, '').toUpperCase(), ctRefFor: $('r-ctreffor').value, payeRef: $('r-payeref').value.trim(),
     payeQuarterly: $('r-payeq').value === 'q',
     buffer: Math.max(0, n('r-buffer', 0)), weeklyLimit: Math.max(0, n('r-week', 0)),
   };
+  if (next.ctRef !== S.ctRef || next.ctRefFor !== S.ctRefFor) next.ctRefChecked = '';
   const ca = num($('r-ctamt').value);
   if (c) { if (isFinite(ca)) { next.ctAmount = r2(ca); next.ctAmountFor = c.end; } else if (S.ctAmountFor === c.end) { next.ctAmount = null; next.ctAmountFor = ''; } }
   return next;
@@ -1429,9 +1439,29 @@ let toastT = 0;
 function toast(t) { const el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 4500); }
 function openBankForm() { const f = $('bank-form'); f.hidden = false; fillBank(); const go = () => f.scrollIntoView({block:'center', behavior:'smooth'}); if ((location.hash || '#today') !== '#today') { location.hash = '#today'; setTimeout(go, 120); } else go(); }
 
+/* ---------- pay HMRC: links and references, always there ---------- */
+function renderPayHmrc() {
+  const items = [
+    {k:'vat', title:'VAT', b:{k:'vat'}},
+    {k:'ct', title:'Corporation tax', b:{k:'ct', period: S.ctRefFor || '', per: S.ctRefFor ? `Year to ${fd(S.ctRefFor, {wd:false, year:true})}` : ''}},
+    {k:'paye', title:'PAYE', b:{k:'paye', p: payeNext()}},
+  ];
+  setHTML($('payhmrc'), items.map(({k, title, b}) => {
+    const rc = refCheck(b); const bank = HMRC[k]; const key = `pay-${k}`;
+    const sub = rc.ref ? `Ref ${rc.ref}${k === 'ct' && S.ctRefFor ? ` · year to ${fd(S.ctRefFor, {wd:false, year:true})}` : ''}` : 'Reference missing: see Rules';
+    const body = `<div class="paybox">
+      <div class="actions"><a class="btn primary" href="${bank.url}" target="_blank" rel="noopener">Pay ${esc(k === 'ct' ? 'corporation tax' : title)} on gov.uk</a></div>
+      <p class="small">HMRC's page fills in its own details: pick Starling and approve it in the app. Or a normal transfer from Starling:</p>
+      <dl class="bank">${copyRow('Name', bank.name)}${copyRow('Sort code', bank.sort)}${copyRow('Account', bank.acct)}${copyRow('Reference', rc.ref)}</dl>
+      ${rc.html}
+    </div>`;
+    return `<details class="ti" data-key="${key}"${openItems.has(key) ? ' open' : ''}><summary><span class="ti-main"><b>${esc(title)}</b><small class="mono">${esc(sub)}</small></span><span class="ti-amt"></span><span class="chev" aria-hidden="true"></span></summary><div class="ti-body">${body}</div></details>`;
+  }).join(''));
+}
+
 /* ---------- render all ---------- */
 function renderAll() {
-  renderHero(); renderTodo(); renderPotsJars(); renderComing(); renderPreview(); renderHistory(); renderOutHint();
+  renderHero(); renderTodo(); renderPotsJars(); renderComing(); renderPayHmrc(); renderPreview(); renderHistory(); renderOutHint();
 }
 function renderOutPots() {
   $('out-pot').innerHTML = POTS.map(p => `<label><input type="radio" name="opot" value="${p.k}"${p.k === 'materials' ? ' checked' : ''}><span><i class="dot" style="--c:${col(p.k)}"></i>${p.name}</span></label>`).join('');
@@ -1612,7 +1642,7 @@ Tools:
 How the app works:
 - Customer job (homeowner): VAT is the flat rate on the whole payment (8.5% until 31 May 2027, then 9.5%). CIS job (for a contractor): no VAT (reverse charge), the contractor took 20% CIS (25% of what landed if it was all labour), which HMRC holds for the company and Sanjay claims back. Other: no VAT.
 - add_payment splits each payment in this order: VAT, materials, garages (topped up each month), PAYE (topped up each month), corporation tax on the profit (CIS jobs: covered by the CIS taken), dividends, the rest free to spend.
-- Paying HMRC: VAT to HMRC VAT, 08-32-00, 11963155, reference ${S.vrn || 'his VAT number'}. Corporation tax to HMRC Cumbernauld, 08-32-10, 12001039, with that year's 17-character reference (the 2 digits before the final A change each year; check in HMRC online). PAYE to HMRC Cumbernauld, 08-32-10, 12001039, reference ${S.payeRef || 'his Accounts Office reference (not set yet)'} (paying early or late add 4 digits: the last 2 digits of the year the tax year ends, then the tax month, e.g. 2707 for 6 Oct to 5 Nov 2026). Or gov.uk's pay pages, "approve a payment through your bank account", which fills in HMRC's details.
+- Paying HMRC: VAT to HMRC VAT, 08-32-00, 11963155, reference ${S.vrn || 'his VAT number'}. Corporation tax to HMRC Cumbernauld, 08-32-10, 12001039, with that year's 17-character reference (the 2 digits before the final A change each year; check in HMRC online)${S.ctRef && S.ctRefFor ? `: for the year to ${fd(S.ctRefFor, {wd:false, year:true})} it is ${S.ctRef}${S.ctRefChecked ? ', confirmed by HMRC' : ''}` : ''}. PAYE to HMRC Cumbernauld, 08-32-10, 12001039, reference ${S.payeRef || 'his Accounts Office reference (not set yet)'} (paying early or late add 4 digits: the last 2 digits of the year the tax year ends, then the tax month, e.g. 2707 for 6 Oct to 5 Nov 2026). Or gov.uk's pay pages, "approve a payment through your bank account", which fills in HMRC's details.
 - Penalties: VAT paid late, 3% on day 15, another 3% on day 30, then interest every day; late returns get points, 4 points = £200. Companies House accounts late: £150 under 1 month, £375 under 3, £750 under 6, £1,500 after, doubled if late two years running. Confirmation statement every year, due 14 days after the statement date, £50 online; ignoring it risks a fine and strike off. Corporation tax due 9 months and 1 day after the year end; the CT600 return within 12 months. PAYE due on the 22nd each month.
 - What he can spend = Starling main account, minus what the Spaces are still short of, minus his cushion (and never more than his weekly limit if he set one). When he asks "what can I spend", give that one number first. If it's 0 or below, tell him straight: stop spending.
 - When he sends a screenshot of Starling, read the main account and each Space balance and call set_bank_balances (this is the one thing you may record from a photo, because that's why he sent it). Match his Space names to the pots as best you can and say which you matched. Then give "You can spend" and what to move.
