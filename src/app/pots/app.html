@@ -983,7 +983,7 @@ function totals() {
     const sp = e.split || {};
     for (const k of Object.keys(sp)) { if (!t[k]) continue; const v = sp[k] || 0; t[k].in += v; if (k === 'rest' || (e.moved && e.moved[k])) t[k].moved += v; }
   }
-  for (const k in t) { t[k].bal = r2(t[k].in - t[k].out); t[k].toMove = r2(t[k].in - t[k].moved); }
+  for (const k in t) { t[k].bal = r2(t[k].in - t[k].out); t[k].toMove = r2(Math.max(0, t[k].in - t[k].moved - t[k].out)); }
   return t;
 }
 const sumVat = (from, to) => r2(entries.reduce((s, e) => (e.kind !== 'out' && e.date >= from && e.date <= to) ? s + ((e.split && e.split.vat) || 0) : s, 0));
