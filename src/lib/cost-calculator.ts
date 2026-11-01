@@ -5,7 +5,10 @@
    £2,200 (labour only); laminate £40 a m² (labour only); loft boarding £120 a m² (raised); decking £250 a m²
    (composite); hanging a door £250 (labour only); media wall £2,800 basic, £5,400 mid; day rate £650.
    His prices are before VAT, as on his quotes, so the page adds VAT. The range runs from his price to 25% over it
-   (he picked that: it never shows less than his price). Marked GUESS = not from Raf, for him to check. */
+   (he picked that: it never shows less than his price). Marked GUESS = not from Raf, for him to check.
+
+   Only some of it is on the site: COST_LIVE below says which jobs and options. Everything else stays in
+   ALL_COST_JOBS, checked by the script and ready to switch back on. */
 
 export const VAT_RATE = 0.2;
 export const RANGE_OVER = 0.25;
@@ -32,6 +35,7 @@ export type CostJob = {
   optionLabel: string;
   /* which line of the brief the picked option goes on: the doors or boards are a Finish, a kitchen's size a Rough size */
   briefLabel: 'Finish' | 'Rough size';
+  sayOption?: boolean; // name the option in the brief and the price panel even when it's the only one on
   options: CostOption[];
   def: string; // option picked to start
   card: string; // the line on its card on /cost
@@ -44,7 +48,7 @@ export type CostJob = {
   metaDescription: string;
 };
 
-export const COST_JOBS: CostJob[] = [
+export const ALL_COST_JOBS: CostJob[] = [
   {
     slug: 'fitted-wardrobes',
     name: 'Fitted wardrobes',
@@ -54,20 +58,22 @@ export const COST_JOBS: CostJob[] = [
     unit: 'metre',
     qty: { label: 'Width of the wardrobe', min: 0.6, max: 6, step: 0.1, def: 2.4, word: 'm', words: 'metres wide' },
     briefLabel: 'Finish',
-    optionLabel: 'Doors',
+    sayOption: true,
+    optionLabel: 'Finish',
     options: [
-      { id: 'flat', label: 'Flat doors', sub: 'Plain, smooth fronts', rate: 1200 },
+      { id: 'flat', label: 'Basic MDF', sub: 'Flat doors, ready for your decorator', rate: 1200 },
       { id: 'shaker', label: 'Shaker doors', sub: 'A frame round each door', rate: 1600 },
     ],
     def: 'flat',
     card: 'Made to measure, priced by the metre.',
-    lede: 'Set the width, pick the doors and see my price straight away. Then send it to me for a written quote.',
+    lede: 'Made to measure in MDF. Set the width and see my price straight away, then send it to me for a written quote.',
     inPrice: ['Made to measure in 18 mm board, backs included', 'Doors, shelves and a hanging rail', 'Fitted and scribed to your walls and ceiling', 'Room left clean'],
-    notInPrice: ['Painting: built in MDF, ready for your decorator'],
+    /* while shaker is off (COST_LIVE), this says how to get it priced */
+    notInPrice: ['Painting: built in MDF, ready for your decorator', "Shaker or mirror doors: say so in your notes and I'll price them"],
     moves: ['Walls and ceilings far out of square', 'Drawers and a busy inside layout', 'Sloping ceilings and awkward corners'],
     service: 'fitted-wardrobes',
     metaTitle: 'Fitted wardrobe cost in London | Price calculator | Raf Carpentry',
-    metaDescription: 'How much do fitted wardrobes cost in London? Set the width and the doors and see my price per metre straight away, then get a written quote.',
+    metaDescription: 'How much do fitted wardrobes cost in London? Made to measure in MDF: set the width and see my price per metre straight away, then get a written quote.',
   },
   {
     slug: 'kitchen-fitting',
@@ -202,7 +208,22 @@ export const COST_JOBS: CostJob[] = [
   },
 ];
 
+/* What's on the site (Raf, 1 Nov 2026: 'keep 1200 £ a meter for basic mdf wardrobe and hide rest and see if people
+   will search this more often'): each job's slug with the options shown. Anything not here has no page, no link
+   and no search entry. To bring one back, add it here; with more than one job on, change COST_LINK in
+   src/lib/cost-link.ts to /cost (the check fails until the two agree). */
+export const COST_LIVE: Record<string, string[]> = { 'fitted-wardrobes': ['flat'] };
+
+/* The jobs on the site, each with only its live options. */
+export const COST_JOBS: CostJob[] = ALL_COST_JOBS.filter((j) => COST_LIVE[j.slug]?.length).map((j) => {
+  const options = j.options.filter((o) => COST_LIVE[j.slug].includes(o.id));
+  return { ...j, options, def: options.some((o) => o.id === j.def) ? j.def : options[0].id };
+});
+
 export const costJob = (slug: string) => COST_JOBS.find((j) => j.slug === slug);
+
+/* "Basic MDF" -> "basic MDF", "Flat doors, ..." -> "flat doors, ...": lower case the first letter only. */
+export const lowerFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 
 /* £ to the nearest 10. */
 const round10 = (v: number) => Math.round(v / 10) * 10;
@@ -259,15 +280,16 @@ export function costMessage(d: { name: string; job: CostJob; qty: number; option
   const e = estimate(d.job, d.qty, d.optionId);
   const opt = d.job.options.find((o) => o.id === d.optionId) ?? d.job.options[0];
   const size = qtyWords(d.job, e.qty);
+  const say = d.job.options.length > 1 || d.job.sayOption;
   const lines: (string | null)[] = [
     `Hi Raf, this is ${d.name.trim()}. Here is my brief from your website.`,
     `What: ${d.job.what}`,
     size ? `Rough size: ${size}` : null,
-    d.job.options.length > 1 ? `${d.job.briefLabel}: ${opt.label} (${opt.sub.toLowerCase()})` : null,
+    say ? `${d.job.briefLabel}: ${opt.label} (${lowerFirst(opt.sub)})` : null,
     d.when ? `When: ${d.when}` : null,
     '',
     'From the cost calculator:',
-    `${d.job.name}${size ? `, ${size}` : ''}${d.job.options.length > 1 ? `, ${opt.label.toLowerCase()}` : ''}`,
+    `${d.job.name}${size ? `, ${size}` : ''}${say ? `, ${lowerFirst(opt.label)}` : ''}`,
     `Price shown: ${money(e.gross[0])} to ${money(e.gross[1])} with VAT (${money(e.net[0])} to ${money(e.net[1])} before VAT)`,
     e.minimum ? `That is the smallest job price (${money(MIN_JOB)} before VAT).` : null,
     ...(d.notes.trim() ? ['', `Notes: ${d.notes.trim()}`] : []),

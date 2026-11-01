@@ -1,8 +1,10 @@
 /* Checks the cost calculator's sums (src/lib/cost-calculator.ts) for every job, every option and every size the
-   page allows: node scripts/cost-calculator/check.mjs (Node 22.18 or later reads the .ts lib itself)
+   page allows, including the ones switched off (ALL_COST_JOBS), and what's on the site (COST_LIVE, COST_LINK):
+   node scripts/cost-calculator/check.mjs (Node 22.18 or later reads the .ts lib itself)
    Raf's prices are fixed here on purpose: changing a price in the lib without changing it here fails the check,
    so a slip of the keyboard can't change what customers see. */
-import { COST_JOBS, MIN_JOB, RANGE_OVER, VAT_RATE, cleanQty, costMessage, estimate, fromPrice, money, qtyWords } from '../../src/lib/cost-calculator.ts';
+import { ALL_COST_JOBS, COST_JOBS, COST_LIVE, MIN_JOB, RANGE_OVER, VAT_RATE, cleanQty, costJob, costMessage, estimate, fromPrice, money, qtyWords } from '../../src/lib/cost-calculator.ts';
+import { COST_LINK } from '../../src/lib/cost-link.ts';
 
 let checks = 0;
 const fails = [];
@@ -22,14 +24,14 @@ const RAF = {
   'media-wall': { basic: 2800, mid: 5400 },
 };
 
-ok(COST_JOBS.length === 7, 'seven jobs');
-ok(new Set(COST_JOBS.map((j) => j.slug)).size === COST_JOBS.length, 'slugs are unique');
+ok(ALL_COST_JOBS.length === 7, 'seven jobs');
+ok(new Set(ALL_COST_JOBS.map((j) => j.slug)).size === ALL_COST_JOBS.length, 'slugs are unique');
 ok(VAT_RATE === 0.2 && RANGE_OVER === 0.25 && MIN_JOB === 330, 'VAT 20%, range +25%, smallest job £330');
 
-for (const job of COST_JOBS) {
+for (const job of [...ALL_COST_JOBS, ...COST_JOBS]) {
   const want = RAF[job.slug];
   ok(want, `${job.slug}: has Raf's prices in the check`);
-  ok(job.options.length === Object.keys(want ?? {}).length, `${job.slug}: same options as the check`);
+  ok(job.options.length === Object.keys(want ?? {}).length || COST_JOBS.includes(job), `${job.slug}: same options as the check`);
   for (const o of job.options) ok(want?.[o.id] === o.rate, `${job.slug}/${o.id}: rate ${o.rate} is Raf's ${want?.[o.id]}`);
   ok(job.options.some((o) => o.id === job.def), `${job.slug}: starts on one of its options`);
   ok(/^[a-z-]+$/.test(job.slug), `${job.slug}: slug shape`);
@@ -78,12 +80,34 @@ for (const job of COST_JOBS) {
   ok(/^£[\d,]+( a (metre|m²|door))?$/.test(fromPrice(job)), `${job.slug}: from price "${fromPrice(job)}"`);
 }
 
+// What's on the site (Raf, 1 Nov 2026: basic MDF wardrobes at £1,200 a metre only, the rest hidden).
+for (const [slug, ids] of Object.entries(COST_LIVE)) {
+  const all = ALL_COST_JOBS.find((j) => j.slug === slug);
+  ok(all, `live ${slug}: is a job`);
+  ok(ids.length && ids.every((id) => all?.options.some((o) => o.id === id)), `live ${slug}: its options are real (${ids})`);
+}
+ok(COST_JOBS.map((j) => j.slug).join() === 'fitted-wardrobes', `only wardrobes on (${COST_JOBS.map((j) => j.slug)})`);
+const live = costJob('fitted-wardrobes');
+ok(live?.options.length === 1 && live.options[0].id === 'flat' && live.options[0].rate === 1200 && live.def === 'flat', 'wardrobes: basic MDF at £1,200 a metre only');
+ok(live?.options[0].label === 'Basic MDF', 'wardrobes: the option is called Basic MDF');
+ok(['kitchen-fitting', 'laminate-flooring', 'loft-boarding', 'decking', 'internal-doors', 'media-wall'].every((s) => !costJob(s)), 'the other six have no page');
+ok(ALL_COST_JOBS[0].options.length === 2, 'shaker kept, just switched off');
+ok(COST_LINK.href === (COST_JOBS.length === 1 ? `/cost/${COST_JOBS[0].slug}` : '/cost'), `menu link ${COST_LINK.href} agrees with COST_LIVE`);
+ok(COST_JOBS.length === 1 || COST_LINK.label === 'Cost calculator', 'menu link label with more than one job on');
+{
+  const msg = costMessage({ name: 'Sam Lee', job: live, qty: 2.4, optionId: 'flat', when: '', postcode: '', notes: '' });
+  ok(msg.includes('Finish: Basic MDF (flat doors, ready for your decorator)'), 'wardrobe brief names basic MDF');
+  ok(msg.includes('Fitted wardrobes, 2.4 m wide, basic MDF'), 'and on the calculator line');
+  ok(msg.includes('Price shown: £3,460 to £4,320 with VAT (£2,880 to £3,600 before VAT)'), 'and the price');
+  ok(fromPrice(live) === '£1,440 a metre', 'live wardrobes from £1,440 a metre with VAT');
+}
+
 // The examples given to Raf.
-const wr = COST_JOBS[0];
+const wr = ALL_COST_JOBS[0];
 ok(estimate(wr, 2.4, 'flat').net.join() === '2880,3600', 'a 2.4 m flat wardrobe: £2,880 to £3,600 before VAT');
 ok(estimate(wr, 2.4, 'flat').gross.join() === '3460,4320', 'and £3,460 to £4,320 with VAT');
 ok(fromPrice(wr) === '£1,440 a metre', 'wardrobes from £1,440 a metre with VAT');
-ok(estimate(COST_JOBS[2], 5, 'fit').minimum && estimate(COST_JOBS[2], 5, 'fit').net[0] === 330, '5 m² of laminate is the smallest job, £330');
+ok(estimate(ALL_COST_JOBS[2], 5, 'fit').minimum && estimate(ALL_COST_JOBS[2], 5, 'fit').net[0] === 330, '5 m² of laminate is the smallest job, £330');
 
 console.log(`${checks} checks, ${fails.length} failed`);
 if (fails.length) {

@@ -1,25 +1,32 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { Container, PageHeader } from '@/components/ui';
 import { COST_JOBS, fromPrice } from '@/lib/cost-calculator';
 import { pageMeta } from '@/lib/seo';
 
 /* Cost calculator (Raf, 1 Nov 2026): the seven jobs he prices, each with its own calculator page (/cost/<job>).
-   Prices and sums in src/lib/cost-calculator.ts. */
+   Prices and sums in src/lib/cost-calculator.ts. While only one job is on (COST_LIVE), /cost goes straight to it. */
+
+const COUNT = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+const n = COUNT[COST_JOBS.length] ?? String(COST_JOBS.length);
+const names = COST_JOBS.map((j) => j.name.toLowerCase());
+const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0];
 
 export const metadata = pageMeta({
   title: 'Cost calculator | London carpentry prices | Raf Carpentry',
-  description: 'What will it cost? My own London prices for fitted wardrobes, kitchen fitting, flooring, loft boarding, decking, doors and media walls. Set the size, see the price.',
+  description: `What will it cost? My own London prices for ${list}. Set the size, see the price.`.slice(0, 160),
   path: '/cost',
 });
 
 export default function CostPage() {
+  if (COST_JOBS.length === 1) redirect(`/cost/${COST_JOBS[0].slug}`);
   return (
     <>
       <PageHeader
         kicker="Cost calculator"
         title="What will it"
         accent="cost?"
-        lede="My own London prices for seven jobs. Pick one, set the size and see the price straight away. Then send it to me for a written quote."
+        lede={`My own London prices for ${n} jobs. Pick one, set the size and see the price straight away. Then send it to me for a written quote.`}
       />
       <section>
         <Container className="pb-16 md:pb-24">

@@ -57,9 +57,11 @@ export default async function CostJobPage({ params }: { params: Promise<{ slug: 
         accent="in London"
         lede={job.lede}
         top={
-          <Link href="/cost" className="font-mono text-[13.5px] text-faint hover:text-accent">
-            <span aria-hidden="true">← </span>All seven jobs
-          </Link>
+          others.length ? (
+            <Link href="/cost" className="font-mono text-[13.5px] text-faint hover:text-accent">
+              <span aria-hidden="true">← </span>All {COST_JOBS.length} jobs
+            </Link>
+          ) : undefined
         }
       />
 
@@ -119,28 +121,32 @@ export default async function CostJobPage({ params }: { params: Promise<{ slug: 
       </section>
 
       {/* The other jobs, and the service page */}
-      <section className="border-t border-line bg-raised">
-        <Container className="py-14 md:py-20">
-          {job.service ? (
-            <Link href={`/services/${job.service}`} className="link-more text-[16px]">
-              See my {lower(job.name)} jobs <span aria-hidden="true">→</span>
-            </Link>
-          ) : null}
-          <nav aria-label="Other prices" className={job.service ? 'mt-10 border-t border-line-strong pt-6' : ''}>
-            <p className="font-mono text-[13px] text-faint">Prices for other jobs</p>
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {others.map((o) => (
-                <li key={o.slug}>
-                  <Link href={`/cost/${o.slug}`} className="inline-flex min-h-10 items-center gap-2 rounded-sm border border-line-strong bg-mount px-4 py-2 text-[14.5px] font-medium text-ink transition-colors hover:border-accent hover:text-accent">
-                    {o.name}
-                    <span className="font-mono text-[12.5px] font-normal text-faint">from {fromPrice(o)}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </Container>
-      </section>
+      {job.service || others.length ? (
+        <section className="border-t border-line bg-raised">
+          <Container className="py-14 md:py-20">
+            {job.service ? (
+              <Link href={`/services/${job.service}`} className="link-more text-[16px]">
+                See my {lower(job.name)} jobs <span aria-hidden="true">→</span>
+              </Link>
+            ) : null}
+            {others.length ? (
+              <nav aria-label="Other prices" className={job.service ? 'mt-10 border-t border-line-strong pt-6' : ''}>
+                <p className="font-mono text-[13px] text-faint">Prices for other jobs</p>
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {others.map((o) => (
+                    <li key={o.slug}>
+                      <Link href={`/cost/${o.slug}`} className="inline-flex min-h-10 items-center gap-2 rounded-sm border border-line-strong bg-mount px-4 py-2 text-[14.5px] font-medium text-ink transition-colors hover:border-accent hover:text-accent">
+                        {o.name}
+                        <span className="font-mono text-[12.5px] font-normal text-faint">from {fromPrice(o)}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ) : null}
+          </Container>
+        </section>
+      ) : null}
     </>
   );
 }

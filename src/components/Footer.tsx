@@ -3,13 +3,14 @@ import Image from 'next/image';
 import SocialIcon, { networkOf } from './SocialIcon';
 import { CosMark, RsMark } from './AlsoByMe';
 import { CABINETOS_URL, COMPANY, GOOGLE_REVIEWS_URL, RAFAL_SOLUTIONS_URL, whatsappText, whatsappUrl } from '@/lib/site';
+import { COST_LINK } from '@/lib/cost-link';
 
 const explore = [
   { href: '/services', label: 'Services' },
   { href: '/portfolio', label: 'My Work' },
   { href: '/designs', label: 'Designs in 3D' },
   { href: '/areas', label: 'Where I work' },
-  { href: '/cost', label: 'Cost calculator' },
+  COST_LINK,
   { href: '/sketchup', label: 'SketchUp' },
   { href: '/cabinetos', label: 'CabinetOS' },
   { href: '/tools', label: 'Tools' },

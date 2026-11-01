@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { COST_WHEN, cleanQty, costJob, costMessage, estimate, money, qtyWords, VAT_RATE, type CostJob } from '@/lib/cost-calculator';
+import { COST_WHEN, cleanQty, costJob, costMessage, estimate, lowerFirst, money, qtyWords, VAT_RATE, type CostJob } from '@/lib/cost-calculator';
 import { PHONE_DISPLAY, whatsappUrl } from '@/lib/site';
 
 /* The calculator on /cost/<job>: the size (box, − / + and a slider) and the option, the price range straight away,
@@ -98,7 +98,7 @@ export default function CostCalculator({ slug }: { slug: string }) {
             </div>
           ) : (
             <p className="mt-2 text-[15px] text-muted">
-              {picked.label}, {picked.sub.toLowerCase()}: <span className="font-mono text-ink">{money(withVat(picked.rate))} {per(job)}</span> with VAT
+              {picked.label}, {lowerFirst(picked.sub)}: <span className="font-mono text-ink">{money(withVat(picked.rate))} {per(job)}</span> with VAT
             </p>
           )}
         </div>
@@ -117,7 +117,7 @@ export default function CostCalculator({ slug }: { slug: string }) {
           <ul className="mt-5 space-y-1.5 border-t border-on-accent/20 pt-4 text-[14.5px] text-on-accent/85">
             <li>
               {job.qty ? `${qtyWords(job, e.qty)}` : picked.label}
-              {job.qty && job.options.length > 1 ? `, ${picked.label.toLowerCase()}` : ''}
+              {job.qty && (job.options.length > 1 || job.sayOption) ? `, ${lowerFirst(picked.label)}` : ''}
               {job.unit !== 'job' ? ` at ${money(withVat(e.rate))} ${per(job)}` : ''}
             </li>
             {e.minimum ? <li>That&apos;s my smallest job price ({money(e.gross[0])} with VAT).</li> : null}

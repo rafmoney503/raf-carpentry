@@ -9,7 +9,7 @@ import { COST_JOBS } from '@/lib/cost-calculator';
 
 /* Every public page, job and blog post, for Google. New jobs and posts are added automatically. */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = ['', '/services', '/portfolio', '/designs', '/areas', '/how-it-works', '/blog', '/about', '/contact', '/sketchup', '/cabinetos', '/tools', '/calculator', '/tips', '/tools/games', '/tools/spirit-level', '/tools/workshop', '/wardrobe-planner', '/cost', '/privacy'];
+  const pages = ['', '/services', '/portfolio', '/designs', '/areas', '/how-it-works', '/blog', '/about', '/contact', '/sketchup', '/cabinetos', '/tools', '/calculator', '/tips', '/tools/games', '/tools/spirit-level', '/tools/workshop', '/wardrobe-planner', ...(COST_JOBS.length > 1 ? ['/cost'] : []), '/privacy'];
   const date = (v: unknown) => {
     const d = new Date(v instanceof Date ? v : String(v));
     return Number.isNaN(d.getTime()) ? undefined : d;
