@@ -9,6 +9,7 @@ const explore = [
   { href: '/portfolio', label: 'My Work' },
   { href: '/designs', label: 'Designs in 3D' },
   { href: '/areas', label: 'Where I work' },
+  { href: '/cost', label: 'Cost calculator' },
   { href: '/sketchup', label: 'SketchUp' },
   { href: '/cabinetos', label: 'CabinetOS' },
   { href: '/tools', label: 'Tools' },

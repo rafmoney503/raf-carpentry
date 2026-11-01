@@ -232,7 +232,7 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
             )}
           </div>
           {phoneSearch ? null : [
-            ...links.flatMap((l) => (l.href === '/designs' ? [l, { href: '/wardrobe-planner', label: 'Wardrobe planner' }] : [l])),
+            ...links.flatMap((l) => (l.href === '/designs' ? [l, { href: '/wardrobe-planner', label: 'Wardrobe planner' }] : l.href === '/services' ? [l, { href: '/cost', label: 'Cost calculator' }] : [l])),
             { href: '/how-it-works', label: 'Plan your project' },
             { href: '/contact', label: 'Contact' },
           ].map((l) => {

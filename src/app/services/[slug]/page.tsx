@@ -18,6 +18,7 @@ import ProjectGallery from '@/components/project/ProjectGallery';
 import { areaPageLinks } from '@/lib/areas';
 import '@/app/portfolio/project.css';
 import Magnetic from '@/components/Magnetic';
+import { COST_JOBS } from '@/lib/cost-calculator';
 
 export function generateStaticParams() {
   return getServices().map((s) => ({ slug: s.slug }));
@@ -67,6 +68,8 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
   const others = getServices().filter((x) => x.slug !== s.slug);
   const waText = whatsappText(`/services/${s.slug}`, s.name);
   const photos = s.photos ?? [];
+  // the cost calculator for this service, when it has one (fitted wardrobes, kitchens, flooring, doors)
+  const cost = COST_JOBS.find((j) => j.service === s.slug);
 
   const serviceLd = {
     '@context': 'https://schema.org',
@@ -86,6 +89,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
           <Link href={QUOTE_HREF} className="btn btn-primary">Get a quote</Link>
           <WhatsAppButton text={waText} />
           {s.slug === 'fitted-wardrobes' ? <Link href="/wardrobe-planner" className="btn btn-ghost">Plan yours in 3D</Link> : null}
+          {cost ? <Link href={`/cost/${cost.slug}`} className="btn btn-ghost">See my prices</Link> : null}
         </div>
         <GoogleRating variant="inline" className="mt-6" />
       </PageHeader>
