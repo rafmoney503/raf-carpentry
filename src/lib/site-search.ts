@@ -10,6 +10,7 @@ import { getServices, jobsFor } from './services';
 import { getTipsData } from './tips';
 import { toolsSectionId } from './menu-panels';
 import { areaPages } from './areas';
+import { COST_JOBS, fromPrice } from './cost-calculator';
 
 /* Everything the search in the menu looks through (magnifier on a computer, the box at the top of the phone menu),
    built once at deploy time and served as /search-index.json (src/app/search-index.json/route.ts). The browser
@@ -59,6 +60,13 @@ const PAGES: { title: string; href: string; sub: string; words: string }[] = [
   { title: 'Workshop Tools app', href: '/tools/workshop', sub: 'Free app for your phone: hinges, drawers, panelling, stud walls', words: 'app phone iphone android install home screen offline workshop tools hinge hinges drawer runners unit sizes panelling picture frames stairs batten flooring stud wall noggins plasterboard insulation inches converter calculator carpenter trade' },
   { title: 'Spirit level', href: '/tools/spirit-level', sub: 'Free: your phone as a level, with Set zero', words: 'spirit level bubble phone angle tilt degrees inclinometer zero tare flat plumb pack packers mm per metre' },
   { title: 'Workshop Games', href: '/tools/games', sub: 'Six free games: Measure Up, Sheet Saver, Timber Stack, Nail Pop, Level Best, Find the Difference', words: 'game games play fun puzzle daily timber stack nail pop hammer measure up tape guess sheet saver board cutting layout level best tilt balance ball bearing marble maze spirit find the difference spot differences snag snags snagging signed off' },
+  ...(COST_JOBS.length > 1 ? [{ title: 'Cost calculator', href: '/cost', sub: `My London prices for ${COST_JOBS.length} jobs`, words: 'cost costs price prices how much calculator estimate budget pay charge rate per metre m2 london' }] : []),
+  ...COST_JOBS.map((j) => ({
+    title: j.h1,
+    href: `/cost/${j.slug}`,
+    sub: `From ${fromPrice(j)} with VAT`,
+    words: `${j.name} ${j.what} ${j.options.map((o) => o.label).join(' ')} cost costs price prices how much calculator estimate${COST_JOBS.length === 1 ? ' budget pay charge rate per metre' : ''} london`,
+  })),
   { title: 'Where I work', href: '/areas', sub: 'Every area, and the jobs nearest you', words: 'areas where work near me local postcode london cover travel' },
   { title: 'Blog', href: '/blog', sub: 'Jobs step by step, SketchUp and CabinetOS', words: 'blog posts articles write ups' },
   { title: 'About', href: '/about', sub: 'Who I am and how I work', words: 'about raf rafal story who carpenter london' },

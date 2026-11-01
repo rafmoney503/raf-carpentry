@@ -6,6 +6,8 @@ import { getAllProjects } from './projects';
 import { PLANNER_HREF, PLANNER_IMAGE, PLANNER_IMAGE_SQUARE } from './planner-picture';
 import { EXTENSION_HREF, EXTENSION_STILL_SQUARE, EXTENSION_STILL_WIDE } from './extension-clip';
 import { getServices, jobsFor } from './services';
+import { COST_JOBS, fromPrice } from './cost-calculator';
+import { COST_LINK } from './cost-link';
 
 /* What each main menu item shows when the mouse rests on it (computer) or its + is tapped (phone menu):
    that page in a line, its sections as # tags that jump straight there, sometimes a short list (newest
@@ -63,6 +65,8 @@ export function getMenuPanels(): Record<string, MenuPanel> {
       cta: 'All services',
       tagsTitle: 'Jump to',
       tags: services.map((s) => ({ label: s.name, href: `/services/${s.slug}`, count: jobsFor(s).length || undefined })),
+      listTitle: 'What it costs',
+      list: [{ label: COST_JOBS.length > 1 ? `Cost calculator: my prices for ${COST_JOBS.length} jobs` : `${COST_LINK.label}: from ${fromPrice(COST_JOBS[0])} with VAT`, href: COST_LINK.href }],
       image: jobs[0] ? { src: jobs[0].cover.src, alt: '', caption: `${jobs[0].title}, ${jobs[0].area}` } : undefined,
     },
     '/portfolio': {

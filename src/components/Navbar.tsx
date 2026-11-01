@@ -7,6 +7,7 @@ import { PHONE_DISPLAY, PHONE_HREF, QUOTE_HREF } from '@/lib/site';
 import type { MenuPanel } from '@/lib/menu-panels';
 import MenuPanelView, { MenuFeatureRow, MenuTags } from './MenuPanel';
 import { PLANNER_HREF, PLANNER_IMAGE_SQUARE } from '@/lib/planner-picture';
+import { COST_LINK } from '@/lib/cost-link';
 import SiteSearch from './SiteSearch';
 import PullSearch from './PullSearch';
 import { MiniLevel } from './ScrollLevel';
@@ -232,7 +233,7 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
             )}
           </div>
           {phoneSearch ? null : [
-            ...links.flatMap((l) => (l.href === '/designs' ? [l, { href: '/wardrobe-planner', label: 'Wardrobe planner' }] : [l])),
+            ...links.flatMap((l) => (l.href === '/designs' ? [l, { href: '/wardrobe-planner', label: 'Wardrobe planner' }] : l.href === '/services' ? [l, COST_LINK] : [l])),
             { href: '/how-it-works', label: 'Plan your project' },
             { href: '/contact', label: 'Contact' },
           ].map((l) => {
