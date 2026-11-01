@@ -65,7 +65,7 @@ const PAGES: { title: string; href: string; sub: string; words: string }[] = [
     title: j.h1,
     href: `/cost/${j.slug}`,
     sub: `From ${fromPrice(j)} with VAT`,
-    words: `${j.name} ${j.what} ${j.options.map((o) => o.label).join(' ')} cost costs price prices how much calculator estimate${COST_JOBS.length === 1 ? ' budget pay charge rate per metre' : ''} london`,
+    words: `${j.name} ${j.h1} ${j.options.map((o) => o.label).join(' ')} cost costs price prices how much calculator estimate${COST_JOBS.length === 1 ? ' budget pay charge rate per metre' : ''} london`,
   })),
   { title: 'Where I work', href: '/areas', sub: 'Every area, and the jobs nearest you', words: 'areas where work near me local postcode london cover travel' },
   { title: 'Blog', href: '/blog', sub: 'Jobs step by step, SketchUp and CabinetOS', words: 'blog posts articles write ups' },

@@ -16,6 +16,7 @@ import { readCode } from '@/lib/pax-design';
 import { mtoLines, usesFor, type InsideKey } from '@/lib/wardrobe-brief';
 import { WardrobeCard, WardrobeWindow, wardrobeNow, withPlan, type Build, type WardrobeBrief } from './wardrobe-window';
 import { whatIcon } from './what-icons';
+import { costJob, estimate, lowerFirst, money } from '@/lib/cost-calculator';
 
 export type BriefOptions = {
   what: string[];
@@ -236,6 +237,22 @@ export default function BriefBuilder({
       if (v && list.includes(v)) set(v);
     };
     pickOne('when', options.timing, setTiming);
+    // From a price page's Get a quote (costBriefHref in src/lib/cost-calculator.ts): ?wardrobe=mto ticks the
+    // wardrobe and how it's built (no plan made, the planner not opened), ?w= and ?h= fill the size in mm.
+    const wbParam = q.get('wardrobe');
+    const wl = options.what.find((w) => /wardrobe/i.test(w));
+    if (wl && (wbParam === 'mto' || wbParam === 'pax' || wbParam === 'unsure')) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- the address is only known in the browser
+      setWhat((cur) => (cur.includes(wl) ? cur : [...cur, wl]));
+      setWb((cur) => (cur.build ? cur : { ...cur, build: wbParam }));
+    }
+    const mm = (k: string) => {
+      const v = (q.get(k) ?? '').replace(/\D/g, '').slice(0, 5);
+      return Number(v) >= 100 ? v : '';
+    };
+    const w = mm('w');
+    const h = mm('h');
+    if (w || h) setSize((cur) => ({ ...cur, w: cur.w || w, h: cur.h || h }));
   }, [options]);
 
   const one = (set: (v: string) => void, cur: string) => (v: string) => set(cur === v ? '' : v);
@@ -264,6 +281,16 @@ export default function BriefBuilder({
     if (add.length) setUses((cur) => [...cur, ...add.filter((a) => !cur.includes(a))]);
   };
   const wbNow = useMemo(() => wardrobeNow(wb, size, uses), [wb, size, uses]);
+  // Raf's wardrobe price, as on the price page (src/lib/cost-calculator.ts), for a fitted wardrobe that isn't IKEA
+  // PAX and is 0.6 to 6 m wide: shown on the size question and written into the message (Raf, 1 Nov 2026).
+  const price = useMemo(() => {
+    const pj = costJob('fitted-wardrobes');
+    const w = Number(size.w);
+    if (!pj?.qty || !wardrobeOn || wb.build === 'pax' || !(w >= pj.qty.min * 1000 && w <= pj.qty.max * 1000)) return null;
+    const opt = pj.options.find((o) => o.id === pj.def) ?? pj.options[0];
+    return { e: estimate(pj, w / 1000, opt.id), finish: opt.label, sub: opt.sub };
+  }, [size.w, wardrobeOn, wb.build]);
+  const priceWords = price ? `${money(price.e.gross[0])} to ${money(price.e.gross[1])}` : '';
   const buildWords = wb.build === 'pax' ? 'IKEA PAX built in' : wb.build === 'mto' ? 'Made to measure' : wb.build === 'unsure' ? 'not sure yet, advise me' : '';
   const planText = useMemo(() => {
     if (!wardrobeOn) return [];
@@ -298,6 +325,7 @@ export default function BriefBuilder({
     if (room.length) lines.push(`${room.length > 1 ? 'Rooms' : 'Room'}: ${join(room)}`);
     if (uses.length) lines.push(`For: ${join(uses)}`);
     if (hasSize) lines.push(`Rough size: ${size.w || '?'} wide x ${size.h || '?'} high x ${size.d || '?'} deep (mm)`);
+    if (price) lines.push(`Price shown: ${priceWords} with VAT (${lowerFirst(price.finish)}, ${price.e.qty} m wide)`);
     if (material.length) lines.push(`Material: ${join(material)}`);
     if (finish.length) lines.push(`Finish: ${join(finish)}`);
     if (timing) lines.push(`When: ${timing}`);
@@ -314,7 +342,7 @@ export default function BriefBuilder({
     if (notes.trim()) lines.push('', notes.trim());
     lines.push('', 'I will send photos of the space next.');
     return lines.join('\n').replace(/\n{3,}/g, '\n\n'); // never two empty lines in a row
-  }, [job, liked, what, wardrobeOn, buildWords, wb.build, ikeaCode, room, uses, material, finish, hasSize, size, planText, name, mobile, email, addressText, parking, access, timing, budget, notes]);
+  }, [job, liked, what, wardrobeOn, buildWords, wb.build, ikeaCode, room, uses, material, finish, hasSize, size, price, priceWords, planText, name, mobile, email, addressText, parking, access, timing, budget, notes]);
 
   const mailto = `mailto:${EMAIL}?subject=${encodeURIComponent(`My project brief${what.length ? `: ${what.join(' + ')}` : ''}`.slice(0, 120))}&body=${encodeURIComponent(message.replace('I will send photos of the space next.', 'Photos of the space attached.'))}`;
 
@@ -502,7 +530,7 @@ export default function BriefBuilder({
       case 'room':
         return [join(room), join(uses)].filter(Boolean).join(' · ');
       case 'size':
-        return sizeOk ? `${size.w} wide x ${size.h} high${size.d ? ` x ${size.d} deep` : ''} (mm)` : '';
+        return sizeOk ? `${size.w} wide x ${size.h} high${size.d ? ` x ${size.d} deep` : ''} (mm)${price ? ` · about ${priceWords}` : ''}` : '';
       case 'material':
         return [join(material), join(finish)].filter(Boolean).join(' · ');
       case 'photos':
@@ -651,6 +679,18 @@ export default function BriefBuilder({
                 <p className="mt-2 font-mono text-[12px] text-faint">
                   In mm{smallMm(size.w) || smallMm(size.h) ? <span className="text-accent">: 2.4 metres is 2400</span> : '. Depth if you know it.'}
                 </p>
+                {price ? (
+                  <div className="mt-4 rounded-sm bg-ink p-4 text-on-accent" data-brief-price>
+                    <p className="font-mono text-[12px] text-on-accent/70">My price for your wardrobe, {price.e.qty} m wide</p>
+                    <p className="mt-1.5 font-display text-[26px] font-[680] leading-tight tracking-[-0.02em]">
+                      {money(price.e.gross[0])} <span className="text-[0.62em] font-[560] text-on-accent/70">to</span> {money(price.e.gross[1])}
+                    </p>
+                    <p className="mt-1 text-[13.5px] leading-snug text-on-accent/80">
+                      with VAT · {price.finish}, {lowerFirst(price.sub)}
+                    </p>
+                    <p className="mt-2 border-t border-on-accent/20 pt-2 text-[13px] leading-snug text-on-accent/70">A guide from my own prices, not a quote. Shaker or mirror doors are priced on the visit.</p>
+                  </div>
+                ) : null}
                 <p className="mt-4 text-[14.5px]">
                   <a href="/tips#measure-skirting-to-skirting" target="_blank" rel="noopener" className="link-more">
                     How I’d measure it <span aria-hidden="true">↗</span>

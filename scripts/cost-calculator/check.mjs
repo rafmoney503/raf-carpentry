@@ -3,7 +3,7 @@
    node scripts/cost-calculator/check.mjs (Node 22.18 or later reads the .ts lib itself)
    Raf's prices are fixed here on purpose: changing a price in the lib without changing it here fails the check,
    so a slip of the keyboard can't change what customers see. */
-import { ALL_COST_JOBS, COST_JOBS, COST_LIVE, MIN_JOB, RANGE_OVER, VAT_RATE, cleanQty, costJob, costMessage, estimate, fromPrice, money, qtyWords } from '../../src/lib/cost-calculator.ts';
+import { ALL_COST_JOBS, COST_JOBS, COST_LIVE, MIN_JOB, RANGE_OVER, VAT_RATE, cleanQty, costBriefHref, costJob, estimate, fromPrice } from '../../src/lib/cost-calculator.ts';
 import { COST_LINK } from '../../src/lib/cost-link.ts';
 
 let checks = 0;
@@ -69,14 +69,9 @@ for (const job of [...ALL_COST_JOBS, ...COST_JOBS]) {
   }
   ok(estimate(job, job.qty?.def ?? 1, 'nonsense').rate === job.options.find((o) => o.id === job.def).rate, `${job.slug}: unknown option falls back`);
 
-  const msg = costMessage({ name: 'Sam Lee', job, qty: job.qty?.def ?? 1, optionId: job.def, when: 'In the next 3 months', postcode: 'N22 5SN', notes: 'Back bedroom' });
-  const e = estimate(job, job.qty?.def ?? 1, job.def);
-  ok(msg.startsWith('Hi Raf, this is Sam Lee. Here is my brief from your website.'), `${job.slug}: brief opening`);
-  ok(msg.includes(`What: ${job.what}`), `${job.slug}: What line`);
-  ok(msg.includes(`${money(e.gross[0])} to ${money(e.gross[1])} with VAT`), `${job.slug}: price in the brief`);
-  ok(!job.qty || msg.includes(`Rough size: ${qtyWords(job, job.qty.def)}`), `${job.slug}: size in the brief`);
-  ok(msg.includes('When: In the next 3 months') && msg.endsWith('Notes: Back bedroom'), `${job.slug}: when and notes`);
-  ok(!/[—–‘’]/.test(msg), `${job.slug}: brief in plain characters`);
+  const href = costBriefHref(job, job.qty?.def ?? 1);
+  ok(href.startsWith('/how-it-works') && href.endsWith('#brief'), `${job.slug}: Get a quote opens the brief (${href})`);
+  ok(job.unit !== 'metre' || href.includes(`w=${Math.round((job.qty?.def ?? 0) * 1000)}`), `${job.slug}: the width goes with it in mm`);
   ok(/^£[\d,]+( a (metre|m²|door))?$/.test(fromPrice(job)), `${job.slug}: from price "${fromPrice(job)}"`);
 }
 
@@ -95,10 +90,9 @@ ok(ALL_COST_JOBS[0].options.length === 2, 'shaker kept, just switched off');
 ok(COST_LINK.href === (COST_JOBS.length === 1 ? `/cost/${COST_JOBS[0].slug}` : '/cost'), `menu link ${COST_LINK.href} agrees with COST_LIVE`);
 ok(COST_JOBS.length === 1 || COST_LINK.label === 'Cost calculator', 'menu link label with more than one job on');
 {
-  const msg = costMessage({ name: 'Sam Lee', job: live, qty: 2.4, optionId: 'flat', when: '', postcode: '', notes: '' });
-  ok(msg.includes('Finish: Basic MDF (flat doors, ready for your decorator)'), 'wardrobe brief names basic MDF');
-  ok(msg.includes('Fitted wardrobes, 2.4 m wide, basic MDF'), 'and on the calculator line');
-  ok(msg.includes('Price shown: £3,460 to £4,320 with VAT (£2,880 to £3,600 before VAT)'), 'and the price');
+  ok(costBriefHref(live, 2.4) === '/how-it-works?wardrobe=mto&w=2400#brief', `wardrobe Get a quote: ${costBriefHref(live, 2.4)}`);
+  ok(costBriefHref(live, 40) === '/how-it-works?wardrobe=mto&w=6000#brief', 'a width past the range goes as 6000');
+  ok(costBriefHref(live, 1.25).includes('w=1300') || costBriefHref(live, 1.25).includes('w=1200'), 'a width between tenths snaps to one');
   ok(fromPrice(live) === '£1,440 a metre', 'live wardrobes from £1,440 a metre with VAT');
 }
 

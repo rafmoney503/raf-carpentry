@@ -28,14 +28,11 @@ export type CostJob = {
   slug: string;
   name: string; // card and calculator title, e.g. "Fitted wardrobes"
   h1: string; // page title before the accent, e.g. "Fitted wardrobe cost"
-  what: string; // the brief's What: line, e.g. "Fitted wardrobe"
-  choicesWhat: string; // words for the thank-you email's closest designs
   unit: CostUnit;
   qty?: { label: string; min: number; max: number; step: number; def: number; word: string; words: string };
   optionLabel: string;
-  /* which line of the brief the picked option goes on: the doors or boards are a Finish, a kitchen's size a Rough size */
-  briefLabel: 'Finish' | 'Rough size';
-  sayOption?: boolean; // name the option in the brief and the price panel even when it's the only one on
+  sayOption?: boolean; // name the option in the price panel even when it's the only one on
+  brief?: Record<string, string>; // what Get a quote fills in on the brief, e.g. { wardrobe: 'mto' }
   options: CostOption[];
   def: string; // option picked to start
   card: string; // the line on its card on /cost
@@ -53,12 +50,10 @@ export const ALL_COST_JOBS: CostJob[] = [
     slug: 'fitted-wardrobes',
     name: 'Fitted wardrobes',
     h1: 'Fitted wardrobe cost',
-    what: 'Fitted wardrobe',
-    choicesWhat: 'Fitted wardrobe',
     unit: 'metre',
     qty: { label: 'Width of the wardrobe', min: 0.6, max: 6, step: 0.1, def: 2.4, word: 'm', words: 'metres wide' },
-    briefLabel: 'Finish',
     sayOption: true,
+    brief: { wardrobe: 'mto' },
     optionLabel: 'Finish',
     options: [
       { id: 'flat', label: 'Basic MDF', sub: 'Flat doors, ready for your decorator', rate: 1200 },
@@ -79,10 +74,7 @@ export const ALL_COST_JOBS: CostJob[] = [
     slug: 'kitchen-fitting',
     name: 'Kitchen fitting',
     h1: 'Kitchen fitting cost',
-    what: 'Kitchen fitting',
-    choicesWhat: 'Kitchen',
     unit: 'job',
-    briefLabel: 'Rough size',
     optionLabel: 'Size of the kitchen',
     options: [
       { id: 'small', label: 'Small', sub: 'Up to 9 units', rate: 1600 }, // GUESS: Raf gave the standard one
@@ -103,11 +95,8 @@ export const ALL_COST_JOBS: CostJob[] = [
     slug: 'laminate-flooring',
     name: 'Laminate flooring',
     h1: 'Laminate flooring fitting cost',
-    what: 'Laminate flooring',
-    choicesWhat: 'Flooring',
     unit: 'm2',
     qty: { label: 'Floor area', min: 5, max: 150, step: 1, def: 20, word: 'm²', words: 'square metres' },
-    briefLabel: 'Finish',
     optionLabel: 'Fitting',
     options: [{ id: 'fit', label: 'Laying it', sub: 'Labour only', rate: 40 }],
     def: 'fit',
@@ -124,11 +113,8 @@ export const ALL_COST_JOBS: CostJob[] = [
     slug: 'loft-boarding',
     name: 'Loft boarding',
     h1: 'Loft boarding cost',
-    what: 'Loft boarding',
-    choicesWhat: 'Loft storage',
     unit: 'm2',
     qty: { label: 'Area to board', min: 5, max: 60, step: 1, def: 20, word: 'm²', words: 'square metres' },
-    briefLabel: 'Finish',
     optionLabel: 'Boarding',
     options: [{ id: 'raised', label: 'Raised boarding', sub: 'On loft legs over the insulation', rate: 120 }],
     def: 'raised',
@@ -144,11 +130,8 @@ export const ALL_COST_JOBS: CostJob[] = [
     slug: 'decking',
     name: 'Decking',
     h1: 'Decking cost',
-    what: 'Decking',
-    choicesWhat: 'Decking',
     unit: 'm2',
     qty: { label: 'Deck area', min: 5, max: 80, step: 1, def: 15, word: 'm²', words: 'square metres' },
-    briefLabel: 'Finish',
     optionLabel: 'Boards',
     options: [
       { id: 'composite', label: 'Composite', sub: 'No staining, lasts longest', rate: 250 },
@@ -167,11 +150,8 @@ export const ALL_COST_JOBS: CostJob[] = [
     slug: 'internal-doors',
     name: 'Internal doors',
     h1: 'Internal door fitting cost',
-    what: 'Internal doors',
-    choicesWhat: 'Door fitting',
     unit: 'door',
     qty: { label: 'How many doors', min: 1, max: 20, step: 1, def: 4, word: 'doors', words: 'doors' },
-    briefLabel: 'Finish',
     optionLabel: 'Fitting',
     options: [{ id: 'hang', label: 'Hanging a door', sub: 'Labour only', rate: 250 }],
     def: 'hang',
@@ -188,10 +168,7 @@ export const ALL_COST_JOBS: CostJob[] = [
     slug: 'media-wall',
     name: 'Media wall',
     h1: 'Media wall cost',
-    what: 'Media wall',
-    choicesWhat: 'TV unit',
     unit: 'job',
-    briefLabel: 'Finish',
     optionLabel: 'Kind of wall',
     options: [
       { id: 'basic', label: 'Simple', sub: 'A boarded wall with a TV recess', rate: 2800 }, // GUESS: the words
@@ -274,31 +251,12 @@ export function qtyWords(job: CostJob, qty: number): string {
   return `${qty} ${qty === 1 ? 'door' : 'doors'}`;
 }
 
-/* The brief, written the way Plan your project writes it, so ServiceM8 and the Job Kit read it the same:
-   the labelled lines first (What, Rough size, Finish, When), then the calculator's lines, then Notes. */
-export function costMessage(d: { name: string; job: CostJob; qty: number; optionId: string; when: string; postcode: string; notes: string }): string {
-  const e = estimate(d.job, d.qty, d.optionId);
-  const opt = d.job.options.find((o) => o.id === d.optionId) ?? d.job.options[0];
-  const size = qtyWords(d.job, e.qty);
-  const say = d.job.options.length > 1 || d.job.sayOption;
-  const lines: (string | null)[] = [
-    `Hi Raf, this is ${d.name.trim()}. Here is my brief from your website.`,
-    `What: ${d.job.what}`,
-    size ? `Rough size: ${size}` : null,
-    say ? `${d.job.briefLabel}: ${opt.label} (${lowerFirst(opt.sub)})` : null,
-    d.when ? `When: ${d.when}` : null,
-    '',
-    'From the cost calculator:',
-    `${d.job.name}${size ? `, ${size}` : ''}${say ? `, ${lowerFirst(opt.label)}` : ''}`,
-    `Price shown: ${money(e.gross[0])} to ${money(e.gross[1])} with VAT (${money(e.net[0])} to ${money(e.net[1])} before VAT)`,
-    e.minimum ? `That is the smallest job price (${money(MIN_JOB)} before VAT).` : null,
-    ...(d.notes.trim() ? ['', `Notes: ${d.notes.trim()}`] : []),
-  ];
-  return lines
-    .filter((l): l is string => l !== null)
-    .join('\n')
-    .replace(/[‘’]/g, "'")
-    .replace(/[–—]/g, '-');
+/* Get a quote on a price page: Plan your project's brief, already filled in (src/app/how-it-works/brief-builder.tsx
+   reads ?wardrobe= and ?w=). One form for every quote (Raf, 1 Nov 2026); the brief shows the same price. */
+export function costBriefHref(job: CostJob, qty: number): string {
+  const q = new URLSearchParams();
+  if (job.brief) for (const [k, v] of Object.entries(job.brief)) q.set(k, v);
+  if (job.unit === 'metre' && job.qty) q.set('w', String(Math.round(cleanQty(job, qty) * 1000)));
+  const s = q.toString();
+  return `/how-it-works${s ? `?${s}` : ''}#brief`;
 }
-
-export const COST_WHEN = ['As soon as possible', 'In the next 3 months', 'Later this year', 'Just pricing it up'];
