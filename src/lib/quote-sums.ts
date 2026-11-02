@@ -198,7 +198,7 @@ export function sizeWords(sizes: Size[]) {
   const h = hs.length === 1 ? `${mm(hs[0])} mm high` : `${hs.map(mm).join(' and ')} mm high`;
   const w =
     sizes.length === 1
-      ? `about ${mm(sizes[0].w)} mm wide`
+      ? `a space about ${mm(sizes[0].w)} mm wide`
       : `${sizes.length === 2 ? 'two' : sizes.length === 3 ? 'three' : sizes.length} spaces of about ${sizes.slice(0, -1).map((s) => mm(s.w)).join(', ')} and ${mm(sizes[sizes.length - 1].w)} mm wide`;
   return { words: `${w} and ${h}`, guessed };
 }
@@ -376,7 +376,8 @@ export function wardrobeOptions(read: QuoteRead, p: Prices, boards: Board[], edi
     lines.push({ label: `Labour, ${days} day${days === 1 ? '' : 's'} at ${money(p.dayRate)}`, amount: days * p.dayRate });
     const worked = round(lines.reduce((n, l) => n + l.amount, 0));
     const why = read.colours.find((c) => c.code === colour?.code)?.why ?? '';
-    const shade = colour ? `Egger ${colour.name}${why ? `, ${why.replace(/\.$/, '')},` : ''} outside${insideBoard && !same ? ` and ${insideBoard.name} inside` : ' inside and out'}` : 'finished board';
+    const reason = why ? ` (${why.replace(/\.$/, '')})` : '';
+    const shade = colour ? (insideBoard && !same ? `Egger ${colour.name} outside${reason}, ${insideBoard.name} inside` : `Egger ${colour.name} inside and out${reason}`) : 'finished board';
     out.push({
       id: 'board',
       title: 'Finished board, colour matched',

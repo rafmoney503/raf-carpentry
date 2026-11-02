@@ -322,7 +322,7 @@ export function QuotesList({ quotes, sm8, marks, loading, onRefresh, onOpen, onM
             <h2 className={label}>
               {g.title} ({entries.filter((e) => e.group === g.id).length})
             </h2>
-            <ul className="mt-2 grid gap-2.5">
+            <ul className="mt-2 grid grid-cols-1 gap-2.5">
               {list.map((e) => (
                 <li key={e.id}>
                   <QuoteCard entry={e} prices={prices} onOpen={() => onOpen(e.id)} onMake={() => onMake(e.id)} />
@@ -542,6 +542,12 @@ export function QuoteView({
   const drawers = Math.max(0, Math.round(edits.drawers ?? wr?.drawers ?? 0));
   const top = edits.top ?? wr?.top ?? false;
   const changedWords = typeof edits.text === 'string';
+  // the message box as tall as the message, so it reads in one go
+  const grow = (el: HTMLTextAreaElement | null) => {
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight + 2}px`;
+  };
 
   return (
     <div className="pt-7">
@@ -576,7 +582,7 @@ export function QuoteView({
           {r.seen.length ? (
             <>
               <h2 className={label}>What Claude saw</h2>
-              <ul className="mt-2 grid gap-1 text-[15px] leading-relaxed">
+              <ul className="mt-2 grid grid-cols-1 gap-1 text-[15px] leading-relaxed">
                 {r.seen.map((s) => (
                   <li key={s} className="flex gap-2">
                     <span aria-hidden className="text-faint">·</span>
@@ -594,7 +600,7 @@ export function QuoteView({
           {r.check.length ? (
             <>
               <h2 className={`${label} mt-4`}>Check on the visit</h2>
-              <ul className="mt-2 grid gap-1 text-[15px] leading-relaxed">
+              <ul className="mt-2 grid grid-cols-1 gap-1 text-[15px] leading-relaxed">
                 {r.check.map((s) => (
                   <li key={s} className="flex gap-2">
                     <span aria-hidden className="text-faint">□</span>
@@ -612,13 +618,13 @@ export function QuoteView({
         <section className="mt-6">
           <h2 className={label}>Sizes in mm</h2>
           <p className="mt-1 text-[14px] text-muted">Change any of them: every price follows.</p>
-          <div className="mt-2 grid gap-2.5">
+          <div className="mt-2 grid grid-cols-1 gap-2.5">
             {sizes.map((s, i) => (
               <div key={i} className="rounded-sm border border-line-strong bg-mount px-3 py-2.5">
                 {sizes.length > 1 || s.label ? <p className="mb-1.5 text-[14.5px] font-semibold">{s.label || `Space ${i + 1}`}</p> : null}
                 <div className="grid grid-cols-3 gap-2">
                   {(['w', 'h', 'd'] as const).map((k) => (
-                    <label key={k} className="grid gap-1">
+                    <label key={k} className="grid grid-cols-1 gap-1">
                       <span className="font-mono text-[11.5px] uppercase tracking-[0.06em] text-faint">{k === 'w' ? 'Wide' : k === 'h' ? 'High' : 'Deep'}</span>
                       <NumBox
                         value={s[k]}
@@ -655,7 +661,7 @@ export function QuoteView({
       <section className="mt-7">
         <h2 className={label}>Prices before VAT</h2>
         <p className="mt-1 text-[14px] text-muted">From your price list. Type your own price on any of them; untick one to leave it out of the message.</p>
-        <div className="mt-3 grid gap-3">
+        <div className="mt-3 grid grid-cols-1 gap-3">
           {options.map((o) => (
             <OptionCard
               key={o.id}
@@ -679,7 +685,7 @@ export function QuoteView({
       {r.questions.length ? (
         <section className="mt-7">
           <h2 className={label}>Questions in the message</h2>
-          <ul className="mt-2 grid gap-1">
+          <ul className="mt-2 grid grid-cols-1 gap-1">
             {r.questions.map((q, i) => (
               <li key={q}>
                 <label className="flex min-h-11 items-start gap-2.5 py-1.5 text-[15px] leading-snug">
@@ -697,9 +703,13 @@ export function QuoteView({
         <h2 className={label}>The message</h2>
         <p className="mt-1 text-[14px] text-muted">{changedWords ? 'You’ve changed the words, so changes to prices above don’t reach them.' : 'Written from the options you’ve ticked. Change anything.'}</p>
         <textarea
+          ref={grow}
           value={message}
-          onChange={(e) => set({ text: e.target.value })}
-          rows={Math.min(26, Math.max(10, message.split('\n').length + 2))}
+          onChange={(e) => {
+            set({ text: e.target.value });
+            grow(e.target);
+          }}
+          rows={10}
           className={`${field} mt-3 py-2.5 text-[15.5px] leading-relaxed`}
           aria-label="The message to the customer"
         />
@@ -708,7 +718,7 @@ export function QuoteView({
             Use the written-out words again
           </button>
         ) : null}
-        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
           <button type="button" onClick={() => void copy()} className="btn btn-ghost">
             Copy
           </button>
@@ -784,7 +794,7 @@ export function QuoteView({
 
 function NoteBox({ note, setNote }: { note: string; setNote: (s: string) => void }) {
   return (
-    <label className="mt-3 grid gap-1.5">
+    <label className="mt-3 grid grid-cols-1 gap-1.5">
       <span className={label}>Anything Claude should know? (optional)</span>
       <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} maxLength={800} placeholder="e.g. the ceiling is 2,600; they want sliding doors" className={`${field} py-2 text-[15px]`} />
     </label>
@@ -816,7 +826,7 @@ function OptionCard({ option: o, on, pick, onPick, onPrice, board }: { option: O
       {o.offered ? (
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
           <label className="flex items-center gap-2">
-            <span className="font-mono text-[12px] uppercase tracking-[0.06em] text-faint">Your price £</span>
+            <span className="whitespace-nowrap font-mono text-[12px] uppercase tracking-[0.06em] text-faint">Your price £</span>
             <NumBox value={o.price} min={1} max={500000} onChange={onPrice} aria={`Your price for ${o.title}`} wide />
           </label>
           {o.changed ? (
@@ -833,7 +843,7 @@ function OptionCard({ option: o, on, pick, onPick, onPrice, board }: { option: O
       </button>
       {open ? (
         <div className="mt-2 rounded-sm border border-line bg-paper px-3 py-2.5">
-          <ul className="grid gap-1 font-mono text-[12.5px] leading-snug">
+          <ul className="grid grid-cols-1 gap-1 font-mono text-[12.5px] leading-snug">
             {o.lines.map((l) => (
               <li key={l.label} className="flex justify-between gap-3">
                 <span className="text-muted">{l.label}</span>
@@ -880,7 +890,7 @@ function BoardBits({ read: r, prices, edits, set }: { read: QuoteRead; prices: P
     <div className="mt-3 rounded-sm border border-line bg-paper p-3">
       <p className={label}>Colour, outside</p>
       {picks.length ? (
-        <div className="mt-2 grid gap-2">
+        <div className="mt-2 grid grid-cols-1 gap-2">
           {picks.map((c) => (
             <Swatch key={c.board.code} b={c.board} why={c.why} />
           ))}
@@ -890,13 +900,13 @@ function BoardBits({ read: r, prices, edits, set }: { read: QuoteRead; prices: P
         {all ? 'Fewer colours' : `All ${BOARDS.length} colours`}
       </button>
       {all ? (
-        <div className="mt-2 grid gap-3">
+        <div className="mt-2 grid grid-cols-1 gap-3">
           {FAMILY_ORDER.map((f) => {
             const list = BOARDS.filter((b) => b.family === f);
             return list.length ? (
               <div key={f}>
                 <p className="font-mono text-[11.5px] uppercase tracking-[0.06em] text-faint">{FAMILY_NAME[f]}</p>
-                <div className="mt-1.5 grid gap-1.5 sm:grid-cols-2">
+                <div className="mt-1.5 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                   {list.map((b) => (
                     <Swatch key={b.code} b={b} />
                   ))}
@@ -915,7 +925,7 @@ function BoardBits({ read: r, prices, edits, set }: { read: QuoteRead; prices: P
           </a>
         </p>
       ) : null}
-      <label className="mt-3 grid gap-1">
+      <label className="mt-3 grid grid-cols-1 gap-1">
         <span className={label}>Inside</span>
         <select value={inside} onChange={(e) => set({ inside: e.target.value })} className={`${field} h-11`}>
           {BOARDS.map((b) => (
@@ -960,7 +970,7 @@ function NumBox({ value, min, max, onChange, aria, wide }: { value: number; min:
         const v = Number.parseInt(e.target.value.replace(/[^\d]/g, ''), 10);
         if (Number.isFinite(v) && v >= min && v <= max) onChange(v);
       }}
-      className={`${field} h-11 ${wide ? 'w-[110px]' : ''} font-mono text-[15px]`}
+      className={`${field} h-11 ${wide ? 'max-w-[140px]' : ''} font-mono text-[15px]`}
     />
   );
 }
