@@ -44,13 +44,20 @@ import Mark from './mark';
    customer until he sends it (copy, WhatsApp, or the job's email box).
    Kept in Supabase (jobkit.quotes, /api/job-kit/quote), so the phone and the computer show the same quote and his
    changes; the last list stays on the device (raf_jobkit_quotes) so it opens with no signal, and changes made with
-   no signal wait (raf_jobkit_quote_pend) and go when it's back. */
+   no signal wait (raf_jobkit_quote_pend) and go when it's back.
+   Raf's own instructions for Claude (2 Nov 2026, Raf: 'in quotes in jobkit I'd like a section where I can add my
+   instructions for to redo the quotes'): written on the Quotes screen, kept as row '_rules' beside his prices, sent
+   to Claude with every reading after that (src/lib/quote-maker.ts). Quotes read before he changed them can be
+   redone with them, one at a time (raf_jobkit_quote_redo, run by job-kit-app.tsx). */
 
 /* ---------- the list, kept on the device ---------- */
 
-export type Quotes = { rows: QuoteRow[]; prices: { data: Record<string, unknown> | null; at: number } | null; at: number; error?: string; detail?: string };
+type Setting = { data: Record<string, unknown> | null; at: number } | null;
+export type Quotes = { rows: QuoteRow[]; prices: Setting; rules?: Setting; at: number; error?: string; detail?: string };
 const KEY = 'raf_jobkit_quotes';
-const PEND = 'raf_jobkit_quote_pend'; // id -> { edits, at }: Raf's changes not in the store yet ('_prices' = his price list)
+const PEND = 'raf_jobkit_quote_pend'; // id -> { edits, at }: Raf's changes not in the store yet ('_prices' = his price list, '_rules' his instructions)
+const REDO = 'raf_jobkit_quote_redo'; // quotes to read again with his instructions, one at a time
+export const RULES_MAX = 3000;
 export const QUOTES_FRESH = 60_000;
 const STUCK_MS = 4 * 60_000; // a reading 'working' for longer stopped part way (the function ran out of time)
 
@@ -88,35 +95,41 @@ function withPending(q: Quotes): Quotes {
   const pend = read<Pending>(PEND, {});
   let rows = q.rows;
   let prices = q.prices;
+  let rules = q.rules ?? null;
   for (const [id, p] of Object.entries(pend)) {
     if (id === '_prices') {
       if (!prices || prices.at < p.at) prices = { data: p.edits, at: p.at };
+      continue;
+    }
+    if (id === '_rules') {
+      if (!rules || rules.at < p.at) rules = { data: p.edits, at: p.at };
       continue;
     }
     const r = rows.find((x) => x.id === id);
     if (r && r.editsAt >= p.at) continue;
     rows = r ? rows.map((x) => (x.id === id ? { ...x, edits: p.edits, editsAt: p.at } : x)) : [{ id, state: 'none', data: null, edits: p.edits, editsAt: p.at, claimed: null, updated: p.at }, ...rows];
   }
-  return { ...q, rows, prices };
+  return { ...q, rows, prices, rules };
 }
 
 export async function fetchQuotes(pin: string, prev: Quotes): Promise<Quotes> {
-  const r = await post<{ quotes: QuoteRow[]; prices: Quotes['prices']; now: number }>(pin, { action: 'list' }, '/api/job-kit/quote');
+  const r = await post<{ quotes: QuoteRow[]; prices: Setting; rules?: Setting; now: number }>(pin, { action: 'list' }, '/api/job-kit/quote');
   if (!r.ok) return { ...prev, error: r.error, detail: r.detail };
   // what the store has now is no longer waiting
   const pend = read<Pending>(PEND, {});
   for (const [id, p] of Object.entries(pend)) {
-    const have = id === '_prices' ? r.data.prices?.at ?? 0 : r.data.quotes.find((x) => x.id === id)?.editsAt ?? 0;
+    const have = id === '_prices' ? r.data.prices?.at ?? 0 : id === '_rules' ? r.data.rules?.at ?? 0 : r.data.quotes.find((x) => x.id === id)?.editsAt ?? 0;
     if (have >= p.at) delete pend[id];
   }
   write(PEND, pend);
-  const next = withPending({ rows: r.data.quotes, prices: r.data.prices, at: Date.now() });
+  const next = withPending({ rows: r.data.quotes, prices: r.data.prices, rules: r.data.rules ?? null, at: Date.now() });
   keepQuotes(next);
   if (Object.keys(pend).length) void flushQuoteEdits();
   return next;
 }
 
-/* Raf's change to one quote (or his prices, id '_prices'): on the device at once, in the store a moment later. */
+/* Raf's change to one quote (or his prices, id '_prices', or his instructions, '_rules'): on the device at once, in
+   the store a moment later. */
 export function changeHere(q: Quotes, id: string, edits: Record<string, unknown>): Quotes {
   const at = Date.now();
   const pend = read<Pending>(PEND, {});
@@ -125,7 +138,9 @@ export function changeHere(q: Quotes, id: string, edits: Record<string, unknown>
   const next =
     id === '_prices'
       ? { ...q, prices: { data: edits, at } }
-      : { ...q, rows: q.rows.some((r) => r.id === id) ? q.rows.map((r) => (r.id === id ? { ...r, edits, editsAt: at } : r)) : [{ id, state: 'none' as const, data: null, edits, editsAt: at, claimed: null, updated: at }, ...q.rows] };
+      : id === '_rules'
+        ? { ...q, rules: { data: edits, at } }
+        : { ...q, rows: q.rows.some((r) => r.id === id) ? q.rows.map((r) => (r.id === id ? { ...r, edits, editsAt: at } : r)) : [{ id, state: 'none' as const, data: null, edits, editsAt: at, claimed: null, updated: at }, ...q.rows] };
   keepQuotes(next);
   queueFlush();
   return next;
@@ -136,25 +151,31 @@ const queueFlush = () => {
   if (flushTimer) clearTimeout(flushTimer);
   flushTimer = setTimeout(() => void flushQuoteEdits(), 900);
 };
-let flushing = false;
-export async function flushQuoteEdits() {
-  if (flushing) return;
+/* Sends the changes waiting. A second call while one is going waits for it, then sends what came in meanwhile, so a
+   redo started straight after saving his instructions always finds them in the store. */
+let flushing: Promise<void> | null = null;
+export async function flushQuoteEdits(): Promise<void> {
+  if (flushing) {
+    await flushing;
+    if (!Object.keys(read<Pending>(PEND, {})).length) return;
+    if (flushing) return flushing;
+  }
+  flushing = flushOnce().finally(() => (flushing = null));
+  return flushing;
+}
+async function flushOnce() {
   const pin = readPin();
   if (!pin) return;
-  flushing = true;
-  try {
-    for (const [id, p] of Object.entries(read<Pending>(PEND, {}))) {
-      const r = await post<{ ok: boolean; editsAt: number }>(pin, id === '_prices' ? { action: 'prices', prices: p.edits, at: p.at } : { action: 'edit', id, edits: p.edits, at: p.at }, '/api/job-kit/quote');
-      if (!r.ok) {
-        if (r.error === 'offline' || r.error === 'sync-down') break; // tried again when the list is next fetched
-        continue;
-      }
-      const now = read<Pending>(PEND, {});
-      if (now[id] && now[id].at <= p.at) delete now[id];
-      write(PEND, now);
+  for (const [id, p] of Object.entries(read<Pending>(PEND, {}))) {
+    const body = id === '_prices' ? { action: 'prices', prices: p.edits, at: p.at } : id === '_rules' ? { action: 'rules', rules: p.edits, at: p.at } : { action: 'edit', id, edits: p.edits, at: p.at };
+    const r = await post<{ ok: boolean; editsAt: number }>(pin, body, '/api/job-kit/quote');
+    if (!r.ok) {
+      if (r.error === 'offline' || r.error === 'sync-down') break; // tried again when the list is next fetched
+      continue;
     }
-  } finally {
-    flushing = false;
+    const now = read<Pending>(PEND, {});
+    if (now[id] && now[id].at <= p.at) delete now[id];
+    write(PEND, now);
   }
 }
 
@@ -170,6 +191,23 @@ export function workingHere(q: Quotes, id: string): Quotes {
 }
 
 export const pricesOf = (q: Quotes): Prices => pricesWith(q.prices?.data);
+/* His instructions for Claude: the words, and when he last changed them (0 = never). */
+export const rulesOf = (q: Quotes) => ({ text: typeof q.rules?.data?.text === 'string' ? q.rules.data.text : '', at: q.rules?.at ?? 0 });
+/* Instructions saved here and not in the store yet: a redo waits for them, so Claude reads the new ones. */
+export const rulesWaiting = () => Boolean(read<Pending>(PEND, {})._rules);
+/* A ready reading made before his latest instructions (or before he wrote any, once he has). */
+export const readBefore = (q: Quotes, r: QuoteRow | undefined) => {
+  const at = rulesOf(q).at;
+  return Boolean(at && readOf(r) && ((r?.data as QuoteData | null)?.rulesAt ?? 0) < at);
+};
+/* Ready quotes, not sent, read before his latest instructions: the ones to offer to redo. */
+export const readBeforeRules = (q: Quotes, sm8: Sm8, marks: Marks) =>
+  quoteEntries(q, sm8, marks)
+    .filter((e) => e.group === 'ready' && readBefore(q, e.row))
+    .map((e) => e.id);
+/* The redo queue, kept on this device so it carries on after a reload. */
+export const savedRedo = () => read<string[]>(REDO, []).filter((x) => typeof x === 'string').slice(0, 40);
+export const keepRedo = (ids: string[]) => write(REDO, ids.slice(0, 40));
 export const rowOf = (q: Quotes, id: string) => q.rows.find((r) => r.id === id);
 export const stuck = (r: QuoteRow) => r.state === 'working' && Date.now() - (r.claimed ?? r.updated) > STUCK_MS;
 export const isWorking = (r: QuoteRow | undefined) => Boolean(r && r.state === 'working' && !stuck(r));
@@ -283,8 +321,33 @@ const GROUPS: { id: Entry['group']; title: string }[] = [
   { id: 'sent', title: 'Sent' },
 ];
 
-export function QuotesList({ quotes, sm8, marks, loading, onRefresh, onOpen, onMake, onPrices }: { quotes: Quotes; sm8: Sm8; marks: Marks; loading: boolean; onRefresh: () => void; onOpen: (id: string) => void; onMake: (id: string) => void; onPrices: () => void }) {
+export function QuotesList({
+  quotes,
+  sm8,
+  marks,
+  loading,
+  redoLeft,
+  onRefresh,
+  onOpen,
+  onMake,
+  onPrices,
+  onSaveRules,
+  onRedo,
+}: {
+  quotes: Quotes;
+  sm8: Sm8;
+  marks: Marks;
+  loading: boolean;
+  redoLeft: number;
+  onRefresh: () => void;
+  onOpen: (id: string) => void;
+  onMake: (id: string) => void;
+  onPrices: () => void;
+  onSaveRules: (text: string) => void;
+  onRedo: (ids: string[]) => void;
+}) {
   const entries = useMemo(() => quoteEntries(quotes, sm8, marks), [quotes, sm8, marks]);
+  const before = useMemo(() => readBeforeRules(quotes, sm8, marks), [quotes, sm8, marks]);
   const prices = pricesOf(quotes);
   const [allSent, setAllSent] = useState(false);
   return (
@@ -308,6 +371,8 @@ export function QuotesList({ quotes, sm8, marks, loading, onRefresh, onOpen, onM
       </div>
       {quotes.error ? <p className="mt-4 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-[15px] leading-relaxed">{quoteProblem(quotes.error, quotes.detail)}</p> : null}
 
+      <Instructions rules={rulesOf(quotes)} before={before} redoLeft={redoLeft} onSave={onSaveRules} onRedo={() => onRedo(before)} />
+
       {!entries.length ? (
         <p className="mt-8 font-mono text-[14px] text-faint">{sm8.at ? 'No new enquiries to quote.' : 'Getting your jobs from ServiceM8…'}</p>
       ) : null}
@@ -325,7 +390,7 @@ export function QuotesList({ quotes, sm8, marks, loading, onRefresh, onOpen, onM
             <ul className="mt-2 grid grid-cols-1 gap-2.5">
               {list.map((e) => (
                 <li key={e.id}>
-                  <QuoteCard entry={e} prices={prices} onOpen={() => onOpen(e.id)} onMake={() => onMake(e.id)} />
+                  <QuoteCard entry={e} prices={prices} old={before.includes(e.id)} onOpen={() => onOpen(e.id)} onMake={() => onMake(e.id)} />
                 </li>
               ))}
             </ul>
@@ -341,7 +406,129 @@ export function QuotesList({ quotes, sm8, marks, loading, onRefresh, onOpen, onM
   );
 }
 
-function QuoteCard({ entry, prices, onOpen, onMake }: { entry: Entry; prices: Prices; onOpen: () => void; onMake: () => void }) {
+/* ---------- his instructions for Claude ---------- */
+
+const EXAMPLES = [
+  'Assume a 2,400 mm ceiling unless the photos show otherwise.',
+  'Don’t offer IKEA PAX unless they ask for it.',
+  'Recommend shaker doors for period houses.',
+  'Always ask for a photo of the whole wall.',
+  'Keep the opening to one short sentence.',
+  'In every message, say they can send more photos on WhatsApp.',
+];
+
+const when = (t: number) => new Date(t).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+
+function Instructions({ rules, before, redoLeft, onSave, onRedo }: { rules: { text: string; at: number }; before: string[]; redoLeft: number; onSave: (text: string) => void; onRedo: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [all, setAll] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const lines = rules.text.split('\n');
+  const long = lines.length > 4 || rules.text.length > 320;
+  const open = () => {
+    setDraft(rules.text);
+    setEditing(true);
+    setSaved(false);
+  };
+  const add = (line: string) => setDraft((d) => (d.includes(line) ? d : `${d.trim() ? `${d.trimEnd()}\n` : ''}${line}`).slice(0, RULES_MAX));
+  return (
+    <section className="mt-5 rounded-sm border border-line-strong bg-mount p-4" aria-label="Your instructions for Claude" data-rules>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-semibold">Your instructions for Claude</h2>
+        {!editing && rules.text ? (
+          <button type="button" onClick={open} className="shrink-0 font-mono text-[13px] text-accent underline">
+            Change them
+          </button>
+        ) : null}
+      </div>
+      {editing ? (
+        <>
+          <p className="mt-1.5 text-[14.5px] leading-relaxed text-muted">
+            In your own words. Claude follows them on every quote: what to assume, which options to offer or leave out, what to recommend and ask, and how the message reads. The prices come from Your prices.
+          </p>
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.slice(0, RULES_MAX))}
+            rows={8}
+            maxLength={RULES_MAX}
+            autoFocus
+            placeholder="e.g. Assume a 2,400 mm ceiling unless the photos show otherwise. Don’t offer IKEA PAX unless they ask for it."
+            aria-label="Your instructions for Claude"
+            className={`${field} mt-3 py-2.5 text-[15.5px] leading-relaxed`}
+          />
+          <p className="mt-1 text-right font-mono text-[11.5px] text-faint">
+            {draft.length.toLocaleString('en-GB')} / {RULES_MAX.toLocaleString('en-GB')}
+          </p>
+          <p className={`${label} mt-2`}>Add an example</p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {EXAMPLES.map((x) => (
+              <button key={x} type="button" onClick={() => add(x)} disabled={draft.includes(x)} className="rounded-sm border border-line-strong bg-paper px-2.5 py-1.5 text-left text-[13.5px] leading-snug hover:border-ink disabled:opacity-40">
+                + {x}
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={draft.trim() === rules.text.trim()}
+              onClick={() => {
+                onSave(draft.trim());
+                setEditing(false);
+                setSaved(true);
+              }}
+              className="btn btn-primary btn-sm disabled:opacity-50"
+            >
+              Save
+            </button>
+            <button type="button" onClick={() => setEditing(false)} className="btn btn-ghost btn-sm">
+              Cancel
+            </button>
+          </div>
+        </>
+      ) : rules.text ? (
+        <>
+          <p className={`mt-2 whitespace-pre-line text-[15px] leading-relaxed ${long && !all ? 'line-clamp-4' : ''}`}>{rules.text}</p>
+          {long ? (
+            <button type="button" onClick={() => setAll(!all)} className="mt-1 font-mono text-[13px] text-accent underline">
+              {all ? 'Show less' : 'Show all'}
+            </button>
+          ) : null}
+          <p className="mt-2 font-mono text-[12px] text-faint">
+            {saved ? 'Saved. ' : ''}Used on every quote read after {when(rules.at)}.
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="mt-1.5 text-[14.5px] leading-relaxed text-muted">
+            {rules.at ? 'None at the moment. ' : ''}Tell Claude how you want your quotes worked out, in your own words: what to assume, what to offer, what to ask. It follows them on every quote.
+          </p>
+          <button type="button" onClick={open} className="btn btn-ghost btn-sm mt-3">
+            Write your instructions
+          </button>
+        </>
+      )}
+      {redoLeft ? (
+        <p className="mt-3 flex items-center gap-2 border-t border-line pt-3 text-[15px]">
+          <Mark state="sending" /> Redoing with your instructions: {redoLeft} to go.
+        </p>
+      ) : before.length && !editing ? (
+        <div className="mt-3 border-t border-line pt-3">
+          <p className="text-[15px] leading-relaxed">
+            {before.length === 1 ? '1 ready quote was' : `${before.length} ready quotes were`} worked out before {rules.text ? 'these instructions' : 'you cleared your instructions'}.
+          </p>
+          <button type="button" onClick={onRedo} className="btn btn-primary btn-sm mt-2.5">
+            {before.length === 1 ? 'Redo it' : `Redo all ${before.length}`}
+            {rules.text ? ' with them' : ''}
+          </button>
+          <p className="mt-1.5 font-mono text-[12px] leading-relaxed text-faint">One at a time, a few pence each. Your prices stay; the message and its questions are written out again.</p>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function QuoteCard({ entry, prices, old, onOpen, onMake }: { entry: Entry; prices: Prices; old: boolean; onOpen: () => void; onMake: () => void }) {
   const { job, row } = entry;
   const data = row?.data as QuoteData | null | undefined;
   const r = data?.read;
@@ -384,6 +571,7 @@ function QuoteCard({ entry, prices, onOpen, onMake }: { entry: Entry; prices: Pr
           </span>
         </span>
         <span className="mt-0.5 block truncate text-[14px] text-muted">{line}</span>
+        {old ? <span className="mt-0.5 block font-mono text-[11.5px] text-faint">Read before your latest instructions</span> : null}
       </span>
       <span aria-hidden className="text-[20px] jk-sec-ink">
         →
@@ -441,22 +629,26 @@ export function QuoteView({
   job,
   row,
   prices,
+  rules,
   sent,
   onEdit,
   onMake,
   onSent,
   onEmailBox,
   onOpenJob,
+  onRules,
 }: {
   job?: CurrentJob;
   row?: QuoteRow;
   prices: Prices;
+  rules: { text: string; at: number };
   sent: boolean;
   onEdit: (edits: QuoteEdits) => void;
   onMake: (force: boolean, note: string) => void;
   onSent: (sent: boolean, how?: QuoteEdits['sentHow']) => void;
   onEmailBox: (subject: string, text: string) => void;
   onOpenJob?: () => void;
+  onRules: () => void;
 }) {
   const data = row?.data as QuoteData | null | undefined;
   const r = data?.read;
@@ -469,6 +661,14 @@ export function QuoteView({
   const set = (patch: Partial<QuoteEdits>) => onEdit({ ...edits, ...patch });
   const first = job?.first || data?.job?.first || '';
   const name = job?.name || first || 'Enquiry';
+  const old = Boolean(rules.at && r && (data?.rulesAt ?? 0) < rules.at);
+  const withRules = Boolean(r && rules.text && data?.rulesAt && !old);
+  // the redo box at the bottom, opened with the note it was last read with
+  const redo = () => {
+    setNote(data?.note ?? '');
+    setAgain(true);
+    requestAnimationFrame(() => document.getElementById('quote-redo')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  };
 
   const options = r ? optionsFor(r, prices, BOARDS, edits, fillWall) : [];
   const message = r ? edits.text ?? quoteMessage(r, options, edits, first, true) : '';
@@ -559,7 +759,20 @@ export function QuoteView({
         {data?.photos?.length ? ` from ${data.photos.length} photo${data.photos.length === 1 ? '' : 's'}` : ', no photos'}
         {data?.skipped ? ` (${data.skipped} more on the job not read)` : ''}
         {data?.note ? ` · you said: “${data.note}”` : ''}
+        {withRules ? ' · with your instructions' : ''}
       </p>
+      {old && !working ? (
+        <div className="mt-3 rounded-sm border border-line-strong bg-mount px-3 py-2.5 text-[14.5px] leading-relaxed">
+          Worked out before your latest instructions.{' '}
+          <button type="button" onClick={redo} className="font-mono text-[13px] text-accent underline">
+            Redo it with them
+          </button>
+        </div>
+      ) : !working ? (
+        <button type="button" onClick={redo} className="mt-1.5 font-mono text-[13px] text-accent underline">
+          Redo this quote
+        </button>
+      ) : null}
       {working ? (
         <p className="mt-3 flex items-center gap-2 rounded-sm border border-accent bg-accent-soft px-3 py-2.5 text-[15px]">
           <Mark state="sending" /> Reading it again… this updates by itself.
@@ -747,11 +960,19 @@ export function QuoteView({
         <p className="mt-1.5 text-center font-mono text-[12px] text-faint">{sent ? 'It shows as Quote sent, with a follow up after 5 days.' : 'Moves the job to Quote sent in the Job Kit.'}</p>
       </section>
 
-      {/* Ask again */}
-      <section className="mt-7 border-t border-line pt-5">
+      {/* Redo it */}
+      <section id="quote-redo" className="mt-7 border-t border-line pt-5">
         {again ? (
           <>
-            <NoteBox note={note} setNote={setNote} />
+            <p className="font-semibold">Redo this quote</p>
+            <p className="mt-1 text-[14.5px] leading-relaxed text-muted">
+              {rules.text ? 'Claude reads it again with your instructions for every quote' : 'Claude reads it again'}
+              {' '}and anything you add here for this one.{' '}
+              <button type="button" onClick={onRules} className="font-mono text-[13px] text-accent underline">
+                {rules.text ? 'Your instructions' : 'Write instructions for every quote'}
+              </button>
+            </p>
+            <NoteBox note={note} setNote={setNote} label="Anything for this one? (optional)" />
             <div className="mt-3 flex flex-wrap gap-3">
               <button
                 type="button"
@@ -762,17 +983,17 @@ export function QuoteView({
                 }}
                 className="btn btn-primary btn-sm"
               >
-                Read it again
+                Redo it
               </button>
               <button type="button" onClick={() => setAgain(false)} className="btn btn-ghost btn-sm">
                 Cancel
               </button>
             </div>
-            <p className="mt-2 font-mono text-[12px] text-faint">Your prices and ticks stay. New photos on the job are read too.</p>
+            <p className="mt-2 font-mono text-[12px] leading-relaxed text-faint">Your prices stay; the message and its questions are written out again. New photos on the job are read too.</p>
           </>
         ) : (
-          <button type="button" onClick={() => setAgain(true)} disabled={working} className="font-mono text-[13.5px] text-accent underline disabled:opacity-50">
-            Work it out again
+          <button type="button" onClick={redo} disabled={working} className="font-mono text-[13.5px] text-accent underline disabled:opacity-50">
+            Redo this quote
           </button>
         )}
         <p className="mt-4 font-mono text-[11.5px] leading-relaxed text-faint">
@@ -792,10 +1013,10 @@ export function QuoteView({
   );
 }
 
-function NoteBox({ note, setNote }: { note: string; setNote: (s: string) => void }) {
+function NoteBox({ note, setNote, label: words = 'Anything Claude should know? (optional)' }: { note: string; setNote: (s: string) => void; label?: string }) {
   return (
     <label className="mt-3 grid grid-cols-1 gap-1.5">
-      <span className={label}>Anything Claude should know? (optional)</span>
+      <span className={label}>{words}</span>
       <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} maxLength={800} placeholder="e.g. the ceiling is 2,600; they want sliding doors" className={`${field} py-2 text-[15px]`} />
     </label>
   );

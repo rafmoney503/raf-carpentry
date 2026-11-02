@@ -1,14 +1,15 @@
 import { after } from 'next/server';
 import { guard } from '@/lib/job-kit-server';
 import { SyncError } from '@/lib/job-kit-sync-server';
-import { claimQuote, listQuotes, quotesRpc, quotesSetUp, runQuote } from '@/lib/quote-maker';
+import { claimQuote, listQuotes, quotesRpc, quotesSetUp, RULES_MAX, runQuote } from '@/lib/quote-maker';
 
 /* The Job Kit's Quotes, behind the PIN (src/lib/quote-maker.ts, src/app/job-kit/quotes.tsx).
-   { action: 'list' }                         every quote of the last 90 days and Raf's price list
+   { action: 'list' }                         every quote of the last 90 days, Raf's price list and instructions
    { action: 'make', job, force?, note? }     Claude reads the job (after the answer, so the phone isn't kept
                                               waiting): { state: 'working' }, or the state already there
    { action: 'edit', id, edits, at }          Raf's changes to a quote (the later change wins)
-   { action: 'prices', prices, at }           his price list */
+   { action: 'prices', prices, at }           his price list
+   { action: 'rules', rules: { text }, at }    his instructions for Claude, used on every reading after this */
 export const maxDuration = 120;
 
 const noStore = { 'Cache-Control': 'no-store' };
@@ -46,6 +47,12 @@ export async function POST(req: Request) {
         const edits = obj(body.edits);
         if (!id || !edits) return Response.json({ error: 'bad' }, { status: 400, headers: noStore });
         return Response.json(await quotesRpc('edit', { id, edits, at: at(body.at) }), { headers: noStore });
+      }
+      case 'rules': {
+        const rules = obj(body.rules);
+        if (!rules || typeof rules.text !== 'string') return Response.json({ error: 'bad' }, { status: 400, headers: noStore });
+        const text = rules.text.replace(/\r\n?/g, '\n').trim().slice(0, RULES_MAX);
+        return Response.json(await quotesRpc('edit', { id: '_rules', edits: { text }, at: at(body.at) }), { headers: noStore });
       }
       case 'prices': {
         const prices = obj(body.prices);

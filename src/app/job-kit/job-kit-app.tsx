@@ -90,7 +90,8 @@ import { reloadFor, safeToReload, watchVersion } from './update';
 import { fetchSocial, newComments, savedSocial, SOCIAL_FRESH, socialKey, socialLine, socialProblem, socialTodayLine, SocialView, type Social } from './social';
 import { PersonalToday, PersonalView, usePersonalToday } from './personal';
 import { startChores } from './chores-store';
-import { askQuote, checkedQuotes, fetchQuotes, isWorking, pricesOf, putInEmailBox, QUOTES_FRESH, QuoteJobBox, QuotePrices, QuotesList, quotesLine, quoteTodayLines, QuoteView, readyCount, rowOf, savedQuotes, toRead, workingHere, changeHere, type Quotes } from './quotes';
+import { askQuote, checkedQuotes, fetchQuotes, flushQuoteEdits, isWorking, keepRedo, pricesOf, putInEmailBox, QUOTES_FRESH, QuoteJobBox, QuotePrices, QuotesList, quotesLine, quoteTodayLines, QuoteView, readyCount, rowOf, rulesOf, rulesWaiting, savedQuotes, savedRedo, toRead, workingHere, changeHere, type Quotes } from './quotes';
+import type { QuoteData } from '@/lib/quote-maker';
 import type { QuoteEdits } from '@/lib/quote-sums';
 import './job-kit.css';
 
@@ -408,6 +409,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   quotesRef.current = quotes;
   const [quotesLoading, setQuotesLoading] = useState(false);
   const lastQuotes = useRef(0);
+  const quotesFresh = useRef(false); // the list has come from the store since the app opened (not just the kept copy)
   const checkQuotes = useCallback((force = false) => {
     const pin = readPin();
     if (!pin || (!force && Date.now() - lastQuotes.current < QUOTES_FRESH)) return;
@@ -415,6 +417,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     setQuotesLoading(true);
     void fetchQuotes(pin, quotesRef.current).then((r) => {
       quotesRef.current = r;
+      if (!r.error) quotesFresh.current = true;
       setQuotes(r);
       setQuotesLoading(false);
       if (r.error) lastQuotes.current = 0;
@@ -425,16 +428,17 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     quotesRef.current = next;
     setQuotes(next);
   }, []);
+  // Answers whether Claude was asked (false: no PIN, no signal, or the store or the key isn't there).
   const startQuote = useCallback(
-    async (uuid: string, force = false, note = '') => {
+    async (uuid: string, force = false, note = ''): Promise<boolean> => {
       const pin = readPin();
-      if (!pin) return;
+      if (!pin) return false;
       const r = await askQuote(pin, uuid, force, note);
       if (!r.ok) {
         const next = { ...quotesRef.current, error: r.error, detail: r.detail };
         quotesRef.current = next;
         setQuotes(next);
-        return;
+        return false;
       }
       if (r.data.state === 'working') {
         const next = workingHere(quotesRef.current, uuid);
@@ -444,10 +448,37 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         const next = { ...quotesRef.current, error: r.data.state === 'down' ? 'sync-down' : 'quotes-not-set-up' };
         quotesRef.current = next;
         setQuotes(next);
+        return false;
       } else checkQuotes(true);
+      return true;
     },
     [checkQuotes],
   );
+  /* A quote read again: the message typed by hand and the question ticks belong to the old reading, so they go (his
+     prices, sizes and picks stay). His instructions saved a moment ago go to the store first, so Claude reads them. */
+  const redoQuote = useCallback(
+    async (id: string, note = '') => {
+      await flushQuoteEdits();
+      const e = { ...((rowOf(quotesRef.current, id)?.edits ?? {}) as QuoteEdits) };
+      if (e.text !== undefined || e.ask !== undefined) {
+        delete e.text;
+        delete e.ask;
+        changeQuote(id, e as Record<string, unknown>);
+      }
+      return startQuote(id, true, note);
+    },
+    [changeQuote, startQuote],
+  );
+  /* Quotes to redo with his instructions, one at a time (kept on this device, so a reload carries on). */
+  const [redo, setRedo] = useState<string[]>([]);
+  const [redoNow, setRedoNow] = useState('');
+  const [redoTick, setRedoTick] = useState(0);
+  const redoPause = useRef(0);
+  const quoteBusy = useRef(false); // one reading started at a time by the Job Kit itself (new ones or redos)
+  const setRedoBoth = useCallback((ids: string[]) => {
+    keepRedo(ids);
+    setRedo(ids);
+  }, []);
   const sm8Ref = useRef(sm8);
   sm8Ref.current = sm8;
   // marks are read from storage, not the screen's copy, so one just in from the other device isn't overwritten
@@ -525,6 +556,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     const keptQuotes = checkedQuotes(savedQuotes());
     quotesRef.current = keptQuotes;
     setQuotes(keptQuotes);
+    setRedo(savedRedo());
     checkQuotes();
     if (readPin()) checkClients(); // so the first search is instant
     // Back from connecting Instagram and Facebook or Threads: open Social with how it went, and take the ?social= off the address.
@@ -671,12 +703,39 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   }, [quoteWorking, checkQuotes]);
   const autoTried = useRef(new Set<string>());
   useEffect(() => {
-    if (!ready || !pin || quoteWorking) return;
+    if (!ready || !pin || quoteWorking || quoteBusy.current) return;
     const next = toRead(quotes, sm8, marks).find((id) => !autoTried.current.has(id));
     if (!next) return;
     autoTried.current.add(next);
-    void startQuote(next);
+    quoteBusy.current = true;
+    void startQuote(next).finally(() => (quoteBusy.current = false));
   }, [ready, pin, quoteWorking, quotes, sm8, marks, startQuote]);
+  // The redo queue: the next one once the store has said nothing is being read (after a reload the kept copy can't
+  // know), his instructions are in the store, and (after no signal or a store that didn't answer) a minute has passed.
+  useEffect(() => {
+    if (!ready || !pin || !quotesFresh.current || quoteWorking || quoteBusy.current || !redo.length) return;
+    if (rulesWaiting() || Date.now() < redoPause.current) {
+      void flushQuoteEdits();
+      const t = setTimeout(() => setRedoTick((n) => n + 1), 2500);
+      return () => clearTimeout(t);
+    }
+    const [id, ...rest] = redo;
+    setRedoBoth(rest);
+    setRedoNow(id);
+    quoteBusy.current = true;
+    const note = (rowOf(quotesRef.current, id)?.data as QuoteData | null)?.note ?? '';
+    void redoQuote(id, note)
+      .then((asked) => {
+        if (asked) return;
+        setRedoBoth([id, ...savedRedo().filter((x) => x !== id)]);
+        redoPause.current = Date.now() + 60_000;
+      })
+      .finally(() => {
+        quoteBusy.current = false;
+        setRedoTick((n) => n + 1);
+      });
+  }, [ready, pin, quoteWorking, quotes.at, redo, redoTick, redoQuote, setRedoBoth]);
+  const redoLeft = redo.length + (redoNow && isWorking(rowOf(quotes, redoNow)) ? 1 : 0);
 
   const job = screen.name === 'job' || screen.name === 'design' ? jobs.find((j) => j.id === screen.id) : undefined;
   // A ServiceM8 job: in the Current jobs, or from a customer opened from the search (an older one).
@@ -1180,6 +1239,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 sm8={sm8}
                 marks={marks}
                 loading={quotesLoading}
+                redoLeft={redoLeft}
                 onRefresh={() => {
                   checkQuotes(true);
                   checkSm8();
@@ -1187,6 +1247,11 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 onOpen={(id) => go({ name: 'quote', id })}
                 onMake={(id) => void startQuote(id, true)}
                 onPrices={() => go({ name: 'quote-prices' })}
+                onSaveRules={(text) => {
+                  changeQuote('_rules', { text });
+                  void flushQuoteEdits();
+                }}
+                onRedo={(ids) => setRedoBoth([...ids, ...redo.filter((x) => !ids.includes(x))])}
               />
             ) : screen.name === 'quote' ? (
               (() => {
@@ -1199,9 +1264,14 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                     job={qjob}
                     row={row}
                     prices={pricesOf(quotes)}
+                    rules={rulesOf(quotes)}
                     sent={sent}
                     onEdit={(e) => changeQuote(screen.id, e as Record<string, unknown>)}
-                    onMake={(force, note) => void startQuote(screen.id, force, note)}
+                    onMake={(force, note) => {
+                      setRedoBoth(redo.filter((x) => x !== screen.id));
+                      void (row?.data ? redoQuote(screen.id, note) : startQuote(screen.id, force, note));
+                    }}
+                    onRules={() => go({ name: 'quotes' })}
                     onSent={(yes, how) => {
                       const e = ((row?.edits ?? {}) as QuoteEdits);
                       changeQuote(screen.id, { ...e, sentAt: yes ? Date.now() : undefined, sentHow: yes ? how : undefined } as Record<string, unknown>);

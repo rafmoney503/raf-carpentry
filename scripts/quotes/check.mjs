@@ -158,6 +158,13 @@ const by = (opts, id) => opts.find((o) => o.id === id);
   ok(/One question to firm it up: Where are the sockets\?/.test(one), 'one question inline');
   const none = quoteMessage({ ...r, questions: [] }, o2, { pick: { plain: false, pax: false, shaker: false, board: false } }, '', true);
   ok(none.startsWith('Hi there,') && !/rough price/.test(none), 'no options: no price lines');
+  ok(/The next step is a free visit to measure up/.test(msg), 'the usual closing paragraph');
+  // Raf's instructions can add a paragraph to every message and change the closing one (2 Nov 2026)
+  const own = quoteMessage({ ...r, extra: 'Send more photos on WhatsApp any time.', closing: 'I can come and measure up this week.' }, o2, e, 'Sarah', true);
+  ok(/Where are the sockets\?\n\nSend more photos on WhatsApp any time\.\n\nI can come and measure up this week\.\n\nThanks,\nRaf$/.test(own), 'his extra paragraph, then his closing, then Thanks');
+  ok(!/The next step is a free visit/.test(own), 'his closing replaces the usual one');
+  ok(quoteMessage({ ...r, extra: '  ', closing: '' }, o2, e, 'Sarah', true) === msg, 'empty extra and closing change nothing');
+  ok(!/\n\n\n/.test(own), 'never two empty lines with his paragraphs');
 }
 
 /* board sheets and days can be set by hand */
@@ -222,6 +229,9 @@ for (let w = 400; w <= 6000; w += 100) {
   ok(c.inside === '' && c.recommend === 'none', 'bad inside and pick dropped');
   ok(c.wardrobe.units === 3 && c.wardrobe.drawers === 0 && c.wardrobe.top && !c.wardrobe.paxOk && c.wardrobe.paxNote === 'sloped', 'wardrobe facts cleaned');
   ok(cleanRead({ kind: 'other', other_options: [{ name: 'A', how: 'rate', rate: 'nope' }] }).other[0].how === 'build', 'an unknown rate becomes days and materials');
+  const x = cleanRead({ kind: 'wardrobe', extra: ' Send   more photos — any time. ', closing: '' });
+  ok(x.extra === 'Send more photos, any time.' && x.closing === undefined, 'his extra paragraph cleaned, an empty closing dropped');
+  ok(c.extra === undefined && c.closing === undefined, 'no extra or closing unless asked');
 }
 
 console.log(`${checks - fails.length} of ${checks} checks pass`);

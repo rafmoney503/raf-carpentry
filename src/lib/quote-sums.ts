@@ -140,6 +140,8 @@ export type QuoteRead = {
   recommend: 'plain' | 'pax' | 'shaker' | 'board' | 'none';
   recommendWhy: string;
   other: OtherOption[];
+  extra?: string; // a paragraph Raf's instructions ask for in every message, before the closing
+  closing?: string; // his own closing paragraph, when his instructions change the usual one
 };
 
 /* Raf's changes to one quote, kept with it and in step between the phone and the computer. */
@@ -428,6 +430,8 @@ export const picked = (o: Option, edits: QuoteEdits = {}) => o.offered && (edits
 
 /* ---------- the message ---------- */
 
+export const CLOSING = 'The next step is a free visit to measure up, then your written quote. I draw it in 3D for you to approve, and nothing is cut until you sign it off.';
+
 export function quoteMessage(read: QuoteRead, options: Option[], edits: QuoteEdits = {}, first = '', sign = false): string {
   const sizes = sizesOf(read, edits);
   const { words, guessed } = sizeWords(sizes);
@@ -446,7 +450,8 @@ export function quoteMessage(read: QuoteRead, options: Option[], edits: QuoteEdi
   const q = (x: string) => (/[?.!]$/.test(x.trim()) ? x.trim() : `${x.trim()}?`);
   if (asks.length === 1) out.push(`One question to firm it up: ${q(asks[0])}`, '');
   else if (asks.length) out.push('A few questions to firm it up:', ...asks.map((x) => `- ${q(x)}`), '');
-  out.push('The next step is a free visit to measure up, then your written quote. I draw it in 3D for you to approve, and nothing is cut until you sign it off.', '', 'Thanks,');
+  if (read.extra?.trim()) out.push(read.extra.trim(), '');
+  out.push(read.closing?.trim() || CLOSING, '', 'Thanks,');
   if (sign) out.push('Raf');
   return out.join('\n');
 }
