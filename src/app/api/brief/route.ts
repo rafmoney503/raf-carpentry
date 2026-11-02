@@ -1,4 +1,6 @@
+import { after } from 'next/server';
 import { createEnquiry, sendEmail, sm8SetUp, Sm8Error } from '@/lib/servicem8';
+import { makeQuote, quotesSetUp } from '@/lib/quote-maker';
 import { parseBrief, stripInvisible } from '@/app/job-kit/brief-paste';
 import { makeToken } from '@/lib/brief-token';
 import { EMAIL } from '@/lib/site';
@@ -18,7 +20,7 @@ import { plannerDesign, sendDesignToCabinetOS, type CabinetOSResult } from '@/li
    Public, so: a hidden field people never see (bots fill it in), a minimum time on the page, a few sends per
    address per 10 minutes, and short limits on every field. A bot gets an ordinary-looking answer and nothing is
    made. createEnquiry is safe to repeat, so a customer pressing send twice gets one job. Nothing is kept here. */
-export const maxDuration = 30;
+export const maxDuration = 120; // 30 for the brief, the rest for the quote reading after the answer (no photos)
 
 const MAX_PHOTOS = 10;
 const MIN_MS = 4000;
@@ -109,6 +111,8 @@ export async function POST(req: Request) {
       ]),
       new Promise((r) => setTimeout(r, 5000)),
     ]);
+    // With no photos to wait for, Claude reads the brief now for the Job Kit's Quotes; with photos, /api/brief/done does.
+    if (!photos && quotesSetUp()) after(() => makeQuote(job.uuid, { job }));
     return Response.json({ ok: true, token: makeToken(job.uuid, photos), photos }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (e) {
     const code = e instanceof Sm8Error ? e.code : 'error';

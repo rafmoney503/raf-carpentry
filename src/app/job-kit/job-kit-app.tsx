@@ -90,6 +90,8 @@ import { reloadFor, safeToReload, watchVersion } from './update';
 import { fetchSocial, newComments, savedSocial, SOCIAL_FRESH, socialKey, socialLine, socialProblem, socialTodayLine, SocialView, type Social } from './social';
 import { PersonalToday, PersonalView, usePersonalToday } from './personal';
 import { startChores } from './chores-store';
+import { askQuote, checkedQuotes, fetchQuotes, isWorking, pricesOf, putInEmailBox, QUOTES_FRESH, QuoteJobBox, QuotePrices, QuotesList, quotesLine, quoteTodayLines, QuoteView, readyCount, rowOf, savedQuotes, toRead, workingHere, changeHere, type Quotes } from './quotes';
+import type { QuoteEdits } from '@/lib/quote-sums';
 import './job-kit.css';
 
 type Tab = SectionId | 'notes' | 'send';
@@ -106,6 +108,9 @@ type Screen =
   | { name: 'design'; id: string }
   | { name: 'new-design'; from?: string; wa?: string } // wa: started from a WhatsApp chat's photos
   | { name: 'current' }
+  | { name: 'quotes' } // rough quotes Claude worked out for new enquiries (quotes.tsx)
+  | { name: 'quote'; id: string; from?: 'job' | 'home' } // one, by its ServiceM8 job
+  | { name: 'quote-prices' } // Raf's price list the quotes are worked out from
   | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer' | 'timeline' | 'board' | 'wa' | 'design'; client?: string; chat?: string; design?: string }
   | { name: 'enquiry'; client?: string; named?: string; mail?: string; wa?: string } // client: started from a customer's page; named: from a search that found nobody; mail: from an email in the Inbox
   | { name: 'customer'; id: string; from?: 'home' } // one customer from ServiceM8 (customer-view.tsx)
@@ -143,6 +148,10 @@ function listFor(s: Screen): Screen | null {
       return { name: 'posts' };
     case 'job':
       return { name: 'kit' };
+    case 'quote':
+      return s.from === 'job' ? { name: 'current' } : { name: 'quotes' };
+    case 'quote-prices':
+      return { name: 'quotes' };
     case 'new':
       return s.design ? { name: 'designs' } : s.from ? { name: 'current' } : { name: 'kit' };
     default:
@@ -154,7 +163,15 @@ const ROOMY = ['home', 'timeline', 'board', 'library', 'stats', 'stats-blog', 's
 
 /* Where "‹ Back" goes when the app was reopened straight onto a screen (no history to go back through). */
 const parentOf = (s: Screen): Screen =>
-  s.name === 'wa-chat'
+  s.name === 'quote'
+    ? s.from === 'job'
+      ? { name: 'sm8', id: s.id }
+      : s.from === 'home'
+        ? { name: 'home' }
+        : { name: 'quotes' }
+    : s.name === 'quote-prices'
+    ? { name: 'quotes' }
+    : s.name === 'wa-chat'
     ? { name: 'whatsapp' }
     : (s.name === 'enquiry' || s.name === 'new-design') && s.wa
     ? { name: 'wa-chat', id: s.wa }
@@ -197,7 +214,7 @@ const parentOf = (s: Screen): Screen =>
           : { name: 'home' };
 const backLabel = (s: Screen) => {
   const p = parentOf(s).name;
-  return p === 'stats-blog' ? 'Blog stats' : p === 'stats' ? 'Stats' : p === 'designs' ? 'Designs' : p === 'design' ? 'Design' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'timeline' ? 'Timeline' : p === 'board' ? 'Board' : p === 'whatsapp' ? 'WhatsApp' : p === 'wa-chat' ? 'Chat' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : p === 'inbox' ? 'Inbox' : p === 'email' ? 'Email' : 'Today';
+  return p === 'stats-blog' ? 'Blog stats' : p === 'stats' ? 'Stats' : p === 'designs' ? 'Designs' : p === 'design' ? 'Design' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'timeline' ? 'Timeline' : p === 'board' ? 'Board' : p === 'whatsapp' ? 'WhatsApp' : p === 'wa-chat' ? 'Chat' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : p === 'inbox' ? 'Inbox' : p === 'email' ? 'Email' : p === 'quotes' ? 'Quotes' : 'Today';
 };
 
 const thisMonth = () => {
@@ -211,7 +228,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'personal', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-blog', 'stats-page', 'kit', 'social'].includes(s.name)) return s;
+    if (s && ['home', 'personal', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-blog', 'stats-page', 'kit', 'social', 'quotes', 'quote', 'quote-prices'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -385,6 +402,52 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   const customerLoaded = useCallback((d: CustomerDetail) => {
     setCustomerJobs((list) => [...d.jobs, ...list.filter((j) => !d.jobs.some((x) => x.uuid === j.uuid))]);
   }, []);
+  /* Quotes (quotes.tsx): what Claude read from new enquiries and Raf's changes, from the store; the last list at once. */
+  const [quotes, setQuotes] = useState<Quotes>({ rows: [], prices: null, at: 0 });
+  const quotesRef = useRef(quotes);
+  quotesRef.current = quotes;
+  const [quotesLoading, setQuotesLoading] = useState(false);
+  const lastQuotes = useRef(0);
+  const checkQuotes = useCallback((force = false) => {
+    const pin = readPin();
+    if (!pin || (!force && Date.now() - lastQuotes.current < QUOTES_FRESH)) return;
+    lastQuotes.current = Date.now();
+    setQuotesLoading(true);
+    void fetchQuotes(pin, quotesRef.current).then((r) => {
+      quotesRef.current = r;
+      setQuotes(r);
+      setQuotesLoading(false);
+      if (r.error) lastQuotes.current = 0;
+    });
+  }, []);
+  const changeQuote = useCallback((id: string, edits: Record<string, unknown>) => {
+    const next = changeHere(quotesRef.current, id, edits);
+    quotesRef.current = next;
+    setQuotes(next);
+  }, []);
+  const startQuote = useCallback(
+    async (uuid: string, force = false, note = '') => {
+      const pin = readPin();
+      if (!pin) return;
+      const r = await askQuote(pin, uuid, force, note);
+      if (!r.ok) {
+        const next = { ...quotesRef.current, error: r.error, detail: r.detail };
+        quotesRef.current = next;
+        setQuotes(next);
+        return;
+      }
+      if (r.data.state === 'working') {
+        const next = workingHere(quotesRef.current, uuid);
+        quotesRef.current = next;
+        setQuotes(next);
+      } else if (r.data.state === 'not-set-up' || r.data.state === 'down') {
+        const next = { ...quotesRef.current, error: r.data.state === 'down' ? 'sync-down' : 'quotes-not-set-up' };
+        quotesRef.current = next;
+        setQuotes(next);
+      } else checkQuotes(true);
+    },
+    [checkQuotes],
+  );
   const sm8Ref = useRef(sm8);
   sm8Ref.current = sm8;
   // marks are read from storage, not the screen's copy, so one just in from the other device isn't overwritten
@@ -459,6 +522,10 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     setInbox(keptInbox);
     checkInbox();
     setSocial(savedSocial());
+    const keptQuotes = checkedQuotes(savedQuotes());
+    quotesRef.current = keptQuotes;
+    setQuotes(keptQuotes);
+    checkQuotes();
     if (readPin()) checkClients(); // so the first search is instant
     // Back from connecting Instagram and Facebook or Threads: open Social with how it went, and take the ?social= off the address.
     const fromLogin = new URLSearchParams(window.location.search).get('social');
@@ -517,6 +584,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         checkSm8();
         checkInbox();
         checkSocial();
+        checkQuotes();
         if (readPin()) checkClients();
       }
     };
@@ -564,7 +632,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
       window.removeEventListener('popstate', back);
       window.removeEventListener('pageshow', shown);
     };
-  }, [reload, checkDesigns, checkSm8, checkClients, checkInbox, checkSocial]);
+  }, [reload, checkDesigns, checkSm8, checkClients, checkInbox, checkSocial, checkQuotes]);
   /* A newer version is live: load it on Today with nothing being typed, or when the app comes back after 30 s away
      (where a sheet or a box being typed in isn't open); the Update button does it at once. */
   useEffect(() => {
@@ -593,6 +661,22 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   useEffect(() => {
     if (ready) window.scrollTo({ top: 0, behavior: 'instant' });
   }, [ready]);
+  /* Quotes: asked again every 6 s while Claude is reading one; and each new enquiry is read by itself, one at a time
+     (toRead in quotes.tsx: Quote jobs of the last 14 days, quote not sent, nothing read yet). */
+  const quoteWorking = quotes.rows.some(isWorking);
+  useEffect(() => {
+    if (!quoteWorking) return;
+    const t = setInterval(() => checkQuotes(true), 6000);
+    return () => clearInterval(t);
+  }, [quoteWorking, checkQuotes]);
+  const autoTried = useRef(new Set<string>());
+  useEffect(() => {
+    if (!ready || !pin || quoteWorking) return;
+    const next = toRead(quotes, sm8, marks).find((id) => !autoTried.current.has(id));
+    if (!next) return;
+    autoTried.current.add(next);
+    void startQuote(next);
+  }, [ready, pin, quoteWorking, quotes, sm8, marks, startQuote]);
 
   const job = screen.name === 'job' || screen.name === 'design' ? jobs.find((j) => j.id === screen.id) : undefined;
   // A ServiceM8 job: in the Current jobs, or from a customer opened from the search (an older one).
@@ -871,6 +955,11 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                   checkSm8();
                   go({ name: 'current' });
                 }}
+                quotes={quotes}
+                onQuotes={() => {
+                  checkQuotes();
+                  go({ name: 'quotes' });
+                }}
                 onDiary={() => {
                   checkSm8();
                   go({ name: 'diary' });
@@ -913,6 +1002,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                       go({ name: 'inbox' });
                     }
                   }
+                  else if (l.go === 'quotes') go(l.id ? { name: 'quote', id: l.id, from: 'home' } : { name: 'quotes' });
                   else if (l.go === 'designs') go(l.id ? { name: 'design', id: l.id } : { name: 'designs' });
                   else if (l.go === 'posts') go({ name: 'posts' });
                   else if (l.go === 'social') {
@@ -1084,6 +1174,51 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 onCustomer={(id) => go({ name: 'customer', id })}
                 onNewNamed={(named) => go({ name: 'enquiry', named })}
               />
+            ) : screen.name === 'quotes' ? (
+              <QuotesList
+                quotes={quotes}
+                sm8={sm8}
+                marks={marks}
+                loading={quotesLoading}
+                onRefresh={() => {
+                  checkQuotes(true);
+                  checkSm8();
+                }}
+                onOpen={(id) => go({ name: 'quote', id })}
+                onMake={(id) => void startQuote(id, true)}
+                onPrices={() => go({ name: 'quote-prices' })}
+              />
+            ) : screen.name === 'quote' ? (
+              (() => {
+                const qjob = findJob(screen.id);
+                const row = rowOf(quotes, screen.id);
+                const sent = Boolean((row?.edits as QuoteEdits | null)?.sentAt) || (qjob ? qjob.status !== 'Quote' || ['sent', 'follow'].includes(stage(qjob, marks)) : false);
+                return (
+                  <QuoteView
+                    key={screen.id}
+                    job={qjob}
+                    row={row}
+                    prices={pricesOf(quotes)}
+                    sent={sent}
+                    onEdit={(e) => changeQuote(screen.id, e as Record<string, unknown>)}
+                    onMake={(force, note) => void startQuote(screen.id, force, note)}
+                    onSent={(yes, how) => {
+                      const e = ((row?.edits ?? {}) as QuoteEdits);
+                      changeQuote(screen.id, { ...e, sentAt: yes ? Date.now() : undefined, sentHow: yes ? how : undefined } as Record<string, unknown>);
+                      mark(screen.id, { quoteSentAt: yes ? Date.now() : undefined });
+                    }}
+                    onEmailBox={(subject, text) => {
+                      if (!qjob) return;
+                      putInEmailBox(qjob.uuid, { mode: 'email', to: qjob.email, subject, text });
+                      go({ name: 'sm8', id: qjob.uuid });
+                      setTimeout(() => document.getElementById('emails')?.scrollIntoView({ behavior: 'instant', block: 'start' }), 120);
+                    }}
+                    onOpenJob={qjob && screen.from !== 'job' ? () => go({ name: 'sm8', id: qjob.uuid }) : undefined}
+                  />
+                );
+              })()
+            ) : screen.name === 'quote-prices' ? (
+              <QuotePrices prices={pricesOf(quotes)} savedAt={quotes.prices?.at ?? 0} onSave={(p) => changeQuote('_prices', p)} />
             ) : screen.name === 'inbox' ? (
               <InboxList
                 inbox={inbox}
@@ -1246,7 +1381,12 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                     checkSm8();
                     go({ name: 'timeline', job: cur.uuid });
                   }}
-                  extra={<WaJobBox chats={waChats} job={cur.uuid} onOpen={(id) => go({ name: 'wa-chat', id })} />}
+                  extra={
+                    <>
+                      <QuoteJobBox job={cur} row={rowOf(quotes, cur.uuid)} prices={pricesOf(quotes)} onOpen={() => go({ name: 'quote', id: cur.uuid, from: 'job' })} onMake={() => void startQuote(cur.uuid, true)} />
+                      <WaJobBox chats={waChats} job={cur.uuid} onOpen={(id) => go({ name: 'wa-chat', id })} />
+                    </>
+                  }
                   onOpenKit={(k) => go(k.kind === 'design' ? { name: 'design', id: k.id } : { name: 'job', id: k.id, tab: 'before' })}
                   bookings={(diarySm8.bookings ?? []).filter((b) => b.jobUuid === cur.uuid)}
                   staff={sm8.staff ?? []}
@@ -1395,16 +1535,22 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     if (id === 'inbox') checkInbox();
     if (id === 'designs' || id === 'library') checkDesigns();
     if (id === 'social') checkSocial();
+    if (id === 'quotes') {
+      checkQuotes();
+      checkSm8();
+    }
     go(id === 'kit' ? { name: 'kit' } : id === 'stats' ? { name: 'stats' } : ({ name: id } as Screen));
   };
   const sideCounts: Partial<Record<SideId, number>> = wide
     ? {
         home:
           (inboxTodayLine(inbox, customers) ? 1 : 0) +
+          quoteTodayLines(quotes, diarySm8, marks).length +
           (socialTodayLine(social) ? 1 : 0) +
           waTodayLines(waChats).length +
           todayLines({ sm8: diarySm8, marks, kit: jobs, designs, done, postsLeft: posts.length - postedEverywhere(posts) }).length,
         inbox: freshUnread(inbox).length,
+        quotes: readyCount(quotes, sm8, marks),
         whatsapp: waChats.filter((c) => !c.sends.length).length,
         social: newComments(social).length,
         personal: personalNow.due.length,
@@ -1592,6 +1738,8 @@ function Home({
   onInbox,
   find,
   onCurrent,
+  quotes,
+  onQuotes,
   onDiary,
   onTimeline,
   onBoard,
@@ -1629,6 +1777,8 @@ function Home({
   onInbox: () => void;
   find: React.ReactNode; // Find a customer (customers.tsx)
   onCurrent: () => void;
+  quotes: Quotes;
+  onQuotes: () => void;
   onDiary: () => void;
   onTimeline: () => void;
   onBoard: () => void;
@@ -1661,7 +1811,8 @@ function Home({
   const mailLine = inboxTodayLine(inbox, customers);
   const waLines: TodayLine[] = waTodayLines(waChats).map((l) => ({ text: l.text, go: 'whatsapp', id: l.id, urgent: l.urgent }));
   const socialNew = socialTodayLine(social);
-  const lines = [...(mailLine ? [mailLine] : []), ...waLines, ...(socialNew ? [socialNew] : []), ...todayLines({ sm8, marks, kit: [...jobs, ...designJobs], designs, done, postsLeft: posts.length - postedEverywhere(posts) })];
+  const quoteLines: TodayLine[] = quoteTodayLines(quotes, sm8, marks).map((l) => ({ text: l.text, go: 'quotes', id: l.id, urgent: true, icon: 'quote' }));
+  const lines = [...(mailLine ? [mailLine] : []), ...quoteLines, ...waLines, ...(socialNew ? [socialNew] : []), ...todayLines({ sm8, marks, kit: [...jobs, ...designJobs], designs, done, postsLeft: posts.length - postedEverywhere(posts) })];
   const goingAhead = sm8.jobs.filter((j) => j.status === 'Work Order').length;
   const [install, setInstall] = useState<(Event & { prompt: () => Promise<void> }) | null>(null);
   useEffect(() => {
@@ -1749,6 +1900,7 @@ function Home({
           {find}
           <HomeRow onClick={onDiary} title="Diary" line={diaryLine(sm8)} />
           <HomeRow onClick={onCurrent} title="Current jobs" line={currentLine(sm8, marks)} />
+          <HomeRow onClick={onQuotes} title="Quotes" line={quotesLine(quotes, sm8, marks)} truncate />
           <HomeRow onClick={onInbox} title="Inbox" line={inboxLine(inbox)} truncate last />
         </div>
       </HomeBand>
@@ -1908,7 +2060,7 @@ function currentLine(sm8: Sm8, marks: Marks) {
 }
 
 /* Each line on the Today list shows the icon of the section it opens. */
-const LINE_ICON: Record<TodayLine['go'], IconName> = { current: 'jobs', designs: 'designs', posts: 'posts', jobs: 'kit', diary: 'diary', sm8: 'diary', inbox: 'mail', timeline: 'gantt', whatsapp: 'chat', social: 'social' };
+const LINE_ICON: Record<TodayLine['go'], IconName> = { quotes: 'quote', current: 'jobs', designs: 'designs', posts: 'posts', jobs: 'kit', diary: 'diary', sm8: 'diary', inbox: 'mail', timeline: 'gantt', whatsapp: 'chat', social: 'social' };
 
 function diaryLine(sm8: Sm8) {
   if (!sm8.at || sm8.bookings === undefined) return 'Visits and work booked in ServiceM8';

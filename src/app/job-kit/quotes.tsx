@@ -1,0 +1,1080 @@
+'use client';
+/* eslint-disable @next/next/no-img-element -- photos from the job's diary, fetched behind the PIN */
+import { useEffect, useMemo, useState } from 'react';
+import type { CurrentJob } from '@/lib/servicem8';
+import type { QuoteData, QuoteRow } from '@/lib/quote-maker';
+import { BOARDS, BOARDS_CHECKED, CWORKSHOP_CUTLIST, INSIDE_DEFAULT } from '@/lib/cworkshop-boards';
+import { fillWall } from '@/lib/pax-brief';
+import {
+  boardWork,
+  DEFAULT_PRICES,
+  fromPrice,
+  money,
+  money2,
+  optionsFor,
+  picked,
+  PRICE_ROWS,
+  pricesWith,
+  quoteMessage,
+  sizesOf,
+  withVat,
+  type Board,
+  type From,
+  type Option,
+  type PriceKey,
+  type Prices,
+  type QuoteEdits,
+  type QuoteRead,
+} from '@/lib/quote-sums';
+import { Icon } from './icons';
+import { field, label } from './parts';
+import { post, problemText } from './sm8-post';
+import { readPin } from './uploader';
+import { fileBlob, Thumb } from './job-notes';
+import { shown, stage, wa, type Marks, type Sm8 } from './current';
+import Mark from './mark';
+
+/* Quotes in the Job Kit (2 Nov 2026, Raf: 'if new job come through from email to service m8 with pictures I'd like
+   you to be in jobkit analyse it and create answer with proposed quote price ... various options to copy and paste
+   ... plain design, ikea pax with mdf outside, custom mdf shaker and match colour from Cworkshop with their prices.
+   I will approve or change prices once your quotes are ready').
+   Claude reads each new Quote job in ServiceM8, its description and the photos in its diary (src/lib/quote-maker.ts),
+   and says what it sees: sizes, insides, colours, what to check and ask. The prices are Raf's, worked out here from
+   his price list (src/lib/quote-sums.ts), and he can change any of them before sending. Nothing goes to the
+   customer until he sends it (copy, WhatsApp, or the job's email box).
+   Kept in Supabase (jobkit.quotes, /api/job-kit/quote), so the phone and the computer show the same quote and his
+   changes; the last list stays on the device (raf_jobkit_quotes) so it opens with no signal, and changes made with
+   no signal wait (raf_jobkit_quote_pend) and go when it's back. */
+
+/* ---------- the list, kept on the device ---------- */
+
+export type Quotes = { rows: QuoteRow[]; prices: { data: Record<string, unknown> | null; at: number } | null; at: number; error?: string; detail?: string };
+const KEY = 'raf_jobkit_quotes';
+const PEND = 'raf_jobkit_quote_pend'; // id -> { edits, at }: Raf's changes not in the store yet ('_prices' = his price list)
+export const QUOTES_FRESH = 60_000;
+const STUCK_MS = 4 * 60_000; // a reading 'working' for longer stopped part way (the function ran out of time)
+
+const read = <T,>(key: string, empty: T): T => {
+  try {
+    return (JSON.parse(localStorage.getItem(key) || 'null') as T) ?? empty;
+  } catch {
+    return empty;
+  }
+};
+const write = (key: string, v: unknown) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(v));
+  } catch {
+    /* no storage */
+  }
+};
+
+export const savedQuotes = (): Quotes => read<Quotes>(KEY, { rows: [], prices: null, at: 0 });
+/* The kept list with changes still waiting laid over it (opening the app with no signal). */
+export const checkedQuotes = (q: Quotes) => withPending(q);
+
+/* Put the message in the job's email box (mail.tsx reads it when the job opens), to send through ServiceM8. */
+export function putInEmailBox(uuid: string, draft: { mode: 'email'; to: string; subject: string; text: string }) {
+  const all = read<Record<string, unknown>>('raf_jobkit_mail_drafts', {});
+  delete all[uuid];
+  write('raf_jobkit_mail_drafts', Object.fromEntries(Object.entries({ [uuid]: draft, ...all }).slice(0, 25)));
+}
+export const keepQuotes = (q: Quotes) => write(KEY, { ...q, rows: q.rows.slice(0, 60) });
+
+type Pending = Record<string, { edits: Record<string, unknown>; at: number }>;
+
+/* Changes waiting are laid over what the store sent, until the store has them. */
+function withPending(q: Quotes): Quotes {
+  const pend = read<Pending>(PEND, {});
+  let rows = q.rows;
+  let prices = q.prices;
+  for (const [id, p] of Object.entries(pend)) {
+    if (id === '_prices') {
+      if (!prices || prices.at < p.at) prices = { data: p.edits, at: p.at };
+      continue;
+    }
+    const r = rows.find((x) => x.id === id);
+    if (r && r.editsAt >= p.at) continue;
+    rows = r ? rows.map((x) => (x.id === id ? { ...x, edits: p.edits, editsAt: p.at } : x)) : [{ id, state: 'none', data: null, edits: p.edits, editsAt: p.at, claimed: null, updated: p.at }, ...rows];
+  }
+  return { ...q, rows, prices };
+}
+
+export async function fetchQuotes(pin: string, prev: Quotes): Promise<Quotes> {
+  const r = await post<{ quotes: QuoteRow[]; prices: Quotes['prices']; now: number }>(pin, { action: 'list' }, '/api/job-kit/quote');
+  if (!r.ok) return { ...prev, error: r.error, detail: r.detail };
+  // what the store has now is no longer waiting
+  const pend = read<Pending>(PEND, {});
+  for (const [id, p] of Object.entries(pend)) {
+    const have = id === '_prices' ? r.data.prices?.at ?? 0 : r.data.quotes.find((x) => x.id === id)?.editsAt ?? 0;
+    if (have >= p.at) delete pend[id];
+  }
+  write(PEND, pend);
+  const next = withPending({ rows: r.data.quotes, prices: r.data.prices, at: Date.now() });
+  keepQuotes(next);
+  if (Object.keys(pend).length) void flushQuoteEdits();
+  return next;
+}
+
+/* Raf's change to one quote (or his prices, id '_prices'): on the device at once, in the store a moment later. */
+export function changeHere(q: Quotes, id: string, edits: Record<string, unknown>): Quotes {
+  const at = Date.now();
+  const pend = read<Pending>(PEND, {});
+  pend[id] = { edits, at };
+  write(PEND, pend);
+  const next =
+    id === '_prices'
+      ? { ...q, prices: { data: edits, at } }
+      : { ...q, rows: q.rows.some((r) => r.id === id) ? q.rows.map((r) => (r.id === id ? { ...r, edits, editsAt: at } : r)) : [{ id, state: 'none' as const, data: null, edits, editsAt: at, claimed: null, updated: at }, ...q.rows] };
+  keepQuotes(next);
+  queueFlush();
+  return next;
+}
+
+let flushTimer: ReturnType<typeof setTimeout> | undefined;
+const queueFlush = () => {
+  if (flushTimer) clearTimeout(flushTimer);
+  flushTimer = setTimeout(() => void flushQuoteEdits(), 900);
+};
+let flushing = false;
+export async function flushQuoteEdits() {
+  if (flushing) return;
+  const pin = readPin();
+  if (!pin) return;
+  flushing = true;
+  try {
+    for (const [id, p] of Object.entries(read<Pending>(PEND, {}))) {
+      const r = await post<{ ok: boolean; editsAt: number }>(pin, id === '_prices' ? { action: 'prices', prices: p.edits, at: p.at } : { action: 'edit', id, edits: p.edits, at: p.at }, '/api/job-kit/quote');
+      if (!r.ok) {
+        if (r.error === 'offline' || r.error === 'sync-down') break; // tried again when the list is next fetched
+        continue;
+      }
+      const now = read<Pending>(PEND, {});
+      if (now[id] && now[id].at <= p.at) delete now[id];
+      write(PEND, now);
+    }
+  } finally {
+    flushing = false;
+  }
+}
+
+/* Claude reads the job (after the server has answered, so this is quick): 'working', or the state already there. */
+export const askQuote = (pin: string, job: string, force = false, note = '') => post<{ state: string }>(pin, { action: 'make', job, force, note }, '/api/job-kit/quote');
+
+/* A reading said to be under way: shown as working on the device until the store says otherwise. */
+export function workingHere(q: Quotes, id: string): Quotes {
+  const now = Date.now();
+  const r = q.rows.find((x) => x.id === id);
+  const row: QuoteRow = r ? { ...r, state: 'working', claimed: now, updated: now } : { id, state: 'working', data: null, edits: null, editsAt: 0, claimed: now, updated: now };
+  return { ...q, rows: [row, ...q.rows.filter((x) => x.id !== id)] };
+}
+
+export const pricesOf = (q: Quotes): Prices => pricesWith(q.prices?.data);
+export const rowOf = (q: Quotes, id: string) => q.rows.find((r) => r.id === id);
+export const stuck = (r: QuoteRow) => r.state === 'working' && Date.now() - (r.claimed ?? r.updated) > STUCK_MS;
+export const isWorking = (r: QuoteRow | undefined) => Boolean(r && r.state === 'working' && !stuck(r));
+const editsOf = (r: QuoteRow | undefined) => (r?.edits ?? {}) as QuoteEdits;
+const readOf = (r: QuoteRow | undefined) => (r?.data as QuoteData | null)?.read;
+
+/* ---------- which quote is where ---------- */
+
+type Entry = { id: string; job?: CurrentJob; row?: QuoteRow; group: 'ready' | 'working' | 'failed' | 'none' | 'sent' };
+const NEW_DAYS = 14;
+const DAY = 86_400_000;
+const madeAt = (s: string | null | undefined) => (s ? Date.parse(s.replace(' ', 'T').slice(0, 16)) : NaN); // ServiceM8's London time, read as the device's (London) time
+const isSent = (job: CurrentJob | undefined, row: QuoteRow | undefined, marks: Marks) => Boolean(editsOf(row).sentAt) || (job ? job.status !== 'Quote' || ['sent', 'follow'].includes(stage(job, marks)) : false);
+
+export function quoteEntries(q: Quotes, sm8: Sm8, marks: Marks): Entry[] {
+  const jobs = shown(sm8, marks);
+  const byId = new Map(sm8.jobs.map((j) => [j.uuid, j]));
+  const out: Entry[] = [];
+  const seen = new Set<string>();
+  for (const row of q.rows) {
+    const job = byId.get(row.id);
+    if (job && (marks[job.uuid]?.hidden || job.status === 'Unsuccessful')) continue;
+    let group: Entry['group'];
+    if (isWorking(row)) group = 'working';
+    else if (readOf(row)) group = isSent(job, row, marks) ? 'sent' : 'ready';
+    else if (row.state === 'failed' || stuck(row)) group = 'failed';
+    else continue; // only Raf's changes, no reading yet: it shows as not worked out below
+    seen.add(row.id);
+    out.push({ id: row.id, job, row, group });
+  }
+  for (const j of jobs) {
+    if (seen.has(j.uuid) || j.status !== 'Quote' || stage(j, marks) !== 'new') continue;
+    out.push({ id: j.uuid, job: j, group: 'none' });
+  }
+  return out;
+}
+
+/* New Quote jobs the Job Kit reads by itself: in ServiceM8 for the last 14 days, quote not sent, nothing read yet.
+   Not in the first 15 minutes (photos from WhatsApp follow the job), and never one that failed (Raf asks again). */
+export function toRead(q: Quotes, sm8: Sm8, marks: Marks): string[] {
+  if (!q.at || q.error) return [];
+  const now = Date.now();
+  return shown(sm8, marks)
+    .filter((j) => {
+      if (j.status !== 'Quote' || stage(j, marks) !== 'new' || q.rows.some((r) => r.id === j.uuid && (r.data || r.state !== 'none'))) return false;
+      const t = madeAt(j.created);
+      return Number.isFinite(t) && now - t < NEW_DAYS * DAY && now - t > 15 * 60_000;
+    })
+    .sort((a, b) => (b.created ?? '').localeCompare(a.created ?? ''))
+    .map((j) => j.uuid);
+}
+
+/* For Today: the quotes ready to check. */
+export function quoteTodayLines(q: Quotes, sm8: Sm8, marks: Marks): { text: string; id?: string }[] {
+  const ready = quoteEntries(q, sm8, marks).filter((e) => e.group === 'ready');
+  if (!ready.length) return [];
+  if (ready.length <= 2) return ready.map((e) => ({ text: `Rough quote ready to check: ${e.job?.name ?? (e.row?.data as QuoteData | null)?.job?.first ?? 'an enquiry'}`, id: e.id }));
+  return [{ text: `${ready.length} rough quotes ready to check` }];
+}
+
+export function quotesLine(q: Quotes, sm8: Sm8, marks: Marks) {
+  if (q.error === 'quotes-not-set-up') return 'Not switched on yet';
+  const e = quoteEntries(q, sm8, marks);
+  const n = (g: Entry['group']) => e.filter((x) => x.group === g).length;
+  const bits = [n('ready') ? `${n('ready')} ready to check` : '', n('working') ? `${n('working')} being worked out` : '', n('none') ? `${n('none')} not worked out` : ''].filter(Boolean);
+  return bits.length ? bits.join(' · ') : 'Rough prices for new enquiries, from your price list';
+}
+export const readyCount = (q: Quotes, sm8: Sm8, marks: Marks) => quoteEntries(q, sm8, marks).filter((e) => e.group === 'ready').length;
+
+/* What went wrong, in plain words. */
+export function quoteProblem(code?: string, detail?: string) {
+  switch (code) {
+    case 'quotes-not-set-up':
+      return 'Quotes aren’t switched on yet: they need ANTHROPIC_API_KEY and the Job Kit’s sync settings in Vercel.';
+    case 'no-text':
+      return 'There’s nothing to read yet: no description, notes or photos on the job in ServiceM8. Add some, then work it out again.';
+    case 'sm8-gone':
+      return 'ServiceM8 doesn’t have this job any more.';
+    case 'ai-error':
+      return `Claude couldn’t read it${detail ? ` (${detail})` : ''}. Try again, or write the quote yourself.`;
+    case 'ai-busy':
+      return 'Claude is busy or didn’t answer. Try again in a minute.';
+    case 'sync-down':
+      return 'The quotes store isn’t answering. Try again in a minute.';
+    case 'sync-key':
+      return 'The quotes store turned the key down: JOBKIT_SYNC_SECRET in Vercel needs a look.';
+    case 'stuck':
+      return 'It stopped part way through. Try again.';
+    default:
+      return problemText(code, detail);
+  }
+}
+
+const ago = (t: number) => {
+  const m = Math.round((Date.now() - t) / 60_000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m} min ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} hour${h === 1 ? '' : 's'} ago`;
+  const d = Math.round(h / 24);
+  return `${d} day${d === 1 ? '' : 's'} ago`;
+};
+
+/* ---------- the list ---------- */
+
+const GROUPS: { id: Entry['group']; title: string }[] = [
+  { id: 'ready', title: 'Ready to check' },
+  { id: 'working', title: 'Being worked out' },
+  { id: 'failed', title: 'Couldn’t work it out' },
+  { id: 'none', title: 'Not worked out yet' },
+  { id: 'sent', title: 'Sent' },
+];
+
+export function QuotesList({ quotes, sm8, marks, loading, onRefresh, onOpen, onMake, onPrices }: { quotes: Quotes; sm8: Sm8; marks: Marks; loading: boolean; onRefresh: () => void; onOpen: (id: string) => void; onMake: (id: string) => void; onPrices: () => void }) {
+  const entries = useMemo(() => quoteEntries(quotes, sm8, marks), [quotes, sm8, marks]);
+  const prices = pricesOf(quotes);
+  const [allSent, setAllSent] = useState(false);
+  return (
+    <div className="pt-7">
+      <p className="kicker">Read by Claude · priced from your list</p>
+      <h1 className="mt-1 flex items-center gap-3 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">
+        <Icon name="quote" className="h-[32px] w-[32px] shrink-0 jk-sec-ink" />
+        Quotes
+      </h1>
+      <p className="mt-3 text-[15.5px] leading-relaxed text-muted">
+        Each new enquiry in ServiceM8 is read with its photos: the sizes, what they want, colours that suit the room. The prices come from your price list, and nothing goes to the customer until you send it.
+      </p>
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <button type="button" onClick={onPrices} className="btn btn-ghost btn-sm">
+          Your prices
+        </button>
+        <button type="button" onClick={onRefresh} disabled={loading} className="font-mono text-[13px] text-accent underline disabled:opacity-60">
+          {loading ? 'Checking…' : 'Refresh'}
+        </button>
+        <span className="font-mono text-[12.5px] text-faint">{quotes.at ? `Checked ${ago(quotes.at)}` : ''}</span>
+      </div>
+      {quotes.error ? <p className="mt-4 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-[15px] leading-relaxed">{quoteProblem(quotes.error, quotes.detail)}</p> : null}
+
+      {!entries.length ? (
+        <p className="mt-8 font-mono text-[14px] text-faint">{sm8.at ? 'No new enquiries to quote.' : 'Getting your jobs from ServiceM8…'}</p>
+      ) : null}
+
+      {GROUPS.map((g) => {
+        let list = entries.filter((e) => e.group === g.id);
+        if (!list.length) return null;
+        const more = g.id === 'sent' && !allSent && list.length > 5 ? list.length - 5 : 0;
+        if (more) list = list.slice(0, 5);
+        return (
+          <section key={g.id} className="mt-7">
+            <h2 className={label}>
+              {g.title} ({entries.filter((e) => e.group === g.id).length})
+            </h2>
+            <ul className="mt-2 grid gap-2.5">
+              {list.map((e) => (
+                <li key={e.id}>
+                  <QuoteCard entry={e} prices={prices} onOpen={() => onOpen(e.id)} onMake={() => onMake(e.id)} />
+                </li>
+              ))}
+            </ul>
+            {more ? (
+              <button type="button" onClick={() => setAllSent(true)} className="mt-2 font-mono text-[13px] text-accent underline">
+                Show {more} more
+              </button>
+            ) : null}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function QuoteCard({ entry, prices, onOpen, onMake }: { entry: Entry; prices: Prices; onOpen: () => void; onMake: () => void }) {
+  const { job, row } = entry;
+  const data = row?.data as QuoteData | null | undefined;
+  const r = data?.read;
+  const name = job?.name ?? data?.job?.first ?? 'Enquiry';
+  const area = job?.area ?? data?.job?.area ?? '';
+  const num = job?.number ?? data?.job?.number ?? '';
+  const edits = editsOf(row);
+  const from = r ? fromPrice(optionsFor(r, prices, BOARDS, edits, fillWall), edits) : 0;
+  const line =
+    entry.group === 'working'
+      ? 'Claude is reading the brief and photos…'
+      : entry.group === 'failed'
+        ? quoteProblem(stuck(row!) ? 'stuck' : data?.error, '').split('. ')[0]
+        : entry.group === 'none'
+          ? (job?.description ?? '').split('\n')[0].slice(0, 90) || 'Not read yet'
+          : r
+            ? `${r.title}${from ? ` · from ${money(from)} + VAT` : ''}`
+            : '';
+  if (entry.group === 'none')
+    return (
+      <div data-jk-id={entry.id} className="flex items-center gap-3 rounded-sm border border-line-strong bg-mount px-3.5 py-3">
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-semibold">{name}</span>
+          <span className="block truncate text-[14px] text-muted">{line}</span>
+        </span>
+        <button type="button" onClick={onMake} className="btn btn-primary btn-sm shrink-0">
+          Work it out
+        </button>
+      </div>
+    );
+  return (
+    <button type="button" data-jk-id={entry.id} onClick={onOpen} className="flex w-full items-center gap-3 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left transition-colors hover:border-ink">
+      <Mark state={entry.group === 'ready' ? 'waiting' : entry.group === 'working' ? 'sending' : entry.group === 'sent' ? 'sent' : 'lost'} />
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline gap-2">
+          <span className="truncate font-semibold">{name}</span>
+          <span className="shrink-0 font-mono text-[12px] text-faint">
+            {num ? `#${num}` : ''}
+            {area ? ` · ${area}` : ''}
+          </span>
+        </span>
+        <span className="mt-0.5 block truncate text-[14px] text-muted">{line}</span>
+      </span>
+      <span aria-hidden className="text-[20px] jk-sec-ink">
+        →
+      </span>
+    </button>
+  );
+}
+
+/* ---------- on a ServiceM8 job's screen ---------- */
+
+export function QuoteJobBox({ job, row, prices, onOpen, onMake }: { job: CurrentJob; row?: QuoteRow; prices: Prices; onOpen: () => void; onMake: () => void }) {
+  if (job.status !== 'Quote' && !readOf(row)) return null;
+  const data = row?.data as QuoteData | null | undefined;
+  const r = data?.read;
+  const edits = editsOf(row);
+  const options = r ? optionsFor(r, prices, BOARDS, edits, fillWall) : [];
+  const n = options.filter((o) => picked(o, edits)).length;
+  const working = isWorking(row);
+  return (
+    <section className="mt-6 rounded-sm border border-line-strong bg-mount p-4" aria-label="Rough quote">
+      <p className="flex items-center gap-2 font-semibold">
+        <Icon name="quote" className="h-5 w-5 shrink-0 jk-sec-ink" />
+        Rough quote
+      </p>
+      {working ? (
+        <p className="mt-2 flex items-center gap-2 text-[15px] text-muted">
+          <Mark state="sending" /> Claude is reading the brief and photos. Usually under a minute.
+        </p>
+      ) : r ? (
+        <>
+          <p className="mt-1.5 text-[15px] leading-relaxed text-muted">
+            {r.title}: {n} option{n === 1 ? '' : 's'}, from {money(fromPrice(options, edits))} + VAT. {edits.sentAt ? 'Sent.' : 'Ready for you to check.'}
+          </p>
+          <button type="button" onClick={onOpen} className="btn btn-primary btn-sm mt-3">
+            Open the quote
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="mt-1.5 text-[15px] leading-relaxed text-muted">{row && row.state !== 'none' ? quoteProblem(stuck(row) ? 'stuck' : data?.error, data?.error === 'ai-error' ? '' : undefined) : 'Claude reads the brief and photos and prices it from your list, for you to check.'}</p>
+          <button type="button" onClick={onMake} className="btn btn-ghost btn-sm mt-3">
+            {row && row.state !== 'none' ? 'Try again' : 'Work it out'}
+          </button>
+        </>
+      )}
+    </section>
+  );
+}
+
+/* ---------- one quote ---------- */
+
+const FROM_WORD: Record<From, string> = { given: 'from the brief', photo: 'from a photo', guess: 'a guess' };
+
+export function QuoteView({
+  job,
+  row,
+  prices,
+  sent,
+  onEdit,
+  onMake,
+  onSent,
+  onEmailBox,
+  onOpenJob,
+}: {
+  job?: CurrentJob;
+  row?: QuoteRow;
+  prices: Prices;
+  sent: boolean;
+  onEdit: (edits: QuoteEdits) => void;
+  onMake: (force: boolean, note: string) => void;
+  onSent: (sent: boolean, how?: QuoteEdits['sentHow']) => void;
+  onEmailBox: (subject: string, text: string) => void;
+  onOpenJob?: () => void;
+}) {
+  const data = row?.data as QuoteData | null | undefined;
+  const r = data?.read;
+  const edits = editsOf(row);
+  const working = isWorking(row);
+  const [note, setNote] = useState('');
+  const [again, setAgain] = useState(false);
+  const [photo, setPhoto] = useState<{ name: string; url: string; error: string } | null>(null);
+  const [copied, setCopied] = useState('');
+  const set = (patch: Partial<QuoteEdits>) => onEdit({ ...edits, ...patch });
+  const first = job?.first || data?.job?.first || '';
+  const name = job?.name || first || 'Enquiry';
+
+  const options = r ? optionsFor(r, prices, BOARDS, edits, fillWall) : [];
+  const message = r ? edits.text ?? quoteMessage(r, options, edits, first, true) : '';
+  const subject = r ? `Rough prices for your ${r.title.charAt(0).toLowerCase()}${r.title.slice(1)}` : '';
+
+  const openPhoto = async (uuid: string, pname: string) => {
+    setPhoto({ name: pname, url: '', error: '' });
+    const b = await fileBlob(uuid, 'full');
+    setPhoto('error' in b ? { name: pname, url: '', error: problemText(b.error, b.detail) } : { name: pname, url: URL.createObjectURL(b.blob), error: '' });
+  };
+  useEffect(() => {
+    if (!photo) return;
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setPhoto(null);
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [photo]);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(message);
+    } catch {
+      const t = document.createElement('textarea');
+      t.value = message;
+      document.body.appendChild(t);
+      t.select();
+      document.execCommand('copy');
+      t.remove();
+    }
+    setCopied('Copied. Paste it in WhatsApp, a text or an email.');
+  };
+
+  const header = (
+    <>
+      <p className="kicker">
+        Rough quote{job?.number || data?.job?.number ? ` · #${job?.number || data?.job?.number}` : ''}
+        {job?.area || data?.job?.area ? ` · ${job?.area || data?.job?.area}` : ''}
+      </p>
+      <h1 className="mt-1 font-display text-[32px] font-[680] leading-[1.05] tracking-[-0.025em]">{name}</h1>
+      {onOpenJob ? (
+        <button type="button" onClick={onOpenJob} className="mt-1.5 font-mono text-[13px] text-accent underline">
+          Open the job
+        </button>
+      ) : null}
+    </>
+  );
+
+  if (!r)
+    return (
+      <div className="pt-7">
+        {header}
+        <div className="mt-6 rounded-sm border border-line-strong bg-mount p-4 text-[15.5px] leading-relaxed">
+          {working ? (
+            <p className="flex items-center gap-2">
+              <Mark state="sending" /> Claude is reading the brief and photos. Usually under a minute: this page fills in by itself.
+            </p>
+          ) : (
+            <>
+              <p>{row && row.state !== 'none' ? quoteProblem(stuck(row) ? 'stuck' : data?.error, data?.error === 'ai-error' ? data?.detail : undefined) : 'Not worked out yet.'}</p>
+              <NoteBox note={note} setNote={setNote} />
+              <button type="button" onClick={() => onMake(true, note)} className="btn btn-primary mt-3">
+                {row && row.state !== 'none' ? 'Try again' : 'Work it out'}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+
+  const sizes = sizesOf(r, edits);
+  const wr = r.wardrobe;
+  const drawers = Math.max(0, Math.round(edits.drawers ?? wr?.drawers ?? 0));
+  const top = edits.top ?? wr?.top ?? false;
+  const changedWords = typeof edits.text === 'string';
+
+  return (
+    <div className="pt-7">
+      {header}
+      <p className="mt-3 text-[16px] font-semibold">{r.title}</p>
+      {r.summary ? <p className="mt-1 text-[15.5px] leading-relaxed text-muted">{r.summary}</p> : null}
+      <p className="mt-2 font-mono text-[12px] text-faint">
+        Read {data?.at ? ago(data.at) : ''}
+        {data?.photos?.length ? ` from ${data.photos.length} photo${data.photos.length === 1 ? '' : 's'}` : ', no photos'}
+        {data?.skipped ? ` (${data.skipped} more on the job not read)` : ''}
+        {data?.note ? ` · you said: “${data.note}”` : ''}
+      </p>
+      {working ? (
+        <p className="mt-3 flex items-center gap-2 rounded-sm border border-accent bg-accent-soft px-3 py-2.5 text-[15px]">
+          <Mark state="sending" /> Reading it again… this updates by itself.
+        </p>
+      ) : data?.error ? (
+        <p className="mt-3 rounded-sm border border-line-strong bg-mount px-3 py-2.5 text-[14.5px]">Reading it again didn’t work: {quoteProblem(data.error).toLowerCase()} This is the earlier reading.</p>
+      ) : null}
+
+      {data?.photos?.length ? (
+        <div className="mt-4 grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+          {data.photos.map((p) => (
+            <Thumb key={p.uuid} file={{ uuid: p.uuid, name: p.name, photo: true }} onOpen={() => void openPhoto(p.uuid, p.name)} />
+          ))}
+        </div>
+      ) : null}
+
+      {/* What Claude saw */}
+      {r.seen.length || r.check.length || r.budget ? (
+        <section className="mt-6 rounded-sm border border-line-strong bg-mount p-4">
+          {r.seen.length ? (
+            <>
+              <h2 className={label}>What Claude saw</h2>
+              <ul className="mt-2 grid gap-1 text-[15px] leading-relaxed">
+                {r.seen.map((s) => (
+                  <li key={s} className="flex gap-2">
+                    <span aria-hidden className="text-faint">·</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+          {r.budget ? (
+            <p className={`${r.seen.length ? 'mt-3' : ''} text-[15px]`}>
+              <span className="font-semibold">Their budget:</span> {r.budget}
+            </p>
+          ) : null}
+          {r.check.length ? (
+            <>
+              <h2 className={`${label} mt-4`}>Check on the visit</h2>
+              <ul className="mt-2 grid gap-1 text-[15px] leading-relaxed">
+                {r.check.map((s) => (
+                  <li key={s} className="flex gap-2">
+                    <span aria-hidden className="text-faint">□</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+        </section>
+      ) : null}
+
+      {/* Sizes */}
+      {r.kind === 'wardrobe' ? (
+        <section className="mt-6">
+          <h2 className={label}>Sizes in mm</h2>
+          <p className="mt-1 text-[14px] text-muted">Change any of them: every price follows.</p>
+          <div className="mt-2 grid gap-2.5">
+            {sizes.map((s, i) => (
+              <div key={i} className="rounded-sm border border-line-strong bg-mount px-3 py-2.5">
+                {sizes.length > 1 || s.label ? <p className="mb-1.5 text-[14.5px] font-semibold">{s.label || `Space ${i + 1}`}</p> : null}
+                <div className="grid grid-cols-3 gap-2">
+                  {(['w', 'h', 'd'] as const).map((k) => (
+                    <label key={k} className="grid gap-1">
+                      <span className="font-mono text-[11.5px] uppercase tracking-[0.06em] text-faint">{k === 'w' ? 'Wide' : k === 'h' ? 'High' : 'Deep'}</span>
+                      <NumBox
+                        value={s[k]}
+                        min={k === 'd' ? 150 : 200}
+                        max={k === 'w' ? 12000 : k === 'h' ? 4000 : 1200}
+                        onChange={(v) => {
+                          const runs = sizes.map((_, j) => ({ ...(edits.runs?.[j] ?? {}) }));
+                          runs[i] = { ...runs[i], [k]: v };
+                          set({ runs });
+                        }}
+                        aria={`${s.label || 'Space'} ${k === 'w' ? 'width' : k === 'h' ? 'height' : 'depth'}`}
+                      />
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-1.5 font-mono text-[11.5px] text-faint">
+                  Width {FROM_WORD[s.wFrom]}, height {FROM_WORD[s.hFrom]}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Step label="Drawers" value={drawers} min={0} max={24} onChange={(v) => set({ drawers: v })} />
+            <label className="flex min-h-11 items-center gap-2 text-[15px]">
+              <input type="checkbox" checked={top} onChange={(e) => set({ top: e.target.checked })} className="h-5 w-5 accent-[var(--color-accent)]" />
+              Top cupboards over the doors
+            </label>
+          </div>
+          {wr?.inside ? <p className="mt-2 text-[14.5px] text-muted">Inside: {wr.inside}</p> : null}
+        </section>
+      ) : null}
+
+      {/* The options */}
+      <section className="mt-7">
+        <h2 className={label}>Prices before VAT</h2>
+        <p className="mt-1 text-[14px] text-muted">From your price list. Type your own price on any of them; untick one to leave it out of the message.</p>
+        <div className="mt-3 grid gap-3">
+          {options.map((o) => (
+            <OptionCard
+              key={o.id}
+              option={o}
+              on={picked(o, edits)}
+              pick={r.recommend === o.id ? r.recommendWhy || 'Claude’s pick' : ''}
+              onPick={(v) => set({ pick: { ...edits.pick, [o.id]: v } })}
+              onPrice={(v) => {
+                const price = { ...edits.price };
+                if (v && v !== o.worked) price[o.id] = v;
+                else delete price[o.id];
+                set({ price });
+              }}
+              board={o.id === 'board' ? <BoardBits read={r} prices={prices} edits={edits} set={set} /> : null}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Questions */}
+      {r.questions.length ? (
+        <section className="mt-7">
+          <h2 className={label}>Questions in the message</h2>
+          <ul className="mt-2 grid gap-1">
+            {r.questions.map((q, i) => (
+              <li key={q}>
+                <label className="flex min-h-11 items-start gap-2.5 py-1.5 text-[15px] leading-snug">
+                  <input type="checkbox" checked={edits.ask?.[String(i)] ?? true} onChange={(e) => set({ ask: { ...edits.ask, [String(i)]: e.target.checked } })} className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-accent)]" />
+                  {q}
+                </label>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {/* The message */}
+      <section className="mt-7 rounded-sm border border-line-strong bg-mount p-4">
+        <h2 className={label}>The message</h2>
+        <p className="mt-1 text-[14px] text-muted">{changedWords ? 'You’ve changed the words, so changes to prices above don’t reach them.' : 'Written from the options you’ve ticked. Change anything.'}</p>
+        <textarea
+          value={message}
+          onChange={(e) => set({ text: e.target.value })}
+          rows={Math.min(26, Math.max(10, message.split('\n').length + 2))}
+          className={`${field} mt-3 py-2.5 text-[15.5px] leading-relaxed`}
+          aria-label="The message to the customer"
+        />
+        {changedWords ? (
+          <button type="button" onClick={() => set({ text: undefined })} className="mt-2 font-mono text-[13px] text-accent underline">
+            Use the written-out words again
+          </button>
+        ) : null}
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <button type="button" onClick={() => void copy()} className="btn btn-ghost">
+            Copy
+          </button>
+          {job?.mobile ? (
+            <a href={wa(job.mobile, message)} target="_blank" rel="noreferrer" className="btn btn-whatsapp" onClick={() => setCopied('Opened WhatsApp with the message typed in.')}>
+              WhatsApp {first || 'them'}
+            </a>
+          ) : (
+            <span className="btn btn-ghost pointer-events-none opacity-50">No mobile</span>
+          )}
+          {job ? (
+            <button type="button" onClick={() => onEmailBox(subject, message.replace(/\n+Raf\s*$/, ''))} className="btn btn-ghost">
+              Email it
+            </button>
+          ) : null}
+        </div>
+        {copied ? <p className="mt-2 font-mono text-[13px] text-muted">{copied}</p> : null}
+        <p className="mt-2 font-mono text-[12px] leading-relaxed text-faint">Email it puts it in the job’s email box with the subject, to send through ServiceM8.</p>
+        <button
+          type="button"
+          onClick={() => onSent(!sent, copied.startsWith('Opened') ? 'whatsapp' : copied ? 'copy' : undefined)}
+          className={`btn mt-4 w-full ${sent ? 'btn-ghost' : 'btn-primary'}`}
+        >
+          {sent ? 'Sent ✓ (tap if it wasn’t)' : 'I’ve sent it'}
+        </button>
+        <p className="mt-1.5 text-center font-mono text-[12px] text-faint">{sent ? 'It shows as Quote sent, with a follow up after 5 days.' : 'Moves the job to Quote sent in the Job Kit.'}</p>
+      </section>
+
+      {/* Ask again */}
+      <section className="mt-7 border-t border-line pt-5">
+        {again ? (
+          <>
+            <NoteBox note={note} setNote={setNote} />
+            <div className="mt-3 flex flex-wrap gap-3">
+              <button
+                type="button"
+                disabled={working}
+                onClick={() => {
+                  onMake(true, note);
+                  setAgain(false);
+                }}
+                className="btn btn-primary btn-sm"
+              >
+                Read it again
+              </button>
+              <button type="button" onClick={() => setAgain(false)} className="btn btn-ghost btn-sm">
+                Cancel
+              </button>
+            </div>
+            <p className="mt-2 font-mono text-[12px] text-faint">Your prices and ticks stay. New photos on the job are read too.</p>
+          </>
+        ) : (
+          <button type="button" onClick={() => setAgain(true)} disabled={working} className="font-mono text-[13.5px] text-accent underline disabled:opacity-50">
+            Work it out again
+          </button>
+        )}
+        <p className="mt-4 font-mono text-[11.5px] leading-relaxed text-faint">
+          Rough prices from your list, before the visit. Board prices from Cworkshop on {new Date(BOARDS_CHECKED).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}.{data?.model ? ` Read by ${data.model}.` : ''}
+        </p>
+      </section>
+
+      {photo ? (
+        <div role="dialog" aria-label={photo.name} className="fixed inset-0 z-50 grid place-items-center bg-ink/90 p-3" onClick={() => setPhoto(null)}>
+          {photo.url ? <img src={photo.url} alt={photo.name} className="max-h-full max-w-full object-contain" /> : <p className="font-mono text-[14px] text-mount">{photo.error || 'Opening the photo…'}</p>}
+          <button type="button" className="absolute right-3 top-[max(12px,env(safe-area-inset-top))] h-11 rounded-sm bg-mount px-4 font-semibold text-ink" onClick={() => setPhoto(null)}>
+            Close
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function NoteBox({ note, setNote }: { note: string; setNote: (s: string) => void }) {
+  return (
+    <label className="mt-3 grid gap-1.5">
+      <span className={label}>Anything Claude should know? (optional)</span>
+      <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} maxLength={800} placeholder="e.g. the ceiling is 2,600; they want sliding doors" className={`${field} py-2 text-[15px]`} />
+    </label>
+  );
+}
+
+function OptionCard({ option: o, on, pick, onPick, onPrice, board }: { option: Option; on: boolean; pick: string; onPick: (v: boolean) => void; onPrice: (v: number) => void; board: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const total = o.lines.reduce((n, l) => n + l.amount, 0);
+  return (
+    <div data-option={o.id} className={`rounded-sm border bg-mount p-4 ${on ? 'border-ink' : 'border-line-strong'} ${o.offered ? '' : 'opacity-70'}`}>
+      <div className="flex items-start gap-3">
+        {o.offered ? <input type="checkbox" checked={on} onChange={(e) => onPick(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-[var(--color-accent)]" aria-label={`${o.title} in the message`} /> : null}
+        <div className="min-w-0 flex-1">
+          <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <span className="text-[16.5px] font-semibold">{o.title}</span>
+            {pick ? <span className="rounded-sm bg-accent-soft px-1.5 py-0.5 font-mono text-[11.5px] text-accent">Claude’s pick</span> : null}
+          </p>
+          {o.offered ? (
+            <p className="mt-1">
+              <span className="font-display text-[26px] font-[680] tracking-[-0.02em]">{money(o.price)}</span> <span className="text-[14px] text-muted">+ VAT · {money(withVat(o.price))} with VAT</span>
+            </p>
+          ) : (
+            <p className="mt-1 text-[14.5px] text-muted">Not in the message: {o.why}</p>
+          )}
+        </div>
+      </div>
+      {pick && pick !== 'Claude’s pick' ? <p className="mt-2 text-[14px] italic text-muted">{pick}</p> : null}
+      {o.offered ? (
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <label className="flex items-center gap-2">
+            <span className="font-mono text-[12px] uppercase tracking-[0.06em] text-faint">Your price £</span>
+            <NumBox value={o.price} min={1} max={500000} onChange={onPrice} aria={`Your price for ${o.title}`} wide />
+          </label>
+          {o.changed ? (
+            <button type="button" onClick={() => onPrice(o.worked)} className="font-mono text-[12.5px] text-accent underline">
+              Back to {money(o.worked)}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      <p className="mt-3 text-[14.5px] leading-relaxed">{o.says}</p>
+      {board}
+      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="mt-3 font-mono text-[12.5px] text-accent underline">
+        {open ? 'Hide how it’s worked out' : 'How it’s worked out'}
+      </button>
+      {open ? (
+        <div className="mt-2 rounded-sm border border-line bg-paper px-3 py-2.5">
+          <ul className="grid gap-1 font-mono text-[12.5px] leading-snug">
+            {o.lines.map((l) => (
+              <li key={l.label} className="flex justify-between gap-3">
+                <span className="text-muted">{l.label}</span>
+                <span className="shrink-0">{money2(l.amount)}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 border-t border-line pt-2 font-mono text-[12.5px]">
+            Comes to {money2(total)}, rounded up to {money(o.worked)}.
+          </p>
+          {o.extra ? <p className="mt-1.5 text-[13.5px] text-muted">{o.extra}</p> : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+const FAMILY_ORDER = ['white', 'plain', 'colour', 'stone', 'light oak', 'warm oak', 'dark oak', 'walnut'];
+const FAMILY_NAME: Record<string, string> = { white: 'Whites', plain: 'Plain colours', colour: 'Colours', stone: 'Stone', 'light oak': 'Light oak', 'warm oak': 'Warm oak', 'dark oak': 'Dark oak', walnut: 'Walnut' };
+
+function BoardBits({ read: r, prices, edits, set }: { read: QuoteRead; prices: Prices; edits: QuoteEdits; set: (p: Partial<QuoteEdits>) => void }) {
+  const [all, setAll] = useState(false);
+  const picks = r.colours.map((c) => ({ board: BOARDS.find((b) => b.code === c.code)!, why: c.why })).filter((c) => c.board);
+  const colour = edits.colour ?? picks[0]?.board.code ?? BOARDS[0].code;
+  const inside = edits.inside ?? (r.inside || INSIDE_DEFAULT);
+  const work = boardWork(r, prices, edits);
+  const chosen = BOARDS.find((b) => b.code === colour);
+  const price = (b: Board) => prices.boards[b.code] ?? b.exVat;
+  const Swatch = ({ b, why }: { b: Board; why?: string }) => (
+    <button
+      type="button"
+      onClick={() => set({ colour: b.code })}
+      aria-pressed={colour === b.code}
+      className={`flex min-h-11 items-center gap-2.5 rounded-sm border px-2.5 py-1.5 text-left ${colour === b.code ? 'border-ink bg-paper ring-1 ring-ink' : 'border-line-strong'}`}
+    >
+      <span aria-hidden className="h-8 w-8 shrink-0 rounded-sm border border-line-strong" style={{ background: b.hex }} />
+      <span className="min-w-0">
+        <span className="block text-[14px] font-semibold leading-tight">{b.name}</span>
+        <span className="block text-[12.5px] leading-snug text-muted">{why || `${money2(price(b))} a sheet`}</span>
+      </span>
+    </button>
+  );
+  return (
+    <div className="mt-3 rounded-sm border border-line bg-paper p-3">
+      <p className={label}>Colour, outside</p>
+      {picks.length ? (
+        <div className="mt-2 grid gap-2">
+          {picks.map((c) => (
+            <Swatch key={c.board.code} b={c.board} why={c.why} />
+          ))}
+        </div>
+      ) : null}
+      <button type="button" onClick={() => setAll(!all)} aria-expanded={all} className="mt-2 font-mono text-[12.5px] text-accent underline">
+        {all ? 'Fewer colours' : `All ${BOARDS.length} colours`}
+      </button>
+      {all ? (
+        <div className="mt-2 grid gap-3">
+          {FAMILY_ORDER.map((f) => {
+            const list = BOARDS.filter((b) => b.family === f);
+            return list.length ? (
+              <div key={f}>
+                <p className="font-mono text-[11.5px] uppercase tracking-[0.06em] text-faint">{FAMILY_NAME[f]}</p>
+                <div className="mt-1.5 grid gap-1.5 sm:grid-cols-2">
+                  {list.map((b) => (
+                    <Swatch key={b.code} b={b} />
+                  ))}
+                </div>
+              </div>
+            ) : null;
+          })}
+        </div>
+      ) : null}
+      {chosen ? (
+        <p className="mt-2 text-[13px] text-muted">
+          {chosen.code} · {chosen.describe} · {money2(price(chosen))} a sheet
+          {chosen.offerEnds ? ` (offer to ${new Date(chosen.offerEnds).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })})` : ''} ·{' '}
+          <a href={chosen.url} target="_blank" rel="noreferrer" className="text-accent underline">
+            Cworkshop
+          </a>
+        </p>
+      ) : null}
+      <label className="mt-3 grid gap-1">
+        <span className={label}>Inside</span>
+        <select value={inside} onChange={(e) => set({ inside: e.target.value })} className={`${field} h-11`}>
+          {BOARDS.map((b) => (
+            <option key={b.code} value={b.code}>
+              {b.name} ({money2(price(b))})
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
+        <Step label="Sheets outside" value={work.out} min={0} max={60} onChange={(v) => set({ sheets: { ...edits.sheets, out: v } })} />
+        <Step label="Sheets inside" value={work.in} min={0} max={60} onChange={(v) => set({ sheets: { ...edits.sheets, in: v } })} />
+        <Step label="Days" value={work.days} min={0.5} max={60} step={0.5} onChange={(v) => set({ days: v })} />
+      </div>
+      {edits.sheets || edits.days ? (
+        <button type="button" onClick={() => set({ sheets: undefined, days: undefined })} className="mt-1 font-mono text-[12.5px] text-accent underline">
+          Back to worked out: {work.calc.out} + {work.calc.in} sheets, {work.workedDays} days
+        </button>
+      ) : null}
+      <p className="mt-2 text-[12.5px] text-muted">
+        Cutting is Cworkshop’s £47.30 a sheet; edging isn’t on their site, so it’s a guess.{' '}
+        <a href={CWORKSHOP_CUTLIST} target="_blank" rel="noreferrer" className="text-accent underline">
+          Price it in their cutting list
+        </a>
+      </p>
+    </div>
+  );
+}
+
+/* A number box that keeps what's typed while it's typed, and says each good number. */
+function NumBox({ value, min, max, onChange, aria, wide }: { value: number; min: number; max: number; onChange: (v: number) => void; aria: string; wide?: boolean }) {
+  const [draft, setDraft] = useState<string | null>(null); // what's typed, while the box has the cursor
+  return (
+    <input
+      inputMode="numeric"
+      value={draft ?? String(value)}
+      aria-label={aria}
+      onFocus={() => setDraft(String(value))}
+      onBlur={() => setDraft(null)}
+      onChange={(e) => {
+        setDraft(e.target.value);
+        const v = Number.parseInt(e.target.value.replace(/[^\d]/g, ''), 10);
+        if (Number.isFinite(v) && v >= min && v <= max) onChange(v);
+      }}
+      className={`${field} h-11 ${wide ? 'w-[110px]' : ''} font-mono text-[15px]`}
+    />
+  );
+}
+
+function Step({ label: l, value, min, max, step = 1, onChange }: { label: string; value: number; min: number; max: number; step?: number; onChange: (v: number) => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[14.5px]">{l}</span>
+      <button type="button" aria-label={`Fewer: ${l}`} disabled={value <= min} onClick={() => onChange(Math.max(min, value - step))} className="grid h-10 w-10 place-items-center rounded-sm border border-line-strong text-[18px] disabled:opacity-40">
+        −
+      </button>
+      <span className="w-9 text-center font-mono text-[15px]">{value}</span>
+      <button type="button" aria-label={`More: ${l}`} disabled={value >= max} onClick={() => onChange(Math.min(max, value + step))} className="grid h-10 w-10 place-items-center rounded-sm border border-line-strong text-[18px] disabled:opacity-40">
+        +
+      </button>
+    </div>
+  );
+}
+
+/* ---------- Raf's price list ---------- */
+
+export function QuotePrices({ prices, savedAt, onSave }: { prices: Prices; savedAt: number; onSave: (p: Record<string, unknown>) => void }) {
+  const [form, setForm] = useState<Record<string, string>>(() => Object.fromEntries(PRICE_ROWS.map((r) => [r.key, String(prices[r.key])])));
+  const [boards, setBoards] = useState<Record<string, string>>(() => Object.fromEntries(Object.entries(prices.boards).map(([k, v]) => [k, String(v)])));
+  const [saved, setSaved] = useState('');
+  const groups = [...new Set(PRICE_ROWS.map((r) => r.group))];
+  const changed = PRICE_ROWS.some((r) => Number(form[r.key]) !== prices[r.key]) || JSON.stringify(Object.fromEntries(Object.entries(boards).filter(([, v]) => v))) !== JSON.stringify(Object.fromEntries(Object.entries(prices.boards).map(([k, v]) => [k, String(v)])));
+  const save = () => {
+    const out: Record<string, unknown> = {};
+    for (const r of PRICE_ROWS) {
+      const v = Number.parseFloat(form[r.key]);
+      out[r.key] = Number.isFinite(v) && v >= 0 ? v : DEFAULT_PRICES[r.key];
+    }
+    out.boards = Object.fromEntries(
+      Object.entries(boards)
+        .map(([k, v]) => [k, Number.parseFloat(v)] as const)
+        .filter(([, v]) => Number.isFinite(v) && v > 0),
+    );
+    onSave(out);
+    setSaved('Saved. Every quote uses these now, on your phone and computer.');
+  };
+  return (
+    <div className="pt-7">
+      <p className="kicker">Quotes</p>
+      <h1 className="mt-1 font-display text-[32px] font-[680] leading-[1.05] tracking-[-0.025em]">Your prices</h1>
+      <p className="mt-3 text-[15.5px] leading-relaxed text-muted">
+        Before VAT. Every rough quote is worked out from these. The ones marked <b className="font-semibold text-ink">my guess</b> are mine, not yours yet: check them.
+      </p>
+      {savedAt ? <p className="mt-2 font-mono text-[12px] text-faint">Last changed {ago(savedAt)}</p> : null}
+      {groups.map((g) => (
+        <section key={g} className="mt-7">
+          <h2 className={label}>{g}</h2>
+          <ul className="mt-2 divide-y divide-line rounded-sm border border-line-strong bg-mount">
+            {PRICE_ROWS.filter((r) => r.group === g).map((r) => (
+              <li key={r.key} className="flex items-center gap-3 px-3.5 py-2.5">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-semibold leading-snug">{r.label}</span>
+                  <span className="block text-[12.5px] leading-snug text-muted">
+                    {r.guess ? <b className="font-semibold text-ink">My guess. </b> : null}
+                    {r.from}
+                    {Number(form[r.key]) !== DEFAULT_PRICES[r.key] ? ` · started at ${fmt(r.key, DEFAULT_PRICES[r.key])}` : ''}
+                  </span>
+                </span>
+                <span className="flex shrink-0 items-center gap-1.5">
+                  {r.unit !== 'days' && r.unit !== '%' ? <span className="font-mono text-[13px] text-faint">£</span> : null}
+                  <input
+                    inputMode="decimal"
+                    value={form[r.key]}
+                    onChange={(e) => setForm({ ...form, [r.key]: e.target.value })}
+                    aria-label={r.label}
+                    className={`${field} h-11 w-[96px] text-right font-mono text-[15px]`}
+                  />
+                  <span className="w-[58px] font-mono text-[11.5px] leading-tight text-faint">{r.unit}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+      <section className="mt-7">
+        <h2 className={label}>Cworkshop boards, a sheet</h2>
+        <p className="mt-1 text-[13.5px] text-muted">Their prices on {new Date(BOARDS_CHECKED).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}. Type your own if yours are different (a trade price, a new price).</p>
+        <ul className="mt-2 divide-y divide-line rounded-sm border border-line-strong bg-mount">
+          {BOARDS.map((b) => (
+            <li key={b.code} className="flex items-center gap-3 px-3.5 py-2">
+              <span aria-hidden className="h-7 w-7 shrink-0 rounded-sm border border-line-strong" style={{ background: b.hex }} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[14.5px] font-semibold">{b.name}</span>
+                <span className="block truncate font-mono text-[11.5px] text-faint">
+                  {b.code} · Cworkshop {money2(b.exVat)}
+                  {b.offerEnds ? ' on offer' : ''}
+                </span>
+              </span>
+              <span className="font-mono text-[13px] text-faint">£</span>
+              <input
+                inputMode="decimal"
+                value={boards[b.code] ?? ''}
+                placeholder={b.exVat.toFixed(2)}
+                onChange={(e) => setBoards({ ...boards, [b.code]: e.target.value })}
+                aria-label={`Your price for ${b.name}`}
+                className={`${field} h-10 w-[96px] text-right font-mono text-[14.5px]`}
+              />
+            </li>
+          ))}
+        </ul>
+      </section>
+      <div className="sticky bottom-0 -mx-4 mt-6 border-t border-line bg-paper px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
+        <button type="button" onClick={save} disabled={!changed} className="btn btn-primary w-full disabled:opacity-50">
+          Save my prices
+        </button>
+        {saved && !changed ? <p className="mt-1.5 text-center font-mono text-[12.5px] text-muted">{saved}</p> : null}
+      </div>
+    </div>
+  );
+}
+
+const fmt = (k: PriceKey, v: number) => (k === 'boardSetupDays' || k === 'boardDaysPerM' ? `${v} days` : k === 'boardMarkup' ? `${v}%` : k === 'cutEdgeSheet' ? money2(v) : money(v));

@@ -1,9 +1,17 @@
 /* Small line icons for the Job Kit's sections, drawn like the site's sketches (round ends, one weight), so each
    card on the Today screen and each line in the Today list shows where it goes. Decorative: the text says it. */
 
-export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note' | 'home';
+export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note' | 'home' | 'quote';
 
 const PATHS: Record<IconName, React.ReactNode> = {
+  // a price tag with a pound sign: Quotes, rough prices for new enquiries
+  quote: (
+    <>
+      <path d="M3.8 11.6V4.8a1 1 0 0 1 1-1h6.8l8.6 8.6a1 1 0 0 1 0 1.4l-6.8 6.8a1 1 0 0 1-1.4 0z" />
+      <circle cx="7.6" cy="7.6" r="1.1" />
+      <path d="M14.6 11.2a1.6 1.6 0 0 0-2.7 1.1v3.4M10.6 14.2h3M10.4 15.9h4.6" strokeWidth="1.4" />
+    </>
+  ),
   // a house with a tick on its door: the personal to do, home and life away from work
   home: (
     <>

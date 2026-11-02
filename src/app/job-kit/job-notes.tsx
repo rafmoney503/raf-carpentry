@@ -206,7 +206,7 @@ function fromJob(job: CurrentJob): Item[] {
 
 /* ---------- photos ---------- */
 
-async function fileBlob(uuid: string, size: 'thumb' | 'full'): Promise<{ blob: Blob } | { error: string; detail?: string }> {
+export async function fileBlob(uuid: string, size: 'thumb' | 'full'): Promise<{ blob: Blob } | { error: string; detail?: string }> {
   const pin = readPin();
   if (!pin) return { error: 'no-pin' };
   try {
@@ -242,7 +242,7 @@ async function keepThumb(uuid: string, blob: Blob) {
 const thumbUrls = new Map<string, string>(); // this visit's thumbnails
 const notPhotos = new Set<string>();
 
-function Thumb({ file, onOpen }: { file: DiaryFile; onOpen: () => void }) {
+export function Thumb({ file, onOpen }: { file: DiaryFile; onOpen: () => void }) {
   const box = useRef<HTMLButtonElement>(null);
   const [url, setUrl] = useState(() => thumbUrls.get(file.uuid) ?? '');
   const [state, setState] = useState<'wait' | 'none' | 'offline'>(notPhotos.has(file.uuid) ? 'none' : 'wait');

@@ -21,7 +21,7 @@ export type SecId = 'todo' | 'personal' | 'customers' | 'whatsapp' | 'timeline' 
 export const SECTIONS: { id: SecId; name: string; what: string }[] = [
   { id: 'todo', name: 'To do', what: 'What needs doing now.' },
   { id: 'personal', name: 'Personal', what: 'Your own to do: home and life, apart from work.' },
-  { id: 'customers', name: 'Customers', what: 'Diary, Current jobs, Inbox, emails and texts.' },
+  { id: 'customers', name: 'Customers', what: 'Diary, Current jobs, Quotes, Inbox, emails and texts.' },
   { id: 'whatsapp', name: 'WhatsApp', what: 'Chats brought in, sent to ServiceM8 with their photos.' },
   { id: 'timeline', name: 'Job timeline', what: 'Gantt chart and the clients board.' },
   { id: 'designs', name: 'Designs in 3D', what: 'Designs for customers and the Design library.' },
@@ -32,7 +32,7 @@ export const SECTIONS: { id: SecId; name: string; what: string }[] = [
 /* Which section a screen belongs to. */
 export function secOfScreen(name: string): SecId | undefined {
   if (name === 'personal') return 'personal';
-  if (['diary', 'current', 'sm8', 'enquiry', 'customer', 'inbox', 'email'].includes(name)) return 'customers';
+  if (['diary', 'current', 'sm8', 'enquiry', 'customer', 'inbox', 'email', 'quotes', 'quote', 'quote-prices'].includes(name)) return 'customers';
   if (['designs', 'design', 'new-design', 'library'].includes(name)) return 'designs';
   if (name === 'timeline' || name === 'board') return 'timeline';
   if (name === 'whatsapp' || name === 'wa-chat') return 'whatsapp';

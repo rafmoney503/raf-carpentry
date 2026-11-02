@@ -340,6 +340,23 @@ export async function currentJobs(): Promise<Current> {
   };
 }
 
+/* One job with its client and best contact, for the Job Kit's Quotes (src/lib/quote-maker.ts), which works on a job
+   the moment it comes in (the website's brief) as well as from the phone. Undefined if ServiceM8 has no such job. */
+export async function oneJob(uuid: string): Promise<CurrentJob | undefined> {
+  const j = await getOne(`job/${uuid}.json`);
+  if (!j) return undefined;
+  const cu = str(j.company_uuid);
+  const [company, jobContacts, clientContacts] = await Promise.all([
+    cu ? getOne(`company/${cu}.json`).catch(() => undefined) : Promise.resolve(undefined),
+    list('jobcontact.json', `active eq 1 and job_uuid eq '${uuid}'`).catch((): Row[] => []),
+    cu ? list('companycontact.json', `active eq 1 and company_uuid eq '${cu}'`).catch((): Row[] => []) : Promise.resolve([] as Row[]),
+  ]);
+  const useful = (c: Row) => str(c.active) !== '0' && (str(c.mobile) || str(c.phone) || str(c.email) || str(c.first));
+  const rank = (c: Row) => (/^(job|job contact)$/i.test(str(c.type)) ? 0 : /billing/i.test(str(c.type)) ? 1 : 2) - (on(c.is_primary_contact) ? 0.5 : 0);
+  const best = (cs: Row[]) => cs.filter(useful).sort((a, b) => rank(a) - rank(b))[0];
+  return shape(j, company, best(jobContacts.filter((c) => str(c.job_uuid) === uuid)) ?? best(clientContacts), null);
+}
+
 /* ---------- customers: the search and one customer's history ---------- */
 
 const personOf = (c: Row): Person => ({ first: str(c.first), last: str(c.last), mobile: str(c.mobile), phone: str(c.phone), email: str(c.email) });

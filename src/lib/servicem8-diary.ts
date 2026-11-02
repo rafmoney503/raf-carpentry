@@ -88,6 +88,15 @@ function fileOf(a: Row): DiaryEntry | null {
   return { id: `file-${uuid}`, kind: 'file', at: stampOf(a.timestamp) ?? stampOf(a.create_date) ?? stampOf(a.edit_date), file: { uuid, name, photo } };
 }
 
+/* The job's photos, oldest first (the brief's own photos come first), for the Job Kit's Quotes. */
+export async function jobPhotos(job: string): Promise<{ uuid: string; name: string; at: string | null }[]> {
+  return (await onJob('attachment.json', 'related_object_uuid', job))
+    .map(fileOf)
+    .filter((e): e is DiaryEntry => e !== null && Boolean(e.file?.photo))
+    .map((e) => ({ uuid: e.file!.uuid, name: e.file!.name, at: e.at }))
+    .sort((a, b) => (a.at ?? '').localeCompare(b.at ?? ''));
+}
+
 /* Bookings (scheduled) and check-ins (recorded: the time ServiceM8's app logged on site). Others (travel and the
    like that ServiceM8 adds by itself) are left out. */
 function activityOf(a: Row): DiaryEntry | null {

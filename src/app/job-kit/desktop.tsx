@@ -25,7 +25,7 @@ export const useWide = () =>
   );
 
 /* The places in the sidebar, in their sections. */
-export type SideId = 'home' | 'personal' | 'diary' | 'current' | 'inbox' | 'whatsapp' | 'timeline' | 'board' | 'designs' | 'library' | 'stats' | 'kit' | 'posts' | 'social' | 'settings';
+export type SideId = 'home' | 'personal' | 'diary' | 'current' | 'quotes' | 'inbox' | 'whatsapp' | 'timeline' | 'board' | 'designs' | 'library' | 'stats' | 'kit' | 'posts' | 'social' | 'settings';
 const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string; icon?: IconName }[] }[] = [
   { sec: 'todo', items: [{ id: 'home', title: 'Today' }] },
   { sec: 'personal', label: 'Personal', items: [{ id: 'personal', title: 'Personal to do', icon: 'home' }] },
@@ -35,6 +35,7 @@ const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string;
     items: [
       { id: 'diary', title: 'Diary', icon: 'diary' },
       { id: 'current', title: 'Current jobs', icon: 'jobs' },
+      { id: 'quotes', title: 'Quotes', icon: 'quote' },
       { id: 'inbox', title: 'Inbox', icon: 'mail' },
     ],
   },
@@ -73,6 +74,8 @@ export function sideOf(name: string, from?: string): SideId | undefined {
   if (name === 'personal') return 'personal';
   if (name === 'diary' || (name === 'sm8' && from === 'diary')) return 'diary';
   if (name === 'board' || (name === 'sm8' && from === 'board')) return 'board';
+  if (name === 'quotes' || name === 'quote-prices' || (name === 'quote' && from !== 'job')) return 'quotes';
+  if (name === 'quote') return 'current';
   if (['current', 'sm8', 'customer', 'enquiry'].includes(name)) return 'current';
   if (name === 'inbox' || name === 'email') return 'inbox';
   if (name === 'whatsapp' || name === 'wa-chat') return 'whatsapp';
@@ -150,6 +153,7 @@ export function Sidebar({ active, counts, onGo }: { active?: SideId; counts: Par
 const PICK: Record<string, { icon: IconName; text: string }> = {
   current: { icon: 'jobs', text: 'Pick a job on the left: its diary, emails and texts, money and the property open here.' },
   diary: { icon: 'diary', text: 'Pick a booking on the left to open its job here.' },
+  quotes: { icon: 'quote', text: 'Pick a quote on the left: the photos, what Claude read, your prices and the message to send.' },
   inbox: { icon: 'mail', text: 'Pick an email on the left. Opening one marks it read in Outlook, as on the phone.' },
   designs: { icon: 'designs', text: 'Pick a design request on the left, or start a New design.' },
   whatsapp: { icon: 'chat', text: 'Pick a chat on the left. Chats brought in on your phone show here too, their photos as small previews.' },
