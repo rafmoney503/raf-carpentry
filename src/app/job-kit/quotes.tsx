@@ -11,6 +11,7 @@ import {
   fromPrice,
   money,
   money2,
+  NOTE_MAX,
   optionsFor,
   picked,
   PRICE_ROWS,
@@ -212,6 +213,12 @@ export const rowOf = (q: Quotes, id: string) => q.rows.find((r) => r.id === id);
 export const stuck = (r: QuoteRow) => r.state === 'working' && Date.now() - (r.claimed ?? r.updated) > STUCK_MS;
 export const isWorking = (r: QuoteRow | undefined) => Boolean(r && r.state === 'working' && !stuck(r));
 const editsOf = (r: QuoteRow | undefined) => (r?.edits ?? {}) as QuoteEdits;
+/* His instructions for one quote: the ones saved on it, else the ones its last reading used (before 2 Nov 2026 the
+   only place they were kept). Sent with every reading of it, his own redo or Redo all. */
+export const ownNote = (r: QuoteRow | undefined) => {
+  const e = editsOf(r);
+  return typeof e.note === 'string' ? e.note : ((r?.data as QuoteData | null)?.note ?? '');
+};
 const readOf = (r: QuoteRow | undefined) => (r?.data as QuoteData | null)?.read;
 
 /* ---------- which quote is where ---------- */
@@ -621,6 +628,155 @@ export function QuoteJobBox({ job, row, prices, onOpen, onMake }: { job: Current
   );
 }
 
+/* ---------- his instructions for one quote ---------- */
+
+const OWN_EXAMPLES = ['The ceiling is 2,600 mm.', 'Leave out IKEA PAX.', 'They want sliding doors.', 'Price the two alcoves separately.', 'Ask if they want lights inside.', 'Make the message shorter.'];
+
+function QuoteOwn({
+  saved,
+  used,
+  hasRead,
+  failed,
+  working,
+  first,
+  everyQuote,
+  onSave,
+  onRedo,
+  onRules,
+}: {
+  saved: string;
+  used: string | null; // what the reading on screen was made with (null: nothing read yet)
+  hasRead: boolean;
+  failed: boolean;
+  working: boolean;
+  first: string;
+  everyQuote: boolean;
+  onSave: (text: string) => void;
+  onRedo: (text: string) => void;
+  onRules: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [all, setAll] = useState(false);
+  const [just, setJust] = useState('');
+  const text = saved.trim();
+  const fresh = !hasRead || (used ?? '').trim() === text; // nothing to redo for
+  const long = text.split('\n').length > 4 || text.length > 320;
+  const go = hasRead ? 'Redo it' : failed ? 'Try again' : 'Work it out';
+  const open = () => {
+    setDraft(saved);
+    setEditing(true);
+    setJust('');
+  };
+  const add = (line: string) => setDraft((d) => (d.includes(line) ? d : `${d.trim() ? `${d.trimEnd()}\n` : ''}${line}`).slice(0, NOTE_MAX));
+  const keep = (redo: boolean) => {
+    const t = draft.replace(/\r\n?/g, '\n').trim();
+    onSave(t);
+    setEditing(false);
+    if (redo) {
+      onRedo(t);
+      setJust('');
+    } else setJust(t ? 'Saved.' : 'Cleared.');
+  };
+  return (
+    <section className="mt-5 rounded-sm border border-line-strong bg-mount p-4" aria-label="Instructions for this quote" data-own>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-semibold">Instructions for this quote</h2>
+        {!editing && text ? (
+          <button type="button" onClick={open} className="shrink-0 font-mono text-[13px] text-accent underline">
+            Change them
+          </button>
+        ) : null}
+      </div>
+      {editing ? (
+        <>
+          <p className="mt-1.5 text-[14.5px] leading-relaxed text-muted">
+            Just for {first || 'this one'}: a size you know, what to leave out, what to ask, how the message reads. {everyQuote ? 'Where they differ from your instructions for every quote, these win.' : ''} The prices still come from Your prices.
+          </p>
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value.slice(0, NOTE_MAX))}
+            rows={4}
+            maxLength={NOTE_MAX}
+            autoFocus
+            placeholder="e.g. The ceiling is 2,600 mm. Leave out IKEA PAX."
+            aria-label="Instructions for this quote"
+            className={`${field} mt-3 py-2.5 text-[15.5px] leading-relaxed`}
+          />
+          <p className="mt-1 text-right font-mono text-[11.5px] text-faint">
+            {draft.length.toLocaleString('en-GB')} / {NOTE_MAX.toLocaleString('en-GB')}
+          </p>
+          <p className={`${label} mt-1`}>Add an example</p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {OWN_EXAMPLES.map((x) => (
+              <button key={x} type="button" onClick={() => add(x)} disabled={draft.includes(x)} className="rounded-sm border border-line-strong bg-paper px-2.5 py-1.5 text-left text-[13.5px] leading-snug hover:border-ink disabled:opacity-40">
+                + {x}
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button type="button" disabled={working} onClick={() => keep(true)} className="btn btn-primary btn-sm disabled:opacity-50">
+              Save and {go.charAt(0).toLowerCase()}
+              {go.slice(1)}
+            </button>
+            <button type="button" disabled={draft.trim() === text} onClick={() => keep(false)} className="btn btn-ghost btn-sm disabled:opacity-50">
+              Save only
+            </button>
+            <button type="button" onClick={() => setEditing(false)} className="btn btn-ghost btn-sm">
+              Cancel
+            </button>
+          </div>
+          {working ? <p className="mt-2 font-mono text-[12px] text-faint">Claude is reading it now: save only, or wait a moment to redo it.</p> : null}
+        </>
+      ) : (
+        <>
+          {text ? (
+            <>
+              <p className={`mt-2 whitespace-pre-line text-[15px] leading-relaxed ${long && !all ? 'line-clamp-4' : ''}`}>{text}</p>
+              {long ? (
+                <button type="button" onClick={() => setAll(!all)} className="mt-1 font-mono text-[13px] text-accent underline">
+                  {all ? 'Show less' : 'Show all'}
+                </button>
+              ) : null}
+            </>
+          ) : (
+            <p className="mt-1.5 text-[14.5px] leading-relaxed text-muted">
+              {hasRead && (used ?? '').trim() ? 'None now. ' : ''}Want something different on this one? Tell Claude here: a size you know, what to leave out, what to ask.
+            </p>
+          )}
+          {working ? (
+            <p className="mt-2 font-mono text-[12px] text-faint">{text ? 'Claude is reading it with these now.' : 'Claude is reading it now.'}</p>
+          ) : !fresh ? (
+            <div className="mt-3 border-t border-line pt-3">
+              <p className="text-[15px] leading-relaxed">{text ? 'Saved, not used yet: the quote below was worked out before these.' : 'The quote below still used the ones you cleared.'}</p>
+              <button type="button" onClick={() => onRedo(text)} className="btn btn-primary btn-sm mt-2.5">
+                Redo it {text ? 'with them' : 'without them'}
+              </button>
+            </div>
+          ) : (
+            <p className="mt-2 font-mono text-[12px] text-faint">
+              {just ? `${just} ` : ''}
+              {text ? (hasRead ? 'Used on the quote below.' : 'Used when Claude works it out.') : ''}
+            </p>
+          )}
+          {!text ? (
+            <button type="button" onClick={open} className="btn btn-ghost btn-sm mt-3">
+              Write instructions for this quote
+            </button>
+          ) : null}
+        </>
+      )}
+      <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint">
+        {everyQuote ? 'Used with ' : 'For every quote, '}
+        <button type="button" onClick={onRules} className="text-accent underline">
+          {everyQuote ? 'your instructions for every quote' : 'write your instructions'}
+        </button>
+        {everyQuote ? '.' : ' on Quotes.'}
+      </p>
+    </section>
+  );
+}
+
 /* ---------- one quote ---------- */
 
 const FROM_WORD: Record<From, string> = { given: 'from the brief', photo: 'from a photo', guess: 'a guess' };
@@ -654,8 +810,6 @@ export function QuoteView({
   const r = data?.read;
   const edits = editsOf(row);
   const working = isWorking(row);
-  const [note, setNote] = useState('');
-  const [again, setAgain] = useState(false);
   const [photo, setPhoto] = useState<{ name: string; url: string; error: string } | null>(null);
   const [copied, setCopied] = useState('');
   const set = (patch: Partial<QuoteEdits>) => onEdit({ ...edits, ...patch });
@@ -663,12 +817,22 @@ export function QuoteView({
   const name = job?.name || first || 'Enquiry';
   const old = Boolean(rules.at && r && (data?.rulesAt ?? 0) < rules.at);
   const withRules = Boolean(r && rules.text && data?.rulesAt && !old);
-  // the redo box at the bottom, opened with the note it was last read with
-  const redo = () => {
-    setNote(data?.note ?? '');
-    setAgain(true);
-    requestAnimationFrame(() => document.getElementById('quote-redo')?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
-  };
+  const own = ownNote(row);
+  const ownFresh = (data?.note ?? '').trim() === own.trim(); // the reading used this quote's instructions as saved
+  const ownBox = (
+    <QuoteOwn
+      saved={own}
+      used={r ? (data?.note ?? '') : null}
+      hasRead={Boolean(r)}
+      failed={Boolean(row && row.state !== 'none')}
+      working={working}
+      first={first}
+      everyQuote={Boolean(rules.text)}
+      onSave={(note) => set({ note })}
+      onRedo={(note) => onMake(true, note)}
+      onRules={onRules}
+    />
+  );
 
   const options = r ? optionsFor(r, prices, BOARDS, edits, fillWall) : [];
   const message = r ? edits.text ?? quoteMessage(r, options, edits, first, true) : '';
@@ -727,13 +891,13 @@ export function QuoteView({
           ) : (
             <>
               <p>{row && row.state !== 'none' ? quoteProblem(stuck(row) ? 'stuck' : data?.error, data?.error === 'ai-error' ? data?.detail : undefined) : 'Not worked out yet.'}</p>
-              <NoteBox note={note} setNote={setNote} />
-              <button type="button" onClick={() => onMake(true, note)} className="btn btn-primary mt-3">
+              <button type="button" onClick={() => onMake(true, own)} className="btn btn-primary mt-3">
                 {row && row.state !== 'none' ? 'Try again' : 'Work it out'}
               </button>
             </>
           )}
         </div>
+        {ownBox}
       </div>
     );
 
@@ -758,20 +922,20 @@ export function QuoteView({
         Read {data?.at ? ago(data.at) : ''}
         {data?.photos?.length ? ` from ${data.photos.length} photo${data.photos.length === 1 ? '' : 's'}` : ', no photos'}
         {data?.skipped ? ` (${data.skipped} more on the job not read)` : ''}
-        {data?.note ? ` · you said: “${data.note}”` : ''}
         {withRules ? ' · with your instructions' : ''}
+        {data?.note ? ' · with this quote’s instructions' : ''}
       </p>
       {old && !working ? (
         <div className="mt-3 rounded-sm border border-line-strong bg-mount px-3 py-2.5 text-[14.5px] leading-relaxed">
-          Worked out before your latest instructions.{' '}
-          <button type="button" onClick={redo} className="font-mono text-[13px] text-accent underline">
-            Redo it with them
-          </button>
+          Worked out before your latest instructions for every quote.{' '}
+          {ownFresh ? (
+            <button type="button" onClick={() => onMake(true, own)} className="font-mono text-[13px] text-accent underline">
+              Redo it with them
+            </button>
+          ) : (
+            'Redo it below: it uses both.'
+          )}
         </div>
-      ) : !working ? (
-        <button type="button" onClick={redo} className="mt-1.5 font-mono text-[13px] text-accent underline">
-          Redo this quote
-        </button>
       ) : null}
       {working ? (
         <p className="mt-3 flex items-center gap-2 rounded-sm border border-accent bg-accent-soft px-3 py-2.5 text-[15px]">
@@ -788,6 +952,8 @@ export function QuoteView({
           ))}
         </div>
       ) : null}
+
+      {ownBox}
 
       {/* What Claude saw */}
       {r.seen.length || r.check.length || r.budget ? (
@@ -962,40 +1128,12 @@ export function QuoteView({
 
       {/* Redo it */}
       <section id="quote-redo" className="mt-7 border-t border-line pt-5">
-        {again ? (
-          <>
-            <p className="font-semibold">Redo this quote</p>
-            <p className="mt-1 text-[14.5px] leading-relaxed text-muted">
-              {rules.text ? 'Claude reads it again with your instructions for every quote' : 'Claude reads it again'}
-              {' '}and anything you add here for this one.{' '}
-              <button type="button" onClick={onRules} className="font-mono text-[13px] text-accent underline">
-                {rules.text ? 'Your instructions' : 'Write instructions for every quote'}
-              </button>
-            </p>
-            <NoteBox note={note} setNote={setNote} label="Anything for this one? (optional)" />
-            <div className="mt-3 flex flex-wrap gap-3">
-              <button
-                type="button"
-                disabled={working}
-                onClick={() => {
-                  onMake(true, note);
-                  setAgain(false);
-                }}
-                className="btn btn-primary btn-sm"
-              >
-                Redo it
-              </button>
-              <button type="button" onClick={() => setAgain(false)} className="btn btn-ghost btn-sm">
-                Cancel
-              </button>
-            </div>
-            <p className="mt-2 font-mono text-[12px] leading-relaxed text-faint">Your prices stay; the message and its questions are written out again. New photos on the job are read too.</p>
-          </>
-        ) : (
-          <button type="button" onClick={redo} disabled={working} className="font-mono text-[13.5px] text-accent underline disabled:opacity-50">
-            Redo this quote
-          </button>
-        )}
+        <button type="button" onClick={() => onMake(true, own)} disabled={working} className="btn btn-ghost btn-sm disabled:opacity-50">
+          Redo this quote
+        </button>
+        <p className="mt-2 font-mono text-[12px] leading-relaxed text-faint">
+          {own.trim() ? 'With the instructions for this quote above. ' : ''}Your prices stay; the message and its questions are written out again. New photos on the job are read too.
+        </p>
         <p className="mt-4 font-mono text-[11.5px] leading-relaxed text-faint">
           Rough prices from your list, before the visit. Board prices from Cworkshop on {new Date(BOARDS_CHECKED).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}.{data?.model ? ` Read by ${data.model}.` : ''}
         </p>
@@ -1010,15 +1148,6 @@ export function QuoteView({
         </div>
       ) : null}
     </div>
-  );
-}
-
-function NoteBox({ note, setNote, label: words = 'Anything Claude should know? (optional)' }: { note: string; setNote: (s: string) => void; label?: string }) {
-  return (
-    <label className="mt-3 grid grid-cols-1 gap-1.5">
-      <span className={label}>{words}</span>
-      <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} maxLength={800} placeholder="e.g. the ceiling is 2,600; they want sliding doors" className={`${field} py-2 text-[15px]`} />
-    </label>
   );
 }
 

@@ -90,8 +90,7 @@ import { reloadFor, safeToReload, watchVersion } from './update';
 import { fetchSocial, newComments, savedSocial, SOCIAL_FRESH, socialKey, socialLine, socialProblem, socialTodayLine, SocialView, type Social } from './social';
 import { PersonalToday, PersonalView, usePersonalToday } from './personal';
 import { startChores } from './chores-store';
-import { askQuote, checkedQuotes, fetchQuotes, flushQuoteEdits, isWorking, keepRedo, pricesOf, putInEmailBox, QUOTES_FRESH, QuoteJobBox, QuotePrices, QuotesList, quotesLine, quoteTodayLines, QuoteView, readyCount, rowOf, rulesOf, rulesWaiting, savedQuotes, savedRedo, toRead, workingHere, changeHere, type Quotes } from './quotes';
-import type { QuoteData } from '@/lib/quote-maker';
+import { askQuote, checkedQuotes, fetchQuotes, flushQuoteEdits, isWorking, keepRedo, ownNote, pricesOf, putInEmailBox, QUOTES_FRESH, QuoteJobBox, QuotePrices, QuotesList, quotesLine, quoteTodayLines, QuoteView, readyCount, rowOf, rulesOf, rulesWaiting, savedQuotes, savedRedo, toRead, workingHere, changeHere, type Quotes } from './quotes';
 import type { QuoteEdits } from '@/lib/quote-sums';
 import './job-kit.css';
 
@@ -464,6 +463,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         delete e.text;
         delete e.ask;
         changeQuote(id, e as Record<string, unknown>);
+        await flushQuoteEdits();
       }
       return startQuote(id, true, note);
     },
@@ -708,7 +708,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     if (!next) return;
     autoTried.current.add(next);
     quoteBusy.current = true;
-    void startQuote(next).finally(() => (quoteBusy.current = false));
+    void startQuote(next, false, ownNote(rowOf(quotes, next))).finally(() => (quoteBusy.current = false));
   }, [ready, pin, quoteWorking, quotes, sm8, marks, startQuote]);
   // The redo queue: the next one once the store has said nothing is being read (after a reload the kept copy can't
   // know), his instructions are in the store, and (after no signal or a store that didn't answer) a minute has passed.
@@ -723,8 +723,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     setRedoBoth(rest);
     setRedoNow(id);
     quoteBusy.current = true;
-    const note = (rowOf(quotesRef.current, id)?.data as QuoteData | null)?.note ?? '';
-    void redoQuote(id, note)
+    void redoQuote(id, ownNote(rowOf(quotesRef.current, id)))
       .then((asked) => {
         if (asked) return;
         setRedoBoth([id, ...savedRedo().filter((x) => x !== id)]);
@@ -1245,7 +1244,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                   checkSm8();
                 }}
                 onOpen={(id) => go({ name: 'quote', id })}
-                onMake={(id) => void startQuote(id, true)}
+                onMake={(id) => void startQuote(id, true, ownNote(rowOf(quotes, id)))}
                 onPrices={() => go({ name: 'quote-prices' })}
                 onSaveRules={(text) => {
                   changeQuote('_rules', { text });
@@ -1453,7 +1452,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                   }}
                   extra={
                     <>
-                      <QuoteJobBox job={cur} row={rowOf(quotes, cur.uuid)} prices={pricesOf(quotes)} onOpen={() => go({ name: 'quote', id: cur.uuid, from: 'job' })} onMake={() => void startQuote(cur.uuid, true)} />
+                      <QuoteJobBox job={cur} row={rowOf(quotes, cur.uuid)} prices={pricesOf(quotes)} onOpen={() => go({ name: 'quote', id: cur.uuid, from: 'job' })} onMake={() => void startQuote(cur.uuid, true, ownNote(rowOf(quotes, cur.uuid)))} />
                       <WaJobBox chats={waChats} job={cur.uuid} onOpen={(id) => go({ name: 'wa-chat', id })} />
                     </>
                   }

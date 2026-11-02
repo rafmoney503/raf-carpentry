@@ -2,6 +2,7 @@ import { after } from 'next/server';
 import { guard } from '@/lib/job-kit-server';
 import { SyncError } from '@/lib/job-kit-sync-server';
 import { claimQuote, listQuotes, quotesRpc, quotesSetUp, RULES_MAX, runQuote } from '@/lib/quote-maker';
+import { NOTE_MAX } from '@/lib/quote-sums';
 
 /* The Job Kit's Quotes, behind the PIN (src/lib/quote-maker.ts, src/app/job-kit/quotes.tsx).
    { action: 'list' }                         every quote of the last 90 days, Raf's price list and instructions
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
       case 'make': {
         const job = typeof body.job === 'string' && UUID.test(body.job) ? body.job : '';
         if (!job) return Response.json({ error: 'bad' }, { status: 400, headers: noStore });
-        const note = typeof body.note === 'string' ? body.note.trim().slice(0, 800) : '';
+        const note = typeof body.note === 'string' ? body.note.replace(/\r\n?/g, '\n').trim().slice(0, NOTE_MAX) : '';
         const c = await claimQuote(job, body.force === true);
         if (!c.ok) return Response.json({ state: c.state }, { headers: noStore });
         after(() => runQuote(job, { note }));

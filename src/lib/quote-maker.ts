@@ -3,7 +3,7 @@ import { attachmentFile, jobNotes, jobPhotos } from './servicem8-diary';
 import { redact } from './draft-reply';
 import { jobkitRpc, syncSetUp } from './job-kit-sync-server';
 import { BOARDS } from './cworkshop-boards';
-import { CLOSING, RATE_KEYS, type From, type OtherOption, type QuoteRead, type RateKey, type Run } from './quote-sums';
+import { CLOSING, NOTE_MAX, RATE_KEYS, type From, type OtherOption, type QuoteRead, type RateKey, type Run } from './quote-sums';
 
 /* The Job Kit's Quotes (Raf, 2 Nov 2026): Claude reads a new enquiry in ServiceM8, the description and the photos in
    its diary, and says what it sees: the sizes, what's inside, the colours that suit the room, what to check and what
@@ -49,7 +49,7 @@ export type QuoteData = {
   at?: number;
   ms?: number;
   tokens?: { in: number; out: number };
-  note?: string; // what Raf told Claude when he asked again
+  note?: string; // his instructions for this quote it was read with
   rulesAt?: number; // the version of his instructions it was read with (0 = none)
   error?: string;
   detail?: string; // what went wrong, in Claude's or ServiceM8's words
@@ -149,8 +149,8 @@ const TOOL = {
       inside: { type: 'string', description: 'The board code for the inside of the finished-board wardrobe.' },
       recommend: { type: 'string', enum: ['plain', 'pax', 'shaker', 'board', 'none'], description: 'For a wardrobe, the option you think suits them best; "none" for other jobs.' },
       recommend_why: { type: 'string', description: 'A few words for Raf.' },
-      extra: { type: 'string', description: "Only when Raf's instructions ask for something in every message: that paragraph, in his voice, no price. Otherwise \"\"." },
-      closing: { type: 'string', description: "Only when Raf's instructions change the usual closing paragraph: his version, no price. Otherwise \"\"." },
+      extra: { type: 'string', description: "Only when Raf's instructions (for every quote, or for this one) ask for something in the message: that paragraph, in his voice, no price. Otherwise \"\"." },
+      closing: { type: 'string', description: "Only when Raf's instructions (for every quote, or for this one) change the usual closing paragraph: his version, no price. Otherwise \"\"." },
       other_options: {
         type: 'array',
         maxItems: 3,
@@ -173,21 +173,25 @@ const TOOL = {
   },
 } as const;
 
-/* The defaults, then his own instructions, which win over them. */
-function systemFor(rules: Rules) {
-  if (!rules.text) return SYSTEM;
+/* The defaults, then his own instructions for every quote, which win over them; and when he's written some for this
+   quote (in the request), a word that those win over both. */
+function systemFor(rules: Rules, own = false) {
+  const one = own
+    ? `\n\nRaf has also written instructions for this one quote, at the end of the request under "Raf's instructions for this quote". Follow them the same way: what to assume, what suits, which options to offer or leave out and which to recommend (pax_ok false when he says to leave out IKEA PAX), what to ask, and how the customer's words read; a paragraph he wants in this message goes in extra, a changed closing in closing. Where they differ from the defaults${rules.text ? ' or from his instructions for every quote' : ''}, they win. Use a fact he gives as he gives it, never make one up, and never write a price in any words.`
+    : '';
+  if (!rules.text) return SYSTEM + one;
   return `${SYSTEM}
 
 Raf's own instructions for every quote follow. They come from Raf, so follow them, and where they differ from the defaults above, they win: what to assume, what suits, which options to offer or leave out and which to recommend (for example set pax_ok false when he says not to offer IKEA PAX, or put the drawers he asks for in wardrobe.drawers), what to ask, and how the customer's words read. If they ask for something in every message, write it in extra. If they change the usual closing paragraph ("${CLOSING}"), write his version in closing. Use a fact he gives (a lead time, a deposit) as he gives it, and never make one up. Never write a price in any words: the prices come only from his price list.
 
-${rules.text}`;
+${rules.text}${one}`;
 }
 
 function boardList() {
   return BOARDS.map((b) => `${b.code} | ${b.name} | ${b.family} | ${b.describe} | £${b.exVat.toFixed(2)} a sheet before VAT`).join('\n');
 }
 
-function promptText(job: CurrentJob, notes: string[], photos: number, note: string) {
+function promptText(job: CurrentJob, notes: string[], photos: number) {
   const r = (s: string) => redact(s, job.name);
   return [
     `New enquiry #${job.number || '?'} in ServiceM8 (status ${job.status}${job.created ? `, came in ${job.created.slice(0, 10)}` : ''}).`,
@@ -199,7 +203,6 @@ function promptText(job: CurrentJob, notes: string[], photos: number, note: stri
     '',
     notes.length ? `Raf's own notes on the job, newest first:\n${notes.map((n) => `- ${r(n).slice(0, 800)}`).join('\n')}` : "Raf hasn't written notes on this job.",
     '',
-    note.trim() ? `Raf says, for this reading: ${r(note).slice(0, 800)}` : '',
     `${photos ? `${photos} photo${photos === 1 ? '' : 's'} from the job's diary follow.` : 'There are no photos on the job yet.'}`,
     '',
     'Finished boards Raf can buy cut and edged (Egger, 18 mm, 2800 x 2070 sheets): code | name | family | looks | price',
@@ -305,13 +308,15 @@ export async function readEnquiry(job: CurrentJob, note = '', rules: Rules = { t
   const pics = await Promise.all(use.map((p) => photoFor(p.uuid)));
   const sent = use.filter((_, i) => pics[i]);
   if (!job.description.trim() && !notes.length && !sent.length) throw new QuoteError('no-text');
-  const content: Content[] = [{ type: 'text', text: promptText(job, notes.map((x) => x.text).slice(0, 6), sent.length, note) }];
+  const content: Content[] = [{ type: 'text', text: promptText(job, notes.map((x) => x.text).slice(0, 6), sent.length) }];
   pics.forEach((b64, i) => {
     if (!b64) return;
     content.push({ type: 'text', text: `Photo ${content.filter((c) => c.type === 'image').length + 1}: ${use[i].name}` });
     content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } });
   });
-  const system = systemFor(rules);
+  // his instructions for this quote last, after the photos, so they're the last thing read
+  if (note.trim()) content.push({ type: 'text', text: `Raf's instructions for this quote (they win where they differ):\n${redact(note, job.name).slice(0, NOTE_MAX)}` });
+  const system = systemFor(rules, Boolean(note.trim()));
   let model = MODEL();
   let { res, text } = await ask(model, system, content);
   if (res.status === 404 || (res.status === 400 && /model/i.test(text) && !/usage limit/i.test(text))) {

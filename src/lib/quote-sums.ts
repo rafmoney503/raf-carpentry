@@ -159,7 +159,11 @@ export type QuoteEdits = {
   text?: string; // the message as he changed it by hand
   sentAt?: number;
   sentHow?: 'email' | 'whatsapp' | 'copy' | 'box';
+  note?: string; // his instructions for this quote only (saved even before it's read again; '' = cleared)
 };
+
+/* His instructions for one quote: at most this long (the route cuts them to it too). */
+export const NOTE_MAX = 1500;
 
 export type Board = { code: string; name: string; family: string; describe: string; exVat: number; normalExVat?: number | null; offerEnds?: string | null; url: string; hex: string };
 
