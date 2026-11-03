@@ -718,7 +718,7 @@ export function WaJobBox({ chats, job, onOpen }: { chats: WaChat[]; job: string;
   const list = chatsForJob(chats, job);
   if (!list.length) return null;
   return (
-    <section className="jk-sec-whatsapp mt-4 rounded-sm border border-line-strong bg-mount p-3.5">
+    <section id="whatsapp" data-jsec="whatsapp" className="jk-sec-whatsapp mt-4 rounded-sm border border-line-strong bg-mount p-3.5">
       <h2 className="flex items-center gap-2 font-mono text-[12.5px] uppercase tracking-[0.06em] jk-sec-ink">
         <Icon name="chat" className="h-[18px] w-[18px]" /> From WhatsApp
       </h2>

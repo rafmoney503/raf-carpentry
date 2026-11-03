@@ -24,6 +24,9 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     "**": ["public/**/*"],
   },
+  /* iPhone photos (HEIC) are read with libheif in WebAssembly (src/lib/photo-jpeg.ts). Loaded from node_modules
+     at run time rather than bundled: its 2 MB script carries the WebAssembly inside it. */
+  serverExternalPackages: ["heic-decode", "libheif-js"],
   /* The Job Kit asks which design requests have a page yet and where each stands (on /designs, built into a job);
      that route reads content/designs and the jobs at run time. */
   outputFileTracingIncludes: {

@@ -282,3 +282,19 @@ button:active > .jk-check { transform: scale(0.9); }
 .jk-chore-going { animation: jk-chore-go 0.26s ease forwards; }
 @keyframes jk-chore-go { 60% { opacity: 1; } to { opacity: 0.25; } }
 @media (prefers-reduced-motion: reduce) { .jk-check { transition: none; } .jk-chore-going { animation: none; } }
+
+/* A job's own menu (job-menu.tsx, 3 Nov 2026): a row of chips sticking under the top bar, on the screen's own
+   background, a line under it once stuck. A jump to any box of the job lands below it (--jk-stick is the top bar
+   and the menu; html's scroll-padding-top of 88 px is taken off). The row's ends fade where there's more. */
+.jk-jobnav { background-color: var(--jk-bg, var(--color-paper)); }
+.jk-jobnav[data-stuck] { border-bottom: 1px solid var(--color-line-strong); box-shadow: 0 8px 14px -14px rgb(22 25 28 / 0.55); }
+.jk-jobnav-end {
+  position: absolute; top: 0; bottom: 0; width: 40px; display: flex; align-items: center;
+  font-size: 22px; line-height: 1; color: var(--color-accent);
+}
+.jk-jobnav-end.left-0 { background: linear-gradient(90deg, var(--jk-bg, var(--color-paper)) 45%, transparent); }
+.jk-jobnav-end.right-0 { background: linear-gradient(270deg, var(--jk-bg, var(--color-paper)) 45%, transparent); }
+.jk-job [data-jsec] { scroll-margin-top: calc(var(--jk-stick, 112px) - 78px) !important; }
+/* on a computer every section shows at once: the chips wrap onto a second row rather than slide */
+.jk-desk .jk-jobnav-row { flex-wrap: wrap; overflow: visible; }
+.jk-desk .jk-jobnav-row > button { height: 32px; font-size: 13px; }

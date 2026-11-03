@@ -2,8 +2,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CurrentJob } from '@/lib/servicem8';
 import type { Mail, Thread } from '@/lib/servicem8-mail';
-import { e164, SIGN_OFF, SMS_SIGN_OFF, textCredits } from '@/lib/mail-text';
-import { Icon } from './icons';
+import { e164, photoMarks, SIGN_OFF, SMS_SIGN_OFF, textCredits } from '@/lib/mail-text';
+import { SecIcon } from './job-menu';
 import { field, label } from './parts';
 import { post, problemText } from './sm8-post';
 import { readPin } from './uploader';
@@ -328,10 +328,16 @@ export function EmailBox({
   const kindWord = (m: Mail) => (m.via === 'sms' ? 'Text' : 'Email');
   const replyHere = justSent === 'sms' ? textsRead : emailsRead;
   return (
-    <section id="emails" className="mt-6 scroll-mt-4 rounded-sm border border-line-strong bg-mount p-4">
+    <section
+      id="emails"
+      data-jsec="emails"
+      data-jsec-note={mails.length ? String(mails.length) : ''}
+      data-jsec-alert={mails[mails.length - 1]?.dir === 'in' ? '1' : undefined}
+      className="mt-6 scroll-mt-4 rounded-sm border border-line-strong bg-mount p-4"
+    >
       <div className="flex items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-[19px] font-[650]">
-          <Icon name="mail" className="h-[22px] w-[22px] text-accent" />
+        <h2 className="flex items-center gap-2.5 text-[19px] font-[650]">
+          <SecIcon k="emails" />
           Emails and texts
         </h2>
         <button type="button" onClick={load} disabled={loading} className="h-9 font-mono text-[13px] text-accent underline">
@@ -385,7 +391,7 @@ export function EmailBox({
                   </p>
                   {showSubject ? <p className="mt-1 text-[13.5px] font-semibold leading-snug [overflow-wrap:anywhere]">{m.subject}</p> : null}
                   {body ? (
-                    <p className="mt-1 whitespace-pre-line text-[15px] leading-relaxed [overflow-wrap:anywhere]">{body}</p>
+                    <p className="mt-1 whitespace-pre-line text-[15px] leading-relaxed [overflow-wrap:anywhere]">{photoMarks(body).text}</p>
                   ) : m.keys ? (
                     <p className="mt-1 text-[14px] leading-relaxed text-muted">
                       The Job Kit couldn’t find the words in this {m.via === 'sms' ? 'text' : 'email'}; it’s on the job in ServiceM8. Tell Claude these names so it can be fixed:{' '}

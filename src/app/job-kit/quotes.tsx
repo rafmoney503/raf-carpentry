@@ -31,6 +31,7 @@ import { Icon } from './icons';
 import { field, label } from './parts';
 import { post, problemText } from './sm8-post';
 import { readPin } from './uploader';
+import { SecIcon } from './job-menu';
 import { fileBlob, Thumb } from './job-notes';
 import { shown, stage, wa, type Marks, type Sm8 } from './current';
 import Mark from './mark';
@@ -598,9 +599,16 @@ export function QuoteJobBox({ job, row, prices, onOpen, onMake }: { job: Current
   const n = options.filter((o) => picked(o, edits)).length;
   const working = isWorking(row);
   return (
-    <section className="mt-6 rounded-sm border border-line-strong bg-mount p-4" aria-label="Rough quote">
-      <p className="flex items-center gap-2 font-semibold">
-        <Icon name="quote" className="h-5 w-5 shrink-0 jk-sec-ink" />
+    <section
+      id="quote"
+      data-jsec="quote"
+      data-jsec-note={working ? '…' : r ? (edits.sentAt ? 'sent' : 'ready') : ''}
+      data-jsec-alert={r && !edits.sentAt ? '1' : undefined}
+      className="mt-6 rounded-sm border border-line-strong bg-mount p-4"
+      aria-label="Rough quote"
+    >
+      <p className="flex items-center gap-2.5 text-[19px] font-[650]">
+        <SecIcon k="quote" />
         Rough quote
       </p>
       {working ? (

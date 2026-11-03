@@ -1,9 +1,50 @@
 /* Small line icons for the Job Kit's sections, drawn like the site's sketches (round ends, one weight), so each
    card on the Today screen and each line in the Today list shows where it goes. Decorative: the text says it. */
 
-export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note' | 'home' | 'quote';
+export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note' | 'home' | 'quote' | 'steps' | 'history' | 'tablet' | 'house' | 'more';
 
 const PATHS: Record<IconName, React.ReactNode> = {
+  // three steps going up, the one reached ticked: where a job is up to (Quote, Work Order, Completed)
+  steps: (
+    <>
+      <path d="M3.5 19.5h5v-4.5h5v-4.5h5V6" />
+      <path d="M3.5 19.5h17" />
+      <path d="M15.6 4.6l1.6 1.6 3-3.2" strokeWidth="1.7" />
+    </>
+  ),
+  // a clock with an arrow going back round it: the job's diary in ServiceM8, everything that happened
+  history: (
+    <>
+      <path d="M4.6 9.2A8 8 0 1 1 4 12" />
+      <path d="M3.2 5.6l1.4 3.6 3.6-1.2" />
+      <path d="M12 7.6V12l3 2" />
+    </>
+  ),
+  // a tablet with a pen on it: Goodnotes, Raf's handwritten notebooks
+  tablet: (
+    <>
+      <rect x="4" y="3" width="13" height="18" rx="1.6" />
+      <path d="M7.5 8h6M7.5 11h4" />
+      <path d="M20.6 7.6l-5.4 9.6-1.9 1 .1-2.1 5.4-9.6a.9.9 0 0 1 1.8 1.1z" />
+    </>
+  ),
+  // a house with its windows and door: the property
+  house: (
+    <>
+      <path d="M3.5 11 12 4l8.5 7" />
+      <path d="M5.8 9.4V20h12.4V9.4" />
+      <path d="M10.2 20v-5h3.6v5" />
+      <path d="M8 12.2h2M14 12.2h2" strokeWidth="1.8" />
+    </>
+  ),
+  // an arrow leaving a box: what to do from here (designs, the Job Kit, all their jobs)
+  more: (
+    <>
+      <path d="M13 4.5h6.5V11" />
+      <path d="M19.5 4.5l-8 8" />
+      <path d="M17.5 14v4.5a1.5 1.5 0 0 1-1.5 1.5H6a1.5 1.5 0 0 1-1.5-1.5v-10A1.5 1.5 0 0 1 6 7h4.5" />
+    </>
+  ),
   // a price tag with a pound sign: Quotes, rough prices for new enquiries
   quote: (
     <>

@@ -15,6 +15,12 @@ export function htmlToText(html: string) {
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/(p|div|li|tr|h\d)>/gi, '\n')
     .replace(/<li\b[^>]*>/gi, '- ')
+    // a photo in the email itself (src="cid:..."): kept as a mark, so photoMarks can show it (logos on the web aren't)
+    .replace(/<img\b[^>]*>/gi, (tag) => {
+      if (!/\bsrc=["']?cid:/i.test(tag)) return '';
+      const name = /\balt=["']([^"'<>]{1,120})["']/i.exec(tag)?.[1]?.trim() || /\bsrc=["']?cid:([^"'@\s>]{1,120})/i.exec(tag)?.[1];
+      return name ? `[image: ${name}]` : '';
+    })
     .replace(/<[^>]+>/g, '')
     .replace(/&(#\d+|#x[\da-f]+|\w+);/gi, (m, e: string) =>
       e[0] === '#' ? String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10)) : (ENTITIES[e.toLowerCase()] ?? m),
@@ -102,3 +108,25 @@ export function e164(raw: string) {
   d = d.replace(/\D/g, '');
   return /^[1-9]\d{7,14}$/.test(d) ? `+${d}` : '';
 }
+
+/* Photos in an email's words: Gmail's "[image: IMG_4821.jpeg]", Outlook's "[cid:image001.jpg@01DB...]", Apple
+   Mail's "<IMG_4821.jpeg>" and an HTML email's own photos (htmlToText). Each becomes "[photo: IMG_4821.jpeg]", and
+   the names come back so the Job Kit's diary can show the photos themselves (ServiceM8 keeps an emailed photo as
+   an attachment on the job). Raf, 3 Nov 2026: customers' photos showed as "just img something". */
+export function photoMarks(text: string): { text: string; photos: string[] } {
+  const photos: string[] = [];
+  const mark = (name: string) => {
+    const n = name.trim().replace(/@.*$/, '');
+    if (!n) return '';
+    if (!photos.includes(n)) photos.push(n);
+    return `[photo: ${n}]`;
+  };
+  const out = text
+    .replace(/\[image:\s*([^\]\n]{1,160})\]/gi, (_, n: string) => mark(n))
+    .replace(/\[cid:([^\]\s]{1,200})\]/gi, (_, n: string) => mark(n))
+    .replace(/<([^<>\n]{1,120}\.(?:jpe?g|png|heic|heif|gif|webp|tiff?))>/gi, (_, n: string) => mark(n));
+  return { text: out, photos };
+}
+
+/* The same photo by name, whatever its ending: an iPhone sends IMG_4821.HEIC as IMG_4821.jpeg. */
+export const photoKey = (name: string) => name.trim().toLowerCase().replace(/\.[a-z0-9]{2,5}$/, '');

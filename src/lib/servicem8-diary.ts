@@ -1,5 +1,6 @@
 import { sm8Base, sm8Call, sm8List, sm8Str as str, Sm8Error, statusError, tidy, type Sm8Row as Row } from './servicem8';
 import { jobMail, NOTE_HEAD, stampOf, TEXT_NOTE_HEAD } from './servicem8-mail';
+import { jpegOf, sniff } from './photo-jpeg';
 
 /* A job's notes and its whole diary in ServiceM8, for the Job Kit's job screen (Current jobs, the job: Notes and Job
    diary; Raf, 23 Oct 2026: "notes card where i can add notes, saved automatically in servicem8 ... read whole diary
@@ -78,13 +79,18 @@ export async function saveJobNote(job: string, uuid: string, text: string, isNew
   await sm8Call(`note/${uuid}.json`, { method: 'POST', body: { note } });
 }
 
-const PHOTO = /\.(jpe?g|png|gif|webp|heic|heif)$/i;
+/* A photo by its type (".jpg", "jpg" or "image/jpeg"), its name, or the size ServiceM8 noted. A file named with
+   no type at all ("IMG_4824") is tried as a photo too: if it isn't one, the phone shows it as a file. */
+const PHOTO = /(^|[./])(jpe?g|png|gif|webp|heic|heif|hei[cf]s|avif|tiff?)$/i;
+const NOT_PHOTO = /(^|[./])(pdf|docx?|xlsx?|csv|txt|rtf|pages|numbers|key|zip|mov|mp4|m4v|mp3|m4a|wav|eml|msg|skp|dwg|dxf)$/i;
 function fileOf(a: Row): DiaryEntry | null {
   const uuid = str(a.uuid);
   if (!uuid) return null;
-  const type = str(a.file_type).toLowerCase();
+  const type = str(a.file_type).toLowerCase().trim();
   const name = str(a.attachment_name) || `File${type.startsWith('.') ? type : ''}`;
-  const photo = PHOTO.test(type.startsWith('.') ? type : `.${type}`) || PHOTO.test(name) || Number(a.photo_width) > 0;
+  const typed = type.replace(/^\./, '');
+  const unknown = !typed && !/\.[a-z0-9]{2,5}$/i.test(name);
+  const photo = PHOTO.test(typed) || PHOTO.test(name) || Number(a.photo_width) > 0 || (unknown && !NOT_PHOTO.test(name));
   return { id: `file-${uuid}`, kind: 'file', at: stampOf(a.timestamp) ?? stampOf(a.create_date) ?? stampOf(a.edit_date), file: { uuid, name, photo } };
 }
 
@@ -153,24 +159,30 @@ export async function jobDiary(job: string, email = '', mobile = ''): Promise<Jo
 /* ---------- an attachment's file, for the phone to show ----------
    GET /attachment/<uuid>.file answers with the bytes (ServiceM8 may hand it over from its file storage, so the
    redirect is followed). thumb: photos made small (400 px JPEG) for the diary's grid; anything else isn't a photo.
-   full: photos over 2.5 MB (or HEIC) made 2000 px JPEG, since a Vercel answer can't be over 4.5 MB; other files go
-   as they are up to 4 MB. */
+   full: photos over 2.5 MB, and every HEIC or TIFF (most browsers can't show them), made 2000 px JPEG, since a
+   Vercel answer can't be over 4.5 MB; other files go as they are up to 4 MB. iPhone photos (HEIC) are read by
+   src/lib/photo-jpeg.ts; until 3 Nov 2026 they showed as their file name ('IMG_4821.HEIC'). Photos are made two
+   at a time on one server, so a page of HEIC thumbnails doesn't take all its memory at once. */
 export class FileProblem extends Error {
   constructor(public code: 'not-photo' | 'too-big', public status: number) {
     super(code);
   }
 }
 
-function sniff(b: Uint8Array): string {
-  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
-  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return 'image/png';
-  if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46) return 'image/gif';
-  if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45) return 'image/webp';
-  if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46) return 'application/pdf';
-  const box = String.fromCharCode(...b.slice(4, 12));
-  if (/^ftyp(heic|heix|hevc|mif1|msf1)/.test(box)) return 'image/heic';
-  return 'application/octet-stream';
+let making = 0;
+const waiting: (() => void)[] = [];
+async function twoAtATime<T>(work: () => Promise<T>): Promise<T> {
+  if (making >= 2) await new Promise<void>((go) => waiting.push(go));
+  making++;
+  try {
+    return await work();
+  } finally {
+    making--;
+    waiting.shift()?.();
+  }
 }
+
+const SHOWN_AS_IS = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 
 export async function attachmentFile(uuid: string, size: 'thumb' | 'full'): Promise<{ bytes: Uint8Array; type: string }> {
   let res: Response;
@@ -189,25 +201,22 @@ export async function attachmentFile(uuid: string, size: 'thumb' | 'full'): Prom
     throw statusError(res.status, text.replace(/\s+/g, ' ').slice(0, 240));
   }
   if (Number(res.headers.get('content-length') ?? 0) > 30_000_000) throw new FileProblem('too-big', 413);
-  let bytes = new Uint8Array(await res.arrayBuffer());
+  const bytes = new Uint8Array(await res.arrayBuffer());
   const type = sniff(bytes);
   const image = type.startsWith('image/');
   if (size === 'thumb') {
     if (!image) throw new FileProblem('not-photo', 415);
     try {
-      const sharp = (await import('sharp')).default;
-      return { bytes: new Uint8Array(await sharp(bytes).rotate().resize({ width: 400, height: 400, fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer()), type: 'image/jpeg' };
+      return { bytes: await twoAtATime(() => jpegOf(bytes, 400, 70)), type: 'image/jpeg' };
     } catch {
-      // can't be made smaller here (HEIC on some servers): send it as it is if it's small, else a file tile
-      if (bytes.length > 600_000 || type === 'image/heic') throw new FileProblem('not-photo', 415);
+      // can't be read here: a small browser-ready photo goes as it is, anything else is a file tile
+      if (bytes.length > 600_000 || !SHOWN_AS_IS.has(type)) throw new FileProblem('not-photo', 415);
       return { bytes, type };
     }
   }
-  if (image && (bytes.length > 2_500_000 || type === 'image/heic')) {
+  if (image && (bytes.length > 2_500_000 || !SHOWN_AS_IS.has(type))) {
     try {
-      const sharp = (await import('sharp')).default;
-      bytes = new Uint8Array(await sharp(bytes).rotate().resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer());
-      return { bytes, type: 'image/jpeg' };
+      return { bytes: await twoAtATime(() => jpegOf(bytes, 2000, 80)), type: 'image/jpeg' };
     } catch {
       /* sent as it is below if it fits */
     }

@@ -9,6 +9,7 @@
    (default info@rafcarpentry.com). MS_LOGIN_API and MS_GRAPH_API override the addresses for local tests. */
 
 import { freshPart } from './mail-text';
+import { jpegOf } from './photo-jpeg';
 
 const MAILBOX = () => (process.env.MS_MAILBOX || 'info@rafcarpentry.com').trim().toLowerCase();
 const LOGIN = () => (process.env.MS_LOGIN_API || 'https://login.microsoftonline.com').replace(/\/+$/, '');
@@ -339,8 +340,7 @@ export async function attachment(id: string, att: string): Promise<{ bytes: Uint
   let outType = type;
   if (image && (bytes.length > 2_500_000 || /heic|heif/.test(type))) {
     try {
-      const sharp = (await import('sharp')).default;
-      bytes = new Uint8Array(await sharp(bytes).rotate().resize({ width: 2000, height: 2000, fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer());
+      bytes = await jpegOf(bytes, 2000, 80); // iPhone photos (HEIC) too: sharp alone can't read them
       outType = 'image/jpeg';
     } catch {
       if (bytes.length > 4_000_000) throw new OutlookError('outlook-too-big', 413, `${bytes.length}`);

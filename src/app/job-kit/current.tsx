@@ -13,6 +13,7 @@ import { EmailBox } from './mail';
 import { JobNotes } from './job-notes';
 import { GoodnotesBox } from './goodnotes';
 import { PropertyBox } from './property-box';
+import { JobMenu, SecIcon } from './job-menu';
 import { methodsFrom, PaidNote, PaymentForm, type NewPayment } from './payments';
 import { CustomerSearch, indexClients, personName, SameCustomer, type Client, type Clients } from './customers';
 import { daysBetween, rowOf, rowWords, spanWords, timelineRows, todayKey } from '@/lib/job-timeline';
@@ -659,9 +660,22 @@ function BookingsBox({
       if (err) setProblem(err);
     });
   };
+  // its word in the job's menu: the next booking ('today 10:00', 'Thu 08:00'), or 'on now' for work already going
+  const next = upcoming[0];
+  const going = next ? next.start.slice(0, 10) < today : false;
+  const nextDay = next && !going ? dayLabel(next.start.slice(0, 10)) : '';
   return (
-    <section className="mt-6 rounded-sm border border-line-strong bg-mount p-4">
-      <h2 className="text-[19px] font-[650]">In the diary</h2>
+    <section
+      id="bookings"
+      data-jsec="bookings"
+      data-jsec-note={!next ? '' : going ? 'on now' : `${nextDay === 'Today' ? 'today' : nextDay === 'Tomorrow' ? 'tmrw' : nextDay.slice(0, 3)} ${next.start.slice(11, 16)}`}
+      data-jsec-alert={next && (going || nextDay === 'Today') ? '1' : undefined}
+      className="mt-6 rounded-sm border border-line-strong bg-mount p-4"
+    >
+      <h2 className="flex items-center gap-2.5 text-[19px] font-[650]">
+        <SecIcon k="bookings" />
+        In the diary
+      </h2>
       {!loaded ? <p className="mt-2 text-[14.5px] text-muted">ServiceM8 didn’t send the schedule this time; Refresh on Current jobs to try again.</p> : null}
       {ticked ? (
         <p role="status" className="mt-2 flex flex-wrap items-center gap-x-3 text-[14.5px] leading-relaxed text-muted">
@@ -1059,7 +1073,7 @@ export function CurrentView({
   const at = STEPS.findIndex((s) => s.status === job.status);
 
   return (
-    <div className="pt-5">
+    <div className="jk-job pt-5">
       <p className="kicker">
         Current job{job.number ? ` #${job.number}` : ''}
       </p>
@@ -1098,8 +1112,13 @@ export function CurrentView({
       </div>
       {!contact && !job.email ? <p className="mt-2 text-[14px] text-faint">No phone or email on this job in ServiceM8.</p> : null}
 
-      <section className="mt-7 rounded-sm border border-line-strong bg-mount p-4">
-        <h2 className="text-[19px] font-[650]">Where it’s up to</h2>
+      <JobMenu first={job.first || job.name} />
+
+      <section id="status" data-jsec="status" className="mt-3 rounded-sm border border-line-strong bg-mount p-4">
+        <h2 className="flex items-center gap-2.5 text-[19px] font-[650]">
+          <SecIcon k="status" />
+          Where it’s up to
+        </h2>
         {/* Tap a step to move the job there (tap again to confirm); Unsuccessful branches off after Quote. */}
         <ol className="mt-3 grid grid-cols-3 gap-1.5">
           {STEPS.map((s, i) => (
@@ -1237,8 +1256,11 @@ export function CurrentView({
       <MoneyBox job={job} methods={methods?.length ? methods : methodsFrom([])} onPay={onPay} onWorkOrder={() => move('Work Order', false)} />
 
       {/* Long labels wrap instead of pushing a 320 px screen sideways. */}
-      <section className="mt-6 grid gap-3 [&_.btn]:h-auto [&_.btn]:min-h-[52px] [&_.btn]:whitespace-normal [&_.btn]:py-3 [&_.btn]:text-center [&_.btn]:leading-snug">
-        <h2 className="text-[19px] font-[650]">From here</h2>
+      <section id="more" data-jsec="more" className="mt-6 grid gap-3 [&_.btn]:h-auto [&_.btn]:min-h-[52px] [&_.btn]:whitespace-normal [&_.btn]:py-3 [&_.btn]:text-center [&_.btn]:leading-snug">
+        <h2 className="flex items-center gap-2.5 text-[19px] font-[650]">
+          <SecIcon k="more" />
+          From here
+        </h2>
         {onCustomer ? (
           <button type="button" className="btn btn-ghost w-full" onClick={onCustomer}>
             All jobs for {job.name}
@@ -1278,9 +1300,21 @@ function MoneyBox({ job, methods, onPay, onWorkOrder }: { job: CurrentJob; metho
   const [saved, setSaved] = useState<NewPayment | null>(null);
   const canAdd = Boolean(onPay) && job.status !== 'Unsuccessful';
   if (total === null && !payments?.length && !canAdd) return null;
+  // its word in the job's menu: what's left once the job is going ahead, else the quote
+  const owed = !quote && left !== null && left > 0 && !(payments === null && !job.paid);
+  const word = owed ? `${gbp(left!)} left` : total !== null ? gbp(total) : '';
   return (
-    <section id="money" className="mt-6 scroll-mt-[calc(env(safe-area-inset-top)-20px)] rounded-sm border border-line-strong bg-mount p-4">
-      <h2 className="text-[19px] font-[650]">Money</h2>
+    <section
+      id="money"
+      data-jsec="money"
+      data-jsec-note={word.replace(/\.00(?= |$)/, '')}
+      data-jsec-alert={owed && job.status !== 'Quote' ? '1' : undefined}
+      className="mt-6 scroll-mt-[calc(env(safe-area-inset-top)-20px)] rounded-sm border border-line-strong bg-mount p-4"
+    >
+      <h2 className="flex items-center gap-2.5 text-[19px] font-[650]">
+        <SecIcon k="money" />
+        Money
+      </h2>
       {total !== null || payments?.length ? (
         <dl className="mt-3 grid grid-cols-3 gap-2">
           <div>

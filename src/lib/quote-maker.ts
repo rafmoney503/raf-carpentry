@@ -1,5 +1,6 @@
 import { oneJob, type CurrentJob } from './servicem8';
 import { attachmentFile, jobNotes, jobPhotos } from './servicem8-diary';
+import { jpegOf } from './photo-jpeg';
 import { redact } from './draft-reply';
 import { jobkitRpc, syncSetUp } from './job-kit-sync-server';
 import { BOARDS } from './cworkshop-boards';
@@ -218,9 +219,8 @@ async function photoFor(uuid: string): Promise<string | null> {
   try {
     const f = await attachmentFile(uuid, 'full');
     if (!f.type.startsWith('image/')) return null;
-    const sharp = (await import('sharp')).default;
-    const jpg = await sharp(f.bytes).rotate().resize({ width: PHOTO_EDGE, height: PHOTO_EDGE, fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 80 }).toBuffer();
-    return jpg.toString('base64');
+    const jpg = await jpegOf(f.bytes, PHOTO_EDGE, 80); // iPhone photos (HEIC) too
+    return Buffer.from(jpg).toString('base64');
   } catch {
     return null;
   }

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import type { CurrentJob } from '@/lib/servicem8';
 import type { Planning, Property } from '@/lib/property';
 import { readPin } from './uploader';
+import { SecIcon } from './job-menu';
 import { post, problemText } from './sm8-post';
 
 /* "Property and customer" on a job (15 Oct 2026; one folded section since 23 Oct 2026, Raf: "the property section
@@ -171,8 +172,9 @@ export function PropertyBox({ job }: { job: CurrentJob }) {
   const chip = 'btn btn-ghost btn-sm h-auto min-h-9 whitespace-normal py-1.5 text-left leading-snug';
 
   return (
-    <section id="property" className="mt-6 scroll-mt-[calc(env(safe-area-inset-top)-20px)] rounded-sm border border-line-strong bg-mount">
-      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} data-property-toggle className="flex w-full items-center gap-3 px-4 py-3.5 text-left">
+    <section id="property" data-jsec="property" className="mt-6 scroll-mt-[calc(env(safe-area-inset-top)-20px)] rounded-sm border border-line-strong bg-mount">
+      <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} data-property-toggle data-jsec-fold className="flex w-full items-center gap-3 px-4 py-3.5 text-left">
+        <SecIcon k="property" />
         <span className="min-w-0 flex-1">
           <span className="block text-[17px] font-[650]">Property and customer</span>
           <span className="block text-[14px] leading-snug text-muted" data-property-summary>

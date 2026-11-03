@@ -6,6 +6,7 @@ import type { CurrentJob } from '@/lib/servicem8';
 import type { Marks } from './current';
 import { post, problemText } from './sm8-post';
 import { readPin } from './uploader';
+import { SecIcon } from './job-menu';
 import { label } from './parts';
 
 /* Goodnotes on the job card (26 Oct 2026, Raf: 'is there a way to connect goodnotes with jobkit so my notes go straight
@@ -404,9 +405,12 @@ export function GoodnotesBox({ job, marks, onMark }: { job: CurrentJob; marks: M
   const err = s.error ? gnProblem(s.error, s.detail) : '';
   const firstLoad = !s.at && s.busy;
   return (
-    <section id="goodnotes" className="mt-6 scroll-mt-[calc(env(safe-area-inset-top)-20px)] rounded-sm border border-line-strong bg-mount p-4" data-goodnotes>
+    <section id="goodnotes" data-jsec="goodnotes" data-jsec-note={books.length ? String(books.length) : ''} className="mt-6 scroll-mt-[calc(env(safe-area-inset-top)-20px)] rounded-sm border border-line-strong bg-mount p-4" data-goodnotes>
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[19px] font-[650]">Goodnotes</h2>
+        <h2 className="flex items-center gap-2.5 text-[19px] font-[650]">
+          <SecIcon k="goodnotes" />
+          Goodnotes
+        </h2>
         <button type="button" onClick={() => void check(true)} disabled={s.busy} className="h-9 shrink-0 px-1 font-mono text-[12.5px] text-accent underline disabled:no-underline disabled:opacity-60" data-gn-refresh>
           {s.busy ? 'Checking…' : 'Refresh'}
         </button>

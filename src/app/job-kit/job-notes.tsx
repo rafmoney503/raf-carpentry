@@ -4,6 +4,8 @@ import type { CurrentJob, Staff } from '@/lib/servicem8';
 import type { DiaryEntry, DiaryFile, DiaryKind, JobDiary, JobNote, Missing } from '@/lib/servicem8-diary';
 import { Icon } from './icons';
 import { field, label } from './parts';
+import { photoKey, photoMarks } from '@/lib/mail-text';
+import { SecIcon } from './job-menu';
 import { post, problemText } from './sm8-post';
 import { readPin } from './uploader';
 
@@ -288,13 +290,26 @@ export function Thumb({ file, onOpen }: { file: DiaryFile; onOpen: () => void })
         // eslint-disable-next-line @next/next/no-img-element
         <img src={url} alt="" className="h-full w-full object-cover" />
       ) : (
-        <span className="absolute inset-0 grid place-items-center p-1 text-center font-mono text-[10.5px] leading-tight text-faint">{state === 'offline' ? 'No signal' : state === 'none' ? file.name : ''}</span>
+        <span className="absolute inset-0 grid place-items-center p-1 text-center font-mono text-[10.5px] leading-tight text-faint">
+          {state === 'offline' ? (
+            'No signal'
+          ) : state === 'none' ? (
+            // not a photo after all (or one that can't be read here): a file to open
+            <span className="grid justify-items-center gap-1">
+              <Icon name="file" className="h-5 w-5 text-accent" />
+              <span className="line-clamp-2 [overflow-wrap:anywhere]">{file.name}</span>
+              <span className="font-sans text-[12px] text-accent">Open</span>
+            </span>
+          ) : (
+            ''
+          )}
+        </span>
       )}
     </button>
   );
 }
 
-type Shown = { file: DiaryFile; url: string; error: string } | null;
+type Shown = { file: DiaryFile; url: string; error: string; image?: boolean } | null;
 
 /* ---------- the two sections ---------- */
 
@@ -466,6 +481,12 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
   const counts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f.key, f.key === 'all' ? items.length : items.filter((x) => f.kinds.includes(x.kind)).length])) as Record<Filter, number>, [items]);
   const list = filter === 'all' ? items : items.filter((x) => FILTERS.find((f) => f.key === filter)!.kinds.includes(x.kind));
   const photos = list.filter((x) => x.kind === 'file' && x.file?.photo).map((x) => x.file!);
+  // the photos an email names ("[image: IMG_4821.jpeg]"), found among the job's attachments by name
+  const byName = useMemo(() => {
+    const m = new Map<string, DiaryFile>();
+    for (const x of items) if (x.kind === 'file' && x.file?.photo) m.set(photoKey(x.file.name), x.file);
+    return m;
+  }, [items]);
 
   /* Days, newest first; photos in a row on the same day go together in a grid. */
   /* Bookings still to come go first under Coming up (soonest first), then the diary newest first. */
@@ -492,7 +513,7 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
     setShown((s) => {
       if (!s || s.file.uuid !== file.uuid) return s; // moved on to another photo
       if ('error' in r) return { ...s, error: r.error === 'too-big' ? 'Too big to show here: open it in ServiceM8.' : problemText(r.error, r.detail) };
-      return { ...s, url: URL.createObjectURL(r.blob) };
+      return { ...s, url: URL.createObjectURL(r.blob), image: r.blob.type.startsWith('image/') };
     });
   };
   const closeFile = () => {
@@ -543,9 +564,18 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
 
   return (
     <>
-      <section id="notes" className="mt-6 scroll-mt-[calc(env(safe-area-inset-top)-20px)] rounded-sm border border-line-strong bg-mount p-4">
+      <section
+        id="notes"
+        data-jsec="notes"
+        data-jsec-note={earlier.length ? String(earlier.length + (current?.text.trim() ? 1 : 0)) : current?.text.trim() ? '1' : ''}
+        data-jsec-alert={state === 'offline' || state === 'error' ? '1' : undefined}
+        className="mt-6 scroll-mt-[calc(env(safe-area-inset-top)-20px)] rounded-sm border border-line-strong bg-mount p-4"
+      >
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-[19px] font-[650]">Notes</h2>
+          <h2 className="flex items-center gap-2.5 text-[19px] font-[650]">
+            <SecIcon k="notes" />
+            Notes
+          </h2>
           {current?.text.trim() ? (
             <button type="button" onClick={() => finish()} className="btn btn-ghost btn-sm shrink-0" data-new-note>
               {editing ? 'Done' : '+ New note'}
@@ -612,8 +642,14 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
         {listProblem ? <p className="mt-2 text-[13.5px] text-muted">{listProblem}</p> : null}
       </section>
 
-      <section id="job-diary" className="mt-6 scroll-mt-[calc(env(safe-area-inset-top)-20px)] rounded-sm border border-line-strong bg-mount">
-        <button type="button" onClick={toggle} aria-expanded={open} data-diary-toggle className="flex w-full items-center gap-3 px-4 py-3.5 text-left">
+      <section
+        id="job-diary"
+        data-jsec="diary"
+        data-jsec-note={diary ? String(items.length) : ''}
+        className="mt-6 scroll-mt-[calc(env(safe-area-inset-top)-20px)] rounded-sm border border-line-strong bg-mount"
+      >
+        <button type="button" onClick={toggle} aria-expanded={open} data-diary-toggle data-jsec-fold className="flex w-full items-center gap-3 px-4 py-3.5 text-left">
+          <SecIcon k="diary" />
           <span className="min-w-0 flex-1">
             <span className="block text-[17px] font-[650]">Job diary from ServiceM8</span>
             <span className="block text-[14px] leading-snug text-muted" data-diary-summary>
@@ -680,7 +716,7 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
                           <li key={b.id} data-entry={b.kind} className="grid grid-cols-[44px_minmax(0,1fr)] gap-x-2 border-b border-line py-2.5 last:border-b-0">
                             <span className="pt-0.5 font-mono text-[12.5px] text-faint">{b.at && d.key !== 'soon' && !((b.kind === 'payment' || b.kind === 'job') && b.at.endsWith('00:00')) ? hm(b.at) : ''}</span>
                             <div className="min-w-0 [overflow-wrap:anywhere]">
-                              <Entry item={b} soon={d.key === 'soon'} who={who} staffName={staffName} whole={Boolean(whole[b.id])} onWhole={() => setWhole((w) => ({ ...w, [b.id]: !w[b.id] }))} onFile={(f) => void openFile(f)} jobKind={job.status === 'Quote' || job.status === 'Unsuccessful' ? 'Visit' : 'Work'} />
+                              <Entry item={b} soon={d.key === 'soon'} who={who} staffName={staffName} whole={Boolean(whole[b.id])} onWhole={() => setWhole((w) => ({ ...w, [b.id]: !w[b.id] }))} onFile={(f) => void openFile(f)} photoNamed={(n) => byName.get(photoKey(n))} jobKind={job.status === 'Quote' || job.status === 'Unsuccessful' ? 'Visit' : 'Work'} />
                             </div>
                           </li>
                         ),
@@ -719,7 +755,7 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
             <p className="m-auto max-w-sm px-6 text-center text-[15px] text-on-accent">{shown.error}</p>
           ) : !shown.url ? (
             <p className="m-auto font-mono text-[13px] text-on-accent/70">Opening…</p>
-          ) : shown.file.photo ? (
+          ) : shown.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={shown.url} alt={shown.file.name} className="min-h-0 flex-1 object-contain" />
           ) : (
@@ -751,7 +787,7 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
   );
 }
 
-function Entry({ item: x, soon, who, staffName, whole, onWhole, onFile, jobKind }: { item: Item; soon: boolean; who: string; staffName: (u?: string) => string; whole: boolean; onWhole: () => void; onFile: (f: DiaryFile) => void; jobKind: 'Visit' | 'Work' }) {
+function Entry({ item: x, soon, who, staffName, whole, onWhole, onFile, photoNamed, jobKind }: { item: Item; soon: boolean; who: string; staffName: (u?: string) => string; whole: boolean; onWhole: () => void; onFile: (f: DiaryFile) => void; photoNamed: (name: string) => DiaryFile | undefined; jobKind: 'Visit' | 'Work' }) {
   const head = 'text-[13.5px] font-semibold';
   if (x.kind === 'note')
     return (
@@ -773,16 +809,35 @@ function Entry({ item: x, soon, who, staffName, whole, onWhole, onFile, jobKind 
     );
   if (x.kind === 'email' || x.kind === 'sms') {
     const what = x.kind === 'sms' ? 'Text' : 'Email';
-    const long = (x.text ?? '').length > 280 || (x.text ?? '').split('\n').length > 5;
+    const marks = photoMarks(x.text ?? '');
+    const shots = [...new Set(marks.photos.map(photoNamed).filter((f): f is DiaryFile => Boolean(f)))];
+    // a line that only named a photo shown under it goes; one ServiceM8 didn't keep stays as '[photo: name]'
+    const words = marks.text
+      .split('\n')
+      .filter((l) => {
+        const only = /^\s*\[photo: ([^\]]+)\]\s*$/.exec(l);
+        return !(only && photoNamed(only[1]));
+      })
+      .join('\n')
+      .replace(/\n{2,}/g, '\n') // the diary is a log: paragraphs one under another, no gaps
+      .trim();
+    const long = words.length > 280 || words.split('\n').length > 5;
     return (
       <>
         <p className={head}>{x.dir === 'in' ? `${what} from ${who}` : `${what} to ${who}`}</p>
         {x.subject ? <p className="mt-0.5 text-[14.5px] font-medium">{x.subject}</p> : null}
-        {x.text ? <p className={`mt-0.5 whitespace-pre-line text-[14.5px] leading-snug text-muted ${long && !whole ? 'line-clamp-5' : ''}`}>{x.text}</p> : null}
+        {words ? <p className={`mt-0.5 whitespace-pre-line text-[14.5px] leading-snug text-muted ${long && !whole ? 'line-clamp-5' : ''}`}>{words}</p> : null}
         {long ? (
           <button type="button" onClick={onWhole} className="h-8 text-[13.5px] text-accent underline">
             {whole ? 'Less' : 'Read it all'}
           </button>
+        ) : null}
+        {shots.length ? (
+          <div className="mt-1.5 grid grid-cols-3 gap-1.5 sm:grid-cols-4" data-email-photos>
+            {shots.map((f) => (
+              <Thumb key={f.uuid} file={f} onOpen={() => onFile(f)} />
+            ))}
+          </div>
         ) : null}
       </>
     );
