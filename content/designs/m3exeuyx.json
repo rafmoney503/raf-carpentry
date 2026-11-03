@@ -1,37 +1,59 @@
 {
   "code": "m3exeuyx",
   "request": "design-2026-11-ikea-pax-wardrobe-mile-end-zniq",
-  "updatedFor": "2026-11-03T20:47:25.148Z",
+  "updatedFor": "2026-11-03T21:21:15.772Z",
   "title": "IKEA PAX wardrobe with top cupboards",
   "area": "Mile End",
   "made": "2026-11-03",
   "options": [
     {
       "name": "The design",
-      "text": "Three IKEA PAX frames, 201 cm high, with mirror doors along the wall beside the door, built in with a scribed filler at the wall, a plinth panel and an end panel by the door. Above them a row of five made to measure MDF cupboards with push to open doors runs the whole width of the wall, over the door as well, with a plain panel above them up to the ceiling. Press Open the doors to see inside.",
+      "text": "Two IKEA PAX frames, 201 cm high, with three mirror doors along the wall beside the door: a 100 cm frame with two short hanging rails, and a 50 cm frame with four baskets and three shelves. They are built in with a scribed filler at the wall, a plinth panel and an end panel by the door. Above them a row of five made to measure MDF cupboards with push to open doors runs the whole width of the wall, the first three lined up with the mirror doors below and two over the door, with a plain panel above them up to the ceiling. Press Open the doors to see inside.",
       "model": {
-        "src": "/designs/m3exeuyx/a-k7w2pm.glb",
+        "src": "/designs/m3exeuyx/a-r8d3tq.glb",
         "poster": {
-          "src": "/designs/m3exeuyx/a-k7w2pm.jpg",
+          "src": "/designs/m3exeuyx/a-r8d3tq.jpg",
           "w": 1600,
           "h": 1200,
-          "alt": "3D model of three mirror door PAX wardrobes beside a panelled door, with a row of white top cupboards across the whole wall above them"
+          "alt": "3D model of a mirror door PAX wardrobe beside a panelled door, with a row of white top cupboards across the whole wall lined up with the doors below"
         },
         "shape": "tall"
       },
       "sizes": [
-        { "label": "Wall", "value": "about 2550 mm wide" },
-        { "label": "Ceiling", "value": "about 3400 mm" },
-        { "label": "PAX frames", "value": "3 frames 50 cm wide, 201 cm high, 58 cm deep" },
-        { "label": "Plinth panel", "value": "about 170 mm" },
-        { "label": "Top cupboards", "value": "5 cupboards about 504 mm wide and 650 mm high" },
-        { "label": "Panel above", "value": "from the top cupboards to the ceiling" }
+        {
+          "label": "Wall",
+          "value": "about 2550 mm wide"
+        },
+        {
+          "label": "Ceiling",
+          "value": "about 3400 mm"
+        },
+        {
+          "label": "PAX frames",
+          "value": "one 100 cm and one 50 cm, 201 cm high, 58 cm deep"
+        },
+        {
+          "label": "Inside",
+          "value": "two short hanging rails in the 100 cm frame; four baskets and three shelves in the 50 cm frame"
+        },
+        {
+          "label": "Plinth panel",
+          "value": "about 170 mm"
+        },
+        {
+          "label": "Top cupboards",
+          "value": "5 cupboards about 650 mm high, no shelves inside, doors lined up with the mirror doors"
+        },
+        {
+          "label": "Panel above",
+          "value": "from the top cupboards to the ceiling"
+        }
       ]
     }
   ],
   "notes": [
     "The sizes are taken roughly from the drawing and have not been measured yet: the wall width, ceiling height, plinth and top cupboard heights will be checked on site.",
-    "The PAX frames are IKEA's standard sizes. The fittings inside are only an example of what can go in.",
+    "The PAX frames, doors, rails and baskets are IKEA's standard sizes; the heights of the rails, baskets and shelves inside can move.",
     "The top cupboards, the fillers and the panels are made to measure in MDF.",
     "Colours on screen are a guide; the mirror doors are shown plain."
   ]
