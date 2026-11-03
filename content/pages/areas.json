@@ -97,6 +97,18 @@
       "name": "Turnpike Lane",
       "lat": 51.5903,
       "lng": -0.1028
+    },
+    {
+      "name": "Stoke Newington",
+      "lat": 51.5626,
+      "lng": -0.0747,
+      "postcode": "N16"
+    },
+    {
+      "name": "Bethnal Green",
+      "lat": 51.527,
+      "lng": -0.055,
+      "postcode": "E2"
     }
   ]
 }
