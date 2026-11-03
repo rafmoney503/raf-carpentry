@@ -1,14 +1,14 @@
-/* Rafal Solutions in daylight: a warm paper workshop, ink type and a colour for each of the five steps.
+/* Rafal Solutions in daylight (the lighter version): near-white paper, ink type and a soft pastel for each of the five steps.
    Learn is tangerine, Design violet, Make CabinetOS green, Fit Raf Carpentry blue and Run the company's yellow, the
    colour of the ball. Buttons are ink pills with the yellow ball; a word in a heading gets a highlighter stroke.
    Cards are white with 20px corners and a soft warm shadow. Bricolage / Geist / Geist Mono as before. */
 
 :root {
-  --paper: #fffaf1;
-  --paper-2: #fff3df;
+  --paper: #fffdf9;
+  --paper-2: #faf7f1;
   --surface: #ffffff;
-  --surface-2: #fdf7ec;
-  --well: #f7efe1;
+  --surface-2: #fcfaf6;
+  --well: #f4f1eb;
   --ink: #17161a;
   --ink-2: #47444d;
   --muted: #6c6872;
@@ -22,32 +22,32 @@
   --hl-edge: #e3a900;
   --live-bg: #e3f6e8;
   --live: #11753a;
-  --idea-bg: #f1ebe0;
+  --idea-bg: #f2efe9;
   --blue: #2547d0;
   --danger: #c2410c;
   --grid: rgb(23 22 26 / 0.05);
   --glass: #ffffff;
   --glass-edge: 0 1px 0 rgb(23 22 26 / 0.63) inset;
-  --shadow: 0 30px 60px -36px rgb(84 58 16 / 0.32);
+  --shadow: 0 26px 50px -34px rgb(60 50 30 / 0.22);
   --r: 20px;
   --r-sm: 12px;
 
   /* the five steps */
-  --learn: #ff6b3d;
+  --learn: #ffa284;
   --learn-ink: #c2410c;
-  --learn-bg: #ffe8de;
-  --design: #8b5cf6;
+  --learn-bg: #fff3ee;
+  --design: #bba6ff;
   --design-ink: #6d3fe0;
-  --design-bg: #efe8ff;
-  --make: #22c55e;
+  --design-bg: #f6f2ff;
+  --make: #7ddca3;
   --make-ink: #13803b;
-  --make-bg: #dff7e7;
-  --fit: #2f5bff;
+  --make-bg: #eefaf3;
+  --fit: #93abff;
   --fit-ink: #2547d0;
-  --fit-bg: #e3e9ff;
-  --run: #ffc21a;
+  --fit-bg: #f0f3ff;
+  --run: #ffd96b;
   --run-ink: #8a5d00;
-  --run-bg: #fff1bf;
+  --run-bg: #fff8df;
 
   --f-display: var(--font-bricolage), 'Arial Narrow', system-ui, sans-serif;
   --f-body: var(--font-geist), system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -245,7 +245,7 @@ textarea {
 /* a word in a heading gets a highlighter stroke, slightly tilted, as if marked by hand */
 .hl {
   color: inherit;
-  background-image: linear-gradient(100deg, rgb(255 212 59 / 0) 0.6%, rgb(255 212 59 / 0.95) 2.4%, rgb(255 212 59 / 0.85) 96%, rgb(255 212 59 / 0) 99.4%);
+  background-image: linear-gradient(100deg, rgb(255 212 59 / 0) 0.6%, rgb(255 212 59 / 0.6) 2.4%, rgb(255 212 59 / 0.5) 96%, rgb(255 212 59 / 0) 99.4%);
   background-size: 100% 0.42em;
   background-position: 0 88%;
   background-repeat: no-repeat;
@@ -1560,7 +1560,7 @@ body::before {
 .foot-planks {
   position: absolute;
   inset: 0 0 auto;
-  height: 22px;
+  height: 14px;
   display: flex;
   align-items: flex-start;
   transform: translateY(-100%);
@@ -1571,23 +1571,23 @@ body::before {
   align-self: flex-end;
 }
 .fp-learn {
-  height: 6px;
+  height: 4px;
   background: var(--learn);
 }
 .fp-design {
-  height: 10px;
+  height: 6px;
   background: var(--design);
 }
 .fp-make {
-  height: 14px;
+  height: 8px;
   background: var(--make);
 }
 .fp-fit {
-  height: 18px;
+  height: 11px;
   background: var(--fit);
 }
 .fp-run {
-  height: 22px;
+  height: 14px;
   background: var(--run);
 }
 .foot-grid {
@@ -4512,7 +4512,7 @@ body[data-search='open'] .float-pill {
   height: 32px;
   border-radius: 50%;
   background: var(--c);
-  color: #fff;
+  color: var(--ink);
   font-weight: 700;
   font-size: 14px;
   margin-bottom: 8px;
@@ -5074,7 +5074,7 @@ dialog .sp {
 .sp-opt[aria-pressed='true'] .sp-tick {
   background: var(--c);
   border-color: var(--c);
-  color: #fff;
+  color: var(--ink);
 }
 [data-c='run'] .sp-opt[aria-pressed='true'] .sp-tick {
   color: var(--ink);

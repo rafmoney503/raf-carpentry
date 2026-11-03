@@ -61,7 +61,7 @@ type RE = typeof import('three/examples/jsm/environments/RoomEnvironment.js').Ro
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const U = 0.1; // logo units to scene units
-const STEP_COLOURS = ['#ff6b3d', '#8b5cf6', '#22c55e', '#2f5bff', '#17161a']; // learn, design, make, fit, and ink
+const STEP_COLOURS = ['#ffa284', '#bba6ff', '#7ddca3', '#93abff', '#e8e3da']; // learn, design, make, fit, and a pale plank
 const R = 0.95; // ball radius
 const RAD = 0.18; // plank corner radius
 
@@ -88,7 +88,7 @@ const GRAIN = `
     float vig = smoothstep(1.35, 0.15, length((vUv - vec2(0.62,0.5))*vec2(uAspect*0.75,1.0)));
     float db = length(p - b);
     float glow = exp(-db*db*4.5);
-    vec3 col = vec3(1.0,0.98,0.945);
+    vec3 col = vec3(1.0,0.992,0.976);
     vec3 lc = mix(vec3(0.6,0.47,0.3), vec3(0.98,0.7,0.0), glow);
     col = mix(col, lc, line*(0.09 + 0.2*glow)*vig);
     col = mix(col, vec3(1.0,0.88,0.42), glow*0.12);
