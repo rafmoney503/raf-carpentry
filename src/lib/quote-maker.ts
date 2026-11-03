@@ -1,3 +1,4 @@
+import { noteClaude } from './ai-usage';
 import { oneJob, type CurrentJob } from './servicem8';
 import { attachmentFile, jobNotes, jobPhotos } from './servicem8-diary';
 import { jpegOf } from './photo-jpeg';
@@ -323,6 +324,7 @@ export async function readEnquiry(job: CurrentJob, note = '', rules: Rules = { t
     model = FALLBACK_MODEL;
     ({ res, text } = await ask(model, system, content));
   }
+  await noteClaude('quotes', model, res.status, text);
   const short = text.replace(/\s+/g, ' ').slice(0, 240);
   if (res.status === 401 || res.status === 403) throw new QuoteError('ai-key', short);
   if (/usage limit|spend limit|credit balance/i.test(text)) throw new QuoteError('ai-limit', short);

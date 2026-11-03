@@ -1,5 +1,5 @@
 import { after } from 'next/server';
-import { pinOk } from '@/lib/job-kit-server';
+import { pinGuard } from '@/lib/job-kit-server';
 import { SyncError } from '@/lib/job-kit-sync-server';
 import { conceptsRpc, conceptsSetUp, runConcept } from '@/lib/concept-maker';
 import { cleanBrief, CODE_RE, type ConceptData, type ConceptRow } from '@/lib/concept-plan';
@@ -12,17 +12,6 @@ import { cleanBrief, CODE_RE, type ConceptData, type ConceptRow } from '@/lib/co
                                             drawing already there, the note is a change to that drawing.
    { action: 'edit', id, edits, at }        Raf's changes (prices, what the customer's page shows, live) */
 export const maxDuration = 120;
-
-/* The PIN only (the Job Kit's own guard also wants the GitHub token, which previews haven't got), so Design with
-   Claude can be tried on a preview with the real Claude key and store. */
-async function pinGuard(req: Request): Promise<Response | null> {
-  if (!process.env.JOBKIT_PIN) return Response.json({ error: 'not-set-up' }, { status: 503 });
-  if (!pinOk(req.headers.get('x-job-kit-pin'))) {
-    await new Promise((r) => setTimeout(r, 700));
-    return Response.json({ error: 'wrong-pin' }, { status: 401 });
-  }
-  return null;
-}
 
 const noStore = { 'Cache-Control': 'no-store' };
 

@@ -1,3 +1,4 @@
+import { noteClaude } from '@/lib/ai-usage';
 import { noStore, potsGuard } from '@/lib/pots-server';
 
 /* Ask Claude in Money pots, behind the PIN. The page runs the conversation and its tools (recording a payment,
@@ -81,6 +82,7 @@ export async function POST(req: Request) {
   // a model this account doesn't have (yet): try the one before it
   if (res && (res.status === 404 || (res.status === 400 && /model/i.test(text) && !/usage limit|credit/i.test(text)))) ({ res, text } = await call(FALLBACK_MODEL, system, messages, tools));
   if (!res) return fail('ai-busy', 502);
+  await noteClaude('pots', MODEL(), res.status, text);
   if (res.status === 401 || res.status === 403) return fail('ai-key', 502);
   if (/usage limit|spend limit|credit balance/i.test(text)) return fail('ai-limit', 502);
   if (res.status === 429 || res.status === 529 || res.status >= 500) return fail('ai-busy', 502);

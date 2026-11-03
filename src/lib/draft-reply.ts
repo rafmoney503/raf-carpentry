@@ -1,3 +1,4 @@
+import { noteClaude } from './ai-usage';
 /* "Draft a reply" in the Job Kit (a job's Emails and texts): Claude writes the next email or text to the customer
    from what they asked for and the conversation so far, keeping to what the site promises. Raf reads it, changes
    what he wants and sends it himself through ServiceM8: nothing here sends anything.
@@ -153,6 +154,7 @@ export async function draftReply(d: DraftInput): Promise<string> {
   let { res, text } = await ask(MODEL(), d);
   // A model this account doesn't have (yet): try the one before it.
   if (res.status === 404 || (res.status === 400 && /model/i.test(text) && !/usage limit/i.test(text))) ({ res, text } = await ask(FALLBACK_MODEL, d));
+  await noteClaude('draft', MODEL(), res.status, text);
   const short = text.replace(/\s+/g, ' ').slice(0, 240);
   if (res.status === 401 || res.status === 403) throw new DraftError('ai-key', short);
   if (/usage limit|spend limit|credit balance/i.test(text)) throw new DraftError('ai-limit', short);

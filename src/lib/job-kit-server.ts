@@ -157,3 +157,14 @@ export async function guard(req: Request): Promise<Response | null> {
   }
   return null;
 }
+
+/* The PIN only, for the Job Kit routes that don't need the inbox (Design with Claude, Claude credit): the guard
+   above also wants JOBKIT_GITHUB_TOKEN, which is production only, so these work on previews too. */
+export async function pinGuard(req: Request): Promise<Response | null> {
+  if (!process.env.JOBKIT_PIN) return Response.json({ error: 'not-set-up' }, { status: 503 });
+  if (!pinOk(req.headers.get('x-job-kit-pin'))) {
+    await new Promise((r) => setTimeout(r, 700));
+    return Response.json({ error: 'wrong-pin' }, { status: 401 });
+  }
+  return null;
+}

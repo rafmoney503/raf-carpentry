@@ -43,7 +43,7 @@ export function secOfScreen(name: string): SecId | undefined {
 
 /* Which section a Today line opens. */
 export const secOfLine = (go: string): SecId =>
-  go === 'designs' ? 'designs' : go === 'posts' || go === 'jobs' || go === 'social' ? 'photos' : go === 'timeline' ? 'timeline' : go === 'whatsapp' ? 'whatsapp' : 'customers';
+  go === 'claude' ? 'todo' : go === 'designs' ? 'designs' : go === 'posts' || go === 'jobs' || go === 'social' ? 'photos' : go === 'timeline' ? 'timeline' : go === 'whatsapp' ? 'whatsapp' : 'customers';
 
 export const secClass = (s?: SecId) => (s ? `jk-sec-${s}` : '');
 

@@ -1728,7 +1728,7 @@ export function NewEnquiry({
 
 /* ---------- the morning summary ---------- */
 
-export type TodayLine = { text: string; go: 'quotes' | 'current' | 'designs' | 'posts' | 'jobs' | 'diary' | 'sm8' | 'inbox' | 'timeline' | 'whatsapp' | 'social'; urgent?: boolean; id?: string; time?: string; icon?: IconName };
+export type TodayLine = { text: string; go: 'quotes' | 'current' | 'designs' | 'posts' | 'jobs' | 'diary' | 'sm8' | 'inbox' | 'timeline' | 'whatsapp' | 'social' | 'claude'; urgent?: boolean; id?: string; time?: string; icon?: IconName };
 
 export function todayLines({
   sm8,

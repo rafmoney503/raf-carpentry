@@ -1,3 +1,4 @@
+import { noteClaude } from './ai-usage';
 import { attachment, outlookSetUp } from './outlook';
 import { jpegOf } from './photo-jpeg';
 import { redact } from './draft-reply';
@@ -193,6 +194,7 @@ export async function drawConcept(data: ConceptData, note = '', current?: Plan):
     model = FALLBACK_MODEL;
     ({ res, text } = await ask(model, content));
   }
+  await noteClaude('design', model, res.status, text);
   const short = text.replace(/\s+/g, ' ').slice(0, 240);
   if (res.status === 401 || res.status === 403) throw new ConceptError('ai-key', short);
   if (/usage limit|spend limit|credit balance/i.test(text)) throw new ConceptError('ai-limit', short);
