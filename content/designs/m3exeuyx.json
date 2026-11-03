@@ -1,0 +1,38 @@
+{
+  "code": "m3exeuyx",
+  "request": "design-2026-11-ikea-pax-wardrobe-mile-end-zniq",
+  "updatedFor": "2026-11-03T20:47:25.148Z",
+  "title": "IKEA PAX wardrobe with top cupboards",
+  "area": "Mile End",
+  "made": "2026-11-03",
+  "options": [
+    {
+      "name": "The design",
+      "text": "Three IKEA PAX frames, 201 cm high, with mirror doors along the wall beside the door, built in with a scribed filler at the wall, a plinth panel and an end panel by the door. Above them a row of five made to measure MDF cupboards with push to open doors runs the whole width of the wall, over the door as well, with a plain panel above them up to the ceiling. Press Open the doors to see inside.",
+      "model": {
+        "src": "/designs/m3exeuyx/a-k7w2pm.glb",
+        "poster": {
+          "src": "/designs/m3exeuyx/a-k7w2pm.jpg",
+          "w": 1600,
+          "h": 1200,
+          "alt": "3D model of three mirror door PAX wardrobes beside a panelled door, with a row of white top cupboards across the whole wall above them"
+        },
+        "shape": "tall"
+      },
+      "sizes": [
+        { "label": "Wall", "value": "about 2550 mm wide" },
+        { "label": "Ceiling", "value": "about 3400 mm" },
+        { "label": "PAX frames", "value": "3 frames 50 cm wide, 201 cm high, 58 cm deep" },
+        { "label": "Plinth panel", "value": "about 170 mm" },
+        { "label": "Top cupboards", "value": "5 cupboards about 504 mm wide and 650 mm high" },
+        { "label": "Panel above", "value": "from the top cupboards to the ceiling" }
+      ]
+    }
+  ],
+  "notes": [
+    "The sizes are taken roughly from the drawing and have not been measured yet: the wall width, ceiling height, plinth and top cupboard heights will be checked on site.",
+    "The PAX frames are IKEA's standard sizes. The fittings inside are only an example of what can go in.",
+    "The top cupboards, the fillers and the panels are made to measure in MDF.",
+    "Colours on screen are a guide; the mirror doors are shown plain."
+  ]
+}
