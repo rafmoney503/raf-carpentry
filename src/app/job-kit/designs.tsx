@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Icon } from './icons';
 import Mark from './mark';
 import { Area, field, label, Missing, SectionView, TalkBox } from './parts';
@@ -115,7 +115,7 @@ export function whatsappTo(mobile: string, text: string) {
 
 /* ---------- the list ---------- */
 
-export function DesignsList({ jobs, items, ready, onNew, onOpen, onLibrary }: { jobs: Job[]; items: Item[]; ready: DesignsReady; onNew: () => void; onOpen: (id: string) => void; onLibrary?: () => void }) {
+export function DesignsList({ jobs, items, ready, onNew, onOpen, onLibrary, children }: { jobs: Job[]; items: Item[]; ready: DesignsReady; onNew: () => void; onOpen: (id: string) => void; onLibrary?: () => void; children?: ReactNode }) {
   return (
     <div className="pt-7">
       <h1 className="flex items-center gap-3 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">
@@ -140,6 +140,7 @@ export function DesignsList({ jobs, items, ready, onNew, onOpen, onLibrary }: { 
           </span>
         </button>
       ) : null}
+      {children}
       {jobs.length ? (
         <ul className="mt-7 grid gap-3">
           {jobs.map((j) => {

@@ -72,7 +72,8 @@ import {
 import { CLIENTS_FRESH, CustomerSearch, fetchClients, savedClients, savedCustomers, withCurrent, type Clients, type CustomerDetail } from './customers';
 import { CustomerView } from './customer-view';
 import type { InboxMail } from '@/lib/outlook';
-import { binOnServer, customerEmails, dropHere, EmailView, enquiryFromMail, fetchInbox, firstOf, freshUnread, INBOX_FRESH, InboxList, inboxLine, inboxTodayLine, lastWith, markReadHere, openedMail, putBackHere, savedInbox, unbinOnServer, whenSaid, type Inbox } from './inbox';
+import { ConceptsBox, ConceptView, startConcept } from './concepts';
+import { binOnServer, conceptBriefFromMail, customerEmails, dropHere, EmailView, enquiryFromMail, putReplyDraft, fetchInbox, firstOf, freshUnread, INBOX_FRESH, InboxList, inboxLine, inboxTodayLine, lastWith, markReadHere, openedMail, putBackHere, savedInbox, unbinOnServer, whenSaid, type Inbox } from './inbox';
 import type { CurrentJob } from '@/lib/servicem8';
 import { StatsPageView, StatsView, statsLine } from './stats';
 import { BlogStatsView } from './blog-stats-view';
@@ -114,6 +115,7 @@ type Screen =
   | { name: 'quotes' } // rough quotes Claude worked out for new enquiries (quotes.tsx)
   | { name: 'quote'; id: string; from?: 'job' | 'home' } // one, by its ServiceM8 job
   | { name: 'quote-prices' } // Raf's price list the quotes are worked out from
+  | { name: 'concept'; id: string; mail?: string } // Design with Claude (concepts.tsx); mail: started from that email
   | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer' | 'timeline' | 'board' | 'wa' | 'design'; client?: string; chat?: string; design?: string }
   | { name: 'enquiry'; client?: string; named?: string; mail?: string; wa?: string } // client: started from a customer's page; named: from a search that found nobody; mail: from an email in the Inbox
   | { name: 'customer'; id: string; from?: 'home' } // one customer from ServiceM8 (customer-view.tsx)
@@ -155,6 +157,8 @@ function listFor(s: Screen): Screen | null {
       return s.from === 'job' ? { name: 'current' } : { name: 'quotes' };
     case 'quote-prices':
       return { name: 'quotes' };
+    case 'concept':
+      return s.mail ? { name: 'inbox' } : { name: 'designs' };
     case 'new':
       return s.design ? { name: 'designs' } : s.from ? { name: 'current' } : { name: 'kit' };
     default:
@@ -174,6 +178,10 @@ const parentOf = (s: Screen): Screen =>
         : { name: 'quotes' }
     : s.name === 'quote-prices'
     ? { name: 'quotes' }
+    : s.name === 'concept'
+    ? s.mail
+      ? { name: 'email', id: s.mail }
+      : { name: 'designs' }
     : s.name === 'wa-chat'
     ? { name: 'whatsapp' }
     : (s.name === 'enquiry' || s.name === 'new-design') && s.wa
@@ -231,7 +239,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'personal', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-blog', 'stats-page', 'kit', 'social', 'quotes', 'quote', 'quote-prices'].includes(s.name)) return s;
+    if (s && ['home', 'personal', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-blog', 'stats-page', 'kit', 'social', 'quotes', 'quote', 'quote-prices', 'concept'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -1191,6 +1199,19 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                   checkDesigns();
                   go({ name: 'library', from: 'designs' });
                 }}
+              >
+                <ConceptsBox onNew={() => go({ name: 'concept', id: startConcept() })} onOpen={(id) => go({ name: 'concept', id })} />
+              </DesignsList>
+            ) : screen.name === 'concept' ? (
+              <ConceptView
+                key={screen.id}
+                id={screen.id}
+                prices={pricesOf(quotes)}
+                onEmail={(mail, text) => {
+                  putReplyDraft(mail, text);
+                  go({ name: 'email', id: mail });
+                }}
+                onClose={back}
               />
             ) : screen.name === 'library' ? (
               <Library designs={library} models={models} kinds={kinds} hasPin={Boolean(pin)} to={sendTo ? { name: sendTo.name, first: sendTo.first, mobile: sendTo.mobile || sendTo.phone } : undefined} />
@@ -1379,6 +1400,10 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 }}
                 onJob={(id) => go({ name: 'sm8', id })}
                 onEnquiry={() => go({ name: 'enquiry', mail: screen.id })}
+                onDesign={(m) => {
+                  checkQuotes();
+                  go({ name: 'concept', id: startConcept(conceptBriefFromMail(m)), mail: screen.id });
+                }}
                 onDelete={async () => {
                   const err = await removeMail(screen.id);
                   if (!err) back();

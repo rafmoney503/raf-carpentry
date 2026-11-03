@@ -25,7 +25,7 @@ export default function LayoutShell({ children, menu }: { children: React.ReactN
       {/* Floating buttons: Get my free quote (the brief on /how-it-works) bottom-left, WhatsApp bottom-right. None on the calculator
           (they sat on the keypad on phones). Plan your project has its own WhatsApp button that sends
           the customer's brief, so neither floats there either. Your readings has its own send bar at the bottom. */}
-      {pathname?.startsWith('/editor') || pathname === '/calculator' || pathname === '/tools/spirit-level' || pathname === '/tools/workshop' || pathname?.startsWith('/tools/games') || pathname === '/tools/readings' || pathname === '/wardrobe-planner' || pathname === '/how-it-works' || pathname?.startsWith('/review') || pathname?.startsWith('/d/') ? null : (
+      {pathname?.startsWith('/editor') || pathname === '/calculator' || pathname === '/tools/spirit-level' || pathname === '/tools/workshop' || pathname?.startsWith('/tools/games') || pathname === '/tools/readings' || pathname === '/wardrobe-planner' || pathname === '/how-it-works' || pathname?.startsWith('/review') || pathname?.startsWith('/d/') || pathname?.startsWith('/ideas/') ? null : (
         pathname?.startsWith('/cost/') ? (
           /* a cost calculator page has its own quote form, so only WhatsApp floats there */
           <WhatsAppFloat />

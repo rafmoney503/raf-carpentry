@@ -21,6 +21,11 @@ export type PriceKey =
   | 'paxIkeaPerM'
   | 'drawer'
   | 'topPerM'
+  | 'openPerM'
+  | 'oakPerM'
+  | 'rack'
+  | 'riser'
+  | 'stripOut'
   | 'dayRate'
   | 'boardSetupDays'
   | 'boardDaysPerM'
@@ -41,7 +46,7 @@ export type PriceKey =
 
 export type Prices = Record<PriceKey, number> & { boards: Record<string, number> };
 
-type Row = { key: PriceKey; label: string; unit: string; group: 'Wardrobes' | 'Finished board' | 'Other jobs' | 'Rounding'; from: string; guess?: boolean; step?: number };
+type Row = { key: PriceKey; label: string; unit: string; group: 'Wardrobes' | 'Cupboards and pantries' | 'Finished board' | 'Other jobs' | 'Rounding'; from: string; guess?: boolean; step?: number };
 export const PRICE_ROWS: Row[] = [
   { key: 'plainPerM', label: 'MDF, flat doors', unit: 'a metre', group: 'Wardrobes', from: 'Your price, 1 Nov' },
   { key: 'shakerPerM', label: 'MDF, shaker doors', unit: 'a metre', group: 'Wardrobes', from: 'Your price, 1 Nov' },
@@ -49,6 +54,11 @@ export const PRICE_ROWS: Row[] = [
   { key: 'paxIkeaPerM', label: 'Their IKEA parts, roughly', unit: 'a metre', group: 'Wardrobes', from: 'Said in the message, not in your price', guess: true },
   { key: 'drawer', label: 'Each drawer inside', unit: 'each', group: 'Wardrobes', from: 'My guess', guess: true },
   { key: 'topPerM', label: 'Top cupboards over the doors', unit: 'a metre', group: 'Wardrobes', from: 'My guess', guess: true },
+  { key: 'openPerM', label: 'Open shelving or dresser (no doors)', unit: 'a metre', group: 'Cupboards and pantries', from: 'My guess: Design with Claude, 3 Nov', guess: true },
+  { key: 'oakPerM', label: 'Solid oak worktop shelf', unit: 'a metre', group: 'Cupboards and pantries', from: 'My guess', guess: true },
+  { key: 'rack', label: 'Door rack inside a door', unit: 'each', group: 'Cupboards and pantries', from: 'My guess', guess: true },
+  { key: 'riser', label: 'Step riser on a shelf', unit: 'each', group: 'Cupboards and pantries', from: 'My guess', guess: true },
+  { key: 'stripOut', label: 'Take out old units first', unit: 'a job', group: 'Cupboards and pantries', from: 'My guess', guess: true },
   { key: 'dayRate', label: 'Your day rate', unit: 'a day', group: 'Finished board', from: 'Your rate, 1 Nov' },
   { key: 'boardSetupDays', label: 'Days on every job', unit: 'days', group: 'Finished board', from: 'My guess', guess: true, step: 0.25 },
   { key: 'boardDaysPerM', label: 'Days for each metre', unit: 'days', group: 'Finished board', from: 'My guess (3.5 days for the 3.1 m LP wall)', guess: true, step: 0.25 },
@@ -75,6 +85,11 @@ export const DEFAULT_PRICES: Prices = {
   paxIkeaPerM: 400,
   drawer: 80,
   topPerM: 250,
+  openPerM: 900,
+  oakPerM: 150,
+  rack: 50,
+  riser: 20,
+  stripOut: 400,
   dayRate: 650,
   boardSetupDays: 0.5,
   boardDaysPerM: 1,

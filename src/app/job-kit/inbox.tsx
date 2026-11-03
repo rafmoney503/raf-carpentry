@@ -10,6 +10,7 @@ import { post, problemText } from './sm8-post';
 import { readPin } from './uploader';
 import { parseBrief } from './brief-paste';
 import { whatOf, type Enquiry, type TodayLine } from './current';
+import { sizesFromText, type Brief } from '@/lib/concept-plan';
 
 /* The Inbox: Raf's info@rafcarpentry.com (Microsoft 365) in the Job Kit (server: /api/job-kit/inbox and
    src/lib/outlook.ts). The newest emails, unread first to the eye; an email with its photos and the rest of its
@@ -387,6 +388,28 @@ export function enquiryFromMail(m: FullMail): Enquiry {
   };
 }
 
+/* Design with Claude from this email (concepts.tsx): what they wrote, their first name, any sizes in it, its photos. */
+export function conceptBriefFromMail(m: FullMail): Partial<Brief> {
+  const w = replyWho(m);
+  const sizes = sizesFromText(m.text);
+  // their surname out on the phone (it's kept with the design and the server only knows the first name)
+  const surnames = w.name.includes('@') ? [] : w.name.trim().split(/\s+/).slice(1).filter((x) => x.length > 1).map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const said = surnames.length ? m.text.replace(new RegExp(`\\b(${surnames.join('|')})\\b`, 'gi'), '').replace(/ {2,}/g, ' ').replace(/ +\n/g, '\n') : m.text;
+  return {
+    want: `${m.subject && !/^(re|fw|fwd):/i.test(m.subject) ? `${m.subject}\n\n` : ''}${said.trim()}`.slice(0, 3000),
+    first: firstOf(w),
+    width: sizes.width ?? 0,
+    height: sizes.height ?? 0,
+    depth: sizes.depth ? String(sizes.depth) : '',
+    mail: m.id,
+    photos: m.files.filter((f) => isPhoto(f.type)).map((f) => f.id).slice(0, 4),
+  };
+}
+/* A reply written elsewhere (Design with Claude's email) put in this email's reply box, ready to check and send. */
+export function putReplyDraft(mailId: string, text: string) {
+  keep<Draft>(DRAFTS_KEY, mailId, { text }, 40);
+}
+
 export function EmailView({
   id,
   fallback,
@@ -397,6 +420,7 @@ export function EmailView({
   onJob,
   onEnquiry,
   onDelete,
+  onDesign,
 }: {
   id: string;
   fallback?: InboxMail; // the list's copy, shown while the email comes
@@ -407,6 +431,7 @@ export function EmailView({
   onJob: (uuid: string) => void;
   onEnquiry: (m: FullMail) => void;
   onDelete: () => Promise<string>;
+  onDesign?: (m: FullMail) => void;
 }) {
   const [binSure, setBinSure] = useState(false);
   const [binBusy, setBinBusy] = useState(false);
@@ -815,6 +840,17 @@ export function EmailView({
               To: <span className="text-ink">{shownName(toWho)}</span>
               {toWho.name ? <span className="font-mono text-[12.5px] text-faint"> {toWho.email}</span> : null}
             </p>
+            {onDesign && mail && !target.mine ? (
+              <div className="jk-sec-designs">
+                <button type="button" onClick={() => onDesign(mail)} className="btn w-full bg-[var(--sec)] text-white hover:opacity-90">
+                  <svg viewBox="0 0 16 16" aria-hidden="true" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 1.5 L9.4 6.6 L14.5 8 L9.4 9.4 L8 14.5 L6.6 9.4 L1.5 8 L6.6 6.6 Z" />
+                  </svg>
+                  Design with Claude
+                </button>
+                <p className="mt-1.5 text-[13px] leading-snug text-muted">Draws options from this email, prices them from your list and gives you a link to send {calledBy || 'them'}.</p>
+              </div>
+            ) : null}
             <div className="rounded-sm border border-line-strong bg-paper px-3 py-1.5">
               <button type="button" onClick={() => setAiOpen(!aiShown)} aria-expanded={aiShown} className="flex min-h-10 w-full items-center justify-between gap-3 text-left text-[15px] font-semibold">
                 <span>Draft a reply with Claude</span>
