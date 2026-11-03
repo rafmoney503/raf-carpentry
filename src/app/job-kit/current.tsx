@@ -1,6 +1,6 @@
 'use client';
 import { useMemo, useRef, useState } from 'react';
-import type { Booking, CurrentJob, Staff, Status } from '@/lib/servicem8';
+import type { Booking, CurrentJob, Removed, Staff, Status } from '@/lib/servicem8';
 import Mark from './mark';
 import { parseBrief, stripInvisible } from './brief-paste';
 import { Icon, type IconName } from './icons';
@@ -114,6 +114,11 @@ export const sendStatus = (pin: string, uuid: string, status: Status) => post<{ 
 export const sendBooking = (pin: string, b: { job: string; start: string; end: string; staff?: string }) => post<{ booking: Booking }>(pin, { action: 'book', ...b });
 export const sendMove = (pin: string, uuid: string, start: string, end: string) => post<{ ok: true }>(pin, { action: 'move', uuid, start, end });
 export const sendCancel = (pin: string, uuid: string) => post<{ ok: true }>(pin, { action: 'cancel', uuid });
+/* A Quote job made by mistake: archived in ServiceM8 (restorable there), with its bookings still to come and, when
+   asked and it was their only job, the customer. Undo sets them all active again. */
+export type { Removed };
+export const sendRemove = (pin: string, job: string, client: boolean) => post<{ removed: Removed }>(pin, { action: 'remove', job, client });
+export const sendRestore = (pin: string, r: Removed) => post<{ ok: true }>(pin, { action: 'restore', job: r.job, bookings: r.bookings, client: r.client });
 
 /* ---------- reading a job ---------- */
 
@@ -992,6 +997,88 @@ export function CurrentList({
 
 /* ---------- one job ---------- */
 
+/* A Quote job made by mistake (Raf, 3 Nov 2026: "if i want to delete current job in jobkit which was created by mistake
+   how do i delete it"). A quiet button at the bottom of Where it's up to opens a box that says what goes, then Remove
+   it. It's ServiceM8's own delete, which only archives (restorable there), and the list shows an Undo bar after. The
+   customer goes too when ticked and this was their only job (the server checks every job they have; a customer with
+   another job on this device isn't offered at all). Not on a job with a payment. */
+function RemoveJob({ job, bookings, otherJobs, onRemove }: { job: CurrentJob; bookings: Booking[]; otherJobs: number; onRemove: (alsoClient: boolean) => Promise<string> }) {
+  const [open, setOpen] = useState(false);
+  const [client, setClient] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [fault, setFault] = useState('');
+  const box = useRef<HTMLDivElement>(null);
+  const today = localDay();
+  const now = `${today}T${new Date().toTimeString().slice(0, 5)}`;
+  const coming = bookings.filter((b) => (b.end ?? b.start) >= now);
+  const first = job.first || job.name;
+  if (!open)
+    return (
+      <button
+        type="button"
+        data-remove-job
+        onClick={() => {
+          setOpen(true);
+          setFault('');
+          requestAnimationFrame(() => box.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
+        }}
+        className="mt-2 h-10 w-full text-[14px] text-muted underline underline-offset-2"
+      >
+        Created by mistake? Remove it
+      </button>
+    );
+  const remove = () => {
+    setBusy(true);
+    setFault('');
+    void onRemove(otherJobs === 0 && client).then((err) => {
+      // on success the screen goes back; if not, it stays open with the reason
+      if (err) {
+        setFault(err);
+        setBusy(false);
+      }
+    });
+  };
+  return (
+    <div ref={box} data-remove-box className="mt-3 scroll-mb-24 rounded-sm border border-dashed border-ink bg-paper p-3.5">
+      <p className="text-[16px] font-semibold">Remove this job?</p>
+      <p className="mt-1 text-[14.5px] leading-relaxed text-muted">For a job made by mistake. It goes off the Job Kit and is archived in ServiceM8, where it can be brought back. You get an Undo here too.</p>
+      {coming.length ? (
+        <p className="mt-2 text-[14.5px] leading-relaxed">
+          {coming.length === 1
+            ? `Its ${kindOf(job).toLowerCase()} ${dayLabel(coming[0].start.slice(0, 10)).replace(/^(Today|Tomorrow)$/, (d) => d.toLowerCase())} at ${hm(coming[0].start)} is cancelled too.`
+            : `Its ${coming.length} bookings still to come are cancelled too.`}
+        </p>
+      ) : null}
+      {otherJobs > 0 ? (
+        <p className="mt-2 text-[14.5px] leading-relaxed">
+          {first} stays as a customer: {otherJobs === 1 ? 'there’s another job' : `there are ${otherJobs} other jobs`} for them.
+        </p>
+      ) : (
+        <label className="mt-3 flex items-start gap-2.5 text-[15px] leading-snug">
+          <input type="checkbox" data-remove-client checked={client} onChange={(e) => setClient(e.target.checked)} disabled={busy} className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--color-ink)]" />
+          <span>
+            Remove {job.name} from your customers too
+            <span className="mt-0.5 block text-[13.5px] text-muted">Only if this is their only job in ServiceM8. If they have older ones, they stay.</span>
+          </span>
+        </label>
+      )}
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button type="button" data-remove-yes disabled={busy} onClick={remove} className="min-h-11 rounded-sm border border-ink bg-ink px-3 text-[14.5px] font-semibold text-on-accent disabled:opacity-60">
+          {busy ? 'Removing…' : 'Remove it'}
+        </button>
+        <button type="button" disabled={busy} onClick={() => setOpen(false)} className="btn btn-ghost btn-sm min-h-11">
+          Keep it
+        </button>
+      </div>
+      {fault ? (
+        <p role="alert" className="mt-2.5 text-[14px] leading-relaxed text-ink">
+          {fault}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 const STEPS: { status: Status; name: string }[] = [
   { status: 'Quote', name: 'Quote' },
   { status: 'Work Order', name: 'Work Order' },
@@ -1023,6 +1110,8 @@ export function CurrentView({
   info,
   methods,
   onPay,
+  otherJobs = 0,
+  onRemove,
 }: {
   job: CurrentJob;
   marks: Marks;
@@ -1048,6 +1137,8 @@ export function CurrentView({
   info?: { line: string; subject: string; open: () => void }; // their latest email in the info@ Inbox
   methods?: string[]; // how payments come in, for Add a payment (payments.tsx methodsFrom)
   onPay?: (p: NewPayment) => Promise<string>;
+  otherJobs?: number; // the customer's other jobs on this device (Current jobs and customers opened)
+  onRemove?: (alsoClient: boolean) => Promise<string>; // a Quote job made by mistake: '' when it's gone, else why not
 }) {
   const st = stage(job, marks);
   const [text] = stageText(job, marks);
@@ -1217,7 +1308,10 @@ export function CurrentView({
             </>
           ) : null}
         </div>
-        <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint">Moving a job here moves it in ServiceM8 too. Nothing is ever deleted there.</p>
+        {job.status === 'Quote' && onRemove && !job.payments?.length ? <RemoveJob job={job} bookings={bookings} otherJobs={otherJobs} onRemove={onRemove} /> : null}
+        <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint">
+          Moving a job here moves it in ServiceM8 too. Nothing is ever deleted there{job.status === 'Quote' && onRemove ? ': a job removed is only archived' : ''}.
+        </p>
       </section>
 
       <JobNotes job={job} staff={staff} />

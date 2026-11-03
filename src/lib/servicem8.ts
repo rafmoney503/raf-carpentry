@@ -5,9 +5,9 @@ import { randomUUID } from 'crypto';
    account's API key (Vercel env SERVICEM8_API_KEY, full access; needs the Starter plan or above).
    Customer details only travel phone <-> this server <-> ServiceM8: never to the inbox, the website pages or
    the repo. The diary is ServiceM8's own schedule: each booking (a "job activity" with a start and an end) belongs
-   to a job; the Job Kit reads them from yesterday on, and can add, move and cancel one. Cancelling is the only
-   removal anywhere here, and ServiceM8 only archives the booking (active 0, restorable); jobs, clients and
-   payments are never deleted. API: https://api.servicem8.com/api_1.0, X-API-Key
+   to a job; the Job Kit reads them from yesterday on, and can add, move and cancel one. Nothing is ever deleted:
+   cancelling a booking and removing a Quote job made by mistake (removeJob, 3 Nov 2026) are ServiceM8's own
+   delete, which only archives (active 0, restorable); payments are never touched. API: https://api.servicem8.com/api_1.0, X-API-Key
    header, OData-style $filter ("active eq 1 and status eq 'Quote'"), new records return their uuid in the
    x-record-uuid header (or take the uuid we send). SERVICEM8_API overrides the address for local tests. */
 
@@ -55,7 +55,7 @@ export type Client = { uuid: string; name: string; address: string; people: Pers
 
 export class Sm8Error extends Error {
   constructor(
-    public code: 'sm8-down' | 'sm8-key' | 'sm8-forbidden' | 'sm8-busy' | 'sm8-error' | 'sm8-bad' | 'sm8-gone',
+    public code: 'sm8-down' | 'sm8-key' | 'sm8-forbidden' | 'sm8-busy' | 'sm8-error' | 'sm8-bad' | 'sm8-gone' | 'sm8-not-quote' | 'sm8-paid',
     public status: number,
     public detail = '',
   ) {
@@ -499,6 +499,75 @@ export async function createEnquiry(e: { name: string; mobile: string; email: st
 
 export async function setStatus(uuid: string, status: Status) {
   await call(`job/${uuid}.json`, { method: 'POST', body: { status } });
+}
+
+/* ---------- a job made by mistake ---------- */
+
+/* Raf, 3 Nov 2026: "if i want to delete current job in jobkit which was created by mistake how do i delete it".
+   Removing is ServiceM8's own delete, which only archives (active 0, hidden in ServiceM8, still there); setting active
+   back to 1 restores it (developer.servicem8.com, Delete a Job). Only a Quote job with no payments can go, so nothing
+   with money or work on it is ever taken away from here. Its bookings still to come go with it (the Diary would
+   otherwise keep a visit for a job that isn't there), and, if Raf asks, the customer too, but only when this was their
+   only job in ServiceM8 (any status, any age). Everything archived is handed back so Undo can restore it. */
+export type Removed = { job: string; bookings: string[]; client: string; clientName: string; others: number };
+
+/* A record even when archived (getOne leaves those out), or undefined if ServiceM8 has none (404). */
+async function anyOne(path: string): Promise<Row | undefined> {
+  try {
+    return rows((await call(path)).data)[0];
+  } catch (e) {
+    if (e instanceof Sm8Error && e.code === 'sm8-error' && /^404\b/.test(e.detail)) return undefined;
+    throw e;
+  }
+}
+
+const londonNow = () => new Date().toLocaleString('sv-SE', { timeZone: 'Europe/London' }).replace(' ', 'T').slice(0, 16);
+
+export async function removeJob(uuid: string, alsoClient: boolean): Promise<Removed> {
+  const j = await anyOne(`job/${uuid}.json`);
+  if (!j) throw new Sm8Error('sm8-gone', 404, 'job');
+  const live = str(j.active) !== '0';
+  if (live && str(j.status) !== 'Quote') throw new Sm8Error('sm8-not-quote', 409, str(j.status));
+  if (live) {
+    const paid = await list('jobpayment.json', `active eq 1 and job_uuid eq '${uuid}'`).catch((): Row[] => []);
+    if (paid.some((p) => str(p.active) !== '0' && str(p.job_uuid) === uuid)) throw new Sm8Error('sm8-paid', 409);
+  }
+  // Its bookings still to come (a visit booked on it): archived too, so the Diary and ServiceM8's schedule lose them.
+  const now = londonNow();
+  const acts = await list('jobactivity.json', `active eq 1 and job_uuid eq '${uuid}'`).catch((): Row[] => []);
+  const coming = acts
+    .filter((a) => str(a.job_uuid) === uuid && str(a.active) !== '0' && on(a.activity_was_scheduled) && !on(a.activity_was_automated))
+    .map(booking)
+    .filter((b): b is Booking => b !== null && (b.end ?? b.start) >= now);
+  const bookings: string[] = [];
+  for (const b of coming) {
+    await call(`jobactivity/${b.uuid}.json`, { method: 'DELETE' });
+    bookings.push(b.uuid);
+  }
+  if (live) await call(`job/${uuid}.json`, { method: 'DELETE' });
+
+  const cu = str(j.company_uuid);
+  let client = '';
+  let clientName = '';
+  let others = 0;
+  if (cu) {
+    const company = await getOne(`company/${cu}.json`).catch(() => undefined);
+    clientName = str(company?.name);
+    // can't tell (ServiceM8 didn't answer): counted as having others, so the customer stays
+    others = (await listAll('job.json', `active eq 1 and company_uuid eq '${cu}'`).catch((): Row[] => [{ uuid: '?' }])).filter((x) => str(x.uuid) !== uuid && str(x.active) !== '0').length;
+    if (alsoClient && company && others === 0) {
+      await call(`company/${cu}.json`, { method: 'DELETE' });
+      client = cu;
+    }
+  }
+  return { job: uuid, bookings, client, clientName, others };
+}
+
+/* Undo: the customer first (a job needs its client), then the job, then its bookings. */
+export async function restoreJob(uuid: string, bookings: string[], client: string) {
+  if (client) await call(`company/${client}.json`, { method: 'POST', body: { active: '1' } });
+  await call(`job/${uuid}.json`, { method: 'POST', body: { active: '1' } });
+  for (const b of bookings) await call(`jobactivity/${b}.json`, { method: 'POST', body: { active: '1' } });
 }
 
 /* ---------- the diary: bookings in ServiceM8's schedule ---------- */
