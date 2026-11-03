@@ -1,8 +1,8 @@
 import OpenSketch from './OpenSketch';
 import StepsMark from './StepsMark';
 
-/* A card that opens the 'Sketch my system' planner, with the steps logo being built one step at a time beside it.
-   Sits just above the bottom band on Systems, Trades and How it works. */
+/* A card that opens Start a project (the seven questions), with the steps logo being built one step at a time beside
+   it. Sits just above the bottom band on Systems, Trades and How it works. */
 
 export default function SketchCard() {
   return (
@@ -13,14 +13,14 @@ export default function SketchCard() {
             <StepsMark play="build" roomy delay={0.6} />
           </div>
           <div className="sketch-text">
-            <p className="kicker">60 seconds</p>
+            <p className="kicker">About a minute</p>
             <h2 className="h3" id="sketch-card-title">
-              Sketch my system
+              Start a project
             </h2>
-            <p className="body">Tap what eats your time and the parts of your system appear, one at a time. Then send it to me.</p>
+            <p className="body">Seven quick questions: what you&apos;d like built, what you use now and what eats your time. Then it comes straight to me.</p>
             <OpenSketch className="btn">
               <span className="dot" aria-hidden="true" />
-              Sketch my system in 60 seconds
+              Start a project
             </OpenSketch>
           </div>
         </div>

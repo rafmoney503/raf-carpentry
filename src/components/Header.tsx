@@ -79,7 +79,7 @@ export default function Header() {
   };
   const keep = () => window.clearTimeout(closeTimer.current);
 
-  const isHere = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  const isHere = (item: MenuItem) => [item.href, ...(item.also ?? [])].some((href) => pathname === href || pathname.startsWith(`${href}/`));
 
   return (
     <header className="site-head" onPointerEnter={(e) => e.pointerType === 'mouse' && replayLogo()}>
@@ -95,8 +95,8 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`nav-link${isHere(item.href) ? ' here' : ''}${panel?.href === item.href ? ' open' : ''}`}
-                aria-current={isHere(item.href) ? 'page' : undefined}
+                className={`nav-link${isHere(item) ? ' here' : ''}${panel?.href === item.href ? ' open' : ''}`}
+                aria-current={isHere(item) ? 'page' : undefined}
                 onPointerEnter={hoverIn(item)}
                 onFocus={(e) => {
                   if (e.currentTarget.matches(':focus-visible')) {
@@ -167,19 +167,19 @@ export default function Header() {
         <nav id="mobile-menu" className="mobile-menu" aria-label="Main">
           <div className="wrap">
             <MenuSearch q={menuQ} setQ={setMenuQ} onDone={() => setOpen(false)} />
-            {!menuQ.trim() && [...MENU, CONTACT_ITEM].map((item) => {
+            {!menuQ.trim() && [...MENU, CONTACT_ITEM].map((item, n) => {
               const tagsOpen = expanded === item.href;
               return (
                 <div key={item.href} className="mm-item">
                   <div className="mm-row">
-                    <Link href={item.href} className={`mm-link${isHere(item.href) ? ' here' : ''}`} aria-current={isHere(item.href) ? 'page' : undefined} onClick={() => setOpen(false)}>
+                    <Link href={item.href} className={`mm-link${isHere(item) ? ' here' : ''}`} aria-current={isHere(item) ? 'page' : undefined} onClick={() => setOpen(false)}>
                       {item.label}
                     </Link>
                     <button
                       type="button"
                       className="mm-plus"
                       aria-expanded={tagsOpen}
-                      aria-controls={`mm-${item.href.slice(1)}`}
+                      aria-controls={`mm-${n}`}
                       aria-label={`${tagsOpen ? 'Hide' : 'Show'} the sections on ${item.label}`}
                       onClick={() => setExpanded(tagsOpen ? null : item.href)}
                     >
@@ -187,7 +187,7 @@ export default function Header() {
                     </button>
                   </div>
                   {tagsOpen ? (
-                    <div id={`mm-${item.href.slice(1)}`} className="tags mm-tags">
+                    <div id={`mm-${n}`} className="tags mm-tags">
                       {item.tags.map((t) => (
                         <Link key={t.id} href={tagHref(item, t)} className="tag" onClick={() => setOpen(false)}>
                           <span aria-hidden="true">#</span>
@@ -199,8 +199,9 @@ export default function Header() {
                 </div>
               );
             })}
-            <Link href="/contact" className="btn" style={{ marginTop: 18, width: '100%' }} onClick={() => setOpen(false)}>
-              Tell me the problem
+            <Link href="/start" className="btn" style={{ marginTop: 18, width: '100%' }} onClick={() => setOpen(false)}>
+              <span className="dot" aria-hidden="true" />
+              Start a project
             </Link>
           </div>
         </nav>

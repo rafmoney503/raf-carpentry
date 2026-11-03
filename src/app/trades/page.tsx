@@ -4,10 +4,10 @@ import PageHeader from '@/components/PageHeader';
 import CtaBand from '@/components/CtaBand';
 import SketchCard from '@/components/SketchCard';
 import OpenSketch from '@/components/OpenSketch';
-import { MENU } from '@/lib/menu';
+import { PAGES } from '@/lib/menu';
 import { TRADES, statusClass } from '@/lib/content';
 
-const item = MENU.find((m) => m.href === '/trades')!;
+const item = PAGES.find((m) => m.href === '/trades')!;
 
 export const metadata: Metadata = {
   title: 'Trades',
@@ -50,7 +50,7 @@ export default function Trades() {
             </div>
             <div className="hero-actions" style={{ marginTop: 20 }}>
               <OpenSketch className="btn" preset={{ trade: t.trade }}>
-                Sketch mine
+                Start mine
               </OpenSketch>
               {t.link ? (
                 <Link href={t.link.href} className="btn btn-ghost">

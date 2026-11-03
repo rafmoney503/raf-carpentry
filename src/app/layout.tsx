@@ -4,7 +4,7 @@ import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import SystemSketch from '@/components/SystemSketch';
+import StartSheet from '@/components/start/StartSheet';
 import MotionObserver from '@/components/MotionObserver';
 import { ADDRESS, COMPANY, COMPANY_NO, PHONE_DISPLAY, SITE_URL, CABINETOS_URL, RAFCARPENTRY_URL } from '@/lib/site';
 
@@ -14,9 +14,9 @@ const bricolage = Bricolage_Grotesque({ subsets: ['latin'], variable: '--font-br
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist', display: 'swap' });
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono', weight: ['400', '500'], display: 'swap' });
 
-const title = 'Rafal Solutions: systems for trade businesses, built by a carpenter';
+const title = 'Rafal Solutions: software for people who build things';
 const description =
-  'Quoting, enquiries, diary, payments and reviews on your phone, connected to ServiceM8. Built and tested on a real London carpentry business. Mockup in 2 days.';
+  'Five tools for a whole job, made by a London carpenter: learn 3D, design in SketchUp, make with CabinetOS, fit with free phone tools, and run your business with a system built for you.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -31,7 +31,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#08090a',
+  themeColor: '#fffaf1',
 };
 
 const jsonLd = {
@@ -64,7 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Header />
         <main id="main">{children}</main>
         <Footer />
-        <SystemSketch />
+        <StartSheet />
         <MotionObserver />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <Analytics />

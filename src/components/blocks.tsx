@@ -166,7 +166,7 @@ export function FlowSection() {
           <strong>0×</strong>
           <span className="small muted">Their details. I read, check and press send.</span>
         </div>
-        <OpenSketch className="btn">Sketch this for my trade</OpenSketch>
+        <OpenSketch className="btn">Start one for my trade</OpenSketch>
       </aside>
     </div>
   );

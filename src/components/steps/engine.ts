@@ -8,7 +8,7 @@
    - mix: it jumps high, the planks jumble into a random pile under it; next jump they snap back into steps
      (the 'Start here' band)
    - build: the planks are pulled out from under it one at a time, then slide back in as it jumps up each one
-     (the 'Sketch my system' card)
+     (the 'Start a project' card)
    Units are the logo's own 100 x 100 box. */
 
 const G = 900;

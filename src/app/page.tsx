@@ -3,15 +3,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 import OpenSketch from '@/components/OpenSketch';
 import CtaBand from '@/components/CtaBand';
-import SystemsBand from '@/components/SystemsBand';
+import PostCard from '@/components/PostCard';
 import { TodayMock } from '@/components/blocks';
 import HeroSteps from '@/components/home/HeroSteps';
 import EnquiryClimb from '@/components/home/EnquiryClimb';
+import StepsLadder from '@/components/home/StepsLadder';
 import TiltCard from '@/components/home/TiltCard';
 import CountUp from '@/components/home/CountUp';
 import ScrollZoom from '@/components/home/ScrollZoom';
-import TradesRow from '@/components/home/TradesRow';
+import { POSTS } from '@/content/blog/posts';
 import { IMG } from '@/lib/site';
+import { STEPS5 } from '@/lib/steps';
 
 /* Words that rise into place one after another when the page opens (CSS only, so they are there without JavaScript
    and stay still for people who ask for less motion). */
@@ -38,7 +40,7 @@ const rise = (d: number) => ({ '--d': `${d}s` }) as React.CSSProperties;
 export default function Home() {
   return (
     <>
-      {/* Hero: the 3D steps behind the words */}
+      {/* Hero: the 3D steps in the five colours behind the words */}
       <section id="top" className="nh" aria-labelledby="nh-title">
         <HeroSteps />
         <div className="wrap nh-text">
@@ -48,25 +50,74 @@ export default function Home() {
             </p>
             <h1 className="h1 nh-title" id="nh-title">
               <span className="ln">
-                <Words text="Systems for trade businesses." delay={0.12} />
+                <Words text="Software for people who" delay={0.12} />
               </span>{' '}
-              <span className="ln hl">
-                <Words text="Built by a carpenter." delay={0.42} />
+              <span className="ln">
+                <span className="hl">
+                  <Words text="build things." delay={0.42} />
+                </span>
               </span>
             </h1>
             <p className="lead nh-lead nh-in" style={rise(0.75)}>
-              I turn your quoting, chasing and paperwork into simple phone tools, connected to ServiceM8 and tested on my own jobs first.
+              Five tools that cover a whole job, from your first 3D click to a fitted, paid-for wardrobe. Made in a working London workshop by a carpenter of 22 years, and used on his own jobs first.
             </p>
             <div className="nh-actions nh-in" style={rise(0.9)}>
               <OpenSketch className="btn">
                 <span className="dot" aria-hidden="true" />
-                Sketch my system in 60 seconds
+                Start a project
               </OpenSketch>
-              <Link href="#enquiry" className="btn btn-ghost">
-                See one enquiry, start to finish
+              <Link href="#steps" className="btn btn-ghost">
+                See the five steps
               </Link>
             </div>
+            <nav className="nh-ladder nh-in" style={rise(1.05)} aria-label="The five steps">
+              {STEPS5.map((s) => (
+                <Link key={s.id} href={`#${s.id}`} className="nh-rung" data-c={s.id}>
+                  <i aria-hidden="true" />
+                  <span>{s.verb}</span>
+                </Link>
+              ))}
+            </nav>
           </div>
+        </div>
+      </section>
+
+      {/* The five steps: a staircase of cards, the ball hops from plank to plank */}
+      <section className="section five" id="steps" aria-labelledby="five-title">
+        <div className="wrap">
+          <div className="five-head" data-reveal>
+            <p className="kicker">Five steps, one workshop</p>
+            <h2 className="h2" id="five-title">
+              Every step of a job, <span className="hl">covered.</span>
+            </h2>
+            <p className="whisper">Start wherever you are. Three of the five are free to use.</p>
+          </div>
+          <StepsLadder />
+        </div>
+      </section>
+
+      {/* One job through all five */}
+      <section className="section chain" aria-labelledby="chain-title">
+        <div className="wrap">
+          <div className="five-head" data-reveal>
+            <p className="kicker">One job, start to finish</p>
+            <h2 className="h2" id="chain-title">
+              Each tool hands the job <span className="hl">to the next.</span>
+            </h2>
+            <p className="whisper">Nothing is typed twice. That&apos;s how Raf Carpentry&apos;s own wardrobes are made.</p>
+          </div>
+          <ol className="chain-row">
+            {STEPS5.map((s, i) => (
+              <li key={s.id} className="chain-step" data-c={s.id} data-reveal style={rise(i * 0.08)}>
+                <span className="chain-dot" aria-hidden="true">
+                  {i + 1}
+                </span>
+                <span className="chain-verb">{s.verb}</span>
+                <b>{s.flow.title}</b>
+                <span className="chain-sub">{s.flow.sub}</span>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
@@ -74,27 +125,27 @@ export default function Home() {
       <section className="nf" aria-label="In numbers">
         <div className="wrap">
           <div className="nf-row">
-            <div className="nf-fact" data-reveal>
+            <div className="nf-fact" data-reveal data-c="learn">
               <b>
                 <CountUp to={22} />
                 <i>+</i>
               </b>
               <span>Years on the tools in London: wardrobes, kitchens, doors, floors</span>
             </div>
-            <div className="nf-fact" data-reveal style={rise(0.08)}>
+            <div className="nf-fact" data-reveal data-c="make" style={rise(0.08)}>
+              <b>
+                3<i> of 5</i>
+              </b>
+              <span>Free to use: Build It in 3D, Workshop Tools and the CabinetOS free plan</span>
+            </div>
+            <div className="nf-fact" data-reveal data-c="fit" style={rise(0.16)}>
               <b>
                 <CountUp to={9} />
                 <i>%</i>
               </b>
               <span>Waste on the CabinetOS demo job: 10 boards, 85 parts nested</span>
             </div>
-            <div className="nf-fact" data-reveal style={rise(0.16)}>
-              <b>
-                <CountUp to={31} />
-              </b>
-              <span>Every finished job on rafcarpentry.com in 3D, to turn and open</span>
-            </div>
-            <div className="nf-fact" data-reveal style={rise(0.24)}>
+            <div className="nf-fact" data-reveal data-c="run" style={rise(0.24)}>
               <b>0</b>
               <span>Retyping, from a website brief to a ServiceM8 job, photos included</span>
             </div>
@@ -102,11 +153,37 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Step 5, Run: built for you */}
+      <section className="run-intro" id="run-more" aria-labelledby="run-title">
+        <div className="wrap run-intro-in" data-reveal>
+          <p className="kicker">
+            <span className="run-chip">05 · Run</span> Built for you
+          </p>
+          <h2 className="h2" id="run-title">
+            Systems for trade businesses, <span className="hl">built by a carpenter.</span>
+          </h2>
+          <p className="lead" style={{ maxWidth: '50ch' }}>
+            Websites, apps and systems joined up with what you already use, like ServiceM8. Here is one enquiry going through mine.
+          </p>
+          <div className="tags">
+            <Link href="/systems" className="tag">
+              <span aria-hidden="true">#</span>Systems running today
+            </Link>
+            <Link href="/servicem8" className="tag">
+              <span aria-hidden="true">#</span>ServiceM8
+            </Link>
+            <Link href="/trades" className="tag">
+              <span aria-hidden="true">#</span>Trades
+            </Link>
+            <Link href="/paint-schedule" className="tag">
+              <span aria-hidden="true">#</span>Paint schedule
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* One enquiry: the ball climbs eight steps as the page scrolls */}
       <EnquiryClimb />
-
-      {/* What a system does: the two moving scenes taking turns */}
-      <SystemsBand />
 
       {/* Running today */}
       <section className="section" id="running">
@@ -163,6 +240,28 @@ export default function Home() {
         </div>
       </section>
 
+      {/* From the blog */}
+      <section className="section home-blog" aria-labelledby="hb-title">
+        <div className="wrap">
+          <div className="hb-head" data-reveal>
+            <div>
+              <p className="kicker">Notes from the workshop</p>
+              <h2 className="h2" id="hb-title">
+                Everyday problems, <span className="hl">made into tools.</span>
+              </h2>
+            </div>
+            <Link href="/blog" className="link-more">
+              All posts <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+          <div className="post-grid">
+            {POSTS.slice(0, 3).map((p) => (
+              <PostCard key={p.slug} post={p} />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Tested on my own jobs */}
       <section className="section na" aria-labelledby="na-title">
         <div className="wrap na-row">
@@ -172,11 +271,14 @@ export default function Home() {
             </div>
           </ScrollZoom>
           <div className="na-text">
+            <p className="kicker" data-reveal>
+              A carpenter built this. It actually works.
+            </p>
             <h2 className="h2" id="na-title" data-reveal>
               Tested on my own jobs <span className="hl">first.</span>
             </h2>
             <p className="lead" data-reveal style={rise(0.08)}>
-              Wardrobes, kitchens, doors and floors, across London. Every system on this site runs Raf Carpentry before it runs your business.
+              Wardrobes, kitchens, doors and floors, across London. Every tool on this site runs Raf Carpentry before it runs your business.
             </p>
             <Link href="/about" className="link-more" data-reveal style={rise(0.16)}>
               About me <span aria-hidden="true">→</span>
@@ -184,9 +286,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Who I build for */}
-      <TradesRow />
 
       <CtaBand />
     </>

@@ -1,4 +1,6 @@
-import { CONTACT_ITEM, MENU } from './menu';
+import { BLOG_ITEM, CONTACT_ITEM, PAGES, START_ITEM, tagHref } from './menu';
+import { STEPS5 } from './steps';
+import { POSTS } from '@/content/blog/posts';
 import { FAQ, INTEGRATIONS, TRADES } from './content';
 import { CABINETOS_URL } from './site';
 
@@ -63,6 +65,14 @@ const SECTION_WORDS: Record<string, string> = {
   'next-steps': 'after send reply visit mockup next',
 };
 
+const STEP_WORDS: Record<string, string> = {
+  learn: 'learn 3d lessons course kids children beginners free sketchup basics mouse zoom draw push pull school',
+  design: 'sketchup extension plugin design draw units components dynamic',
+  make: 'cut list cutlist boards sheet nesting waste drawings make workshop',
+  fit: 'tools hinge hinges drawer runners level spirit unit sizes fitting site phone free calculator',
+  run: 'website app system systems business servicem8 automation quote quotes',
+};
+
 const words = (s: string) => s.toLowerCase().replace(/[’']/g, '').split(/[^a-z0-9]+/).filter(Boolean).join(' ');
 
 /* Rafal wants the search to lead with CabinetOS and the systems running today, and to keep decorating in the
@@ -79,10 +89,14 @@ function buildIndex(): Entry[] {
   const out: Entry[] = [];
   const add = (h: Hit, extra = '') => out.push({ ...h, titleWords: words(h.title), words: words(`${h.title} ${h.sub} ${extra}`), boost: weight(h) });
 
-  for (const m of [...MENU, CONTACT_ITEM]) {
+  for (const m of [...PAGES, START_ITEM, BLOG_ITEM, CONTACT_ITEM]) {
     add({ kind: 'page', title: m.label, sub: `${m.title}.`, href: m.href }, `${m.kicker} ${m.line}`);
-    for (const t of m.tags) add({ kind: 'section', title: `# ${t.label}`, sub: `On ${m.label}`, href: `${m.href}#${t.id}` }, SECTION_WORDS[t.id] ?? '');
+    for (const t of m.tags) add({ kind: 'section', title: `# ${t.label}`, sub: `On ${m.label}`, href: tagHref(m, t) }, SECTION_WORDS[t.id] ?? '');
   }
+  // the five steps: four are their own sites
+  for (const st of STEPS5.filter((x) => x.id !== 'make')) // CabinetOS is already in the list above
+    add({ kind: 'system', title: st.name, sub: `${st.verb}: ${st.line}`, href: st.href, external: st.external }, `${st.verb} ${st.badge} ${st.points.join(' ')} ${STEP_WORDS[st.id]}`);
+  for (const p of POSTS) add({ kind: 'page', title: p.title, sub: `Blog: ${p.summary}`, href: `/blog/${p.slug}` }, 'blog post notes');
   for (const it of HERO_ITEMS) {
     if (!it.href || it.k === 'Trade') continue;
     add({ kind: 'system', title: it.title, sub: it.sub, href: it.href, external: it.href.startsWith('http') }, it.words);
@@ -169,7 +183,7 @@ export function siteSearch(raw: string, max = 5): Hit[] {
   });
   let hits: Hit[] = ranked.slice(0, sum ? max - 2 : max - 1);
   if (sum) hits = [sum, ...hits];
-  if (hits.length < 2) hits.push({ kind: 'sketch', title: 'Sketch my system', sub: 'The 60-second planner, with your words in it' });
+  if (hits.length < 2) hits.push({ kind: 'sketch', title: 'Start a project', sub: 'Seven quick questions, with your words in it' });
   const short = q.length > 22 ? `${q.slice(0, 21)}…` : q;
   hits.push({ kind: 'send', title: `Send “${short}” to Rafal`, sub: 'Lands in his ServiceM8 as a job' });
   return hits.slice(0, max);

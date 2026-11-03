@@ -21,8 +21,8 @@ export default function Contact() {
         <div className="wrap contact-row">
           <div className="contact-text">
             <p className="kicker">Send a message</p>
-            <h2 className="h2" style={{ color: '#fff' }}>
-              Straight into my <span style={{ color: 'var(--hl)' }}>ServiceM8.</span>
+            <h2 className="h2">
+              Straight into my <span className="hl">ServiceM8.</span>
             </h2>
             <p>It lands as a job, the same way the systems I build work, and you see exactly what happened once you press send.</p>
           </div>

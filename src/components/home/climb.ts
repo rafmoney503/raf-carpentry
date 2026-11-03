@@ -4,7 +4,7 @@
    three climbs it rolls off the right end, drops beside the steps, comes round to the front, rolls left past the bottom
    step and hops up one, two, three. `z` is in scene units (the 3D steps are 3 units deep). */
 
-export type Plank = { x: number; y: number; w: number; op: number; dy: number };
+export type Plank = { x: number; y: number; w: number; op: number; dy: number; id: number }; // id: which plank this is, for its colour
 export type BallState = { x: number; y: number; z: number; sq: number; sqv: number; sqT: number; show: boolean };
 
 const easeOut = (u: number) => 1 - Math.pow(1 - u, 3);
@@ -16,10 +16,11 @@ type Task = { t: number; d: number; fn: (u: number) => void; res: () => void };
 
 export function makeClimb(G = 760, freshAt = 0.64) {
   const planks: Plank[] = [
-    { x: 10, y: 72, w: 80, op: 1, dy: 0 },
-    { x: 34, y: 54, w: 56, op: 1, dy: 0 },
-    { x: 58, y: 36, w: 32, op: 1, dy: 0 },
+    { x: 10, y: 72, w: 80, op: 1, dy: 0, id: 0 },
+    { x: 34, y: 54, w: 56, op: 1, dy: 0, id: 1 },
+    { x: 58, y: 36, w: 32, op: 1, dy: 0, id: 2 },
   ];
+  let nextId = 3;
   const ball: BallState = { x: 74, y: 36, z: 0, sq: 0, sqv: 0, sqT: 0, show: true };
   const tasks: Task[] = [];
   let alive = true;
@@ -72,7 +73,7 @@ export function makeClimb(G = 760, freshAt = 0.64) {
       crouch: 0.2,
       onTakeoff: (T) => {
         const old = planks.slice();
-        const fresh: Plank = { x: 90, y: 36, w: 0, op: 1, dy: 0 };
+        const fresh: Plank = { x: 90, y: 36, w: 0, op: 1, dy: 0, id: nextId++ };
         planks.push(fresh);
         const from = old.map((p) => ({ x: p.x, y: p.y, w: p.w }));
         void wait(0.04)

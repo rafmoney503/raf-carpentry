@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { makeClimb } from './climb';
 
-/* The home page hero: the steps logo in 3D. Three satin planks and the yellow ball over a field of wood grain that
-   drifts slowly, bends round the pointer like a knot and warms up where the ball is. The ball climbs the way the logo
+/* The home page hero: the steps logo in 3D. Satin planks in the five step colours (learn, design, make, fit, run)
+   and the yellow ball, over a pale field of wood grain that drifts slowly, bends round the pointer like a knot and
+   warms up where the ball is. The ball climbs the way the logo
    in the top bar does (climb.ts). three.js is fetched only on this page, after the words are on screen; the planks
    rising in and the ball dropping onto them cover that wait. Drawing stops when the hero is off screen or the tab is
    hidden. People who ask for less motion get one still picture. If 3D is not available the flat logo shows. */
@@ -44,9 +45,9 @@ export default function HeroSteps() {
       <canvas ref={ref} className="nh-canvas" aria-hidden="true" style={failed ? { display: 'none' } : undefined} />
       {failed ? (
         <svg className="nh-flat" viewBox="0 0 100 100" aria-hidden="true">
-          <rect x="10" y="72" width="80" height="14" rx="2" fill="var(--ink)" />
-          <rect x="34" y="54" width="56" height="14" rx="2" fill="var(--ink)" />
-          <rect x="58" y="36" width="32" height="14" rx="2" fill="var(--ink)" />
+          <rect x="10" y="72" width="80" height="14" rx="2" fill="var(--learn)" />
+          <rect x="34" y="54" width="56" height="14" rx="2" fill="var(--make)" />
+          <rect x="58" y="36" width="32" height="14" rx="2" fill="var(--fit)" />
           <circle cx="74" cy="25" r="9.5" fill="var(--hl)" stroke="var(--paper)" strokeWidth="3" />
         </svg>
       ) : null}
@@ -60,6 +61,7 @@ type RE = typeof import('three/examples/jsm/environments/RoomEnvironment.js').Ro
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const U = 0.1; // logo units to scene units
+const STEP_COLOURS = ['#ff6b3d', '#8b5cf6', '#22c55e', '#2f5bff', '#17161a']; // learn, design, make, fit, and ink
 const R = 0.95; // ball radius
 const RAD = 0.18; // plank corner radius
 
@@ -86,10 +88,10 @@ const GRAIN = `
     float vig = smoothstep(1.35, 0.15, length((vUv - vec2(0.62,0.5))*vec2(uAspect*0.75,1.0)));
     float db = length(p - b);
     float glow = exp(-db*db*4.5);
-    vec3 col = vec3(0.031,0.035,0.039);
-    vec3 lc = mix(vec3(0.62,0.58,0.48), vec3(1.0,0.89,0.36), glow);
-    col += line*lc*(0.06 + 0.26*glow)*vig;
-    col += vec3(1.0,0.84,0.28)*glow*0.05;
+    vec3 col = vec3(1.0,0.98,0.945);
+    vec3 lc = mix(vec3(0.6,0.47,0.3), vec3(0.98,0.7,0.0), glow);
+    col = mix(col, lc, line*(0.09 + 0.2*glow)*vig);
+    col = mix(col, vec3(1.0,0.88,0.42), glow*0.12);
     gl_FragColor = vec4(col, 1.0);
   }`;
 
@@ -135,18 +137,19 @@ function start(THREE: T3, RoundedBoxGeometry: RBG, RoomEnvironment: RE, canvas: 
   scene.add(rim);
 
   // planks: rounded boxes whose width changes without stretching the corners (the two ends move, the middle grows)
-  const planks = Array.from({ length: 5 }, () => {
+  const tints = STEP_COLOURS.map((hex) => new THREE.Color(hex));
+  const planks = STEP_COLOURS.map((hex) => {
     const g = new RoundedBoxGeometry(1, 1.4, 3.0, 5, RAD);
     const base = (g.attributes.position.array as Float32Array).slice();
     const m = new THREE.MeshPhysicalMaterial({
-      color: 0xdfe2dc,
-      roughness: 0.42,
-      clearcoat: 0.55,
-      clearcoatRoughness: 0.28,
-      sheen: 0.35,
+      color: new THREE.Color(hex),
+      roughness: 0.38,
+      clearcoat: 0.6,
+      clearcoatRoughness: 0.22,
+      sheen: 0.25,
       sheenRoughness: 0.6,
-      sheenColor: new THREE.Color(0xfff3cf),
-      envMapIntensity: 0.62,
+      sheenColor: new THREE.Color(0xffffff),
+      envMapIntensity: 0.7,
       transparent: true,
     });
     const mesh = new THREE.Mesh(g, m);
@@ -189,7 +192,7 @@ function start(THREE: T3, RoundedBoxGeometry: RBG, RoomEnvironment: RE, canvas: 
   const shadow = new THREE.Mesh(plane, shMat);
   shadow.rotation.x = -Math.PI / 2;
   group.add(shadow);
-  const floorMat = new THREE.MeshBasicMaterial({ map: shTex, transparent: true, depthWrite: false, opacity: 0.75 });
+  const floorMat = new THREE.MeshBasicMaterial({ map: shTex, transparent: true, depthWrite: false, opacity: 0.32 });
   const floor = new THREE.Mesh(plane, floorMat);
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(0.3, (50 - 86) * U - 0.01, 0.4);
@@ -268,6 +271,7 @@ function start(THREE: T3, RoundedBoxGeometry: RBG, RoomEnvironment: RE, canvas: 
       setWidth(pk, p.w * U);
       pk.mesh.position.set((p.x + p.w / 2 - 50) * U, (50 - (p.y + p.dy + 7)) * U, 0);
       pk.m.opacity = p.op;
+      pk.m.color.copy(tints[p.id % tints.length]);
     });
     const b = climb.ball;
     const sq = clamp(b.sq, -0.2, 0.35);

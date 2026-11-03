@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import './bounce-cta.css';
 
-/* "Tell me the problem" in the top bar, with a yellow ball that lives in two small holes, one at each end of the
+/* "Start a project" in the top bar, with a yellow ball that lives in two small holes, one at each end of the
    button. It jumps out, bounces twice along the top edge and drops into the far hole, then comes back the same
    way. After each crossing there is a 4 in 10 chance it sinks into the hole instead and pops up out of the other
    one, then bounces the same way again. The movement itself is CSS generated from a small physics model
@@ -57,7 +57,7 @@ export default function BounceCta({ onPointerEnter }: { onPointerEnter?: () => v
   const warp = phase === 'warpR' || phase === 'warpL';
 
   return (
-    <Link href="/contact" className="btn btn-sm head-cta bounce-cta" onPointerEnter={onPointerEnter}>
+    <Link href="/start" className="btn btn-sm head-cta bounce-cta" onPointerEnter={onPointerEnter}>
       <span className="bc-socket bc-l" aria-hidden="true" />
       <span className="bc-socket bc-r" aria-hidden="true" />
       <span className={`bc-track${flip ? ' flip' : ''}`} aria-hidden="true">
@@ -65,7 +65,7 @@ export default function BounceCta({ onPointerEnter }: { onPointerEnter?: () => v
         <span key={`s${step}`} className={`bc-shadow${moving && !warp ? ' run' : ''}`} />
         <span key={`b${step}`} className={`bc-ball${moving ? (warp ? ' warp' : ' run') : ''}`} />
       </span>
-      <span className="bc-text">Tell me the problem</span>
+      <span className="bc-text">Start a project</span>
     </Link>
   );
 }

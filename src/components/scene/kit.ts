@@ -4,10 +4,10 @@
    Every stroke keeps 1.5 px whatever the scene is scaled to (non-scaling-stroke). */
 
 export const NS = 'http://www.w3.org/2000/svg';
-/* strokes take the text colour of the scene (light on the dark site); the ball's ring is the page colour */
+/* strokes take the text colour of the scene (ink on the paper site); the ball's ring is the page colour */
 export const INK = 'currentColor';
-export const RING = '#08090A';
-export const HL = '#FFE45C';
+export const RING = '#FFFAF1';
+export const HL = '#FFD43B';
 export const FAINT = 0.42;
 
 export type Pt = [number, number];

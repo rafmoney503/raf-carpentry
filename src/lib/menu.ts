@@ -1,11 +1,13 @@
-/* The menu: each page with the sections people can jump to. The header shows these as # tags (a panel under the
-   menu on a computer, a + beside each item on a phone), each page shows them under its title, and the home page
-   uses them for its "Where to start" cards. Section ids here must match the ids on the pages. */
+/* The pages, each with the sections people can jump to (PAGES), and the menu in the top bar (MENU). Each page shows
+   its sections as # tags under its title; the menu shows # tags too (a panel under the menu on a computer, a + beside
+   each item on a phone), which can point to other pages. Section ids here must match the ids on the pages. */
 
-export type MenuTag = { id: string; label: string };
-export type MenuItem = { href: string; label: string; kicker: string; title: string; line: string; tags: MenuTag[] };
+import { STEPS5 } from './steps';
 
-export const MENU: MenuItem[] = [
+export type MenuTag = { id: string; label: string; href?: string };
+export type MenuItem = { href: string; label: string; kicker: string; title: string; line: string; tags: MenuTag[]; also?: string[] };
+
+export const PAGES: MenuItem[] = [
   {
     href: '/systems',
     label: 'Systems',
@@ -99,4 +101,56 @@ export const CONTACT_ITEM: MenuItem = {
   ],
 };
 
-export const tagHref = (item: MenuItem, tag: MenuTag) => `${item.href}#${tag.id}`;
+export const START_ITEM: MenuItem = {
+  href: '/start',
+  label: 'Start a project',
+  kicker: 'Built for you',
+  title: 'Start a project',
+  line: 'Seven quick questions about the website, app or system you have in mind. About a minute.',
+  tags: [],
+};
+
+export const BLOG_ITEM: MenuItem = {
+  href: '/blog',
+  label: 'Blog',
+  kicker: 'Notes from the workshop',
+  title: 'Everyday problems, made into tools',
+  line: 'How each tool started: a problem on a real job, and what I built so it would not happen again.',
+  tags: [],
+};
+
+const page = (href: string) => PAGES.find((p) => p.href === href)!;
+
+/* The top bar: the five steps, the systems built for you (with the pages that belong to them), how it works, the
+   blog and about. */
+export const MENU: MenuItem[] = [
+  {
+    href: '/#steps',
+    label: 'Five steps',
+    kicker: 'One company, five steps',
+    title: 'Learn, design, make, fit, run',
+    line: 'One tool for each part of a job, from your first 3D click to a fitted, paid-for wardrobe. Three are free.',
+    tags: STEPS5.map((s) => ({ id: s.id, label: `${s.verb}: ${s.name}`, href: `/#${s.id}` })),
+  },
+  {
+    ...page('/systems'),
+    label: 'Built for you',
+    kicker: 'Step 5 · Run',
+    title: 'Systems for trade businesses',
+    line: 'Websites, apps and systems joined up with what you already use, like ServiceM8. Tested on my own jobs first.',
+    also: ['/servicem8', '/trades', '/paint-schedule'],
+    tags: [
+      { id: 'cabinetos', label: 'CabinetOS', href: '/systems#cabinetos' },
+      { id: 'job-kit', label: 'Job Kit', href: '/systems#job-kit' },
+      { id: 'planner', label: 'Wardrobe planner', href: '/systems#planner' },
+      { id: 'servicem8', label: 'ServiceM8', href: '/servicem8' },
+      { id: 'trades', label: 'Trades', href: '/trades' },
+      { id: 'paint', label: 'Paint schedule', href: '/paint-schedule' },
+    ],
+  },
+  page('/how-it-works'),
+  BLOG_ITEM,
+  page('/about'),
+];
+
+export const tagHref = (item: MenuItem, tag: MenuTag) => tag.href ?? `${item.href}#${tag.id}`;

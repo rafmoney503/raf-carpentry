@@ -3,6 +3,9 @@
 /* Sends an enquiry from the browser to /api/enquiry. Every failure comes back as a plain reason the form can show,
    and the form always offers WhatsApp with the same words typed in. */
 
+/* Start a project: the answers to the seven questions. */
+export type ProjectAnswers = { what: string; business: string; tools: string[]; pains: string[]; note: string; budget: string; when: string };
+
 export type EnquiryPayload = {
   name: string;
   email: string;
@@ -11,7 +14,8 @@ export type EnquiryPayload = {
   trade: string;
   message: string;
   sketch?: { trade: string; pains: string[]; hours: number; modules: string[] };
-  source: 'contact' | 'sketch';
+  project?: ProjectAnswers;
+  source: 'contact' | 'sketch' | 'start';
   website?: string;
   ms: number;
 };

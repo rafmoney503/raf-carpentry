@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import PageHeader from '@/components/PageHeader';
 import CtaBand from '@/components/CtaBand';
 import { IntegrationsGrid, SectionHead, Sm8Grid } from '@/components/blocks';
-import { MENU } from '@/lib/menu';
+import { PAGES } from '@/lib/menu';
 
-const item = MENU.find((m) => m.href === '/servicem8')!;
+const item = PAGES.find((m) => m.href === '/servicem8')!;
 
 export const metadata: Metadata = {
   title: 'ServiceM8 systems',

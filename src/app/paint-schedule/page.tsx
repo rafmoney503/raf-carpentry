@@ -5,9 +5,9 @@ import PaintCalc from '@/components/PaintCalc';
 import OpenSketch from '@/components/OpenSketch';
 import { SectionHead } from '@/components/blocks';
 import { DoorCoats, SpiritLevel } from '@/components/motion-pieces';
-import { MENU } from '@/lib/menu';
+import { PAGES } from '@/lib/menu';
 
-const item = MENU.find((m) => m.href === '/paint-schedule')!;
+const item = PAGES.find((m) => m.href === '/paint-schedule')!;
 
 export const metadata: Metadata = {
   title: 'Paint schedule for decorators',
@@ -150,7 +150,7 @@ export default function PaintSchedule() {
                 <li>Walls and ceilings come next: wall area less doors and windows</li>
               </ul>
               <OpenSketch className="btn" preset={{ trade: 'Decorator', pain: 'Working out materials' }}>
-                I&apos;m a decorator: sketch mine
+                I&apos;m a decorator: start mine
               </OpenSketch>
             </div>
           </div>

@@ -1,7 +1,7 @@
 'use client';
 
-/* A button anywhere on the page that opens the "Sketch my system" planner, optionally with a trade or a problem
-   already picked. The planner (SystemSketch.tsx) listens for this event. */
+/* A button anywhere on the page that opens "Start a project" (the seven questions), optionally with a trade or a
+   problem already picked. The sheet (start/StartSheet.tsx) listens for this event. */
 
 export type SketchPreset = { trade?: string; pain?: string };
 

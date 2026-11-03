@@ -179,24 +179,24 @@ export default function EnquiryClimb() {
             <svg viewBox="0 -70 820 640">
               <defs>
                 <linearGradient id="ecLit" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stopColor="#f6f7f3" />
-                  <stop offset="1" stopColor="#c9ccc6" />
+                  <stop offset="0" stopColor="#3a3842" />
+                  <stop offset="1" stopColor="#17161a" />
                 </linearGradient>
                 <radialGradient id="ecBall" cx="0.36" cy="0.32" r="0.75">
                   <stop offset="0" stopColor="#fff7c7" />
-                  <stop offset="0.45" stopColor="#ffe45c" />
+                  <stop offset="0.45" stopColor="#ffd43b" />
                   <stop offset="1" stopColor="#d9b11f" />
                 </radialGradient>
                 <radialGradient id="ecGlow">
-                  <stop offset="0" stopColor="#ffe45c" stopOpacity="0.45" />
-                  <stop offset="1" stopColor="#ffe45c" stopOpacity="0" />
+                  <stop offset="0" stopColor="#ffd43b" stopOpacity="0.55" />
+                  <stop offset="1" stopColor="#ffd43b" stopOpacity="0" />
                 </radialGradient>
                 <radialGradient id="ecShadow">
-                  <stop offset="0" stopColor="#000" stopOpacity="0.6" />
+                  <stop offset="0" stopColor="#3a2a0a" stopOpacity="0.35" />
                   <stop offset="1" stopColor="#000" stopOpacity="0" />
                 </radialGradient>
               </defs>
-              <line x1={PX(4) - 7} x2={PX(4) - 7} y1={-40} y2={560} stroke="rgba(255,255,255,0.12)" strokeDasharray="4 8" />
+              <line x1={PX(4) - 7} x2={PX(4) - 7} y1={-40} y2={560} stroke="rgba(23,22,26,0.2)" strokeDasharray="4 8" />
               <text x={PX(0)} y={-24} className="ec-cap">
                 BY ITSELF
               </text>
@@ -212,8 +212,8 @@ export default function EnquiryClimb() {
                     width={PW}
                     height={15}
                     rx={3}
-                    fill={i <= idx ? 'url(#ecLit)' : 'rgba(255,255,255,0.05)'}
-                    stroke={i <= idx ? 'none' : waiting && i === idx + 1 ? '#ffe45c' : 'rgba(255,255,255,0.2)'}
+                    fill={i <= idx ? 'url(#ecLit)' : '#ffffff'}
+                    stroke={i <= idx ? 'none' : waiting && i === idx + 1 ? '#e3a900' : 'rgba(23,22,26,0.22)'}
                     className={waiting && i === idx + 1 ? 'ec-next' : undefined}
                   />
                   <text x={CX(i)} y={PY(i) + 40} textAnchor="middle" className={`ec-lbl${i === idx ? ' on' : ''}`}>

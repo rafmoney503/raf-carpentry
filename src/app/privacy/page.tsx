@@ -20,7 +20,7 @@ export default function Privacy() {
 
           <h2>What I collect</h2>
           <ul>
-            <li>What you type into the contact form or the &ldquo;Sketch my system&rdquo; planner: your name, business name, trade, email or mobile, your message and the choices you tap.</li>
+            <li>What you type into the contact form or the &ldquo;Start a project&rdquo; questions: your name, business name, trade, email or mobile, your message and the choices you tap.</li>
             <li>Anonymous visit counts (pages viewed, country, device type) from Vercel Web Analytics. It uses no cookies and does not identify you.</li>
           </ul>
 

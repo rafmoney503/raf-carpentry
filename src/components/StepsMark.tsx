@@ -4,7 +4,7 @@ import { memo, useEffect, useRef } from 'react';
 import { FINALE, GAPS, PLAYS, REST, StepsEngine, type StepsPlay } from './steps/engine';
 
 /* The steps logo, moving (steps/engine.ts): 'climb' in the top bar, 'mix' in the 'Start here' band, 'build' on the
-   'Sketch my system' card. The page is sent the logo at rest, so it shows without JavaScript and stays still for
+   'Start a project' card. The page is sent the logo at rest, so it shows without JavaScript and stays still for
    people who ask for less motion. It only moves while it is on screen and the tab is open.
    `rounds`: play that many times, then the play's finale (the climb ends back at rest on the top step) and stop;
    left out, it plays for as long as it is on screen. `replayEvent`: a window event that starts it again once it has

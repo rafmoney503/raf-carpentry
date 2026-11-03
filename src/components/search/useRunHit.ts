@@ -6,7 +6,7 @@ import { openSketch } from '../OpenSketch';
 import type { Hit } from '@/lib/search';
 
 /* What picking a search result does, the same from the sheet and from the phone menu: a page or section opens, an
-   outside site opens in a new tab, 'Sketch my system' opens the planner with the words in it, and 'Send to Rafal'
+   outside site opens in a new tab, 'Start a project' opens the seven questions with the words in it, and 'Send to Rafal'
    takes the words to the contact form. */
 export function useRunHit() {
   const router = useRouter();

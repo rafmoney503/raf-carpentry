@@ -134,7 +134,7 @@ export default function PaintCalc() {
           Doors and fronts count both faces and edges. Coverage taken as 10 m² per litre for primer and 12 for top coat; the app reads the real figure from the tin you pick. Sizes can come straight from a CabinetOS job, so nobody measures twice.
         </p>
         <button type="button" className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start' }} onClick={() => openSketch({ trade: 'Decorator', pain: 'Working out materials' })}>
-          I&apos;m a decorator: sketch mine
+          I&apos;m a decorator: start mine
         </button>
       </div>
     </div>

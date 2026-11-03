@@ -2,14 +2,15 @@ import { NextResponse } from 'next/server';
 import { createEnquiry, sendEmail, sm8SetUp, Sm8Error, tidy } from '@/lib/servicem8';
 import { PHONE_DISPLAY, SITE_URL } from '@/lib/site';
 
-/* POST /api/enquiry: the contact form and the "Sketch my system" planner. Makes a Quote job in Rafal's ServiceM8,
+/* POST /api/enquiry: the contact form and "Start a project" (the seven questions; 'sketch' is the planner it replaced). Makes a Quote job in Rafal's ServiceM8,
    emails him (RAF_EMAIL, default info@rafcarpentry.com) and thanks the visitor if they gave an email. Without
    SERVICEM8_API_KEY it answers 503 not-set-up and the page offers WhatsApp with the message typed in. */
 
 export const runtime = 'nodejs';
 
 type Sketch = { trade?: string; pains?: string[]; hours?: number; modules?: string[] };
-type Body = { name?: string; email?: string; mobile?: string; company?: string; trade?: string; message?: string; sketch?: Sketch; source?: string; website?: string; ms?: number };
+type Project = { what?: string; business?: string; tools?: string[]; pains?: string[]; note?: string; budget?: string; when?: string };
+type Body = { name?: string; email?: string; mobile?: string; company?: string; trade?: string; message?: string; sketch?: Sketch; project?: Project; source?: string; website?: string; ms?: number };
 
 const recent = new Map<string, number[]>();
 function tooMany(ip: string) {
@@ -45,17 +46,28 @@ export async function POST(req: Request) {
   const pains = Array.isArray(sketch?.pains) ? sketch!.pains.slice(0, 12).map((p) => cut(p, 80)).filter(Boolean) : [];
   const modules = Array.isArray(sketch?.modules) ? sketch!.modules.slice(0, 12).map((p) => cut(p, 80)).filter(Boolean) : [];
   const hours = typeof sketch?.hours === 'number' && Number.isFinite(sketch.hours) ? Math.max(0, Math.min(60, Math.round(sketch.hours))) : 0;
+  const pj = b.project && typeof b.project === 'object' ? b.project : undefined;
+  const list = (v: unknown) => (Array.isArray(v) ? v.slice(0, 12).map((x) => cut(x, 80)).filter(Boolean) : []);
+  const project = pj
+    ? { what: cut(pj.what, 80), business: cut(pj.business, 80), tools: list(pj.tools), pains: list(pj.pains), budget: cut(pj.budget, 40), when: cut(pj.when, 40) }
+    : null;
 
   if (!name) return NextResponse.json({ ok: false, reason: 'name' }, { status: 400 });
   if (!email && mobile.replace(/\D/g, '').length < 10) return NextResponse.json({ ok: false, reason: 'contact' }, { status: 400 });
   if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return NextResponse.json({ ok: false, reason: 'email' }, { status: 400 });
-  if (!message && !pains.length) return NextResponse.json({ ok: false, reason: 'message' }, { status: 400 });
+  if (!message && !pains.length && !project?.what) return NextResponse.json({ ok: false, reason: 'message' }, { status: 400 });
 
   if (!sm8SetUp()) return NextResponse.json({ ok: false, reason: 'not-set-up' }, { status: 503 });
 
   const lines = [
-    `Systems enquiry from rafalsolutions.co.uk${b.source === 'sketch' ? ' (Sketch my system)' : ''}`,
-    trade ? `Trade: ${trade}` : '',
+    `${project ? 'New project' : 'Systems enquiry'} from rafalsolutions.co.uk${b.source === 'sketch' ? ' (Sketch my system)' : b.source === 'start' ? ' (Start a project)' : ''}`,
+    project?.what ? `Build: ${project.what}` : '',
+    project?.business ? `Business: ${project.business}` : '',
+    project?.tools.length ? `Uses now: ${project.tools.join(', ')}` : '',
+    project?.pains.length ? `Wastes time: ${project.pains.join(', ')}` : '',
+    project?.budget ? `Budget: ${project.budget}` : '',
+    project?.when ? `When: ${project.when}` : '',
+    trade && !project ? `Trade: ${trade}` : '',
     company ? `Business: ${company}` : '',
     pains.length ? `What eats their time: ${pains.join(', ')}` : '',
     hours ? `Hours lost a week: ${hours} (about ${hours * 46} a year)` : '',
@@ -90,9 +102,11 @@ export async function POST(req: Request) {
   const thanks = [
     `Hi ${first},`,
     '',
-    "Thanks for telling me what slows your business down. It's with me now, filed as a job in ServiceM8, the same way the systems I build work.",
+    project
+      ? "Thanks for telling me about your project. It's with me now, filed as a job in ServiceM8, the same way the systems I build work."
+      : "Thanks for telling me what slows your business down. It's with me now, filed as a job in ServiceM8, the same way the systems I build work.",
     '',
-    "I'll read it properly and come back to you with one question or a first sketch.",
+    project ? "I'll read it properly and reply within 24 hours with what I'd build first." : "I'll read it properly and come back to you with one question or a first sketch.",
     '',
     'What you sent:',
     description,
@@ -105,7 +119,7 @@ export async function POST(req: Request) {
 
   const sent = await Promise.race([
     Promise.all([
-      sendEmail({ to: toRaf, subject: `New systems enquiry: ${name}${trade ? ` (${trade})` : ''}`, text: rafText, jobUuid: job.uuid, replyTo: email || undefined }),
+      sendEmail({ to: toRaf, subject: `${project ? 'New project' : 'New systems enquiry'}: ${name}${trade ? ` (${trade})` : ''}`, text: rafText, jobUuid: job.uuid, replyTo: email || undefined }),
       email ? sendEmail({ to: email, subject: `Thanks ${first}, it's with me`, text: thanks, jobUuid: job.uuid }) : Promise.resolve(false),
     ]),
     new Promise<[boolean, boolean]>((r) => setTimeout(() => r([false, false]), 6000)),

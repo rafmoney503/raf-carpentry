@@ -4,10 +4,10 @@ import PageHeader from '@/components/PageHeader';
 import CtaBand from '@/components/CtaBand';
 import { SectionHead } from '@/components/blocks';
 import { SpiritLevel } from '@/components/motion-pieces';
-import { MENU } from '@/lib/menu';
+import { PAGES } from '@/lib/menu';
 import { ADDRESS, CABINETOS_URL, COMPANY, COMPANY_NO, IMG, RAFCARPENTRY_URL, VAT_NO } from '@/lib/site';
 
-const item = MENU.find((m) => m.href === '/about')!;
+const item = PAGES.find((m) => m.href === '/about')!;
 
 export const metadata: Metadata = {
   title: 'About',

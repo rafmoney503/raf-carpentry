@@ -4,9 +4,9 @@ import CtaBand from '@/components/CtaBand';
 import SketchCard from '@/components/SketchCard';
 import { FaqList, FlowSection, SectionHead, StepsList } from '@/components/blocks';
 import { CarryDiagram } from '@/components/motion-pieces';
-import { MENU } from '@/lib/menu';
+import { PAGES } from '@/lib/menu';
 
-const item = MENU.find((m) => m.href === '/how-it-works')!;
+const item = PAGES.find((m) => m.href === '/how-it-works')!;
 
 export const metadata: Metadata = {
   title: 'How it works',
