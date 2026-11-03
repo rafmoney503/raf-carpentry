@@ -1,5 +1,5 @@
 import { guard } from '@/lib/job-kit-server';
-import { addBooking, addJobNote, addPayment, allClients, cancelBooking, clientJobs, createEnquiry, currentJobs, moveBooking, setStatus, sm8SetUp, Sm8Error, STATUSES, touchJob, type Status } from '@/lib/servicem8';
+import { addBooking, addJobNote, addPayment, allClients, cancelBooking, clientJobs, createEnquiry, currentJobs, moveBooking, removeJob, restoreJob, setStatus, sm8SetUp, Sm8Error, STATUSES, touchJob, type Status } from '@/lib/servicem8';
 import { stableUuid } from '@/lib/brief-token';
 import { jobMail, recentReplies, sendJobEmail, sendJobText } from '@/lib/servicem8-mail';
 import { e164 } from '@/lib/mail-text';
@@ -20,6 +20,10 @@ import { attachmentFile, FileProblem, jobDiary, jobNotes, saveJobNote } from '@/
    { action: 'book', job, start, end, staff? }           adds a booking to ServiceM8's schedule
    { action: 'move', uuid, start, end }                  moves a booking
    { action: 'cancel', uuid }                            cancels a booking (ServiceM8 archives it, restorable)
+   { action: 'remove', job, client? }                    a Quote job made by mistake, with no payments: archived in
+                                                         ServiceM8 with its bookings still to come (and the customer,
+                                                         client: true, if it was their only job); answers what went
+   { action: 'restore', job, bookings, client? }         Undo: sets them all active again
    { action: 'mail', job, email?, mobile? }              the job's emails and texts (src/lib/servicem8-mail.ts)
    { action: 'send-mail', job, to, subject, text, save? } an email to the customer through ServiceM8, filed on the job
                                                          (save: the job has no email, so `to` is saved on its contact)
@@ -199,6 +203,19 @@ export async function POST(req: Request) {
       const uuid = text(body.uuid, 40);
       if (!isUuid(uuid)) return Response.json({ error: 'bad' }, { status: 400 });
       await cancelBooking(uuid);
+      return Response.json({ ok: true }, { headers: noStore });
+    }
+    if (body.action === 'remove') {
+      const job = text(body.job, 40);
+      if (!isUuid(job)) return Response.json({ error: 'bad' }, { status: 400 });
+      return Response.json({ removed: await removeJob(job, body.client === true) }, { headers: noStore });
+    }
+    if (body.action === 'restore') {
+      const job = text(body.job, 40);
+      const client = text(body.client, 40);
+      const bookings = Array.isArray(body.bookings) ? body.bookings.slice(0, 20).map((b) => text(b, 40)) : [];
+      if (!isUuid(job) || (client && !isUuid(client)) || !bookings.every(isUuid)) return Response.json({ error: 'bad' }, { status: 400 });
+      await restoreJob(job, bookings, client);
       return Response.json({ ok: true }, { headers: noStore });
     }
     return Response.json({ error: 'bad' }, { status: 400 });

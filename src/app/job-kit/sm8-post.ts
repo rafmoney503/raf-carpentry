@@ -28,7 +28,11 @@ export function problemText(error?: string, detail?: string, at?: number) {
     case 'sm8-busy':
       return /quota/i.test(detail ?? '') ? 'ServiceM8 says today’s allowance of messages is used up. Try again tomorrow, or send it from ServiceM8.' : 'ServiceM8 is busy. Try again in a minute.';
     case 'sm8-gone':
-      return 'ServiceM8 doesn’t have that customer any more (archived or merged there). Search again.';
+      return detail === 'job' ? 'ServiceM8 doesn’t have that job any more. Refresh Current jobs.' : 'ServiceM8 doesn’t have that customer any more (archived or merged there). Search again.';
+    case 'sm8-not-quote':
+      return `Only a job still on Quote can be removed from here, and ServiceM8 has this one on ${detail || 'another status'}. Refresh Current jobs.`;
+    case 'sm8-paid':
+      return 'This job has a payment on it in ServiceM8, so it can’t be removed from here. Take the payment off in ServiceM8 first if it really was a mistake.';
     case 'ai-not-set-up':
       return 'Draft a reply isn’t switched on yet: ANTHROPIC_API_KEY is missing in Vercel.';
     case 'ai-key':

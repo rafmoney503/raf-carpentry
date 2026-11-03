@@ -55,6 +55,8 @@ import {
   saveMarks,
   savedSm8,
   sendEnquiry,
+  sendRemove,
+  sendRestore,
   sendStatus,
   shown,
   stage,
@@ -63,6 +65,7 @@ import {
   withoutDone,
   type Booking,
   type Marks,
+  type Removed,
   type Sm8,
   type TodayLine,
 } from './current';
@@ -292,13 +295,18 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   const [marks, setMarks] = useState<Marks>({});
   const [sm8Loading, setSm8Loading] = useState(false);
   const lastSm8 = useRef(0);
+  const goneJobs = useRef(new Set<string>()); // jobs removed here (made by mistake) while a list may be on its way
   const checkSm8 = useCallback((force = false) => {
     const pin = readPin();
     if (!pin || (!force && Date.now() - lastSm8.current < 60_000)) return;
     lastSm8.current = Date.now();
     setSm8Loading(true);
     void fetchSm8(pin, { jobs: [], at: 0 }).then((r) => {
-      setSm8((prev) => (r.error ? { ...prev, error: r.error, detail: r.detail } : r));
+      // a job removed while this list was on its way stays off it (the next list won't have it anyway)
+      const gone = goneJobs.current;
+      const fresh = gone.size && !r.error ? { ...r, jobs: r.jobs.filter((j) => !gone.has(j.uuid)), bookings: r.bookings ? r.bookings.filter((b) => !gone.has(b.jobUuid)) : r.bookings } : r;
+      if (fresh !== r) keepSm8(fresh);
+      setSm8((prev) => (r.error ? { ...prev, error: r.error, detail: r.detail } : fresh));
       setSm8Loading(false);
     });
   }, []);
@@ -399,6 +407,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   // Back from Facebook's or Threads' login (/api/job-kit/social/<meta|threads>/callback): how it went, shown on the Social screen.
   const [socialBack, setSocialBack] = useState('');
   const [customerJobs, setCustomerJobs] = useState<CurrentJob[]>([]);
+  const [leaving, setLeaving] = useState<CurrentJob | null>(null); // a job just removed, while its screen goes back
   const customerLoaded = useCallback((d: CustomerDetail) => {
     setCustomerJobs((list) => [...d.jobs, ...list.filter((j) => !d.jobs.some((x) => x.uuid === j.uuid))]);
   }, []);
@@ -738,7 +747,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
 
   const job = screen.name === 'job' || screen.name === 'design' ? jobs.find((j) => j.id === screen.id) : undefined;
   // A ServiceM8 job: in the Current jobs, or from a customer opened from the search (an older one).
-  const findJob = (uuid: string) => sm8.jobs.find((j) => j.uuid === uuid) ?? customerJobs.find((j) => j.uuid === uuid);
+  const findJob = (uuid: string) => sm8.jobs.find((j) => j.uuid === uuid) ?? customerJobs.find((j) => j.uuid === uuid) ?? (leaving?.uuid === uuid ? leaving : undefined);
   const cur = screen.name === 'sm8' ? findJob(screen.id) : undefined;
   const allClients = useMemo(() => withCurrent(clients.clients, sm8.jobs), [clients.clients, sm8.jobs]);
   const customerOf = (uuid: string) => allClients.find((c) => c.uuid === uuid) ?? savedCustomers()[uuid]?.client;
@@ -839,6 +848,64 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     [checkSm8],
   );
   const payMethods = useMemo(() => methodsFrom([...sm8.jobs, ...customerJobs]), [sm8.jobs, customerJobs]);
+  /* A Quote job made by mistake (RemoveJob in current.tsx): archived in ServiceM8, then off every list here (Current
+     jobs, the Diary, the board, Quotes, Today); the screen goes back and a bar offers Undo for 12 s. Until the screen
+     has gone back the job is still found (leaving), so it doesn't jump to its parent by itself as well. */
+  const [unjob, setUnjob] = useState<null | { removed: Removed; job: CurrentJob; bookings: Booking[]; asked: boolean; busy?: boolean; problem?: string }>(null);
+  const unjobTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const removeJob = useCallback(
+    async (job: CurrentJob, alsoClient: boolean) => {
+      const r = await sendRemove(readPin(), job.uuid, alsoClient);
+      if (!r.ok) return problemText(r.error, r.detail);
+      const rm = r.data.removed;
+      const had = (sm8Ref.current.bookings ?? []).filter((b) => b.jobUuid === job.uuid);
+      goneJobs.current.add(job.uuid);
+      setLeaving(job);
+      setSm8((s) => {
+        const next = { ...s, jobs: s.jobs.filter((j) => j.uuid !== job.uuid), bookings: s.bookings ? s.bookings.filter((b) => b.jobUuid !== job.uuid) : s.bookings };
+        keepSm8(next);
+        return next;
+      });
+      setCustomerJobs((list) => list.filter((j) => j.uuid !== job.uuid));
+      if (rm.client) setClients((c) => ({ ...c, clients: c.clients.filter((x) => x.uuid !== rm.client) }));
+      lastClients.current = 0; // the search fetches the customers again next time
+      setBinned(null);
+      if (unjobTimer.current) clearTimeout(unjobTimer.current);
+      setUnjob({ removed: rm, job, bookings: had, asked: alsoClient });
+      unjobTimer.current = setTimeout(() => setUnjob(null), 12000);
+      back();
+      return '';
+    },
+    [back],
+  );
+  useEffect(() => {
+    if (leaving && !(screen.name === 'sm8' && screen.id === leaving.uuid)) setLeaving(null);
+  }, [leaving, screen]);
+  const undoRemove = useCallback(() => {
+    if (!unjob || unjob.busy) return;
+    if (unjobTimer.current) clearTimeout(unjobTimer.current);
+    setUnjob({ ...unjob, busy: true, problem: '' });
+    void sendRestore(readPin(), unjob.removed).then((r) => {
+      if (!r.ok) {
+        setUnjob({ ...unjob, busy: false, problem: `${problemText(r.error, r.detail)} It’s still archived in ServiceM8, where it can be restored.` });
+        return;
+      }
+      const { job, bookings } = unjob;
+      goneJobs.current.delete(job.uuid);
+      setSm8((s) => {
+        const next = {
+          ...s,
+          jobs: [job, ...s.jobs.filter((j) => j.uuid !== job.uuid)].sort((a, b) => (b.created ?? '').localeCompare(a.created ?? '')),
+          bookings: s.bookings ? [...s.bookings.filter((b) => !bookings.some((x) => x.uuid === b.uuid)), ...bookings].sort((a, b) => a.start.localeCompare(b.start)) : s.bookings,
+        };
+        keepSm8(next);
+        return next;
+      });
+      lastClients.current = 0;
+      setUnjob(null);
+      checkSm8(true);
+    });
+  }, [unjob, checkSm8]);
   /* The Job timeline's dates: each booking added or moved in turn (ServiceM8 first, then here); stops at the first
      ServiceM8 turns down and says why. */
   const saveTimeline = useCallback(
@@ -1465,6 +1532,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                   onCancel={cancelBooking}
                   methods={payMethods}
                   onPay={(p) => pay(cur.uuid, p)}
+                  otherJobs={cur.client ? new Set([...sm8.jobs, ...customerJobs].filter((j) => j.client === cur.client && j.uuid !== cur.uuid).map((j) => j.uuid)).size : 0}
+                  onRemove={leaving ? undefined : (alsoClient) => removeJob(cur, alsoClient)}
                   replyAt={sm8.replies?.[cur.uuid] ?? undefined}
                   info={(() => {
                     // Their latest email to info@ (or Raf's latest to them): reply from info@ in the Inbox.
@@ -1679,9 +1748,34 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         )}
       </main>
       </div>
-      {binned ? (
-        <div role="status" className="jk-fixbar fixed inset-x-0 bottom-0 z-40 px-4 pb-[max(16px,env(safe-area-inset-bottom))]">
-          <div className="mx-auto flex max-w-[588px] items-center gap-3 rounded-sm bg-ink px-4 py-2.5 text-[14.5px] leading-snug text-mount shadow-[0_14px_30px_-12px_rgb(22_25_28/0.6)]">
+      {binned || unjob ? (
+        <div className="jk-fixbar fixed inset-x-0 bottom-0 z-40 grid gap-2 px-4 pb-[max(16px,env(safe-area-inset-bottom))]">
+          {unjob ? (
+            <div role="status" data-removed-bar className="mx-auto flex w-full max-w-[588px] items-center gap-3 rounded-sm bg-ink px-4 py-2.5 text-[14.5px] leading-snug text-mount shadow-[0_14px_30px_-12px_rgb(22_25_28/0.6)]">
+              <span className="min-w-0 flex-1">
+                {unjob.problem ||
+                  (() => {
+                    const { removed: rm, job } = unjob;
+                    const also = [rm.bookings.length === 1 ? 'its booking' : rm.bookings.length ? `its ${rm.bookings.length} bookings` : '', rm.client ? 'the customer' : ''].filter(Boolean);
+                    return (
+                      <>
+                        Removed <b className="font-semibold">{job.name}</b>’s job{job.number ? ` #${job.number}` : ''}
+                        {also.length ? `${also.length === 2 ? ', ' : ' and '}${also.join(' and ')}` : ''}. Archived in ServiceM8.
+                        {unjob.asked && !rm.client && rm.others ? ` ${job.first || job.name} stays as a customer: there ${rm.others === 1 ? 'is another job' : `are ${rm.others} other jobs`}.` : ''}
+                      </>
+                    );
+                  })()}
+              </span>
+              <button type="button" onClick={undoRemove} disabled={unjob.busy} className="h-10 shrink-0 font-semibold underline">
+                {unjob.busy ? 'Putting it back…' : 'Undo'}
+              </button>
+              <button type="button" onClick={() => setUnjob(null)} aria-label="Close" className="h-10 w-8 shrink-0 text-[20px] leading-none opacity-70">
+                ×
+              </button>
+            </div>
+          ) : null}
+          {binned ? (
+          <div role="status" className="mx-auto flex w-full max-w-[588px] items-center gap-3 rounded-sm bg-ink px-4 py-2.5 text-[14.5px] leading-snug text-mount shadow-[0_14px_30px_-12px_rgb(22_25_28/0.6)]">
             <span className="min-w-0 flex-1">
               {binned.problem || (
                 <>
@@ -1696,6 +1790,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               ×
             </button>
           </div>
+          ) : null}
         </div>
       ) : null}
       {colourKey.open ? <ColourKey onClose={colourKey.hide} tint={tint} onTint={setTint} /> : null}
