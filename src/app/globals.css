@@ -48,6 +48,13 @@
   --run: #ffc21a;
   --run-ink: #8a5d00;
   --run-bg: #fff1bf;
+  --plank-5: #17161a;
+  /* text or ticks on top of each step colour */
+  --learn-on: #fff;
+  --design-on: #fff;
+  --make-on: #fff;
+  --fit-on: #fff;
+  --run-on: var(--ink);
 
   --f-display: var(--font-bricolage), 'Arial Narrow', system-ui, sans-serif;
   --f-body: var(--font-geist), system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -4127,26 +4134,31 @@ body[data-search='open'] .float-pill {
    readable on paper) and --c-bg (a pale wash of it). */
 
 [data-c='learn'] {
+  --c-on: var(--learn-on);
   --c: var(--learn);
   --c-ink: var(--learn-ink);
   --c-bg: var(--learn-bg);
 }
 [data-c='design'] {
+  --c-on: var(--design-on);
   --c: var(--design);
   --c-ink: var(--design-ink);
   --c-bg: var(--design-bg);
 }
 [data-c='make'] {
+  --c-on: var(--make-on);
   --c: var(--make);
   --c-ink: var(--make-ink);
   --c-bg: var(--make-bg);
 }
 [data-c='fit'] {
+  --c-on: var(--fit-on);
   --c: var(--fit);
   --c-ink: var(--fit-ink);
   --c-bg: var(--fit-bg);
 }
 [data-c='run'] {
+  --c-on: var(--run-on);
   --c: var(--run);
   --c-ink: var(--run-ink);
   --c-bg: var(--run-bg);
@@ -4512,14 +4524,12 @@ body[data-search='open'] .float-pill {
   height: 32px;
   border-radius: 50%;
   background: var(--c);
-  color: #fff;
+  color: var(--c-on, #fff);
   font-weight: 700;
   font-size: 14px;
   margin-bottom: 8px;
 }
-[data-c='run'] .chain-dot {
-  color: var(--ink);
-}
+
 .chain-verb {
   font-family: var(--f-mono);
   font-size: 12px;
@@ -4596,7 +4606,7 @@ body[data-search='open'] .float-pill {
   padding: 3px 9px;
   border-radius: 999px;
   background: var(--run);
-  color: var(--ink);
+  color: var(--run-on);
 }
 
 /* blog cards */
@@ -5074,10 +5084,7 @@ dialog .sp {
 .sp-opt[aria-pressed='true'] .sp-tick {
   background: var(--c);
   border-color: var(--c);
-  color: #fff;
-}
-[data-c='run'] .sp-opt[aria-pressed='true'] .sp-tick {
-  color: var(--ink);
+  color: var(--c-on, #fff);
 }
 .sp-nav {
   display: flex;
@@ -5128,4 +5135,96 @@ dialog .sp {
 }
 .planner-body .sp {
   padding: 4px 2px 8px;
+}
+
+/* ---------- colour options (preview only): ?p=workshop, ?p=blueprint or ?p=mono ---------- */
+
+/* Workshop: timber and paint tones. Terracotta, ochre, sage, slate and walnut on a warm white. */
+html[data-palette='workshop'] {
+  --paper: #fbf8f3;
+  --paper-2: #f3ede4;
+  --surface-2: #f8f4ee;
+  --well: #efe8dd;
+  --idea-bg: #efe8dd;
+  --ink: #1f1c18;
+  --ink-2: #4a443d;
+  --muted: #736b62;
+  --learn: #d9734e;
+  --learn-ink: #a4492a;
+  --learn-bg: #f8e9e2;
+  --design: #c99a3b;
+  --design-ink: #85600f;
+  --design-bg: #f6eedb;
+  --make: #7f9f7a;
+  --make-ink: #4d6b49;
+  --make-bg: #e9f0e7;
+  --fit: #5c7b94;
+  --fit-ink: #3d5a72;
+  --fit-bg: #e5ecf2;
+  --run: #7a5a43;
+  --run-ink: #5e4331;
+  --run-bg: #efe6de;
+  --run-on: #fff;
+  --plank-5: #2a2622;
+}
+/* Blueprint: cool white and drawing-board blues with teal; the yellow ball is the only warm thing. */
+html[data-palette='blueprint'] {
+  --paper: #f6f9fc;
+  --paper-2: #eaf1f8;
+  --surface-2: #f3f7fb;
+  --well: #e7eef6;
+  --idea-bg: #e7eef6;
+  --ink: #0f1b2d;
+  --ink-2: #3b4a5e;
+  --muted: #5f6e82;
+  --grid: rgb(37 99 235 / 0.07);
+  --shadow: 0 30px 60px -36px rgb(15 40 80 / 0.3);
+  --learn: #38bdf8;
+  --learn-ink: #0369a1;
+  --learn-bg: #e3f4fd;
+  --design: #6366f1;
+  --design-ink: #4338ca;
+  --design-bg: #eceefe;
+  --make: #14b8a6;
+  --make-ink: #0f766e;
+  --make-bg: #e0f6f3;
+  --fit: #2563eb;
+  --fit-ink: #1d4ed8;
+  --fit-bg: #e4ecfd;
+  --run: #0f1b2d;
+  --run-ink: #0f1b2d;
+  --run-bg: #e6ebf2;
+  --run-on: #fff;
+  --plank-5: #0f1b2d;
+}
+/* Mono: white, black and greys. The yellow ball and the highlighter are the only colour. */
+html[data-palette='mono'] {
+  --paper: #ffffff;
+  --paper-2: #f5f5f4;
+  --surface-2: #fafaf9;
+  --well: #f0f0ef;
+  --idea-bg: #f0f0ef;
+  --ink: #111111;
+  --ink-2: #444444;
+  --muted: #6b6b6b;
+  --shadow: 0 30px 60px -36px rgb(0 0 0 / 0.25);
+  --learn: #e2e0de;
+  --learn-ink: #57534e;
+  --learn-bg: #f5f5f4;
+  --learn-on: #111;
+  --design: #b8b4b0;
+  --design-ink: #57534e;
+  --design-bg: #f5f5f4;
+  --design-on: #111;
+  --make: #8a8580;
+  --make-ink: #44403c;
+  --make-bg: #f2f1f0;
+  --fit: #4a4642;
+  --fit-ink: #292524;
+  --fit-bg: #efeeed;
+  --run: #111111;
+  --run-ink: #111111;
+  --run-bg: #ecebea;
+  --run-on: #fff;
+  --plank-5: #e7e5e4;
 }

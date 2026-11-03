@@ -62,6 +62,15 @@ type RE = typeof import('three/examples/jsm/environments/RoomEnvironment.js').Ro
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const U = 0.1; // logo units to scene units
 const STEP_COLOURS = ['#ff6b3d', '#8b5cf6', '#22c55e', '#2f5bff', '#17161a']; // learn, design, make, fit, and ink
+/* The plank colours and the page colour come from the stylesheet (--learn, --design, --make, --fit, --plank-5 and
+   --paper), so a colour change there reaches the 3D steps too; these are the fallbacks. */
+const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const stepColours = () => ['--learn', '--design', '--make', '--fit', '--plank-5'].map((v, i) => cssVar(v) || STEP_COLOURS[i]);
+function paperRGB() {
+  const hex = cssVar('--paper').replace('#', '');
+  const n = hex.length === 6 ? parseInt(hex, 16) : 0xfffaf1;
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
 const R = 0.95; // ball radius
 const RAD = 0.18; // plank corner radius
 
@@ -69,6 +78,7 @@ const GRAIN = `
   precision highp float;
   varying vec2 vUv;
   uniform float uTime, uAspect, uKnot;
+  uniform vec3 uPaper;
   uniform vec2 uMouse, uBall;
   float hash(vec2 p){ p = fract(p*vec2(123.34,456.21)); p += dot(p, p+45.32); return fract(p.x*p.y); }
   float noise(vec2 p){ vec2 i=floor(p), f=fract(p); vec2 u=f*f*(3.0-2.0*f);
@@ -88,7 +98,7 @@ const GRAIN = `
     float vig = smoothstep(1.35, 0.15, length((vUv - vec2(0.62,0.5))*vec2(uAspect*0.75,1.0)));
     float db = length(p - b);
     float glow = exp(-db*db*4.5);
-    vec3 col = vec3(1.0,0.98,0.945);
+    vec3 col = uPaper;
     vec3 lc = mix(vec3(0.6,0.47,0.3), vec3(0.98,0.7,0.0), glow);
     col = mix(col, lc, line*(0.09 + 0.2*glow)*vig);
     col = mix(col, vec3(1.0,0.88,0.42), glow*0.12);
@@ -118,6 +128,7 @@ function start(THREE: T3, RoundedBoxGeometry: RBG, RoomEnvironment: RE, canvas: 
       uMouse: { value: new THREE.Vector2(0.72, 0.55) },
       uBall: { value: new THREE.Vector2(0.7, 0.5) },
       uKnot: { value: 0 },
+      uPaper: { value: new THREE.Vector3(...paperRGB()) },
     },
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
     fragmentShader: GRAIN,
@@ -137,8 +148,9 @@ function start(THREE: T3, RoundedBoxGeometry: RBG, RoomEnvironment: RE, canvas: 
   scene.add(rim);
 
   // planks: rounded boxes whose width changes without stretching the corners (the two ends move, the middle grows)
-  const tints = STEP_COLOURS.map((hex) => new THREE.Color(hex));
-  const planks = STEP_COLOURS.map((hex) => {
+  const colours = stepColours();
+  const tints = colours.map((hex) => new THREE.Color(hex));
+  const planks = colours.map((hex) => {
     const g = new RoundedBoxGeometry(1, 1.4, 3.0, 5, RAD);
     const base = (g.attributes.position.array as Float32Array).slice();
     const m = new THREE.MeshPhysicalMaterial({

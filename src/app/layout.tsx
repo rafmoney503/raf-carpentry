@@ -56,6 +56,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Pieces that rise in as they reach the screen are hidden only while the page script runs; if it has not
             started after 5 seconds, everything is simply shown (MotionObserver sets __mo). */}
         <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js');setTimeout(function(){if(!window.__mo)document.documentElement.classList.remove('js')},5000)" }} />
+        {/* preview only: ?p=workshop, ?p=blueprint or ?p=mono picks a colour option for this visit */}
+        <script dangerouslySetInnerHTML={{ __html: "try{var p=new URLSearchParams(location.search).get('p');if(p)sessionStorage.setItem('palette',p);p=p||sessionStorage.getItem('palette');if(p&&p!=='now')document.documentElement.dataset.palette=p}catch(e){}" }} />
       </head>
       <body>
         <a className="skip" href="#main">
