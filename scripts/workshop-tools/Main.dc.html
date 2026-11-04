@@ -1089,6 +1089,18 @@ button:focus-visible{outline:2px solid #2547D0;outline-offset:2px}
 <span class="mono" style="padding: 6px 9px; background: #FFFFFF; border: 1px solid #A9AEB3; border-radius: 2px; font-size: 14px; font-weight: 700; color: #2547D0">{{ m.t }}</span>
 </sc-for>
 </div>
+<h3 style="margin: 6px 0 0; font-size: 14px; font-weight: 700">Heights from the floor</h3>
+<div data-grid-heights="1" style="display: flex; flex-direction: column">
+<sc-for list="{{ pnMarksY }}" as="m" hint-placeholder-count="4">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid #E3E4E0">
+<span style="font-size: 13px; font-weight: 600; color: {{ m.c }}">{{ m.label }}</span>
+<span class="mono" style="font-size: 17px; font-weight: 700; color: {{ m.c }}">{{ m.val }}</span>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{ pnMarksYNote }}" hint-placeholder-val="{{ false }}">
+<p style="margin: 0; font-size: 12px; color: #4F555B">{{ pnMarksYNote }}</p>
+</sc-if>
 </section>
 </sc-if>
 <sc-if value="{{ pfOk }}" hint-placeholder-val="{{ false }}">
@@ -1189,6 +1201,11 @@ button:focus-visible{outline:2px solid #2547D0;outline-offset:2px}
 </sc-if>
 </div>
 <h3 style="margin: 4px 0 0; font-size: 13.5px; font-weight: 700">Height and battens <span style="font-weight: 500; color: #4F555B">· same on every wall</span></h3>
+<div role="group" aria-label="Where the grid starts" style="display: flex; gap: 3px; padding: 3px; background: #E6E7E2; border-radius: 2px">
+<sc-for list="{{ pgFromSeg }}" as="o" hint-placeholder-count="2">
+<button type="button" aria-pressed="{{ o.pressed }}" onClick="{{ o.pick }}" style="flex: 1 1 0; min-width: 0; min-height: 48px; padding: 4px 6px; border: 0; border-radius: 2px; background: {{ o.bg }}; color: {{ o.fg }}; font-family: 'Geist', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px"><span style="font-size: 13.5px; font-weight: 600">{{ o.label }}</span><span style="font-size: 11px; font-weight: 500; color: {{ o.subFg }}">{{ o.sub }}</span></button>
+</sc-for>
+</div>
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
 <sc-for list="{{ pnFields }}" as="f" hint-placeholder-count="3">
 <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
@@ -1208,6 +1225,9 @@ button:focus-visible{outline:2px solid #2547D0;outline-offset:2px}
 </div>
 </div>
 </div>
+<sc-if value="{{ pgSpan }}" hint-placeholder-val="{{ false }}">
+<p data-grid-span="1" class="mono" style="margin: 0; padding: 8px 10px; background: #F0F3FD; border: 1px solid #C9D3F5; border-radius: 2px; font-size: 12.5px; line-height: 1.45; font-weight: 600; color: #1B38AD">{{ pgSpan }}</p>
+</sc-if>
 <p style="margin: 0; font-size: 12px; line-height: 1.4; color: #4F555B">For a wall with a door, window or radiator, add each section between them as its own wall.</p>
 </sc-if>
 <sc-if value="{{ pnFrames }}" hint-placeholder-val="{{ true }}">
@@ -2118,7 +2138,7 @@ class Component extends DCLogic {
       uTopSpace: '300', uRailDrop: '60', uLowGap: '300', uLowN: 2, uPlinth: '100', uInfill: '0',
       lvMode: 'edge', lvStatus: 'off', lvAx: 0, lvAy: 0, lvAz: 0, lvOffX: 0, lvOffY: 0,
       lvHold: false, lvHeldX: 0, lvHeldY: 0, lvDemo: '0',
-      pW: '3000', pH: '1000', pBat: '69', pTarget: '500', pRows: 1, pStock: '2440', pWaste: '10', pgWalls: [{ w: '3000', n: 0 }], pgSel: 0,
+      pW: '3000', pH: '1000', pBat: '69', pTarget: '500', pRows: 1, pStock: '2440', pWaste: '10', pgWalls: [{ w: '3000', n: 0 }], pgSel: 0, pgFrom: 'floor', pgGap: '0',
       pnStyle: 'frames', pfCeil: '2400', pfSkirt: '100', pfRailTop: '1000', pfRailH: '45', pfMould: '22',
       pfAround: '100', pfBetween: '100', pfTarget: '700', pfUpper: 'yes', pfRailStock: '2400',
       pfWalls: [{ w: '3000', n: 0 }], pfSel: 0,
@@ -2504,10 +2524,23 @@ class Component extends DCLogic {
   }
 
   panelCalc(s) {
+    // H = the top of the panelling from the floor. The grid starts on the floor, or above the skirting
+    // (skirting height plus a gap; a gap of 0 sits the bottom rail right on the skirting).
     const H = this.num(s.pH), B = this.num(s.pBat), TGT = this.num(s.pTarget), ST = this.num(s.pStock), WS = this.num(s.pWaste);
     const rows = s.pRows;
-    const okShared = ![H, B, TGT, ST, WS].some((x) => isNaN(x)) && H >= 150 && B >= 10 && TGT >= 50 && ST >= 500;
-    const openH = okShared ? (H - (rows + 1) * B) / rows : NaN;
+    const fromSk = s.pgFrom === 'skirting';
+    const SK = fromSk ? this.num(s.pfSkirt) : 0;
+    const GP = fromSk ? (String(s.pgGap == null ? '' : s.pgGap).trim() === '' ? 0 : this.num(s.pgGap)) : 0;
+    const base = SK + GP;
+    const G = H - base;
+    let shareErr = '';
+    if ([H, B, TGT, ST, WS, SK, GP].some((x) => isNaN(x)) || B < 10 || TGT < 50 || ST < 500) shareErr = 'Check the numbers: one of the boxes is empty or not a number.';
+    else if (SK < 0 || GP < 0) shareErr = 'The skirting and the gap can’t be below 0.';
+    else if (G < 150) shareErr = fromSk
+      ? 'Only ' + this.fmt(Math.max(0, G)) + ' mm from the bottom rail to the top. The grid needs at least 150: raise the top, or lower the skirting or the gap.'
+      : 'The panelling needs to be at least 150 mm high.';
+    const okShared = !shareErr;
+    const openH = okShared ? (G - (rows + 1) * B) / rows : NaN;
     // each wall: its own width and panels across; height, batten and rows are shared
     const walls = this.pgWallList(s).map((wl, i) => {
       const W = this.num(wl.w);
@@ -2522,7 +2555,7 @@ class Component extends DCLogic {
       r.total = (rows + 1) * W + (r.n + 1) * rows * openH;
       return r;
     });
-    if (!okShared) return { error: 'Check the numbers: one of the boxes is empty or not a number.', walls: walls };
+    if (!okShared) return { error: shareErr, walls: walls };
     if (openH < 20) return { error: 'Too many rows for this height. Use fewer rows.', walls: walls };
     const bad = walls.find((r) => r.error);
     if (bad) return { error: bad.error, walls: walls };
@@ -2530,7 +2563,7 @@ class Component extends DCLogic {
     const lengths = Math.ceil((total * (1 + WS / 100)) / ST);
     const panels = walls.reduce((a, r) => a + r.n * rows, 0);
     const uprights = walls.reduce((a, r) => a + (r.n + 1) * rows, 0);
-    return { H: H, B: B, rows: rows, openH: openH, walls: walls, total: total, lengths: lengths, panels: panels, uprights: uprights, ST: ST, WS: WS };
+    return { H: H, G: G, base: base, SK: SK, GP: GP, fromSk: fromSk, B: B, rows: rows, openH: openH, walls: walls, total: total, lengths: lengths, panels: panels, uprights: uprights, ST: ST, WS: WS };
   }
 
   pfWallList(s) {
@@ -3884,10 +3917,17 @@ class Component extends DCLogic {
 
     // ---------- wall panelling: batten grid ----------
     const pc = this.panelCalc(s);
-    v.pnFields = [
-      this.field(s, 'pH', 'PANELLING HEIGHT', 'pn-h'), this.field(s, 'pBat', 'BATTEN WIDTH', 'pn-b'),
-      this.field(s, 'pTarget', 'AIM FOR PANELS OF', 'pn-t')
-    ];
+    const pgFromSk = s.pgFrom === 'skirting';
+    v.pgFromSeg = this.seg(Object.assign({}, s, { pgFrom: pgFromSk ? 'skirting' : 'floor' }), 'pgFrom', [
+      { label: 'From the floor', sub: 'bottom rail on the floor', value: 'floor' },
+      { label: 'Above the skirting', sub: 'with a gap, or 0', value: 'skirting' }
+    ]);
+    v.pnFields = (pgFromSk ? [
+      this.field(s, 'pfSkirt', 'SKIRTING HEIGHT', 'pn-sk'), this.field(s, 'pgGap', 'GAP ABOVE', 'pn-gp'),
+      this.field(s, 'pH', 'TOP FROM FLOOR', 'pn-h')
+    ] : [this.field(s, 'pH', 'PANELLING HEIGHT', 'pn-h')]).concat([
+      this.field(s, 'pBat', 'BATTEN WIDTH', 'pn-b'), this.field(s, 'pTarget', 'AIM FOR PANELS OF', 'pn-t')
+    ]);
     v.pnStockFields = [this.field(s, 'pStock', 'BATTEN LENGTH', 'pn-st'), this.field(s, 'pWaste', 'WASTE', 'pn-ws', '%')];
     const pgList = this.pgWallList(s);
     const pgMulti = pgList.length > 1;
@@ -3923,6 +3963,14 @@ class Component extends DCLogic {
     v.pnHasError = !!pc.error;
     v.pnError = pc.error || '';
     v.pnOk = !pc.error;
+    // under the height boxes: where the grid ends up, so the top and the gap can't be misread
+    v.pgSpan = '';
+    if (pgFromSk && pc.G != null && !isNaN(pc.G) && pc.G >= 150 && !pc.error) {
+      v.pgSpan = 'Grid ' + f1(pc.G) + ' high: bottom rail at ' + f1(pc.base) + ', top at ' + f1(pc.H) + ' from the floor. ' +
+        (pc.GP > 0 ? f1(pc.GP) + ' mm gap above the skirting.' : 'Gap 0: it sits right on the skirting.');
+    } else if (pgFromSk) {
+      v.pgSpan = 'Gap 0 sits the bottom rail right on the skirting.';
+    }
     if (v.pnOk) {
       const cw = pc.walls[pgSel];
       v.pnBig = pgMulti ? String(pc.panels) : String(cw.n);
@@ -3944,18 +3992,41 @@ class Component extends DCLogic {
         big: v.pnBig, word: pgMulti ? 'panels' : 'panels across',
         cols: 'repeat(2, minmax(0, 1fr))',
         cells: pgMulti ? [{ v: f1(cw.gapW), k: 'wall ' + (pgSel + 1) + ' opening width' }, v.pnStats[1], buy[0], buy[1]] : v.pnStats,
+        foot: pc.fromSk ? ['Bottom rail at ' + f1(pc.base) + ', top at ' + f1(pc.H) + (pc.GP > 0 ? ', ' + f1(pc.GP) + ' above the skirting' : ', on the skirting')] : [],
         strip: v.pnLine1
       });
+      // drawn from the floor up: the skirting (when the grid starts above it), the gap, then the grid
       const psc = Math.min(this.drawMax() / cw.W, 200 / pc.H);
       v.pnDrawW = this.r1(cw.W * psc);
       v.pnDrawH = this.r1(pc.H * psc);
-      const pr = (x1, y1, x2, y2) => ({ l: this.r1(x1 * psc), b: this.r1(y1 * psc), w: Math.max(1, this.r1((x2 - x1) * psc)), h: Math.max(1, this.r1((y2 - y1) * psc)), bg: '#D9C9A6', bd: '1px solid #A08F6E' });
+      const pr = (x1, y1, x2, y2, bg) => ({ l: this.r1(x1 * psc), b: this.r1(y1 * psc), w: Math.max(1, this.r1((x2 - x1) * psc)), h: Math.max(1, this.r1((y2 - y1) * psc)), bg: bg || '#D9C9A6', bd: '1px solid #A08F6E' });
       const prs = [];
-      cw.ups.forEach((x) => prs.push(pr(x, 0, x + pc.B, pc.H)));
-      for (let r = 0; r <= pc.rows; r++) { const y = r * (pc.openH + pc.B); prs.push(pr(0, y, cw.W, y + pc.B)); }
+      if (pc.fromSk && pc.SK > 0) prs.push(pr(0, 0, cw.W, pc.SK, '#EDE5D3'));
+      cw.ups.forEach((x) => prs.push(pr(x, pc.base, x + pc.B, pc.H)));
+      const railY = [];
+      for (let r = 0; r <= pc.rows; r++) { const y = pc.base + r * (pc.openH + pc.B); railY.push(y); prs.push(pr(0, y, cw.W, y + pc.B)); }
       v.pnRects = prs;
       v.pnMarks = cw.ups.map((x) => ({ t: f1(x) }));
       v.pnMarksTitle = (pgMulti ? 'Wall ' + (pgSel + 1) + ': uprights' : 'Uprights') + ', left edge from the left end';
+      // heights to mark out, top down: the top of every rail, then where the bottom rail starts
+      const ink = '#16191C', blue = '#2547D0', grey = '#4F555B';
+      const ys = [];
+      for (let r = pc.rows; r >= 0; r--) {
+        const top = railY[r] + pc.B;
+        let label;
+        if (r === pc.rows) label = 'Top rail, top';
+        else if (r === 0) label = 'Bottom rail, top';
+        else label = pc.rows === 2 ? 'Middle rail, top' : 'Middle rail ' + r + ', top';
+        ys.push({ label: label, val: f1(top), c: r === pc.rows ? blue : ink });
+      }
+      if (pc.fromSk) {
+        ys.push({ label: 'Bottom rail, underside', val: f1(pc.base), c: blue });
+        if (pc.SK > 0) ys.push({ label: 'Skirting top', val: f1(pc.SK), c: grey });
+      } else {
+        ys.push({ label: 'Bottom rail, on the floor', val: '0', c: grey });
+      }
+      v.pnMarksY = ys;
+      v.pnMarksYNote = pc.rows > 2 ? 'Middle rails are counted from the bottom.' : '';
       // cut list: rails per wall (grouped when the same), uprights all the same length
       const cut = [];
       const rg = [];
@@ -3972,11 +4043,17 @@ class Component extends DCLogic {
       cut.push({ part: 'Uprights' + (pgMulti ? ', all walls' : ''), note: 'fit between the rails', qty: String(pc.uprights), size: f1(pc.openH), bg: '#F0F3FD' });
       cut.push({ part: 'Battens to buy', note: '+' + f1(pc.WS) + '% waste', qty: String(pc.lengths), size: '× ' + f1(pc.ST), bg: 'transparent' });
       v.pnCut = cut;
-      v.pnNote = 'Rails run the full wall width (top, bottom' + (pc.rows > 1 ? ' and ' + (pc.rows - 1) + ' between rows' : '') + '). Uprights are cut to ' + f1(pc.openH) + ' and fit between the rails, so both end panels come out the same width.' + (pgMulti ? ' Heights match on every wall; panel widths are worked out for each wall.' : '');
-      v.pnDrawLabel = (pgMulti ? 'Wall ' + (pgSel + 1) + ', ' : 'Wall ') + f1(cw.W) + ' by ' + f1(pc.H) + ' with ' + cw.n + ' equal panels across and ' + pc.rows + ' rows';
+      v.pnNote = 'Rails run the full wall width (top, bottom' + (pc.rows > 1 ? ' and ' + (pc.rows - 1) + ' between rows' : '') + '). Uprights are cut to ' + f1(pc.openH) + ' and fit between the rails, so both end panels come out the same width.' +
+        (pc.fromSk
+          ? (pc.GP > 0 ? ' The bottom rail’s underside is ' + f1(pc.base) + ' from the floor, ' + f1(pc.GP) + ' above the ' + f1(pc.SK) + ' skirting.' : ' The bottom rail sits right on the ' + f1(pc.SK) + ' skirting.')
+          : ' The bottom rail sits on the floor.') +
+        (pgMulti ? ' Heights match on every wall; panel widths are worked out for each wall.' : '');
+      v.pnDrawLabel = (pgMulti ? 'Wall ' + (pgSel + 1) + ', ' : 'Wall ') + f1(cw.W) + ' wide, ' +
+        (pc.fromSk ? 'skirting ' + f1(pc.SK) + ', grid from ' + f1(pc.base) + ' to ' + f1(pc.H) : 'grid from the floor to ' + f1(pc.H)) +
+        ', with ' + cw.n + ' equal panels across and ' + pc.rows + ' rows';
     } else {
       v.pnBig = '–';
-      v.pnLine1 = 'Fix the inputs'; v.pnLine2 = ''; v.pnStats = []; v.pnDrawW = 0; v.pnDrawH = 0; v.pnRects = []; v.pnMarks = []; v.pnNote = ''; v.pnDrawLabel = ''; v.pnCut = []; v.pnMarksTitle = '';
+      v.pnLine1 = 'Fix the inputs'; v.pnLine2 = ''; v.pnStats = []; v.pnDrawW = 0; v.pnDrawH = 0; v.pnRects = []; v.pnMarks = []; v.pnNote = ''; v.pnDrawLabel = ''; v.pnCut = []; v.pnMarksTitle = ''; v.pnMarksY = []; v.pnMarksYNote = '';
     }
 
     // ----- picture-frame panelling (second style of the same tool) -----
