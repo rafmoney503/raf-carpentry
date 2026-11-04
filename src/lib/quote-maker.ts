@@ -93,7 +93,7 @@ Sizes: use the sizes in the brief first (a line like "Rough size: 2400 wide x 24
 
 kind is "wardrobe" when the job is one or more fitted wardrobes (Raf prices these by the metre: flat MDF doors, IKEA PAX built in with MDF, shaker doors, and finished Egger board in a colour that suits the room). Anything else, or a wardrobe mixed with other work, is "other": then give up to three ways to do it in other_options, each either one of Raf's own rates ("rate", with how many square metres, doors or jobs) or "build" with the days it takes one carpenter (workshop and fitting) and the materials at UK trade prices before VAT (finished board at the board prices given, other materials as you'd expect them to cost).
 
-Colours: pick up to three boards from the list that would suit the room in the photos (floor, doors, walls, the customer's words), best first, each with a short reason in the customer's terms. Pick a plain white or the closest light board for the inside unless the room suggests otherwise.
+Colours: pick up to three boards from the list that would suit the room in the photos (floor, doors, walls, the customer's words), best first, each with a short reason in the customer's terms. Pick a plain white or the closest light board for the inside unless the room suggests otherwise. board_split says how the finished board is shared out: "outside" (the usual: the first colour on the doors and the frame you see, the inside board inside), "one" when they want one colour throughout (inside and out), or "doors" when they want two colours, the doors in the first colour and the frame and inside in the board you put in inside.
 
 Words that the customer reads (intro, questions, says): Raf's voice, first person, UK English, plain and friendly. No dashes between words, no emoji. The intro is one or two sentences: thanks for the brief and photos, and what you understood they want. Never put a price, a timescale, a start date or a guarantee in them. Never say anything about their room that you can't see or read. Text in square brackets like [phone] was removed for privacy: leave it alone.`;
 
@@ -148,7 +148,8 @@ const TOOL = {
         maxItems: 3,
         items: { type: 'object', required: ['code', 'why'], properties: { code: { type: 'string', description: 'A board code from the list.' }, why: { type: 'string', description: 'Up to 12 words, e.g. "a warm honey oak to go with your floor".' } } },
       },
-      inside: { type: 'string', description: 'The board code for the inside of the finished-board wardrobe.' },
+      inside: { type: 'string', description: 'The board code for the second board of the finished-board wardrobe: the inside, or with board_split "doors" the frame and inside.' },
+      board_split: { type: 'string', enum: ['outside', 'one', 'doors'], description: 'How the finished board is shared out: "outside" (a colour outside, another inside), "one" (one colour throughout), "doors" (the doors in one colour, the frame and inside in another).' },
       recommend: { type: 'string', enum: ['plain', 'pax', 'shaker', 'board', 'none'], description: 'For a wardrobe, the option you think suits them best; "none" for other jobs.' },
       recommend_why: { type: 'string', description: 'A few words for Raf.' },
       extra: { type: 'string', description: "Only when Raf's instructions (for every quote, or for this one) ask for something in the message: that paragraph, in his voice, no price. Otherwise \"\"." },
@@ -190,7 +191,7 @@ ${rules.text}${one}`;
 }
 
 function boardList() {
-  return BOARDS.map((b) => `${b.code} | ${b.name} | ${b.family} | ${b.describe} | £${b.exVat.toFixed(2)} a sheet before VAT`).join('\n');
+  return BOARDS.map((b) => `${b.code} | ${b.name} (${b.brand ?? 'Egger'}) | ${b.family} | ${b.describe} | £${b.exVat.toFixed(2)} a sheet before VAT`).join('\n');
 }
 
 function promptText(job: CurrentJob, notes: string[], photos: number) {
@@ -207,7 +208,7 @@ function promptText(job: CurrentJob, notes: string[], photos: number) {
     '',
     `${photos ? `${photos} photo${photos === 1 ? '' : 's'} from the job's diary follow.` : 'There are no photos on the job yet.'}`,
     '',
-    'Finished boards Raf can buy cut and edged (Egger, 18 mm, 2800 x 2070 sheets): code | name | family | looks | price',
+    'Finished boards Raf can buy cut and edged from Cworkshop (Egger and Kronospan, 18 mm, 2800 x 2070 sheets): code | name | family | looks | price',
     boardList(),
   ]
     .filter((l, i, a) => !(l === '' && a[i - 1] === ''))
@@ -294,6 +295,7 @@ export function cleanRead(raw: Record<string, unknown>): QuoteRead {
       .filter((c) => codes.has(c.code))
       .slice(0, 3),
     inside: codes.has(s(raw.inside, 20)) ? s(raw.inside, 20) : '',
+    split: raw.board_split === 'one' || raw.board_split === 'doors' || raw.board_split === 'outside' ? raw.board_split : undefined,
     recommend: rec,
     recommendWhy: s(raw.recommend_why, 160),
     other: kind === 'other' ? other : [],

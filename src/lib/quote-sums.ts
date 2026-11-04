@@ -29,10 +29,15 @@ export type PriceKey =
   | 'dayRate'
   | 'boardSetupDays'
   | 'boardDaysPerM'
+  | 'labourX'
   | 'cutEdgeSheet'
-  | 'edgeSheet'
-  | 'hardwareUnit'
+  | 'edgeThinM'
+  | 'edgeThickM'
+  | 'hingeHole'
+  | 'fastFlow'
   | 'delivery'
+  | 'hardwareUnit'
+  | 'runner'
   | 'boardMarkup'
   | 'kitchen'
   | 'laminateM2'
@@ -46,7 +51,8 @@ export type PriceKey =
 
 export type Prices = Record<PriceKey, number> & { boards: Record<string, number> };
 
-type Row = { key: PriceKey; label: string; unit: string; group: 'Wardrobes' | 'Cupboards and pantries' | 'Finished board' | 'Other jobs' | 'Rounding'; from: string; guess?: boolean; step?: number };
+export type PriceGroup = 'Wardrobes' | 'Cupboards and pantries' | 'Finished board' | 'Cworkshop' | 'Other jobs' | 'Rounding';
+type Row = { key: PriceKey; label: string; unit: string; group: PriceGroup; from: string; guess?: boolean; step?: number };
 export const PRICE_ROWS: Row[] = [
   { key: 'plainPerM', label: 'MDF, flat doors', unit: 'a metre', group: 'Wardrobes', from: 'Your price, 1 Nov' },
   { key: 'shakerPerM', label: 'MDF, shaker doors', unit: 'a metre', group: 'Wardrobes', from: 'Your price, 1 Nov' },
@@ -62,11 +68,16 @@ export const PRICE_ROWS: Row[] = [
   { key: 'dayRate', label: 'Your day rate', unit: 'a day', group: 'Finished board', from: 'Your rate, 1 Nov' },
   { key: 'boardSetupDays', label: 'Days on every job', unit: 'days', group: 'Finished board', from: 'My guess', guess: true, step: 0.25 },
   { key: 'boardDaysPerM', label: 'Days for each metre', unit: 'days', group: 'Finished board', from: 'My guess (3.5 days for the 3.1 m LP wall)', guess: true, step: 0.25 },
-  { key: 'cutEdgeSheet', label: 'Cworkshop cutting', unit: 'a sheet', group: 'Finished board', from: 'Cworkshop’s pages, 2 Nov: £47.30 a sheet on the cutting list', step: 0.1 },
-  { key: 'edgeSheet', label: 'Edging (Cworkshop doesn’t publish it)', unit: 'a sheet', group: 'Finished board', from: 'My guess: priced live in their cutting list', guess: true },
+  { key: 'labourX', label: 'Or labour as times the materials', unit: '× (0 = days)', group: 'Finished board', from: '0 works labour out by the days. 2 makes it twice the boards, cutting, edging and fittings', step: 0.1 },
   { key: 'hardwareUnit', label: 'Hinges, rail and fixings', unit: 'a unit', group: 'Finished board', from: 'My guess', guess: true },
-  { key: 'delivery', label: 'Cworkshop delivery', unit: 'a job', group: 'Finished board', from: 'My guess: Cworkshop works it out by distance', guess: true },
+  { key: 'runner', label: 'Drawer runners', unit: 'a pair', group: 'Finished board', from: 'My guess', guess: true },
   { key: 'boardMarkup', label: 'On top of the board', unit: '%', group: 'Finished board', from: 'Nothing to start with' },
+  { key: 'cutEdgeSheet', label: 'Cutting', unit: 'a sheet', group: 'Cworkshop', from: 'Cworkshop’s pages: a sheet costs £47.30 more on the cutting list', step: 0.01 },
+  { key: 'edgeThinM', label: 'Edging, 1 mm ABS (carcass and shelves)', unit: 'a metre', group: 'Cworkshop', from: 'My guess: not on their website, priced in their cutting list', guess: true, step: 0.01 },
+  { key: 'edgeThickM', label: 'Edging, 2 mm ABS (doors and frame)', unit: 'a metre', group: 'Cworkshop', from: 'My guess: not on their website, priced in their cutting list', guess: true, step: 0.01 },
+  { key: 'hingeHole', label: 'Hinge holes drilled', unit: 'each', group: 'Cworkshop', from: 'My guess: their CNC, no price on the website', guess: true, step: 0.01 },
+  { key: 'fastFlow', label: 'Fast Flow, next day', unit: 'a job', group: 'Cworkshop', from: 'My guess: no price on the website', guess: true },
+  { key: 'delivery', label: 'Delivery', unit: 'a job', group: 'Cworkshop', from: 'My guess: worked out by distance, no prices on the website', guess: true },
   { key: 'kitchen', label: 'Kitchen fit, labour only', unit: 'standard kitchen', group: 'Other jobs', from: 'Your price, 1 Nov' },
   { key: 'laminateM2', label: 'Laminate laying, labour only', unit: 'a m²', group: 'Other jobs', from: 'Your price, 1 Nov' },
   { key: 'loftM2', label: 'Loft boarding, raised', unit: 'a m²', group: 'Other jobs', from: 'Your price, 1 Nov' },
@@ -93,10 +104,15 @@ export const DEFAULT_PRICES: Prices = {
   dayRate: 650,
   boardSetupDays: 0.5,
   boardDaysPerM: 1,
+  labourX: 0,
   cutEdgeSheet: 47.3,
-  edgeSheet: 15,
-  hardwareUnit: 50,
+  edgeThinM: 1.5,
+  edgeThickM: 2,
+  hingeHole: 1.5,
+  fastFlow: 50,
   delivery: 60,
+  hardwareUnit: 50,
+  runner: 25,
   boardMarkup: 0,
   kitchen: 2200,
   laminateM2: 40,
@@ -110,17 +126,28 @@ export const DEFAULT_PRICES: Prices = {
   boards: {},
 };
 
-/* Saved prices over the defaults; anything missing or not a number keeps the default. */
-export function pricesWith(saved: unknown): Prices {
+/* Saved prices over the defaults (or over `base`: the Job Kit passes the defaults with Cworkshop's current service
+   prices, src/lib/cworkshop-boards.ts PRICE_BASE); anything missing or not a number keeps the default. */
+export function pricesWith(saved: unknown, base: Prices = DEFAULT_PRICES): Prices {
   const s = (saved && typeof saved === 'object' ? saved : {}) as Record<string, unknown>;
-  const out = { ...DEFAULT_PRICES, boards: {} as Record<string, number> };
+  const out = { ...DEFAULT_PRICES, ...base, boards: {} as Record<string, number> };
   for (const r of PRICE_ROWS) {
     const v = Number(s[r.key]);
     if (Number.isFinite(v) && v >= 0 && v < 1e6) out[r.key] = v;
   }
   if (out.roundTo < 1) out.roundTo = 1;
+  if (out.labourX > 10) out.labourX = 10;
   const b = s.boards && typeof s.boards === 'object' ? (s.boards as Record<string, unknown>) : {};
   for (const [k, v] of Object.entries(b)) if (Number.isFinite(Number(v)) && Number(v) > 0 && Number(v) < 5000) out.boards[k] = Number(v);
+  return out;
+}
+
+/* What's kept for his price list: only the prices he has made different from where they start, so a price that
+   starts from Cworkshop's own (cutting) follows Cworkshop until he types his own, and his board prices. */
+export function ownPrices(full: Prices, base: Prices = DEFAULT_PRICES): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const r of PRICE_ROWS) if (Math.abs(full[r.key] - base[r.key]) > 1e-9) out[r.key] = full[r.key];
+  out.boards = { ...full.boards };
   return out;
 }
 
@@ -151,7 +178,8 @@ export type QuoteRead = {
   budget: string;
   wardrobe?: { units: number; drawers: number; top: boolean; sliding: boolean; inside: string; paxOk: boolean; paxNote: string };
   colours: { code: string; why: string }[];
-  inside: string; // board code for the inside of the finished-board option
+  inside: string; // board code for the second board of the finished-board option: the inside, or everything but the doors
+  split?: Split; // one board throughout, a decor outside and another inside, or the doors in one and the rest in another
   recommend: 'plain' | 'pax' | 'shaker' | 'board' | 'none';
   recommendWhy: string;
   other: OtherOption[];
@@ -164,9 +192,13 @@ export type QuoteEdits = {
   runs?: { w?: number; h?: number; d?: number }[];
   price?: Record<string, number>; // option id -> his price before VAT
   pick?: Record<string, boolean>; // option id -> in the message
-  colour?: string;
-  inside?: string;
-  sheets?: { out?: number; in?: number };
+  colour?: string; // the first board: the decor outside, or the doors
+  inside?: string; // the second board
+  split?: Split; // how the two boards are shared out ('one' = the first board throughout)
+  sheets?: { out?: number; in?: number }; // sheets of the first and second board (with one board, out is all of them)
+  holes?: boolean; // Cworkshop drills the hinge holes
+  fast?: boolean; // Cworkshop's Fast Flow, next day
+  delivery?: boolean; // false: collected, no delivery
   days?: number;
   drawers?: number;
   top?: boolean;
@@ -180,7 +212,11 @@ export type QuoteEdits = {
 /* His instructions for one quote: at most this long (the route cuts them to it too). */
 export const NOTE_MAX = 1500;
 
-export type Board = { code: string; name: string; family: string; describe: string; exVat: number; normalExVat?: number | null; offerEnds?: string | null; url: string; hex: string };
+export type Board = { code: string; name: string; brand?: string; family: string; describe: string; exVat: number; normalExVat?: number | null; offerEnds?: string | null; thick?: number; url: string; hex: string; checked?: string };
+/* How the finished-board wardrobe uses its boards: one decor throughout, a decor outside (doors and the frame you see)
+   with another inside, or the doors in one decor and the frame and inside in another. */
+export type Split = 'one' | 'outside' | 'doors';
+export const SPLITS: Split[] = ['one', 'outside', 'doors'];
 
 /* ---------- money ---------- */
 
@@ -246,25 +282,72 @@ const metres = (mmW: number) => Math.round(mmW / 10) / 100;
 const boardOf = (boards: Board[], code?: string) => boards.find((b) => b.code === code);
 export const sheetPrice = (b: Board | undefined, p: Prices) => (b ? (p.boards[b.code] ?? b.exVat) : 0);
 
-/* Sheets for a finished-board wardrobe, worked out from its parts and rounded up. Outside: the doors, the plinth and
-   top infill, the fillers and drawer fronts. Inside: sides and dividers, the top, bottom and two shelves in each
-   unit, 18 mm backs (Raf's way), drawer boxes. */
-export function boardSheets(sizes: Size[], units: number, drawers: number, top: boolean) {
-  let outM2 = 0;
-  let inM2 = 0;
+/* Hinges a door needs by its height (metres), as hinge makers suggest. */
+export const hingesFor = (h: number) => (h <= 0.9 ? 2 : h <= 1.6 ? 3 : h <= 2.2 ? 4 : 5);
+
+/* The parts of a finished-board wardrobe, worked out from its sizes. Areas (m²): the doors (and drawer fronts), the
+   frame you see (plinth, top infill, fillers) and the inside (a carcass per unit: sides and dividers, top, bottom, two
+   shelves, an 18 mm back as Raf builds; drawer boxes). Edges (metres, rounded up): doors no wider than 600 between a
+   100 plinth and a 50 infill (with top cupboards, tall doors to 2,000 and short ones over them), edged all round in
+   2 mm, with the infill's and each filler's edge you see; the carcass fronts, shelf fronts and drawer box tops in
+   1 mm. Hinges by each door's height. */
+export function boardParts(sizes: Size[], units: number, drawers: number, top: boolean) {
+  let doorsM2 = 0;
+  let frameM2 = 0;
+  let insideM2 = 0;
+  let thin = 0;
+  let thick = 0;
+  let doors = 0;
+  let hinges = 0;
   const n = Math.max(1, units);
   for (const s of sizes) {
     const W = s.w / 1000;
     const H = s.h / 1000;
     const D = s.d / 1000;
     const u = Math.max(1, Math.round((n * s.w) / Math.max(1, totalWidth(sizes))));
-    outM2 += W * H + W * 0.25 + 2 * H * 0.1 + (top ? W * 0.1 : 0);
-    inM2 += (u + 1) * H * D + 4 * W * D + W * H + (top ? 2 * W * D : 0);
+    doorsM2 += W * H;
+    frameM2 += W * 0.25 + 2 * H * 0.1 + (top ? W * 0.1 : 0);
+    insideM2 += (u + 1) * H * D + 4 * W * D + W * H + (top ? 2 * W * D : 0);
+    const across = Math.max(1, Math.ceil(W / 0.6 - 1e-9)); // doors across the run
+    const zone = Math.max(0.3, H - 0.15);
+    const tall = top ? Math.min(zone, 1.9) : zone;
+    const short = top && zone - tall > 0.05 ? zone - tall : 0;
+    thick += 2 * W + 2 * across * tall + (short ? 2 * W + 2 * across * short : 0) + W + 2 * H;
+    thin += 2 * u * zone + 4 * W + (short ? 2 * W : 0);
+    doors += across * (short ? 2 : 1);
+    hinges += across * hingesFor(tall) + (short ? across * hingesFor(short) : 0);
   }
-  outM2 += drawers * 0.6 * 0.2;
-  inM2 += drawers * 0.55;
-  const sheets = (m2: number) => Math.max(1, Math.ceil(m2 / (SHEET_M2 * SHEET_YIELD) - 1e-9));
-  return { out: sheets(outM2), in: sheets(inM2), outM2: Math.round(outM2 * 10) / 10, inM2: Math.round(inM2 * 10) / 10 };
+  doorsM2 += drawers * 0.6 * 0.2;
+  insideM2 += drawers * 0.55;
+  thick += drawers * 1.3;
+  thin += drawers * 1.9;
+  const r1 = (x: number) => Math.round(x * 10) / 10;
+  return { doorsM2: r1(doorsM2), frameM2: r1(frameM2), insideM2: r1(insideM2), thinM: Math.ceil(thin - 1e-9), thickM: Math.ceil(thick - 1e-9), doors, hinges };
+}
+export type Parts = ReturnType<typeof boardParts>;
+
+const sheetsOf = (m2: number) => (m2 > 0 ? Math.max(1, Math.ceil(m2 / (SHEET_M2 * SHEET_YIELD) - 1e-9)) : 0);
+
+/* Sheets of the first and second board for the way they're shared out. One board throughout shares its offcuts, so it
+   can need fewer sheets than two. */
+export function splitSheets(parts: Parts, split: Split) {
+  const outM2 = split === 'one' ? parts.doorsM2 + parts.frameM2 + parts.insideM2 : split === 'doors' ? parts.doorsM2 : parts.doorsM2 + parts.frameM2;
+  const inM2 = split === 'one' ? 0 : split === 'doors' ? parts.frameM2 + parts.insideM2 : parts.insideM2;
+  const r1 = (x: number) => Math.round(x * 10) / 10;
+  return { out: sheetsOf(outM2), in: sheetsOf(inM2), outM2: r1(outM2), inM2: r1(inM2) };
+}
+
+/* Sheets for a finished-board wardrobe with a decor outside and another inside (the first way it was priced). */
+export function boardSheets(sizes: Size[], units: number, drawers: number, top: boolean) {
+  return splitSheets(boardParts(sizes, units, drawers, top), 'outside');
+}
+
+/* How the two boards are shared out on this quote: Raf's choice, else what Claude read, else the second board
+   being the same as the first means one board, else a decor outside and another inside. */
+export function splitOf(read: Pick<QuoteRead, 'split' | 'inside' | 'colours'>, edits: QuoteEdits = {}): Split {
+  if (edits.split && SPLITS.includes(edits.split)) return edits.split;
+  if (read.split && SPLITS.includes(read.split)) return read.split;
+  return read.inside && read.inside === read.colours[0]?.code ? 'one' : 'outside';
 }
 
 export const unitsFor = (sizes: Size[], said?: number) => (said && said > 0 && said < 20 ? Math.round(said) : Math.max(1, sizes.reduce((n, s) => n + Math.max(1, Math.round(s.w / 750)), 0)));
@@ -273,21 +356,28 @@ export const unitsFor = (sizes: Size[], said?: number) => (said && said > 0 && s
    file keeps no imports). */
 export type FillWall = (wall: number) => number[];
 
-/* The finished-board wardrobe's sheets and days: worked out from the sizes, or Raf's own numbers. */
+/* The finished-board wardrobe's parts, sheets and days: worked out from the sizes, or Raf's own numbers. */
 export function boardWork(read: QuoteRead, p: Prices, edits: QuoteEdits = {}) {
   const sizes = sizesOf(read, edits);
   const w = totalWidth(sizes);
   const wr = read.wardrobe;
   const drawers = Math.max(0, Math.min(24, Math.round(edits.drawers ?? wr?.drawers ?? 0)));
   const top = edits.top ?? wr?.top ?? false;
-  const calc = boardSheets(sizes, unitsFor(sizes, wr?.units), drawers, top);
+  const units = unitsFor(sizes, wr?.units);
+  const parts = boardParts(sizes, units, drawers, top);
+  const split = splitOf(read, edits);
+  const calc = splitSheets(parts, split);
   const workedDays = Math.round((p.boardSetupDays + p.boardDaysPerM * (w / 1000) + drawers * 0.15 + (top ? 0.3 * (w / 1000) : 0)) * 4) / 4;
   const own = (v: number | undefined, lo: number, hi: number) => (typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi ? v : undefined);
   return {
+    parts,
+    split,
+    units,
+    drawers,
     calc,
     workedDays,
     out: Math.round(own(edits.sheets?.out, 0, 60) ?? calc.out),
-    in: Math.round(own(edits.sheets?.in, 0, 60) ?? calc.in),
+    in: split === 'one' ? 0 : Math.round(own(edits.sheets?.in, 0, 60) ?? calc.in),
     days: Math.round((own(edits.days, 0.25, 60) ?? workedDays) * 4) / 4,
   };
 }
@@ -370,35 +460,49 @@ export function wardrobeOptions(read: QuoteRead, p: Prices, boards: Board[], edi
     });
   }
 
-  // 4. Finished board from Cworkshop in a colour that suits the room: nothing to paint
+  // 4. Finished board from Cworkshop in a colour that suits the room: nothing to paint. One board throughout, or two:
+  // a decor outside and another inside, or the doors in one and the frame and inside in another.
   {
     const colour = boardOf(boards, edits.colour) ?? boardOf(boards, read.colours.find((c) => boardOf(boards, c.code))?.code) ?? boards[0];
-    const insideBoard = boardOf(boards, edits.inside) ?? boardOf(boards, read.inside) ?? boards.find((b) => b.code === 'W1000 ST9') ?? colour;
-    const same = colour?.code === insideBoard?.code;
+    const second = boardOf(boards, edits.inside) ?? boardOf(boards, read.inside) ?? boards.find((b) => b.code === 'W1000 ST9') ?? colour;
     const work = boardWork(read, p, edits);
-    const calc = work.calc;
+    const { parts, split } = work;
     const outSheets = work.out;
     const inSheets = work.in;
     const markup = 1 + p.boardMarkup / 100;
     const days = work.days;
+    const role1 = split === 'one' ? 'throughout' : split === 'doors' ? 'doors' : 'outside';
+    const role2 = split === 'doors' ? 'frame and inside' : 'inside';
+    const s1 = (n: number) => `${n} sheet${n === 1 ? '' : 's'}`;
     const lines: Line[] = [];
     if (colour) {
-      if (same) lines.push({ label: `${outSheets + inSheets} sheets ${colour.name} at ${money2(sheetPrice(colour, p))}`, amount: (outSheets + inSheets) * sheetPrice(colour, p) * markup });
-      else {
-        lines.push({ label: `${outSheets} sheet${outSheets === 1 ? '' : 's'} ${colour.name} (outside) at ${money2(sheetPrice(colour, p))}`, amount: outSheets * sheetPrice(colour, p) * markup });
-        if (insideBoard) lines.push({ label: `${inSheets} sheet${inSheets === 1 ? '' : 's'} ${insideBoard.name} (inside) at ${money2(sheetPrice(insideBoard, p))}`, amount: inSheets * sheetPrice(insideBoard, p) * markup });
-      }
+      lines.push({ label: `${s1(outSheets)} ${colour.name} (${role1}) at ${money2(sheetPrice(colour, p))}`, amount: outSheets * sheetPrice(colour, p) * markup });
+      if (split !== 'one' && second && inSheets) lines.push({ label: `${s1(inSheets)} ${second.name} (${role2}) at ${money2(sheetPrice(second, p))}`, amount: inSheets * sheetPrice(second, p) * markup });
     }
-    lines.push({ label: `Cworkshop cutting, ${outSheets + inSheets} sheets at ${money2(p.cutEdgeSheet)}`, amount: (outSheets + inSheets) * p.cutEdgeSheet });
-    if (p.edgeSheet) lines.push({ label: `Edging, ${outSheets + inSheets} sheets at about ${money(p.edgeSheet)}`, amount: (outSheets + inSheets) * p.edgeSheet });
+    const sheets = outSheets + (split === 'one' ? 0 : inSheets);
+    lines.push({ label: `Cworkshop cutting, ${s1(sheets)} at ${money2(p.cutEdgeSheet)}`, amount: sheets * p.cutEdgeSheet });
+    lines.push({ label: `Edging 2 mm, ${parts.thickM} m at ${money2(p.edgeThickM)} (doors and frame)`, amount: parts.thickM * p.edgeThickM });
+    lines.push({ label: `Edging 1 mm, ${parts.thinM} m at ${money2(p.edgeThinM)} (carcass and shelves)`, amount: parts.thinM * p.edgeThinM });
+    if (edits.holes) lines.push({ label: `Hinge holes drilled, ${parts.hinges} at ${money2(p.hingeHole)}`, amount: parts.hinges * p.hingeHole });
     lines.push({ label: `Hinges, rails and fixings, ${units} unit${units === 1 ? '' : 's'} at ${money(p.hardwareUnit)}`, amount: units * p.hardwareUnit });
-    if (drawers) lines.push({ label: `Drawer runners, ${drawers} at £25`, amount: drawers * 25 });
-    lines.push({ label: 'Delivery', amount: p.delivery });
-    lines.push({ label: `Labour, ${days} day${days === 1 ? '' : 's'} at ${money(p.dayRate)}`, amount: days * p.dayRate });
+    if (drawers) lines.push({ label: `Drawer runners, ${drawers} at ${money(p.runner)}`, amount: drawers * p.runner });
+    const materials = lines.reduce((n, l) => n + l.amount, 0);
+    if (edits.fast) lines.push({ label: 'Fast Flow, cut and edged next day', amount: p.fastFlow });
+    if (edits.delivery !== false) lines.push({ label: 'Delivery', amount: p.delivery });
+    if (p.labourX > 0) lines.push({ label: `Labour, ${p.labourX} × the materials (${money(materials)})`, amount: materials * p.labourX });
+    else lines.push({ label: `Labour, ${days} day${days === 1 ? '' : 's'} at ${money(p.dayRate)}`, amount: days * p.dayRate });
     const worked = round(lines.reduce((n, l) => n + l.amount, 0));
     const why = read.colours.find((c) => c.code === colour?.code)?.why ?? '';
     const reason = why ? ` (${why.replace(/\.$/, '')})` : '';
-    const shade = colour ? (insideBoard && !same ? `Egger ${colour.name} outside${reason}, ${insideBoard.name} inside` : `Egger ${colour.name} inside and out${reason}`) : 'finished board';
+    const brand = (b: Board) => b.brand || 'Egger';
+    const shade = !colour
+      ? 'Finished board'
+      : split === 'one' || !second
+        ? `${brand(colour)} ${colour.name} inside and out${reason}`
+        : split === 'doors'
+          ? `${brand(colour)} ${colour.name} doors${reason}, with ${second.name} for the frame and inside`
+          : `${brand(colour)} ${colour.name} outside${reason}, ${second.name} inside`;
+    const m2 = split === 'one' ? `${work.calc.outM2} m² of ${colour?.name ?? 'board'}` : `${work.calc.outM2} m² ${colour?.name ?? ''} and ${work.calc.inM2} m² ${second?.name ?? ''}`;
     out.push({
       id: 'board',
       title: 'Finished board, colour matched',
@@ -406,10 +510,12 @@ export function wardrobeOptions(read: QuoteRead, p: Prices, boards: Board[], edi
       worked,
       ...own('board', worked),
       lines,
-      says: `${shade}. The board comes finished, so there’s no painting and no decorator needed.${inside}`,
+      says: `${shade}. Every edge is finished to match, and the board comes finished, so there’s no painting and no decorator needed.${inside}`,
       offered: Boolean(colour),
       why: colour ? undefined : 'No boards in the list.',
-      extra: colour ? `Sheets worked out from the parts: about ${calc.outM2} m² outside, ${calc.inM2} m² inside, ${Math.round(SHEET_YIELD * 100)}% of each sheet used.` : undefined,
+      extra: colour
+        ? `Worked out from the parts: about ${m2}, ${Math.round(SHEET_YIELD * 100)}% of each sheet used; ${parts.thickM} m of 2 mm edging and ${parts.thinM} m of 1 mm; ${parts.hinges} hinges on ${parts.doors} doors.`
+        : undefined,
     });
   }
   return out;

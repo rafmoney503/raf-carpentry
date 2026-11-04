@@ -1,7 +1,7 @@
 /* Small line icons for the Job Kit's sections, drawn like the site's sketches (round ends, one weight), so each
    card on the Today screen and each line in the Today list shows where it goes. Decorative: the text says it. */
 
-export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note' | 'home' | 'quote' | 'steps' | 'history' | 'tablet' | 'house' | 'more';
+export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note' | 'home' | 'quote' | 'steps' | 'history' | 'tablet' | 'house' | 'more' | 'swatch';
 
 const PATHS: Record<IconName, React.ReactNode> = {
   // three steps going up, the one reached ticked: where a job is up to (Quote, Work Order, Completed)
@@ -43,6 +43,15 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M13 4.5h6.5V11" />
       <path d="M19.5 4.5l-8 8" />
       <path d="M17.5 14v4.5a1.5 1.5 0 0 1-1.5 1.5H6a1.5 1.5 0 0 1-1.5-1.5v-10A1.5 1.5 0 0 1 6 7h4.5" />
+    </>
+  ),
+  // three board samples fanned out, the edge of each one showing: Cworkshop, the decors and their prices
+  swatch: (
+    <>
+      <rect x="3.5" y="9" width="10" height="11" rx="1" />
+      <path d="M7.5 9V5.5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1V16a1 1 0 0 1-1 1h-3.5" />
+      <path d="M17.5 8h2a1 1 0 0 1 1 1v8.5a1 1 0 0 1-1 1h-2" />
+      <path d="M3.5 12.5h10" strokeWidth="1.4" />
     </>
   ),
   // a price tag with a pound sign: Quotes, rough prices for new enquiries

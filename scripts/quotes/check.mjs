@@ -4,11 +4,16 @@
    Raf's own prices are fixed here on purpose, as in scripts/cost-calculator/check.mjs: changing one in the lib
    without changing it here fails the check. */
 import { createJiti } from 'jiti';
-import { BOARDS, CUT_CHARGE, INSIDE_DEFAULT } from '../../src/lib/cworkshop-boards.ts';
+import { readFileSync } from 'node:fs';
 import {
+  boardParts,
   boardSheets,
   boardWork,
   DEFAULT_PRICES,
+  hingesFor,
+  ownPrices,
+  splitOf,
+  splitSheets,
   fromPrice,
   optionsFor,
   otherOptions,
@@ -25,6 +30,7 @@ import {
 } from '../../src/lib/quote-sums.ts';
 
 const jiti = createJiti(import.meta.url);
+const { BOARDS, CUT_CHARGE, INSIDE_DEFAULT, PRICE_BASE, SERVICES, CHANGES, FAMILY_ORDER, BOARDS_CHECKED } = await jiti.import('../../src/lib/cworkshop-boards.ts');
 const { fillWall } = await jiti.import('../../src/lib/pax-brief.ts');
 const { cleanRead } = await jiti.import('../../src/lib/quote-maker.ts');
 
@@ -40,6 +46,7 @@ const RAF = { plainPerM: 1200, shakerPerM: 1600, paxPerM: 1050, dayRate: 650, ki
 for (const [k, v] of Object.entries(RAF)) ok(DEFAULT_PRICES[k] === v, `default ${k} is ${v}`);
 ok(CUT_CHARGE === DEFAULT_PRICES.cutEdgeSheet, 'cutting charge matches the board list');
 ok(PRICE_ROWS.length === Object.keys(DEFAULT_PRICES).length - 1, 'a price row for every price');
+ok(new Set(PRICE_ROWS.map((r) => r.key)).size === PRICE_ROWS.length, 'price rows unique');
 for (const r of PRICE_ROWS) ok(typeof DEFAULT_PRICES[r.key] === 'number', `default for ${r.key}`);
 for (const r of PRICE_ROWS) ok(!/[—–]/.test(r.label + r.from), `no dashes in ${r.key}`);
 
@@ -47,13 +54,34 @@ for (const r of PRICE_ROWS) ok(!/[—–]/.test(r.label + r.from), `no dashes in
 ok(BOARDS.length >= 25, 'at least 25 boards');
 ok(new Set(BOARDS.map((b) => b.code)).size === BOARDS.length, 'board codes unique');
 ok(BOARDS.some((b) => b.code === INSIDE_DEFAULT), 'the inside board is in the list');
+ok(/^\d{4}-\d{2}-\d{2}$/.test(BOARDS_CHECKED), 'the list says when it was checked');
 for (const b of BOARDS) {
   ok(b.exVat > 50 && b.exVat < 200, `${b.code} price looks like a sheet`);
-  ok(/^https:\/\/cworkshop\.co\.uk\/sheet-materials\/egger\//.test(b.url), `${b.code} links to Cworkshop`);
+  ok(/^https:\/\/cworkshop\.co\.uk\/sheet-materials\/(egger|kronospan)\/[a-z0-9-]+-chipboard-2800-x-2070mm\/(18(\.5)?mm\/)?$/.test(b.url), `${b.code} links to its Cworkshop page`);
+  ok(['Egger', 'Kronospan'].includes(b.brand), `${b.code} has its maker`);
+  ok(FAMILY_ORDER.includes(b.family), `${b.code} is in a family the screens show`);
+  ok(b.thick === 18 || b.thick === 18.5, `${b.code} is 18 or 18.5 mm`);
+  ok(b.thick !== 18.5 || /18\.5mm\/$/.test(b.url), `${b.code} links to its 18.5 mm page`);
+  ok(/^\d{4}-\d{2}-\d{2}$/.test(b.checked ?? '') && b.checked <= BOARDS_CHECKED, `${b.code} says when its price was read`);
   ok(/^#[0-9a-f]{6}$/.test(b.hex), `${b.code} has a swatch colour`);
   ok(!/[—–]/.test(b.describe + b.name), `${b.code} words have no dashes`);
   if (b.offerEnds) ok(b.normalExVat && b.normalExVat > b.exVat, `${b.code} offer is below the normal price`);
 }
+
+/* Cworkshop's services: each one a price row in the Cworkshop group, where the list of prices starts */
+const raw = JSON.parse(readFileSync(new URL('../../content/cworkshop.json', import.meta.url), 'utf8'));
+ok(raw.boards.length === BOARDS.length && raw.services.length === SERVICES.length, 'the data file is what the Job Kit reads');
+for (const sv of SERVICES) {
+  const row = PRICE_ROWS.find((r) => r.key === sv.key);
+  ok(row && row.group === 'Cworkshop', `${sv.key} is a Cworkshop price row`);
+  ok(PRICE_BASE[sv.key] === sv.price, `${sv.key} starts at Cworkshop's ${sv.price}`);
+  ok(typeof sv.published === 'boolean' && sv.from.length > 10, `${sv.key} says where its price comes from`);
+  ok(!/[—–]/.test(sv.label + sv.from), `${sv.key} words have no dashes`);
+}
+for (const r of PRICE_ROWS.filter((x) => x.group === 'Cworkshop')) ok(SERVICES.some((sv) => sv.key === r.key), `${r.key} is in the data file`);
+ok(SERVICES.find((x) => x.key === 'cutEdgeSheet').published === true, 'cutting is Cworkshop’s published price');
+ok(CHANGES.length >= 1 && CHANGES.every((c) => /^\d{4}-\d{2}-\d{2}$/.test(c.at) && c.text.length > 5 && !/[—–]/.test(c.text)), 'changes dated and worded');
+ok(pricesWith({}, PRICE_BASE).edgeThinM === PRICE_BASE.edgeThinM, 'the Job Kit starts from Cworkshop’s prices');
 
 /* pricesWith keeps good numbers, drops bad ones */
 {
@@ -99,11 +127,20 @@ const by = (opts, id) => opts.find((o) => o.id === id);
   const outM2 = 2.4 * 2.4 + 2.4 * 0.25 + 2 * 2.4 * 0.1;
   const inM2 = 4 * 2.4 * 0.6 + 4 * 2.4 * 0.6 + 2.4 * 2.4;
   ok(s.out === Math.ceil(outM2 / (SHEET_M2 * SHEET_YIELD)) && s.in === Math.ceil(inM2 / (SHEET_M2 * SHEET_YIELD)), `sheets ${s.out} + ${s.in} as worked by hand`);
+  // edges: 4 doors 600 x 2,250 all round, the infill and two fillers; three carcasses' fronts and two shelves each
+  const parts = boardParts(sizesOf(r), 3, 0, false);
+  const thick = Math.ceil(2 * 2.4 + 2 * 4 * 2.25 + 2.4 + 2 * 2.4 - 1e-9);
+  const thin = Math.ceil(2 * 3 * 2.25 + 4 * 2.4 - 1e-9);
+  ok(parts.thickM === thick && parts.thinM === thin, `edging ${parts.thickM} m 2 mm and ${parts.thinM} m 1 mm as worked by hand (${thick}, ${thin})`);
+  ok(parts.doors === 4 && parts.hinges === 4 * hingesFor(2.25) && hingesFor(2.25) === 5, `4 doors, ${parts.hinges} hinges`);
   const oak = BOARDS.find((b) => b.code === 'H3171 ST12').exVat;
   const white = BOARDS.find((b) => b.code === 'W1000 ST9').exVat;
   const days = Math.round((0.5 + 2.4) * 4) / 4;
-  const sum = s.out * oak + s.in * white + (s.out + s.in) * (47.3 + 15) + 3 * 50 + 60 + days * 650;
+  const sum = s.out * oak + s.in * white + (s.out + s.in) * 47.3 + thick * 2 + thin * 1.5 + 3 * 50 + 60 + days * 650;
   ok(by(o, 'board').worked === roundUp(sum, 50), `board ${by(o, 'board').worked} = ${roundUp(sum, 50)} by hand`);
+  ok(by(o, 'board').lines.some((l) => /^Edging 2 mm, 30 m at £2\.00/.test(l.label)) && by(o, 'board').lines.some((l) => /^Edging 1 mm, 24 m at £1\.50/.test(l.label)), 'edging lines say the metres and the price');
+  ok(/30 m of 2 mm edging and 24 m of 1 mm; 20 hinges on 4 doors/.test(by(o, 'board').extra), `the note says the parts: ${by(o, 'board').extra}`);
+  ok(/Every edge is finished to match/.test(by(o, 'board').says), 'board says the edges match');
   ok(/^Egger Oiled Kendal Oak outside \(a warm honey oak to go with your floor\), Premium White inside\./.test(by(o, 'board').says), `board says the colour and the inside: ${by(o, 'board').says}`);
   ok(/no painting/.test(by(o, 'board').says), 'board says nothing to paint');
   ok(by(o, 'plain').price < by(o, 'shaker').price, 'flat doors cost less than shaker');
@@ -179,6 +216,61 @@ const by = (opts, id) => opts.find((o) => o.id === id);
   ok(by(wardrobeOptions(r, cheap, BOARDS, {}, fillWall), 'board').worked < by(wardrobeOptions(r, P, BOARDS, {}, fillWall), 'board').worked, 'Raf’s board price used');
 }
 
+/* one board or two: one decor throughout, a decor outside and another inside, or the doors and the rest */
+{
+  const r = wardrobe([[2400, 2400]]);
+  const parts = boardParts(sizesOf(r), 3, 0, false);
+  const one = splitSheets(parts, 'one');
+  const two = splitSheets(parts, 'outside');
+  const doors = splitSheets(parts, 'doors');
+  ok(one.in === 0 && one.out <= two.out + two.in && one.out === Math.ceil((parts.doorsM2 + parts.frameM2 + parts.insideM2) / (SHEET_M2 * SHEET_YIELD) - 1e-9), `one board: ${one.out} sheets, never more than two boards' ${two.out + two.in}`);
+  ok(doors.outM2 === parts.doorsM2 && Math.abs(doors.inM2 - (parts.frameM2 + parts.insideM2)) < 0.11, 'doors split: the doors in the first board, the rest in the second');
+  ok(splitOf(r) === 'outside', 'a decor outside and white inside to start with');
+  ok(splitOf({ ...r, inside: 'H3171 ST12' }) === 'one', 'the same board inside means one board');
+  ok(splitOf({ ...r, split: 'doors' }) === 'doors' && splitOf({ ...r, split: 'doors' }, { split: 'one' }) === 'one', 'Claude’s split, then Raf’s');
+  const o1 = by(wardrobeOptions(r, P, BOARDS, { split: 'one' }, fillWall), 'board');
+  ok(/^Egger Oiled Kendal Oak inside and out \(a warm honey oak/.test(o1.says), `one board says inside and out: ${o1.says}`);
+  ok(o1.lines.filter((l) => / sheets? /.test(l.label) && !/cutting/i.test(l.label)).length === 1 && /\(throughout\)/.test(o1.lines[0].label), 'one board: one line of sheets');
+  ok(boardWork(r, P, { split: 'one', sheets: { out: 9, in: 4 } }).in === 0, 'one board has no second board, whatever was typed');
+  const o2 = by(wardrobeOptions(r, P, BOARDS, { split: 'doors', inside: 'W1100 ST9' }, fillWall), 'board');
+  ok(/^Egger Oiled Kendal Oak doors \(a warm honey oak to go with your floor\), with Alpine White for the frame and inside\./.test(o2.says), `doors split words: ${o2.says}`);
+  ok(o2.lines.some((l) => /Alpine White \(frame and inside\)/.test(l.label)) && o2.lines.some((l) => /Oiled Kendal Oak \(doors\)/.test(l.label)), 'doors split lines name each board’s parts');
+  const k = by(wardrobeOptions({ ...r, colours: [{ code: 'K357 PW', why: '' }] }, P, BOARDS, {}, fillWall), 'board');
+  ok(/^Kronospan Greige Castello Oak outside, Premium White inside\./.test(k.says), `a Kronospan board says its maker: ${k.says}`);
+  // the extras
+  const base = by(wardrobeOptions(r, P, BOARDS, {}, fillWall), 'board');
+  const sumOf = (o) => o.lines.reduce((n, l) => n + l.amount, 0);
+  const holes = by(wardrobeOptions(r, P, BOARDS, { holes: true }, fillWall), 'board');
+  ok(Math.abs(sumOf(holes) - sumOf(base) - parts.hinges * 1.5) < 1e-6, 'hinge holes: each hinge at £1.50');
+  const fast = by(wardrobeOptions(r, P, BOARDS, { fast: true }, fillWall), 'board');
+  ok(Math.abs(sumOf(fast) - sumOf(base) - 50) < 1e-6 && fast.lines.some((l) => /Fast Flow/.test(l.label)), 'Fast Flow adds its price');
+  const coll = by(wardrobeOptions(r, P, BOARDS, { delivery: false }, fillWall), 'board');
+  ok(Math.abs(sumOf(base) - sumOf(coll) - 60) < 1e-6 && !coll.lines.some((l) => /Delivery/.test(l.label)), 'collected: no delivery');
+  const drawers = by(wardrobeOptions(wardrobe([[2400, 2400]], { drawers: 2 }), P, BOARDS, {}, fillWall), 'board');
+  ok(drawers.lines.some((l) => l.label === 'Drawer runners, 2 at £25'), 'drawer runners at his price');
+  const twice = pricesWith({ labourX: 2 });
+  const lx = by(wardrobeOptions(r, twice, BOARDS, {}, fillWall), 'board');
+  const mats = lx.lines.filter((l) => !/Labour|Delivery|Fast Flow/.test(l.label)).reduce((n, l) => n + l.amount, 0);
+  const lab = lx.lines.find((l) => /^Labour/.test(l.label));
+  ok(lab && /2 × the materials/.test(lab.label) && Math.abs(lab.amount - 2 * mats) < 1e-6, `labour as twice the materials: ${lab?.label}`);
+  ok(pricesWith({ labourX: 99 }).labourX === 10, 'times the materials kept sensible');
+  const dear = pricesWith({ edgeThickM: 3, edgeThinM: 2 });
+  ok(sumOf(by(wardrobeOptions(r, dear, BOARDS, {}, fillWall), 'board')) - sumOf(base) === parts.thickM * 1 + parts.thinM * 0.5, 'his edging prices used');
+  // top cupboards: short doors over tall ones, more edging and hinges
+  const t = boardParts(sizesOf(r), 3, 0, true);
+  ok(t.doors === 8 && t.hinges === 4 * hingesFor(1.9) + 4 * hingesFor(0.35) && t.thickM > parts.thickM, `top cupboards: ${t.doors} doors, ${t.hinges} hinges`);
+}
+
+/* his price list keeps only what he changed, so Cworkshop's own prices still reach every quote */
+{
+  const full = pricesWith({ plainPerM: 1300, boards: { 'U638 ST9': 80 } }, PRICE_BASE);
+  const kept = ownPrices(full, PRICE_BASE);
+  ok(kept.plainPerM === 1300 && !('cutEdgeSheet' in kept) && !('edgeThinM' in kept) && kept.boards['U638 ST9'] === 80, `only his changes kept: ${Object.keys(kept).join(', ')}`);
+  const moved = { ...PRICE_BASE, cutEdgeSheet: 49.5 };
+  ok(pricesWith(kept, moved).cutEdgeSheet === 49.5 && pricesWith(kept, moved).plainPerM === 1300, 'a new Cworkshop price reaches his list, his own prices stay');
+  ok(pricesWith(ownPrices({ ...full, cutEdgeSheet: 40 }, PRICE_BASE), moved).cutEdgeSheet === 40, 'his own cutting price wins over Cworkshop’s');
+}
+
 /* every size: rounded, at least the smallest job, wider never cheaper */
 for (let w = 400; w <= 6000; w += 100) {
   const a = wardrobeOptions(wardrobe([[w, 2400]]), P, BOARDS, {}, fillWall);
@@ -226,6 +318,8 @@ for (let w = 400; w <= 6000; w += 100) {
   ok(c.runs.length === 4 && c.runs[0].height === 2400 && c.runs[0].heightFrom === 'guess', 'runs trimmed and rounded');
   ok(c.seen.length === 6, 'at most six things seen');
   ok(c.colours.length === 1 && c.colours[0].code === 'H3171 ST12', 'only real board codes');
+  ok(c.split === undefined, 'no board split when Claude gives none');
+  ok(cleanRead({ kind: 'wardrobe', board_split: 'doors' }).split === 'doors' && cleanRead({ kind: 'wardrobe', board_split: 'half' }).split === undefined, 'Claude’s board split kept when it’s a real one');
   ok(c.inside === '' && c.recommend === 'none', 'bad inside and pick dropped');
   ok(c.wardrobe.units === 3 && c.wardrobe.drawers === 0 && c.wardrobe.top && !c.wardrobe.paxOk && c.wardrobe.paxNote === 'sloped', 'wardrobe facts cleaned');
   ok(cleanRead({ kind: 'other', other_options: [{ name: 'A', how: 'rate', rate: 'nope' }] }).other[0].how === 'build', 'an unknown rate becomes days and materials');

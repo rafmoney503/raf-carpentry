@@ -95,6 +95,7 @@ import { reloadFor, safeToReload, watchVersion } from './update';
 import { fetchSocial, newComments, savedSocial, SOCIAL_FRESH, socialKey, socialLine, socialProblem, socialTodayLine, SocialView, type Social } from './social';
 import { PersonalToday, PersonalView, usePersonalToday } from './personal';
 import { startChores } from './chores-store';
+import { CworkshopView } from './cworkshop';
 import { askQuote, checkedQuotes, fetchQuotes, flushQuoteEdits, isWorking, keepRedo, ownNote, pricesOf, putInEmailBox, QUOTES_FRESH, QuoteJobBox, QuotePrices, QuotesList, quotesLine, quoteTodayLines, QuoteView, readyCount, rowOf, rulesOf, rulesWaiting, savedQuotes, savedRedo, toRead, workingHere, changeHere, type Quotes } from './quotes';
 import type { QuoteEdits } from '@/lib/quote-sums';
 import './job-kit.css';
@@ -116,6 +117,7 @@ type Screen =
   | { name: 'quotes' } // rough quotes Claude worked out for new enquiries (quotes.tsx)
   | { name: 'quote'; id: string; from?: 'job' | 'home' } // one, by its ServiceM8 job
   | { name: 'quote-prices' } // Raf's price list the quotes are worked out from
+  | { name: 'cworkshop' } // Cworkshop's decors and service prices the finished-board quotes use (cworkshop.tsx)
   | { name: 'concept'; id: string; mail?: string; job?: string } // Design with Claude (concepts.tsx); mail: started from that email; job: from that ServiceM8 job's screen
   | { name: 'claude' } // Claude credit: what's left and what used it (claude-credit.tsx)
   | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer' | 'timeline' | 'board' | 'wa' | 'design'; client?: string; chat?: string; design?: string }
@@ -158,6 +160,7 @@ function listFor(s: Screen): Screen | null {
     case 'quote':
       return s.from === 'job' ? { name: 'current' } : { name: 'quotes' };
     case 'quote-prices':
+    case 'cworkshop':
       return { name: 'quotes' };
     case 'concept':
       return s.mail ? { name: 'inbox' } : s.job ? { name: 'current' } : { name: 'designs' };
@@ -178,7 +181,7 @@ const parentOf = (s: Screen): Screen =>
       : s.from === 'home'
         ? { name: 'home' }
         : { name: 'quotes' }
-    : s.name === 'quote-prices'
+    : s.name === 'quote-prices' || s.name === 'cworkshop'
     ? { name: 'quotes' }
     : s.name === 'concept'
     ? s.mail
@@ -243,7 +246,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'personal', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-blog', 'stats-page', 'kit', 'social', 'quotes', 'quote', 'quote-prices', 'concept', 'claude'].includes(s.name)) return s;
+    if (s && ['home', 'personal', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-blog', 'stats-page', 'kit', 'social', 'quotes', 'quote', 'quote-prices', 'cworkshop', 'concept', 'claude'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -1364,6 +1367,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 onOpen={(id) => go({ name: 'quote', id })}
                 onMake={(id) => void startQuote(id, true, ownNote(rowOf(quotes, id)))}
                 onPrices={() => go({ name: 'quote-prices' })}
+                onCworkshop={() => go({ name: 'cworkshop' })}
                 onSaveRules={(text) => {
                   changeQuote('_rules', { text });
                   void flushQuoteEdits();
@@ -1401,11 +1405,14 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                       setTimeout(() => document.getElementById('emails')?.scrollIntoView({ behavior: 'instant', block: 'start' }), 120);
                     }}
                     onOpenJob={qjob && screen.from !== 'job' ? () => go({ name: 'sm8', id: qjob.uuid }) : undefined}
+                    onCworkshop={() => go({ name: 'cworkshop' })}
                   />
                 );
               })()
             ) : screen.name === 'quote-prices' ? (
-              <QuotePrices prices={pricesOf(quotes)} savedAt={quotes.prices?.at ?? 0} onSave={(p) => changeQuote('_prices', p)} />
+              <QuotePrices prices={pricesOf(quotes)} savedAt={quotes.prices?.at ?? 0} onSave={(p) => changeQuote('_prices', p)} onCworkshop={() => go({ name: 'cworkshop' })} />
+            ) : screen.name === 'cworkshop' ? (
+              <CworkshopView prices={pricesOf(quotes)} savedAt={quotes.prices?.at ?? 0} onSave={(p) => changeQuote('_prices', p)} />
             ) : screen.name === 'inbox' ? (
               <InboxList
                 inbox={inbox}

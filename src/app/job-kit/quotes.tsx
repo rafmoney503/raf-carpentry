@@ -3,16 +3,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CurrentJob } from '@/lib/servicem8';
 import type { QuoteData, QuoteRow } from '@/lib/quote-maker';
-import { BOARDS, BOARDS_CHECKED, CWORKSHOP_CUTLIST, INSIDE_DEFAULT } from '@/lib/cworkshop-boards';
+import { BOARDS, BOARDS_CHECKED, FAMILY_NAME, FAMILY_ORDER, INSIDE_DEFAULT, PRICE_BASE } from '@/lib/cworkshop-boards';
 import { fillWall } from '@/lib/pax-brief';
 import {
   boardWork,
-  DEFAULT_PRICES,
   fromPrice,
   money,
   money2,
   NOTE_MAX,
   optionsFor,
+  ownPrices,
   picked,
   PRICE_ROWS,
   pricesWith,
@@ -26,6 +26,7 @@ import {
   type Prices,
   type QuoteEdits,
   type QuoteRead,
+  type Split,
 } from '@/lib/quote-sums';
 import { Icon } from './icons';
 import { field, label } from './parts';
@@ -192,7 +193,8 @@ export function workingHere(q: Quotes, id: string): Quotes {
   return { ...q, rows: [row, ...q.rows.filter((x) => x.id !== id)] };
 }
 
-export const pricesOf = (q: Quotes): Prices => pricesWith(q.prices?.data);
+/* His price list over where it starts: his own prices, Cworkshop's service prices from content/cworkshop.json. */
+export const pricesOf = (q: Quotes): Prices => pricesWith(q.prices?.data, PRICE_BASE);
 /* His instructions for Claude: the words, and when he last changed them (0 = never). */
 export const rulesOf = (q: Quotes) => ({ text: typeof q.rules?.data?.text === 'string' ? q.rules.data.text : '', at: q.rules?.at ?? 0 });
 /* Instructions saved here and not in the store yet: a redo waits for them, so Claude reads the new ones. */
@@ -339,6 +341,7 @@ export function QuotesList({
   onOpen,
   onMake,
   onPrices,
+  onCworkshop,
   onSaveRules,
   onRedo,
 }: {
@@ -351,6 +354,7 @@ export function QuotesList({
   onOpen: (id: string) => void;
   onMake: (id: string) => void;
   onPrices: () => void;
+  onCworkshop: () => void;
   onSaveRules: (text: string) => void;
   onRedo: (ids: string[]) => void;
 }) {
@@ -371,6 +375,10 @@ export function QuotesList({
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
         <button type="button" onClick={onPrices} className="btn btn-ghost btn-sm">
           Your prices
+        </button>
+        <button type="button" onClick={onCworkshop} className="btn btn-ghost btn-sm gap-2" data-open-cworkshop>
+          <Icon name="swatch" className="h-[18px] w-[18px] shrink-0" />
+          Cworkshop
         </button>
         <button type="button" onClick={onRefresh} disabled={loading} className="font-mono text-[13px] text-accent underline disabled:opacity-60">
           {loading ? 'Checking…' : 'Refresh'}
@@ -801,6 +809,7 @@ export function QuoteView({
   onEmailBox,
   onOpenJob,
   onRules,
+  onCworkshop,
 }: {
   job?: CurrentJob;
   row?: QuoteRow;
@@ -813,6 +822,7 @@ export function QuoteView({
   onEmailBox: (subject: string, text: string) => void;
   onOpenJob?: () => void;
   onRules: () => void;
+  onCworkshop?: () => void;
 }) {
   const data = row?.data as QuoteData | null | undefined;
   const r = data?.read;
@@ -1062,7 +1072,7 @@ export function QuoteView({
                 else delete price[o.id];
                 set({ price });
               }}
-              board={o.id === 'board' ? <BoardBits read={r} prices={prices} edits={edits} set={set} /> : null}
+              board={o.id === 'board' ? <BoardBits read={r} prices={prices} edits={edits} set={set} onCworkshop={onCworkshop} /> : null}
             />
           ))}
         </div>
@@ -1143,7 +1153,7 @@ export function QuoteView({
           {own.trim() ? 'With the instructions for this quote above. ' : ''}Your prices stay; the message and its questions are written out again. New photos on the job are read too.
         </p>
         <p className="mt-4 font-mono text-[11.5px] leading-relaxed text-faint">
-          Rough prices from your list, before the visit. Board prices from Cworkshop on {new Date(BOARDS_CHECKED).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}.{data?.model ? ` Read by ${data.model}.` : ''}
+          Rough prices from your list, before the visit. Board prices from Cworkshop, checked {new Date(`${BOARDS_CHECKED}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}.{data?.model ? ` Read by ${data.model}.` : ''}
         </p>
       </section>
 
@@ -1219,38 +1229,88 @@ function OptionCard({ option: o, on, pick, onPick, onPrice, board }: { option: O
   );
 }
 
-const FAMILY_ORDER = ['white', 'plain', 'colour', 'stone', 'light oak', 'warm oak', 'dark oak', 'walnut'];
-const FAMILY_NAME: Record<string, string> = { white: 'Whites', plain: 'Plain colours', colour: 'Colours', stone: 'Stone', 'light oak': 'Light oak', 'warm oak': 'Warm oak', 'dark oak': 'Dark oak', walnut: 'Walnut' };
 
-function BoardBits({ read: r, prices, edits, set }: { read: QuoteRead; prices: Prices; edits: QuoteEdits; set: (p: Partial<QuoteEdits>) => void }) {
-  const [all, setAll] = useState(false);
-  const picks = r.colours.map((c) => ({ board: BOARDS.find((b) => b.code === c.code)!, why: c.why })).filter((c) => c.board);
-  const colour = edits.colour ?? picks[0]?.board.code ?? BOARDS[0].code;
-  const inside = edits.inside ?? (r.inside || INSIDE_DEFAULT);
-  const work = boardWork(r, prices, edits);
-  const chosen = BOARDS.find((b) => b.code === colour);
-  const price = (b: Board) => prices.boards[b.code] ?? b.exVat;
-  const Swatch = ({ b, why }: { b: Board; why?: string }) => (
+const SPLIT_WORDS: Record<Split, { first: string; second: string; sheets: [string, string] }> = {
+  one: { first: 'Colour', second: '', sheets: ['Sheets', ''] },
+  outside: { first: 'Colour, outside', second: 'Inside', sheets: ['Sheets outside', 'Sheets inside'] },
+  doors: { first: 'Doors', second: 'Frame and inside', sheets: ['Sheets for doors', 'Sheets for the rest'] },
+};
+const GUESSED: PriceKey[] = ['edgeThinM', 'edgeThickM', 'hingeHole', 'fastFlow', 'delivery'];
+
+function BoardChoice({ on, onClick, title, sub }: { on: boolean; onClick: () => void; title: string; sub: string }) {
+  return (
+    <button type="button" onClick={onClick} aria-pressed={on} className={`min-h-11 rounded-sm border px-2.5 py-1.5 text-left ${on ? 'border-ink bg-mount ring-1 ring-ink' : 'border-line-strong'}`}>
+      <span className="block text-[14px] font-semibold leading-tight">{title}</span>
+      <span className="block text-[12px] leading-snug text-muted">{sub}</span>
+    </button>
+  );
+}
+
+function BoardSwatch({ b, why, on, price, onPick }: { b: Board; why?: string; on: boolean; price: number; onPick: () => void }) {
+  return (
     <button
       type="button"
-      onClick={() => set({ colour: b.code })}
-      aria-pressed={colour === b.code}
-      className={`flex min-h-11 items-center gap-2.5 rounded-sm border px-2.5 py-1.5 text-left ${colour === b.code ? 'border-ink bg-paper ring-1 ring-ink' : 'border-line-strong'}`}
+      onClick={onPick}
+      aria-pressed={on}
+      className={`flex min-h-11 items-center gap-2.5 rounded-sm border px-2.5 py-1.5 text-left ${on ? 'border-ink bg-paper ring-1 ring-ink' : 'border-line-strong'}`}
     >
       <span aria-hidden className="h-8 w-8 shrink-0 rounded-sm border border-line-strong" style={{ background: b.hex }} />
       <span className="min-w-0">
         <span className="block text-[14px] font-semibold leading-tight">{b.name}</span>
-        <span className="block text-[12.5px] leading-snug text-muted">{why || `${money2(price(b))} a sheet`}</span>
+        <span className="block text-[12.5px] leading-snug text-muted">{why || `${money2(price)} a sheet`}</span>
       </span>
     </button>
   );
+}
+
+function ExtraTick({ on, onChange, title, sub, data }: { on: boolean; onChange: (v: boolean) => void; title: string; sub: string; data: string }) {
   return (
-    <div className="mt-3 rounded-sm border border-line bg-paper p-3">
-      <p className={label}>Colour, outside</p>
+    <label className="flex min-h-11 cursor-pointer items-start gap-2.5 py-1" data-extra={data}>
+      <input type="checkbox" checked={on} onChange={(e) => onChange(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-[var(--color-accent)]" />
+      <span className="min-w-0">
+        <span className="block text-[14.5px] font-semibold leading-snug">{title}</span>
+        <span className="block text-[12.5px] leading-snug text-muted">{sub}</span>
+      </span>
+    </label>
+  );
+}
+
+/* The finished-board option's choices: one board or two (and which parts get which), the decors, sheets and days,
+   and Cworkshop's extras. */
+function BoardBits({ read: r, prices, edits, set, onCworkshop }: { read: QuoteRead; prices: Prices; edits: QuoteEdits; set: (p: Partial<QuoteEdits>) => void; onCworkshop?: () => void }) {
+  const [all, setAll] = useState(false);
+  const picks = r.colours.map((c) => ({ board: BOARDS.find((b) => b.code === c.code)!, why: c.why })).filter((c) => c.board);
+  const colour = edits.colour ?? picks[0]?.board.code ?? BOARDS[0].code;
+  const second = edits.inside ?? (r.inside || INSIDE_DEFAULT);
+  const work = boardWork(r, prices, edits);
+  const { parts, split } = work;
+  const words = SPLIT_WORDS[split];
+  const chosen = BOARDS.find((b) => b.code === colour);
+  const price = (b: Board) => prices.boards[b.code] ?? b.exVat;
+  const pickSplit = (v: Split) => {
+    if (v === split) return;
+    set({ split: v, sheets: undefined, ...(v !== 'one' && second === colour ? { inside: INSIDE_DEFAULT === colour ? 'W1100 ST9' : INSIDE_DEFAULT } : {}) });
+  };
+  const twoWay: Split = split !== 'one' ? split : r.split === 'doors' ? 'doors' : 'outside';
+  const guessing = GUESSED.some((k) => prices[k] === PRICE_BASE[k]);
+  return (
+    <div className="mt-3 rounded-sm border border-line bg-paper p-3" data-board-bits>
+      <p className={label}>Boards</p>
+      <div className="mt-2 grid grid-cols-2 gap-1.5" role="group" aria-label="How many boards" data-board-count>
+        <BoardChoice on={split === 'one'} onClick={() => pickSplit('one')} title="One board" sub="one decor throughout" />
+        <BoardChoice on={split !== 'one'} onClick={() => pickSplit(twoWay)} title="Two boards" sub="two decors" />
+      </div>
+      {split !== 'one' ? (
+        <div className="mt-1.5 grid grid-cols-2 gap-1.5" role="group" aria-label="Which parts get which board" data-board-split>
+          <BoardChoice on={split === 'outside'} onClick={() => pickSplit('outside')} title="Outside, inside" sub="doors and frame in one, the inside in the other" />
+          <BoardChoice on={split === 'doors'} onClick={() => pickSplit('doors')} title="Doors, the rest" sub="the doors in one, frame and inside in the other" />
+        </div>
+      ) : null}
+      <p className={`${label} mt-3`}>{words.first}</p>
       {picks.length ? (
         <div className="mt-2 grid grid-cols-1 gap-2">
           {picks.map((c) => (
-            <Swatch key={c.board.code} b={c.board} why={c.why} />
+            <BoardSwatch key={c.board.code} b={c.board} why={c.why} on={colour === c.board.code} price={price(c.board)} onPick={() => set({ colour: c.board.code })} />
           ))}
         </div>
       ) : null}
@@ -1266,7 +1326,7 @@ function BoardBits({ read: r, prices, edits, set }: { read: QuoteRead; prices: P
                 <p className="font-mono text-[11.5px] uppercase tracking-[0.06em] text-faint">{FAMILY_NAME[f]}</p>
                 <div className="mt-1.5 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                   {list.map((b) => (
-                    <Swatch key={b.code} b={b} />
+                    <BoardSwatch key={b.code} b={b} on={colour === b.code} price={price(b)} onPick={() => set({ colour: b.code })} />
                   ))}
                 </div>
               </div>
@@ -1276,38 +1336,59 @@ function BoardBits({ read: r, prices, edits, set }: { read: QuoteRead; prices: P
       ) : null}
       {chosen ? (
         <p className="mt-2 text-[13px] text-muted">
-          {chosen.code} · {chosen.describe} · {money2(price(chosen))} a sheet
-          {chosen.offerEnds ? ` (offer to ${new Date(chosen.offerEnds).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })})` : ''} ·{' '}
+          {chosen.brand ?? 'Egger'} {chosen.code} · {chosen.describe} · {money2(price(chosen))} a sheet
+          {chosen.offerEnds ? ` (offer to ${new Date(`${chosen.offerEnds}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })})` : ''} ·{' '}
           <a href={chosen.url} target="_blank" rel="noreferrer" className="text-accent underline">
             Cworkshop
           </a>
         </p>
       ) : null}
-      <label className="mt-3 grid grid-cols-1 gap-1">
-        <span className={label}>Inside</span>
-        <select value={inside} onChange={(e) => set({ inside: e.target.value })} className={`${field} h-11`}>
-          {BOARDS.map((b) => (
-            <option key={b.code} value={b.code}>
-              {b.name} ({money2(price(b))})
-            </option>
-          ))}
-        </select>
-      </label>
+      {split !== 'one' ? (
+        <label className="mt-3 grid grid-cols-1 gap-1">
+          <span className={label}>{words.second}</span>
+          <select value={second} onChange={(e) => set({ inside: e.target.value })} className={`${field} h-11`} data-second-board>
+            {FAMILY_ORDER.map((f) => {
+              const list = BOARDS.filter((b) => b.family === f);
+              return list.length ? (
+                <optgroup key={f} label={FAMILY_NAME[f]}>
+                  {list.map((b) => (
+                    <option key={b.code} value={b.code}>
+                      {b.name} ({money2(price(b))})
+                    </option>
+                  ))}
+                </optgroup>
+              ) : null;
+            })}
+          </select>
+        </label>
+      ) : null}
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
-        <Step label="Sheets outside" value={work.out} min={0} max={60} onChange={(v) => set({ sheets: { ...edits.sheets, out: v } })} />
-        <Step label="Sheets inside" value={work.in} min={0} max={60} onChange={(v) => set({ sheets: { ...edits.sheets, in: v } })} />
-        <Step label="Days" value={work.days} min={0.5} max={60} step={0.5} onChange={(v) => set({ days: v })} />
+        <Step label={words.sheets[0]} value={work.out} min={0} max={60} onChange={(v) => set({ sheets: { ...edits.sheets, out: v } })} />
+        {split !== 'one' ? <Step label={words.sheets[1]} value={work.in} min={0} max={60} onChange={(v) => set({ sheets: { ...edits.sheets, in: v } })} /> : null}
+        {prices.labourX > 0 ? null : <Step label="Days" value={work.days} min={0.5} max={60} step={0.5} onChange={(v) => set({ days: v })} />}
       </div>
       {edits.sheets || edits.days ? (
         <button type="button" onClick={() => set({ sheets: undefined, days: undefined })} className="mt-1 font-mono text-[12.5px] text-accent underline">
-          Back to worked out: {work.calc.out} + {work.calc.in} sheets, {work.workedDays} days
+          Back to worked out: {split === 'one' ? work.calc.out : `${work.calc.out} + ${work.calc.in}`} sheets, {work.workedDays} days
         </button>
       ) : null}
-      <p className="mt-2 text-[12.5px] text-muted">
-        Cutting is Cworkshop’s £47.30 a sheet; edging isn’t on their site, so it’s a guess.{' '}
-        <a href={CWORKSHOP_CUTLIST} target="_blank" rel="noreferrer" className="text-accent underline">
-          Price it in their cutting list
-        </a>
+      {prices.labourX > 0 ? <p className="mt-1 text-[12.5px] text-muted">Labour is {prices.labourX} × the materials (Your prices).</p> : null}
+      <p className="mt-3 text-[13px] leading-snug text-muted" data-board-parts>
+        Edging {parts.thickM} m of 2 mm at {money2(prices.edgeThickM)} and {parts.thinM} m of 1 mm at {money2(prices.edgeThinM)} · cutting {money2(prices.cutEdgeSheet)} a sheet · {parts.hinges} hinges on {parts.doors} doors
+      </p>
+      <p className={`${label} mt-3`}>Cworkshop extras</p>
+      <div className="mt-1 grid grid-cols-1">
+        <ExtraTick data="holes" on={Boolean(edits.holes)} onChange={(v) => set({ holes: v || undefined })} title="They drill the hinge holes" sub={`${parts.hinges} at ${money2(prices.hingeHole)}, ${money(parts.hinges * prices.hingeHole)}. Leave it off when you drill them yourself.`} />
+        <ExtraTick data="fast" on={Boolean(edits.fast)} onChange={(v) => set({ fast: v || undefined })} title="Fast Flow, next day" sub={`${money(prices.fastFlow)} on top`} />
+        <ExtraTick data="delivery" on={edits.delivery !== false} onChange={(v) => set({ delivery: v ? undefined : false })} title="Delivery" sub={`${money(prices.delivery)}. Untick when you collect.`} />
+      </div>
+      <p className="mt-2 text-[12.5px] leading-snug text-muted">
+        Cutting is Cworkshop’s own price{guessing ? '; edging, drilling and delivery are my guesses until you type yours' : ''}.{' '}
+        {onCworkshop ? (
+          <button type="button" onClick={onCworkshop} className="text-accent underline" data-open-cworkshop>
+            Cworkshop prices and decors
+          </button>
+        ) : null}
       </p>
     </div>
   );
@@ -1350,24 +1431,21 @@ function Step({ label: l, value, min, max, step = 1, onChange }: { label: string
 
 /* ---------- Raf's price list ---------- */
 
-export function QuotePrices({ prices, savedAt, onSave }: { prices: Prices; savedAt: number; onSave: (p: Record<string, unknown>) => void }) {
-  const [form, setForm] = useState<Record<string, string>>(() => Object.fromEntries(PRICE_ROWS.map((r) => [r.key, String(prices[r.key])])));
-  const [boards, setBoards] = useState<Record<string, string>>(() => Object.fromEntries(Object.entries(prices.boards).map(([k, v]) => [k, String(v)])));
+export function QuotePrices({ prices, savedAt, onSave, onCworkshop }: { prices: Prices; savedAt: number; onSave: (p: Record<string, unknown>) => void; onCworkshop: () => void }) {
+  // Cworkshop's prices and the decors are on their own screen (cworkshop.tsx)
+  const rows = PRICE_ROWS.filter((r) => r.group !== 'Cworkshop');
+  const [form, setForm] = useState<Record<string, string>>(() => Object.fromEntries(rows.map((r) => [r.key, String(prices[r.key])])));
   const [saved, setSaved] = useState('');
-  const groups = [...new Set(PRICE_ROWS.map((r) => r.group))];
-  const changed = PRICE_ROWS.some((r) => Number(form[r.key]) !== prices[r.key]) || JSON.stringify(Object.fromEntries(Object.entries(boards).filter(([, v]) => v))) !== JSON.stringify(Object.fromEntries(Object.entries(prices.boards).map(([k, v]) => [k, String(v)])));
+  const groups = [...new Set(rows.map((r) => r.group))];
+  const value = (k: PriceKey) => {
+    const v = Number.parseFloat(form[k]);
+    return Number.isFinite(v) && v >= 0 ? v : PRICE_BASE[k];
+  };
+  const changed = rows.some((r) => value(r.key) !== prices[r.key]);
   const save = () => {
-    const out: Record<string, unknown> = {};
-    for (const r of PRICE_ROWS) {
-      const v = Number.parseFloat(form[r.key]);
-      out[r.key] = Number.isFinite(v) && v >= 0 ? v : DEFAULT_PRICES[r.key];
-    }
-    out.boards = Object.fromEntries(
-      Object.entries(boards)
-        .map(([k, v]) => [k, Number.parseFloat(v)] as const)
-        .filter(([, v]) => Number.isFinite(v) && v > 0),
-    );
-    onSave(out);
+    const full: Prices = { ...prices, boards: { ...prices.boards } };
+    for (const r of rows) full[r.key] = value(r.key);
+    onSave(ownPrices(full, PRICE_BASE)); // only what differs from where it starts
     setSaved('Saved. Every quote uses these now, on your phone and computer.');
   };
   return (
@@ -1378,22 +1456,32 @@ export function QuotePrices({ prices, savedAt, onSave }: { prices: Prices; saved
         Before VAT. Every rough quote is worked out from these. The ones marked <b className="font-semibold text-ink">my guess</b> are mine, not yours yet: check them.
       </p>
       {savedAt ? <p className="mt-2 font-mono text-[12px] text-faint">Last changed {ago(savedAt)}</p> : null}
+      <button type="button" onClick={onCworkshop} className="mt-4 flex w-full items-center gap-3 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left" data-open-cworkshop>
+        <Icon name="swatch" className="h-[26px] w-[26px] shrink-0 jk-sec-ink" />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] font-semibold">Cworkshop</span>
+          <span className="block text-[13px] leading-snug text-muted">
+            Cutting {money2(prices.cutEdgeSheet)} a sheet, edging {money2(prices.edgeThickM)} and {money2(prices.edgeThinM)} a metre, drilling, delivery and {BOARDS.length} decors
+          </span>
+        </span>
+        <span aria-hidden className="text-[18px] text-faint">›</span>
+      </button>
       {groups.map((g) => (
         <section key={g} className="mt-7">
           <h2 className={label}>{g}</h2>
           <ul className="mt-2 divide-y divide-line rounded-sm border border-line-strong bg-mount">
-            {PRICE_ROWS.filter((r) => r.group === g).map((r) => (
+            {rows.filter((r) => r.group === g).map((r) => (
               <li key={r.key} className="flex items-center gap-3 px-3.5 py-2.5">
                 <span className="min-w-0 flex-1">
                   <span className="block text-[15px] font-semibold leading-snug">{r.label}</span>
                   <span className="block text-[12.5px] leading-snug text-muted">
                     {r.guess ? <b className="font-semibold text-ink">My guess. </b> : null}
                     {r.from}
-                    {Number(form[r.key]) !== DEFAULT_PRICES[r.key] ? ` · started at ${fmt(r.key, DEFAULT_PRICES[r.key])}` : ''}
+                    {Number(form[r.key]) !== PRICE_BASE[r.key] ? ` · started at ${fmt(r.key, PRICE_BASE[r.key])}` : ''}
                   </span>
                 </span>
                 <span className="flex shrink-0 items-center gap-1.5">
-                  {r.unit !== 'days' && r.unit !== '%' ? <span className="font-mono text-[13px] text-faint">£</span> : null}
+                  {r.unit !== 'days' && r.unit !== '%' && !r.unit.startsWith('×') ? <span className="font-mono text-[13px] text-faint">£</span> : null}
                   <input
                     inputMode="decimal"
                     value={form[r.key]}
@@ -1408,33 +1496,6 @@ export function QuotePrices({ prices, savedAt, onSave }: { prices: Prices; saved
           </ul>
         </section>
       ))}
-      <section className="mt-7">
-        <h2 className={label}>Cworkshop boards, a sheet</h2>
-        <p className="mt-1 text-[13.5px] text-muted">Their prices on {new Date(BOARDS_CHECKED).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}. Type your own if yours are different (a trade price, a new price).</p>
-        <ul className="mt-2 divide-y divide-line rounded-sm border border-line-strong bg-mount">
-          {BOARDS.map((b) => (
-            <li key={b.code} className="flex items-center gap-3 px-3.5 py-2">
-              <span aria-hidden className="h-7 w-7 shrink-0 rounded-sm border border-line-strong" style={{ background: b.hex }} />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[14.5px] font-semibold">{b.name}</span>
-                <span className="block truncate font-mono text-[11.5px] text-faint">
-                  {b.code} · Cworkshop {money2(b.exVat)}
-                  {b.offerEnds ? ' on offer' : ''}
-                </span>
-              </span>
-              <span className="font-mono text-[13px] text-faint">£</span>
-              <input
-                inputMode="decimal"
-                value={boards[b.code] ?? ''}
-                placeholder={b.exVat.toFixed(2)}
-                onChange={(e) => setBoards({ ...boards, [b.code]: e.target.value })}
-                aria-label={`Your price for ${b.name}`}
-                className={`${field} h-10 w-[96px] text-right font-mono text-[14.5px]`}
-              />
-            </li>
-          ))}
-        </ul>
-      </section>
       <div className="sticky bottom-0 -mx-4 mt-6 border-t border-line bg-paper px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
         <button type="button" onClick={save} disabled={!changed} className="btn btn-primary w-full disabled:opacity-50">
           Save my prices
@@ -1445,4 +1506,4 @@ export function QuotePrices({ prices, savedAt, onSave }: { prices: Prices; saved
   );
 }
 
-const fmt = (k: PriceKey, v: number) => (k === 'boardSetupDays' || k === 'boardDaysPerM' ? `${v} days` : k === 'boardMarkup' ? `${v}%` : k === 'cutEdgeSheet' ? money2(v) : money(v));
+const fmt = (k: PriceKey, v: number) => (k === 'boardSetupDays' || k === 'boardDaysPerM' ? `${v} days` : k === 'boardMarkup' ? `${v}%` : k === 'labourX' ? `${v} ×` : money(v));
