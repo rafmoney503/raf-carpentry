@@ -5,7 +5,7 @@ import { sm8SetUp } from './servicem8';
 import { attachmentFile } from './servicem8-diary';
 import { redact } from './draft-reply';
 import { jobkitRpc, syncSetUp } from './job-kit-sync-server';
-import { cleanPlan, photoCount, type Brief, type ConceptData, type Plan } from './concept-plan';
+import { asDrawn, cleanPlan, photoCount, type Brief, type ConceptData, type Plan } from './concept-plan';
 
 /* Design with Claude (Job Kit, 3 Nov 2026): Claude plans a customer's piece of fitted furniture from the brief Raf
    fills in (often straight from their email in the Inbox, with its photos) as a layout of bays and sections, through
@@ -43,7 +43,8 @@ How a layout works (all sizes in mm):
 - Bays are the upright sections across the run, left to right. Their widths add up to the run width exactly. Keep bays 400 to 1200 wide.
 - Each bay has sections stacked from the floor (from 0) to the bay's top (its height). Sections touch: each one's to is the next one's from, and the last one ends at the bay's height.
 - A bay is lower than the run when something is over it (a boxing, a slope, a window, a beam): give it its lower height and boxed_above true.
-- front: "doors" is a pair of hinged doors (bays 600 to 1200 wide), "door" is one hinged door (bays up to 600 wide, hinge left or right), "drawers" (with how many), "open" is no front (open shelves; worktop true stands it on a solid oak top, e.g. a dresser's work surface).
+- front: "doors" is a pair of hinged doors (bays 600 to 1200 wide), "door" is one hinged door (bays up to 600 wide, hinge left or right), "drawers", "open" is no front (open shelves; worktop true stands it on a solid oak top, e.g. a dresser's work surface).
+- Drawers: drawers is how many one above the other, across how many side by side (1 if not given), so the section holds drawers × across. "Three drawers in a row", "side by side" or "next to each other" means drawers 1, across 3; "three drawers in a column" or "stacked" means drawers 3, across 1; a chest two wide and three high is drawers 3, across 2. A low piece (a bench, a window seat, a TV unit, under 600 high) with drawers has them side by side unless told otherwise. No drawer front wider than 1,000 or narrower than 250, and none under 120 high.
 - Inside each section: shelves as heights from the floor (food shelves 250 to 350 apart, more for tall things; heavy things low), rail for hanging, hooks for a broom cupboard, and a short label of what goes there for the customer ("tins, jars, spices").
 - boxes: beams, pipe boxes or boxing that come into a bay at the back, as the bay's index (0 = leftmost), from and to heights. Shelves are cut round them, so a shelf just under or in front of one is shallow.
 - Extras Raf prices: racks (door racks on the inside of doors, a count), risers (step risers on deep shelves, a count), oak_m (metres of solid oak worktop shelf), strip_out (old units to take out first).
@@ -109,7 +110,8 @@ const TOOL = {
                         to: { type: 'number' },
                         front: { type: 'string', enum: ['doors', 'door', 'drawers', 'open'] },
                         hinge: { type: 'string', enum: ['left', 'right'] },
-                        drawers: { type: 'number' },
+                        drawers: { type: 'number', description: 'How many drawers one above the other.' },
+                        across: { type: 'number', description: 'How many drawers side by side (1 if not given). "3 drawers in a row" = drawers 1, across 3.' },
                         worktop: { type: 'boolean' },
                         shelves: { type: 'array', items: { type: 'number' } },
                         rail: { type: 'number' },
@@ -204,7 +206,7 @@ export async function drawConcept(data: ConceptData, note = '', current?: Plan):
     content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: p.data } });
   });
   if (current && note.trim()) {
-    content.push({ type: 'text', text: `The design as it is now (JSON):\n${JSON.stringify(current)}` });
+    content.push({ type: 'text', text: `The design as it is now (JSON):\n${JSON.stringify(asDrawn(current))}` });
     content.push({ type: 'text', text: `Raf wants this changed (it wins over the brief where they differ). Give the whole design again with the change made and everything else as it was:\n${redact(note, b.first).slice(0, 800)}` });
   } else if (note.trim()) {
     content.push({ type: 'text', text: `Raf adds (it wins over the brief where they differ):\n${redact(note, b.first).slice(0, 800)}` });

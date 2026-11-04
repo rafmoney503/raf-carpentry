@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Box, Handles, Option, Section, Style } from '@/lib/concept-plan';
+import { drawerGrid, type Box, type Handles, type Option, type Section, type Style } from '@/lib/concept-plan';
 
 /* A Design with Claude option drawn to scale (src/lib/concept-plan.ts), from the front with the doors on or with the
    doors off to show the inside. Used by the Job Kit (src/app/job-kit/concepts.tsx) and the customer's page
@@ -130,13 +130,16 @@ function drawFront(x: number, w: number, s: Section, style: Style, kind: Handles
     const right = (s.hinge ?? (last ? 'right' : 'left')) === 'left';
     handle(kind, right ? x + w - (kind === 'knob' ? 90 : kind === 'edge' ? 6 : 74) : x + (kind === 'knob' ? 90 : kind === 'edge' ? 6 : 74), g, true, rect, out, key, Y);
   } else if (s.front === 'drawers') {
-    const n = Math.max(1, s.drawers ?? 3);
-    const each = h / n;
-    for (let i = 0; i < n; i++) {
-      const y0 = s.from + i * each;
-      door(x, y0, w, each, style, colour, rect);
-      handle(kind, x + w / 2, y0 + each - Math.min(90, each / 3), false, rect, out, key, Y);
-    }
+    // rows one above the other, columns side by side (drawerGrid)
+    const { rows, cols } = drawerGrid(s, w);
+    const each = h / rows;
+    const cw = w / cols;
+    for (let c = 0; c < cols; c++)
+      for (let i = 0; i < rows; i++) {
+        const y0 = s.from + i * each;
+        door(x + c * cw, y0, cw, each, style, colour, rect);
+        handle(kind, x + c * cw + cw / 2, y0 + each - Math.min(90, each / 3), false, rect, out, key, Y);
+      }
   }
 }
 
@@ -158,9 +161,14 @@ function drawInside(x: number, w: number, s: Section, boxes: Box[], rect: RectFn
   }
   for (const y of s.shelves) rect(x + 18, y, w - 36, 22, open ? colour : BIRCH, open ? INK : BIRCH_LINE, 5);
   if (s.front === 'drawers' && !front) {
-    const n = Math.max(1, s.drawers ?? 3);
-    const each = (s.to - s.from) / n;
-    for (let i = 0; i < n; i++) rect(x + 40, s.from + i * each + 20, w - 80, each - 50, '#e6dac6', BIRCH_LINE, 5, 3);
+    const { rows, cols } = drawerGrid(s, w);
+    const each = (s.to - s.from) / rows;
+    const cw = (w - 36) / cols;
+    for (let c = 0; c < cols; c++) {
+      // the upright between drawers side by side
+      if (c) rect(x + 18 + c * cw - 9, s.from + 6, 18, s.to - s.from - 12, BIRCH, BIRCH_LINE, 5);
+      for (let i = 0; i < rows; i++) rect(x + 18 + c * cw + 22, s.from + i * each + 20, cw - 44, each - 50, '#e6dac6', BIRCH_LINE, 5, 3);
+    }
   }
   if (s.rail) {
     rect(x + 40, s.rail - 10, w - 80, 20, METAL, 'none', 0, 8);
