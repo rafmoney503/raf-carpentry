@@ -637,6 +637,11 @@ const statusError = (status: number, short: string) =>
    field called `file`, a name with an extension, related_object job). We send our own uuid, so a retry is safe:
    ServiceM8 answers 409 when it already has that attachment. */
 export async function attachPhoto(jobUuid: string, photo: Blob, fileName: string, uuid: string): Promise<string> {
+  return (await attachFile(jobUuid, photo, fileName, uuid)).uuid;
+}
+
+/* The same, also saying whether ServiceM8 had it already (a 409 on our own uuid: sent before, nothing new added). */
+export async function attachFile(jobUuid: string, photo: Blob, fileName: string, uuid: string): Promise<{ uuid: string; existed: boolean }> {
   const fd = new FormData();
   fd.set('file', photo, fileName);
   fd.set('related_object', 'job');
@@ -655,10 +660,10 @@ export async function attachPhoto(jobUuid: string, photo: Blob, fileName: string
   } catch {
     throw new Sm8Error('sm8-down', 502);
   }
-  if (res.status === 409) return uuid; // already there from an earlier try
+  if (res.status === 409) return { uuid, existed: true }; // already there from an earlier try
   const text = await res.text().catch(() => '');
   if (!res.ok) throw statusError(res.status, text.replace(/\s+/g, ' ').slice(0, 240));
-  return res.headers.get('x-record-uuid') || uuid;
+  return { uuid: res.headers.get('x-record-uuid') || uuid, existed: false };
 }
 
 /* A note on a job (its diary in ServiceM8): what came in a WhatsApp chat, for one of their open jobs. */

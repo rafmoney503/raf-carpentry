@@ -14,7 +14,7 @@ const WORK = () => (process.env.GOODNOTES_WORK_FOLDER || 'Clients').trim().toLow
 const MAX_FOLDERS = 60;
 const MAX_DEPTH = 4;
 
-export type GnCode = 'gn-secret' | 'gn-consent' | 'gn-no-drive' | 'gn-no-folder' | 'gn-no-work' | 'gn-not-set-up' | 'gn-busy' | 'gn-error' | 'gn-gone' | 'gn-too-big';
+export type GnCode = 'gn-secret' | 'gn-consent' | 'gn-no-drive' | 'gn-no-folder' | 'gn-no-work' | 'gn-not-set-up' | 'gn-busy' | 'gn-error' | 'gn-gone' | 'gn-too-big' | 'gn-pages-gone' | 'gn-bad-pdf';
 export class GnError extends Error {
   constructor(
     public code: GnCode,
@@ -135,4 +135,27 @@ export async function notebookFile(id: string, maxBytes = 40 * 1048576): Promise
   if (!res.ok) throw new GnError(res.status === 404 ? 'gn-gone' : 'gn-busy', res.status === 404 ? 404 : 503, `${res.status}`);
   const blob = new Blob([await res.arrayBuffer()], { type: 'application/pdf' });
   return { blob, name: link.name, at: link.at };
+}
+
+/* Some pages of a notebook as a PDF of their own (4 Nov 2026: one notebook for the year, a job on each page), for the
+   ServiceM8 job and for showing a job's pages without the phone downloading the whole year. `hash` is of the pages
+   picked out, so the same pages sent twice can be one attachment even though the notebook changed elsewhere. */
+export async function notebookPages(id: string, pages: number[], maxBytes = 80 * 1048576): Promise<{ blob: Blob; name: string; at: string; count: number; hash: string }> {
+  const f = await notebookFile(id, maxBytes);
+  const { PDFDocument } = await import('pdf-lib');
+  let src: Awaited<ReturnType<typeof PDFDocument.load>>;
+  try {
+    src = await PDFDocument.load(await f.blob.arrayBuffer(), { ignoreEncryption: true, updateMetadata: false });
+  } catch {
+    throw new GnError('gn-bad-pdf', 422);
+  }
+  const count = src.getPageCount();
+  const missing = pages.filter((p) => p > count);
+  if (missing.length) throw new GnError('gn-pages-gone', 404, `${count}|${missing.join(',')}`);
+  const out = await PDFDocument.create({ updateMetadata: false });
+  for (const p of await out.copyPages(src, pages.map((p) => p - 1))) out.addPage(p);
+  const bytes = await out.save();
+  const { createHash } = await import('node:crypto');
+  const hash = createHash('sha256').update(bytes).digest('hex').slice(0, 24);
+  return { blob: new Blob([bytes as BlobPart], { type: 'application/pdf' }), name: f.name, at: f.at, count, hash };
 }

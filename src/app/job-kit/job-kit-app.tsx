@@ -1588,6 +1588,10 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                   onCancel={cancelBooking}
                   methods={payMethods}
                   onPay={(p) => pay(cur.uuid, p)}
+                  jobLabel={(uuid) => {
+                    const j = sm8.jobs.find((x) => x.uuid === uuid) ?? customerJobs.find((x) => x.uuid === uuid);
+                    return j ? `#${j.number} ${j.name}` : '';
+                  }}
                   otherJobs={cur.client ? new Set([...sm8.jobs, ...customerJobs].filter((j) => j.client === cur.client && j.uuid !== cur.uuid).map((j) => j.uuid)).size : 0}
                   onRemove={leaving ? undefined : (alsoClient) => removeJob(cur, alsoClient)}
                   replyAt={sm8.replies?.[cur.uuid] ?? undefined}

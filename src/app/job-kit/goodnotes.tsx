@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @next/next/no-img-element -- the pictures here are the notebooks' first pages, fetched behind the PIN as blobs */
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { attachName, looseNotebooks, notebooksFor, sizeWords, type Notebook } from '@/lib/goodnotes-match';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { attachName, cleanPages, looseNotebooks, notebooksFor, pagesElsewhere, pagesSlug, pagesWords, sizeWords, type Notebook } from '@/lib/goodnotes-match';
 import type { CurrentJob } from '@/lib/servicem8';
 import type { Marks } from './current';
 import { post, problemText } from './sm8-post';
@@ -13,7 +13,11 @@ import { label } from './parts';
    to client card', then 'go'). Goodnotes' Auto Backup puts each notebook in info@'s OneDrive as a PDF; the job card
    shows the ones for this job (named with its number first, or linked here by hand) with the first page, opens the
    pages here (pdf.js, loaded only then), and puts the PDF on the ServiceM8 job with one tap. Server side:
-   src/lib/goodnotes.ts and /api/job-kit/goodnotes; the matching: src/lib/goodnotes-match.ts. */
+   src/lib/goodnotes.ts and /api/job-kit/goodnotes; the matching: src/lib/goodnotes-match.ts.
+   Pages of a notebook on a job (4 Nov 2026, Raf keeps one notebook for the year with a job on each page: 'yes we have
+   to do page linking for job'): Link pages from a notebook opens its pages (opening at the last page, where a new
+   job goes), the ones tapped are kept in the job's marks (gnPages: notebook path -> page numbers, in step with the
+   computer), and the job card shows, opens and sends only those pages. */
 
 const ROUTE = '/api/job-kit/goodnotes';
 const KEY = 'raf_jobkit_goodnotes';
@@ -94,6 +98,13 @@ function gnProblem(error?: string, detail?: string): string {
       return 'Over 40 MB, too big to send from here. Add it to the job in ServiceM8 itself.';
     case 'gn-too-big-here':
       return 'This notebook is over 4 MB and OneDrive’s link didn’t open here. Open it in Goodnotes or OneDrive.';
+    case 'gn-pages-gone': {
+      const [count, missing] = (detail ?? '').split('|');
+      const ps = cleanPages((missing ?? '').split(','));
+      return `The notebook has ${count || 'fewer'} page${count === '1' ? '' : 's'} now, so ${pagesWords(ps) === 'no pages' ? 'those pages aren’t' : `${pagesWords(ps)} ${ps.length === 1 ? 'isn’t' : 'aren’t'}`} there any more. Change pages.`;
+    }
+    case 'gn-bad-pdf':
+      return 'That PDF couldn’t be read to pick its pages out. Open it in Goodnotes.';
     case 'gn-busy':
       return 'Microsoft didn’t answer. Try again in a minute.';
     case 'gn-error':
@@ -202,6 +213,17 @@ function loadPdfjs() {
   return pdfjs;
 }
 
+/* A document closing and the next one opening share pdf.js's worker: wait for the close to finish first, or a notebook
+   already on this phone (opened straight away, no download) can catch the worker half shut ('couldn't be opened'). */
+let closing: Promise<unknown> = Promise.resolve();
+const closeTask = (t: PdfTask | null) => {
+  if (t) closing = Promise.all([closing, t.destroy().catch(() => {})]);
+};
+async function openTask(lib: { getDocument: (o: { data: ArrayBuffer }) => PdfTask }, data: ArrayBuffer): Promise<PdfTask> {
+  await closing;
+  return lib.getDocument({ data });
+}
+
 const pdfBytes = new Map<string, ArrayBuffer>(); // this visit's notebooks, by id and version
 
 async function fetchPdf(nb: Notebook): Promise<ArrayBuffer | { error: string; detail?: string }> {
@@ -236,16 +258,23 @@ async function fetchPdf(nb: Notebook): Promise<ArrayBuffer | { error: string; de
   return buf.slice(0);
 }
 
-function PageCanvas({ doc, n, width }: { doc: PdfDoc; n: number; width: number }) {
+function PageCanvas({ doc, n, width, label, onDrawn }: { doc: PdfDoc; n: number; width: number; label?: number; onDrawn?: (c: HTMLCanvasElement) => void }) {
   const box = useRef<HTMLDivElement>(null);
   const [ratio, setRatio] = useState(1.414);
   const [drawn, setDrawn] = useState(false);
+  const drawnFn = useRef(onDrawn);
+  useEffect(() => {
+    drawnFn.current = onDrawn;
+  });
   useEffect(() => {
     let gone = false;
-    void doc.getPage(n).then((p) => {
-      const v = p.getViewport({ scale: 1 });
-      if (!gone) setRatio(v.height / v.width);
-    });
+    void doc
+      .getPage(n)
+      .then((p) => {
+        const v = p.getViewport({ scale: 1 });
+        if (!gone) setRatio(v.height / v.width);
+      })
+      .catch(() => {}); // the notebook was closed meanwhile
     return () => {
       gone = true;
     };
@@ -259,18 +288,23 @@ function PageCanvas({ doc, n, width }: { doc: PdfDoc; n: number; width: number }
         if (!es.some((e) => e.isIntersecting)) return;
         seen.disconnect();
         void (async () => {
-          const p = await doc.getPage(n);
-          const base = p.getViewport({ scale: 1 });
-          const scale = (width / base.width) * Math.min(2, window.devicePixelRatio || 1);
-          const vp = p.getViewport({ scale });
-          const c = document.createElement('canvas');
-          c.width = Math.round(vp.width);
-          c.height = Math.round(vp.height);
-          c.className = 'block h-auto w-full';
-          await p.render({ canvas: c, viewport: vp }).promise;
-          if (gone || !box.current) return;
-          box.current.replaceChildren(c);
-          setDrawn(true);
+          try {
+            const p = await doc.getPage(n);
+            const base = p.getViewport({ scale: 1 });
+            const scale = (width / base.width) * Math.min(2, window.devicePixelRatio || 1);
+            const vp = p.getViewport({ scale });
+            const c = document.createElement('canvas');
+            c.width = Math.round(vp.width);
+            c.height = Math.round(vp.height);
+            c.className = 'block h-auto w-full';
+            await p.render({ canvas: c, viewport: vp }).promise;
+            if (gone || !box.current) return;
+            box.current.replaceChildren(c);
+            setDrawn(true);
+            drawnFn.current?.(c);
+          } catch {
+            /* closed or switched while drawing: nothing to show */
+          }
         })();
       },
       { rootMargin: '600px' },
@@ -281,34 +315,153 @@ function PageCanvas({ doc, n, width }: { doc: PdfDoc; n: number; width: number }
       seen.disconnect();
     };
   }, [doc, n, width, drawn]);
+  const shown = label ?? n;
   return (
-    <div className="relative bg-mount shadow-[0_6px_18px_-8px_rgb(0_0_0/0.6)]" style={{ aspectRatio: `1 / ${ratio}` }} data-gn-page={n}>
+    <div className="relative bg-mount shadow-[0_6px_18px_-8px_rgb(0_0_0/0.6)]" style={{ aspectRatio: `1 / ${ratio}` }} data-gn-page={shown}>
       <div ref={box} />
-      {!drawn ? <span className="absolute inset-0 grid place-items-center font-mono text-[12px] text-faint">Page {n}</span> : null}
+      {!drawn ? <span className="absolute inset-0 grid place-items-center font-mono text-[12px] text-faint">Page {shown}</span> : null}
+      {label !== undefined && drawn ? <span className="absolute bottom-1.5 right-1.5 rounded-sm bg-ink/75 px-1.5 py-0.5 font-mono text-[11px] text-on-accent">p. {label}</span> : null}
     </div>
   );
 }
 
-function Viewer({ nb, onClose }: { nb: Notebook; onClose: () => void }) {
-  const [doc, setDoc] = useState<PdfDoc | null>(null);
+/* Pages picked out on the server, so a job's pages open without the phone downloading the whole notebook (up to
+   4 MB); undefined if that didn't work, and the whole notebook is fetched instead. */
+async function fetchPages(nb: Notebook, pages: number[]): Promise<ArrayBuffer | { error: string; detail?: string } | undefined> {
+  try {
+    const res = await fetch(ROUTE, { method: 'POST', headers: { 'x-job-kit-pin': readPin(), 'content-type': 'application/json' }, body: JSON.stringify({ action: 'pages', id: nb.id, pages }), cache: 'no-store' });
+    if (res.ok && (res.headers.get('content-type') || '').includes('pdf')) return await res.arrayBuffer();
+    const e = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+    if (e.error === 'gn-pages-gone' || e.error === 'gn-gone' || e.error === 'wrong-pin') return { error: e.error, detail: e.detail };
+  } catch {
+    if (navigator.onLine === false) return { error: 'offline' };
+  }
+  return undefined;
+}
+
+const canvasBlob = (c: HTMLCanvasElement, q = 0.72) => new Promise<Blob | null>((r) => c.toBlob(r, 'image/jpeg', q));
+async function smallBlob(c: HTMLCanvasElement, w = 240): Promise<Blob | null> {
+  const k = Math.min(1, w / c.width);
+  const s = document.createElement('canvas');
+  s.width = Math.max(1, Math.round(c.width * k));
+  s.height = Math.max(1, Math.round(c.height * k));
+  s.getContext('2d')?.drawImage(c, 0, 0, s.width, s.height);
+  const b = await canvasBlob(s);
+  s.width = 0;
+  s.height = 0;
+  return b;
+}
+
+/* ---------- pictures of linked pages for the job card: made here when the pages are drawn, kept on the device ---------- */
+
+const coverKey = (path: string, page: number) => `/__jk-gnp/${encodeURIComponent(path)}/${page}`;
+const coverUrls = new Map<string, string>();
+const coverSubs = new Set<() => void>();
+let coverRev = 0;
+const bumpCovers = () => {
+  coverRev++;
+  coverSubs.forEach((f) => f());
+};
+async function keepCover(path: string, page: number, blob: Blob | null) {
+  if (!blob) return;
+  const key = coverKey(path, page);
+  try {
+    await (await caches.open(THUMBS)).put(key, new Response(blob, { headers: { 'content-type': blob.type || 'image/jpeg' } }));
+  } catch {
+    /* shown this visit only */
+  }
+  coverUrls.set(key, URL.createObjectURL(blob));
+  bumpCovers();
+}
+
+function PageCover({ path, page, onOpen, name }: { path: string; page: number; onOpen: () => void; name: string }) {
+  useSyncExternalStore(
+    (f) => {
+      coverSubs.add(f);
+      return () => void coverSubs.delete(f);
+    },
+    () => coverRev,
+    () => 0,
+  );
+  const key = coverKey(path, page);
+  const url = coverUrls.get(key) ?? '';
+  useEffect(() => {
+    if (coverUrls.has(key)) return;
+    let gone = false;
+    void (async () => {
+      try {
+        const hit = await (await caches.open(THUMBS)).match(key);
+        if (!hit || gone) return;
+        coverUrls.set(key, URL.createObjectURL(await hit.blob()));
+        bumpCovers();
+      } catch {
+        /* no picture yet: it's made the first time the page is drawn here */
+      }
+    })();
+    return () => {
+      gone = true;
+    };
+  }, [key]);
+  return (
+    <button type="button" onClick={onOpen} aria-label={`Open ${name}, page ${page}`} className="relative h-[104px] w-[78px] shrink-0 overflow-hidden rounded-sm border border-line-strong bg-paper" data-gn-cover>
+      {url ? (
+        <img src={url} alt="" className="h-full w-full object-cover object-top" />
+      ) : (
+        <span aria-hidden className="absolute inset-0 grid place-items-center">
+          <svg viewBox="0 0 24 24" className="h-7 w-7 fill-none stroke-current text-faint" strokeWidth="1.5" strokeLinejoin="round">
+            <path d="M6.5 3.5h11v17h-11z" />
+            <path d="M9 8h6M9 11h6M9 14h4" />
+          </svg>
+        </span>
+      )}
+      <span className="absolute bottom-1 left-1 rounded-sm bg-ink/75 px-1 font-mono text-[10.5px] text-on-accent">p. {page}</span>
+    </button>
+  );
+}
+
+function Viewer({ nb, pages, onClose, onCover }: { nb: Notebook; pages?: number[]; onClose: () => void; onCover?: (page: number, c: HTMLCanvasElement) => void }) {
+  const only = pages?.length ? pages : undefined;
+  const [whole, setWhole] = useState(!only);
+  // the PDF on screen, and the notebook page each of its pages is
+  const [shown, setShown] = useState<{ doc: PdfDoc; labels: number[]; total?: number } | null>(null);
   const [error, setError] = useState('');
+  const [missing, setMissing] = useState<number[]>([]);
   const [width, setWidth] = useState(0);
   const area = useRef<HTMLDivElement>(null);
+  const pagesKey = only ? only.join(',') : '';
   useEffect(() => {
     let gone = false;
     let task: PdfTask | null = null;
-    const end = () => void task?.destroy().catch(() => {});
+    const end = () => closeTask(task);
     void (async () => {
-      const bytes = await fetchPdf(nb);
+      const want = !whole && pagesKey ? pagesKey.split(',').map(Number) : null;
+      let bytes: ArrayBuffer | { error: string; detail?: string } | undefined;
+      let picked = false;
+      if (want) {
+        bytes = await fetchPages(nb, want);
+        picked = bytes instanceof ArrayBuffer;
+        if (bytes && !(bytes instanceof ArrayBuffer) && bytes.error !== 'offline') {
+          if (!gone) setError(gnProblem(bytes.error, bytes.detail));
+          return;
+        }
+      }
+      if (!picked) bytes = await fetchPdf(nb);
       if (gone) return;
-      if (!(bytes instanceof ArrayBuffer)) return setError(gnProblem(bytes.error, bytes.detail));
+      if (!(bytes instanceof ArrayBuffer)) return setError(gnProblem(bytes?.error, bytes?.detail));
       try {
         const lib = await loadPdfjs();
         if (gone) return;
-        task = lib.getDocument({ data: bytes });
+        task = await openTask(lib, bytes);
+        if (gone) return end();
         const opened = await task.promise;
         if (gone) return end();
-        setDoc(opened);
+        if (want && !picked) {
+          // the whole notebook came: show only the job's pages that are in it
+          const there = want.filter((p) => p <= opened.numPages);
+          setMissing(want.filter((p) => p > opened.numPages));
+          setShown({ doc: opened, labels: there, total: opened.numPages });
+        } else if (want) setShown({ doc: opened, labels: want });
+        else setShown({ doc: opened, labels: Array.from({ length: opened.numPages }, (_, i) => i + 1), total: opened.numPages });
       } catch {
         if (!gone) setError('This PDF couldn’t be opened here.');
       }
@@ -317,7 +470,7 @@ function Viewer({ nb, onClose }: { nb: Notebook; onClose: () => void }) {
       gone = true;
       end();
     };
-  }, [nb]);
+  }, [nb, whole, pagesKey]);
   useEffect(() => {
     const el = area.current;
     if (!el) return;
@@ -334,27 +487,70 @@ function Viewer({ nb, onClose }: { nb: Notebook; onClose: () => void }) {
       window.removeEventListener('keydown', esc);
     };
   }, [onClose]);
+  useEffect(() => {
+    area.current?.scrollTo({ top: 0 });
+  }, [whole]);
+  const n = shown?.labels.length ?? 0;
+  const sub = only && !whole ? pagesWords(only) : shown?.total ? `${shown.total} page${shown.total === 1 ? '' : 's'}` : '';
   return (
-    <div role="dialog" aria-modal="true" aria-label={nb.name} className="fixed inset-0 z-50 flex flex-col bg-ink" data-gn-viewer>
+    <div role="dialog" aria-modal="true" aria-label={nb.name} className="fixed inset-0 z-50 flex flex-col bg-ink" data-gn-viewer data-gn-only={only && !whole ? only.join(',') : undefined}>
       <div className="flex h-14 shrink-0 items-center justify-between gap-3 px-4 pt-[env(safe-area-inset-top)] text-on-accent">
         <span className="min-w-0">
           <span className="block truncate text-[15px] font-semibold">{nb.name}</span>
-          <span className="block font-mono text-[11.5px] text-on-accent/70">{doc ? `${doc.numPages} page${doc.numPages === 1 ? '' : 's'} · ` : ''}changed {ago(nb.at)}</span>
+          <span className="block truncate font-mono text-[11.5px] text-on-accent/70">
+            {sub ? `${sub} · ` : ''}changed {ago(nb.at)}
+          </span>
         </span>
-        <button type="button" onClick={onClose} className="h-11 shrink-0 px-2 text-[15px] font-semibold">
-          Close
-        </button>
+        <span className="flex shrink-0 items-center gap-1">
+          {only ? (
+            <button
+              type="button"
+              onClick={() => {
+                setShown(null);
+                setError('');
+                setMissing([]);
+                setWhole((w) => !w);
+              }}
+              className="h-11 px-2 text-[13.5px] text-on-accent/85 underline"
+              data-gn-whole-toggle
+            >
+              {whole ? 'Just this job' : 'Whole notebook'}
+            </button>
+          ) : null}
+          <button type="button" onClick={onClose} className="h-11 px-2 text-[15px] font-semibold">
+            Close
+          </button>
+        </span>
       </div>
       <div ref={area} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-[calc(env(safe-area-inset-bottom)+16px)]">
         {error ? (
-          <p className="mx-auto mt-16 max-w-sm px-3 text-center text-[15px] leading-relaxed text-on-accent">{error}</p>
-        ) : !doc || !width ? (
+          <p className="mx-auto mt-16 max-w-sm px-3 text-center text-[15px] leading-relaxed text-on-accent" data-gn-viewer-problem>
+            {error}
+          </p>
+        ) : !shown || !width ? (
           <p className="mt-16 text-center font-mono text-[13px] text-on-accent/70">Opening…</p>
         ) : (
           <div className="mx-auto grid gap-3 pt-1" style={{ width }}>
-            {Array.from({ length: doc.numPages }, (_, i) => (
-              <PageCanvas key={i} doc={doc} n={i + 1} width={width} />
-            ))}
+            {missing.length ? (
+              <p className="rounded-sm border border-on-accent/30 px-3 py-2 text-[14px] leading-snug text-on-accent" data-gn-viewer-problem>
+                The notebook has {shown.total} pages now, so {pagesWords(missing)} {missing.length === 1 ? 'isn’t' : 'aren’t'} there any more. Change pages on the job.
+              </p>
+            ) : null}
+            {Array.from({ length: n }, (_, i) => {
+              const label = shown.labels[i];
+              // drawn from the picked-out PDF its pages are 1..n; from the whole notebook, the notebook's own numbers
+              const page = shown.total ? label : i + 1;
+              return (
+                <PageCanvas
+                  key={`${whole}-${i}`}
+                  doc={shown.doc}
+                  n={page}
+                  width={width}
+                  label={only ? label : undefined}
+                  onDrawn={only && label === only[0] && onCover ? (c) => onCover(label, c) : undefined}
+                />
+              );
+            })}
           </div>
         )}
       </div>
@@ -362,50 +558,366 @@ function Viewer({ nb, onClose }: { nb: Notebook; onClose: () => void }) {
   );
 }
 
+/* ---------- picking a job's pages out of a notebook ---------- */
+
+const pickThumbs = new Map<string, string>(); // this visit's page pictures, by notebook version, page and width
+
+function PickThumb({ doc, nb, n, width, ratio, picked, tag, onToggle }: { doc: PdfDoc; nb: Notebook; n: number; width: number; ratio: number; picked: boolean; tag: string; onToggle: () => void }) {
+  const key = `${nb.id}|${nb.at}|${n}|${Math.round(width)}`;
+  const [got, setGot] = useState<{ key: string; url: string } | null>(null);
+  const url = pickThumbs.get(key) ?? (got?.key === key ? got.url : '');
+  const el = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (pickThumbs.has(key)) return;
+    const b = el.current;
+    if (!b || !width) return;
+    let gone = false;
+    const seen = new IntersectionObserver(
+      (es) => {
+        if (!es.some((e) => e.isIntersecting)) return;
+        seen.disconnect();
+        void (async () => {
+          try {
+            const p = await doc.getPage(n);
+            const base = p.getViewport({ scale: 1 });
+            const vp = p.getViewport({ scale: (width / base.width) * Math.min(2, window.devicePixelRatio || 1) });
+            const c = document.createElement('canvas');
+            c.width = Math.round(vp.width);
+            c.height = Math.round(vp.height);
+            await p.render({ canvas: c, viewport: vp }).promise;
+            // kept as a JPEG and the canvas let go, so a notebook of hundreds of pages doesn't fill an iPhone's memory
+            const blob = await canvasBlob(c);
+            c.width = 0;
+            c.height = 0;
+            if (!blob) return;
+            const u = URL.createObjectURL(blob);
+            pickThumbs.set(key, u);
+            if (!gone) setGot({ key, url: u });
+          } catch {
+            /* stays as its number */
+          }
+        })();
+      },
+      { rootMargin: '900px' },
+    );
+    seen.observe(b);
+    return () => {
+      gone = true;
+      seen.disconnect();
+    };
+  }, [doc, n, width, key]);
+  return (
+    <button ref={el} type="button" aria-pressed={picked} onClick={onToggle} className="group block w-full text-left" data-gn-pick-page={n}>
+      <span
+        className={`relative block overflow-hidden bg-mount ${picked ? 'outline outline-[3px] outline-offset-0 outline-accent' : 'outline outline-1 outline-on-accent/20'}`}
+        style={{ aspectRatio: `1 / ${ratio}` }}
+      >
+        {url ? <img src={url} alt="" className="absolute inset-0 h-full w-full object-cover object-top" /> : <span className="absolute inset-0 grid place-items-center font-mono text-[12px] text-faint">Page {n}</span>}
+        {picked ? (
+          <span aria-hidden className="absolute right-1.5 top-1.5 grid h-7 w-7 place-items-center rounded-full bg-accent text-[15px] font-bold text-on-accent shadow">
+            ✓
+          </span>
+        ) : null}
+      </span>
+      <span className={`mt-1 flex min-w-0 items-baseline gap-1.5 font-mono text-[12px] ${picked ? 'font-semibold text-on-accent' : 'text-on-accent/75'}`}>
+        <span>{n}</span>
+        {tag ? <span className="min-w-0 truncate text-[11px] font-normal text-on-accent/60" data-gn-tag>{tag}</span> : null}
+      </span>
+    </button>
+  );
+}
+
+const SIZES = [
+  { word: 'Small', w: 100 },
+  { word: 'Medium', w: 160 },
+  { word: 'Big', w: 420 },
+];
+
+function PagePicker({
+  nb,
+  initial,
+  elsewhere,
+  jobTitle,
+  canWhole,
+  onLink,
+  onWhole,
+  onClose,
+}: {
+  nb: Notebook;
+  initial: number[];
+  elsewhere: Map<number, string[]>; // page -> the other jobs it's linked to (their #number and name)
+  jobTitle: string;
+  canWhole: boolean;
+  onLink: (pages: number[], cover: Blob | null) => void;
+  onWhole: () => void;
+  onClose: () => void;
+}) {
+  const [doc, setDoc] = useState<{ d: PdfDoc; ratio: number } | null>(null);
+  const [error, setError] = useState('');
+  const [picked, setPicked] = useState<number[]>(initial);
+  const [size, setSize] = useState(1);
+  const [width, setWidth] = useState(0);
+  const area = useRef<HTMLDivElement>(null);
+  const placed = useRef(false);
+  useEffect(() => {
+    let gone = false;
+    let task: PdfTask | null = null;
+    const end = () => closeTask(task);
+    void (async () => {
+      const bytes = await fetchPdf(nb);
+      if (gone) return;
+      if (!(bytes instanceof ArrayBuffer)) return setError(gnProblem(bytes.error, bytes.detail));
+      try {
+        const lib = await loadPdfjs();
+        if (gone) return;
+        task = await openTask(lib, bytes);
+        if (gone) return end();
+        const d = await task.promise;
+        if (gone) return end();
+        const v = (await d.getPage(1)).getViewport({ scale: 1 });
+        if (!gone) setDoc({ d, ratio: v.height / v.width });
+      } catch {
+        if (!gone) setError('This PDF couldn’t be opened here.');
+      }
+    })();
+    return () => {
+      gone = true;
+      end();
+    };
+  }, [nb]);
+  useEffect(() => {
+    const el = area.current;
+    if (!el) return;
+    const fit = () => setWidth(Math.min(el.clientWidth - 24, 960));
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', esc);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('keydown', esc);
+    };
+  }, [onClose]);
+  const gap = 12;
+  const cols = width ? Math.max(1, Math.floor((width + gap) / (SIZES[size].w + gap))) : 1;
+  const tw = width ? (width - gap * (cols - 1)) / cols : 0;
+  // opens on the job's pages when it has some, else at the end, where a new job's page goes
+  useLayoutEffect(() => {
+    if (!doc || !tw || placed.current) return;
+    const el = area.current;
+    if (!el) return;
+    placed.current = true;
+    const first = initial[0];
+    const target = first ? el.querySelector<HTMLElement>(`[data-gn-pick-page="${first}"]`) : null;
+    if (target) el.scrollTop = Math.max(0, target.offsetTop - 12);
+    else el.scrollTop = el.scrollHeight;
+  }, [doc, tw, initial]);
+  // a new size keeps the page at the top of the screen where it was
+  const resize = (next: number) => {
+    const el = area.current;
+    let keep = 0;
+    if (el) {
+      const top = el.scrollTop;
+      const ps = [...el.querySelectorAll<HTMLElement>('[data-gn-pick-page]')];
+      keep = Number(ps.find((p) => p.offsetTop + p.offsetHeight > top)?.dataset.gnPickPage ?? 0);
+    }
+    setSize(next);
+    requestAnimationFrame(() => {
+      const t = keep && area.current?.querySelector<HTMLElement>(`[data-gn-pick-page="${keep}"]`);
+      if (t && area.current) area.current.scrollTop = Math.max(0, t.offsetTop - 12);
+    });
+  };
+  const toggle = (n: number) => setPicked((p) => (p.includes(n) ? p.filter((x) => x !== n) : cleanPages([...p, n])));
+  const changed = picked.join(',') !== cleanPages(initial).join(',');
+  const link = async () => {
+    const first = picked[0];
+    const u = pickThumbs.get(`${nb.id}|${nb.at}|${first}|${Math.round(tw)}`) ?? [...pickThumbs.entries()].find(([k]) => k.startsWith(`${nb.id}|${nb.at}|${first}|`))?.[1];
+    let blob: Blob | null = null;
+    if (u) {
+      try {
+        blob = await (await fetch(u)).blob();
+      } catch {
+        /* the card shows the page number instead */
+      }
+    }
+    onLink(picked, blob);
+  };
+  const total = doc?.d.numPages ?? 0;
+  return (
+    <div role="dialog" aria-modal="true" aria-label={`Pages of ${nb.name}`} className="fixed inset-0 z-50 flex flex-col bg-ink text-on-accent" data-gn-picker>
+      <div className="flex shrink-0 items-start justify-between gap-3 px-4 pb-2 pt-[calc(env(safe-area-inset-top)+10px)]">
+        <span className="min-w-0">
+          <span className="block truncate text-[15.5px] font-semibold">{nb.name}</span>
+          <span className="block font-mono text-[11.5px] leading-snug text-on-accent/70">
+            {total ? `${total} page${total === 1 ? '' : 's'} · ` : ''}tap the pages for {jobTitle}
+          </span>
+        </span>
+        <button type="button" onClick={onClose} className="h-10 shrink-0 px-1 text-[15px] font-semibold">
+          Close
+        </button>
+      </div>
+      <div className="flex shrink-0 items-center gap-1 px-4 pb-2" role="group" aria-label="Page size">
+        {SIZES.map((z, i) => (
+          <button
+            key={z.word}
+            type="button"
+            aria-pressed={size === i}
+            onClick={() => resize(i)}
+            className={`h-8 rounded-sm px-2.5 font-mono text-[12px] ${size === i ? 'bg-on-accent text-ink' : 'text-on-accent/75 underline'}`}
+            data-gn-size={z.word}
+          >
+            {z.word}
+          </button>
+        ))}
+        {total > 6 ? (
+          <span className="ml-auto flex gap-3 font-mono text-[12px]">
+            <button type="button" className="h-8 text-on-accent/75 underline" onClick={() => area.current?.scrollTo({ top: 0 })}>
+              First page
+            </button>
+            <button type="button" className="h-8 text-on-accent/75 underline" onClick={() => area.current?.scrollTo({ top: area.current.scrollHeight })}>
+              Last page
+            </button>
+          </span>
+        ) : null}
+      </div>
+      <div ref={area} className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-4">
+        {error ? (
+          <p className="mx-auto mt-16 max-w-sm px-3 text-center text-[15px] leading-relaxed">{error}</p>
+        ) : !doc || !tw ? (
+          <p className="mt-16 text-center font-mono text-[13px] text-on-accent/70">Opening the notebook…</p>
+        ) : (
+          <div className="mx-auto grid pt-1" style={{ width, gap, gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }} data-gn-grid>
+            {Array.from({ length: total }, (_, i) => {
+              const n = i + 1;
+              const others = elsewhere.get(n);
+              return <PickThumb key={n} doc={doc.d} nb={nb} n={n} width={tw} ratio={doc.ratio} picked={picked.includes(n)} tag={others?.length ? `on ${others.join(', ')}` : ''} onToggle={() => toggle(n)} />;
+            })}
+          </div>
+        )}
+      </div>
+      <div className="shrink-0 border-t border-on-accent/15 bg-ink px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-3" data-gn-pick-bar>
+        <p className="text-[14px] leading-snug" data-gn-picked>
+          {picked.length ? (
+            <>
+              <span className="font-semibold">{pagesWords(picked).replace(/^p/, 'P')}</span> for {jobTitle}
+            </>
+          ) : (
+            <span className="text-on-accent/75">Tap the pages for this job.</span>
+          )}
+        </p>
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+          <button
+            type="button"
+            disabled={!picked.length || (!changed && initial.length > 0)}
+            onClick={() => void link()}
+            className="h-11 rounded-sm bg-accent px-4 text-[15px] font-semibold text-on-accent disabled:opacity-40"
+            data-gn-link-pages
+          >
+            {initial.length ? 'Save pages' : picked.length > 1 ? `Link ${picked.length} pages` : 'Link this page'}
+          </button>
+          {picked.length ? (
+            <button type="button" onClick={() => setPicked([])} className="h-11 text-[14px] text-on-accent/75 underline">
+              Clear
+            </button>
+          ) : null}
+          {canWhole ? (
+            <button type="button" onClick={onWhole} className="h-11 text-[14px] text-on-accent/75 underline" data-gn-whole>
+              Link the whole notebook instead
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- the box on the job card ---------- */
 
-export function GoodnotesBox({ job, marks, onMark }: { job: CurrentJob; marks: Marks; onMark: (patch: Marks[string]) => void }) {
+export function GoodnotesBox({ job, marks, onMark, jobLabel }: { job: CurrentJob; marks: Marks; onMark: (patch: Marks[string]) => void; jobLabel?: (uuid: string) => string }) {
   const s = useNotebooks();
   const mine = marks[job.uuid] ?? {};
   const linked = mine.gn ?? [];
   const sent = mine.gnSent ?? {};
-  const [open, setOpen] = useState<Notebook | null>(null);
+  const pageLinks = mine.gnPages ?? {};
+  const [open, setOpen] = useState<{ nb: Notebook; pages?: number[] } | null>(null);
   const [sending, setSending] = useState<Record<string, boolean>>({});
   const [problem, setProblem] = useState<Record<string, string>>({});
-  const [picking, setPicking] = useState(false);
-  const [allLoose, setAllLoose] = useState(false);
+  const [note, setNote] = useState<Record<string, string>>({});
+  const [choosing, setChoosing] = useState(false);
+  const [allChoices, setAllChoices] = useState(false);
+  const [picker, setPicker] = useState<Notebook | null>(null);
+  const [confirmOff, setConfirmOff] = useState('');
 
   useEffect(() => {
     void check();
   }, [job.uuid]);
+  useEffect(() => {
+    if (!confirmOff) return;
+    const t = setTimeout(() => setConfirmOff(''), 5000);
+    return () => clearTimeout(t);
+  }, [confirmOff]);
 
-  const books = notebooksFor(s.notebooks, job.number, linked);
+  const title = `#${job.number} ${job.name}`.trim();
+  const books = notebooksFor(s.notebooks, job.number, linked).filter((n) => !pageLinks[n.path]);
   const linkedAnywhere = Object.values(marks).flatMap((m) => m?.gn ?? []);
   const loose = looseNotebooks(
     s.notebooks.filter((n) => !n.number),
     [],
     linkedAnywhere,
   );
-  const shown = allLoose ? loose : loose.slice(0, 5);
+  // the job's pages, notebook by notebook (a notebook gone from the Clients folder still shows, to be unlinked)
+  const pageRows = Object.entries(pageLinks)
+    .map(([path, ps]) => ({ path, pages: cleanPages(ps), nb: s.notebooks.find((n) => n.path === path) }))
+    .filter((r) => r.pages.length)
+    .sort((a, b) => ((a.nb?.at ?? '') < (b.nb?.at ?? '') ? 1 : -1));
+  // any notebook in Clients can give pages: newest change first (this year's notebook is usually at the top)
+  const choices = [...s.notebooks].filter((n) => !books.some((b) => b.path === n.path) && !pageLinks[n.path]).sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+  const shownChoices = allChoices ? choices : choices.slice(0, 6);
+  const gnPagesAll = Object.fromEntries(Object.entries(marks).map(([u, m]) => [u, m?.gnPages]));
+  const sentKey = (path: string, pages?: number[]) => (pages?.length ? `${path}#${pagesSlug(pages)}` : path);
 
-  const attach = async (nb: Notebook) => {
-    setSending((x) => ({ ...x, [nb.path]: true }));
-    setProblem((x) => ({ ...x, [nb.path]: '' }));
-    const r = await post<{ uuid: string; at: string }>(readPin(), { action: 'attach', id: nb.id, job: job.uuid }, ROUTE);
-    setSending((x) => ({ ...x, [nb.path]: false }));
-    if (!r.ok) return setProblem((x) => ({ ...x, [nb.path]: gnProblem(r.error, r.detail) }));
-    onMark({ gnSent: { ...(marks[job.uuid]?.gnSent ?? {}), [nb.path]: r.data.at || nb.at } });
+  const attach = async (nb: Notebook, pages?: number[]) => {
+    const k = sentKey(nb.path, pages);
+    setSending((x) => ({ ...x, [k]: true }));
+    setProblem((x) => ({ ...x, [k]: '' }));
+    setNote((x) => ({ ...x, [k]: '' }));
+    const r = await post<{ uuid: string; at: string; same?: boolean }>(readPin(), { action: 'attach', id: nb.id, job: job.uuid, ...(pages?.length ? { pages } : {}) }, ROUTE);
+    setSending((x) => ({ ...x, [k]: false }));
+    if (!r.ok) return setProblem((x) => ({ ...x, [k]: gnProblem(r.error, r.detail) }));
+    if (r.data.same && pages?.length) setNote((x) => ({ ...x, [k]: 'Nothing new on these pages: ServiceM8 already has them as they are.' }));
+    onMark({ gnSent: { ...(marks[job.uuid]?.gnSent ?? {}), [k]: r.data.at || nb.at } });
   };
   const link = (nb: Notebook) => {
-    onMark({ gn: [...new Set([...linked, nb.path])] });
-    setPicking(false);
+    const { [nb.path]: _gone, ...rest } = pageLinks;
+    void _gone;
+    onMark({ gn: [...new Set([...linked, nb.path])], gnPages: rest });
+    setPicker(null);
+    setChoosing(false);
   };
   const unlink = (nb: Notebook) => onMark({ gn: linked.filter((p) => p !== nb.path) });
+  const linkPages = (nb: Notebook, pages: number[], cover: Blob | null) => {
+    onMark({ gnPages: { ...pageLinks, [nb.path]: cleanPages(pages) }, gn: linked.filter((p) => p !== nb.path) });
+    if (cover && pages.length) void keepCover(nb.path, cleanPages(pages)[0], cover);
+    setPicker(null);
+    setChoosing(false);
+  };
+  const unlinkPages = (path: string) => {
+    if (confirmOff !== path) return setConfirmOff(path);
+    const { [path]: _gone, ...rest } = pageLinks;
+    void _gone;
+    onMark({ gnPages: rest });
+    setConfirmOff('');
+  };
 
   const err = s.error ? gnProblem(s.error, s.detail) : '';
   const firstLoad = !s.at && s.busy;
+  const count = books.length + pageRows.length;
+  const ready = Boolean(s.at && !s.error);
   return (
-    <section id="goodnotes" data-jsec="goodnotes" data-jsec-note={books.length ? String(books.length) : ''} className="mt-6 scroll-mt-[calc(env(safe-area-inset-top)-20px)] rounded-sm border border-line-strong bg-mount p-4" data-goodnotes>
+    <section id="goodnotes" data-jsec="goodnotes" data-jsec-note={count ? String(count) : ''} className="mt-6 scroll-mt-[calc(env(safe-area-inset-top)-20px)] rounded-sm border border-line-strong bg-mount p-4" data-goodnotes>
       <div className="flex items-center justify-between gap-3">
         <h2 className="flex items-center gap-2.5 text-[19px] font-[650]">
           <SecIcon k="goodnotes" />
@@ -416,7 +928,7 @@ export function GoodnotesBox({ job, marks, onMark }: { job: CurrentJob; marks: M
         </button>
       </div>
       <p className="mt-1 text-[14px] leading-snug text-muted">
-        {job.number ? `Notebooks in your Clients folder named ${job.number} first.` : 'Notebooks in your Clients folder.'}
+        {job.number ? `Notebooks in your Clients folder named ${job.number} first, and pages you link here.` : 'Notebooks in your Clients folder, and pages you link here.'}
         {s.at && !s.error ? ` Checked ${ago(new Date(s.at).toISOString())}.` : ''}
       </p>
 
@@ -428,6 +940,64 @@ export function GoodnotesBox({ job, marks, onMark }: { job: CurrentJob; marks: M
       {s.error === 'offline' && s.at ? <p className="mt-2 font-mono text-[12.5px] text-faint">{err}</p> : null}
       {firstLoad ? <p className="mt-3 font-mono text-[13px] text-faint">Checking OneDrive…</p> : null}
 
+      {pageRows.length ? (
+        <ul className="mt-3 grid gap-3" data-gn-page-list>
+          {pageRows.map(({ path, pages, nb }) => {
+            const k = sentKey(path, pages);
+            const on = sent[k];
+            const fresh = nb && on && on >= nb.at;
+            const name = nb?.name ?? path.split('/').pop() ?? path;
+            const folder = path.includes('/') ? path.split('/').slice(0, -1).join(' / ') : '';
+            return (
+              <li key={path} className="flex gap-3" data-gn-pages={path}>
+                <PageCover path={path} page={pages[0]} name={name} onOpen={() => nb && setOpen({ nb, pages })} />
+                <div className="min-w-0 flex-1">
+                  <p className="break-words text-[15.5px] font-semibold leading-snug">{pagesWords(pages).replace(/^p/, 'P')}</p>
+                  <p className="mt-0.5 font-mono text-[12px] leading-snug text-faint">
+                    of {name}
+                    {nb ? ` · changed ${ago(nb.at)}` : ''}
+                    {folder ? ` · ${folder}` : ''}
+                  </p>
+                  {nb ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <button type="button" onClick={() => setOpen({ nb, pages })} className="btn btn-primary btn-sm" data-gn-open-pages>
+                        Open
+                      </button>
+                      {fresh ? (
+                        <span className="flex items-center gap-1 text-[13.5px] text-muted" data-gn-sent>
+                          <span className="text-accent">✓</span> On the ServiceM8 job
+                        </span>
+                      ) : (
+                        <button type="button" disabled={sending[k]} onClick={() => void attach(nb, pages)} className="h-9 text-left text-[14px] text-accent underline disabled:no-underline disabled:opacity-60" data-gn-attach-pages>
+                          {sending[k] ? 'Putting them on…' : on ? 'Put the latest on ServiceM8' : pages.length > 1 ? 'Put these pages on the ServiceM8 job' : 'Put this page on the ServiceM8 job'}
+                        </button>
+                      )}
+                      <button type="button" onClick={() => setPicker(nb)} className="h-9 text-[13.5px] text-muted underline" data-gn-change>
+                        Change pages
+                      </button>
+                      <button type="button" onClick={() => unlinkPages(path)} className={`h-9 text-[13.5px] underline ${confirmOff === path ? 'font-semibold text-ink' : 'text-muted'}`} data-gn-unlink-pages>
+                        {confirmOff === path ? 'Tap again to unlink' : 'Unlink'}
+                      </button>
+                    </div>
+                  ) : ready ? (
+                    <div className="mt-1.5">
+                      <p className="text-[13.5px] leading-snug text-ink" data-gn-missing>
+                        Not in your Clients folder any more: renamed or moved in Goodnotes? Link its pages again under the new name.
+                      </p>
+                      <button type="button" onClick={() => unlinkPages(path)} className={`h-9 text-[13.5px] underline ${confirmOff === path ? 'font-semibold text-ink' : 'text-muted'}`} data-gn-unlink-pages>
+                        {confirmOff === path ? 'Tap again to unlink' : 'Unlink'}
+                      </button>
+                    </div>
+                  ) : null}
+                  {note[k] ? <p className="mt-1 text-[13.5px] leading-snug text-muted">{note[k]}</p> : null}
+                  {problem[k] ? <p className="mt-1 text-[13.5px] leading-snug text-ink">{problem[k]}</p> : null}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+
       {books.length ? (
         <ul className="mt-3 grid gap-3" data-gn-list>
           {books.map((nb) => {
@@ -436,7 +1006,7 @@ export function GoodnotesBox({ job, marks, onMark }: { job: CurrentJob; marks: M
             const byHand = linked.includes(nb.path) && nb.number !== String(Number(job.number));
             return (
               <li key={nb.id} className="flex gap-3" data-gn-book={nb.path}>
-                <Cover nb={nb} onOpen={() => setOpen(nb)} />
+                <Cover nb={nb} onOpen={() => setOpen({ nb })} />
                 <div className="min-w-0 flex-1">
                   <p className="break-words text-[15.5px] font-semibold leading-snug">{nb.name}</p>
                   <p className="mt-0.5 font-mono text-[12px] leading-snug text-faint">
@@ -444,7 +1014,7 @@ export function GoodnotesBox({ job, marks, onMark }: { job: CurrentJob; marks: M
                     {nb.path.includes('/') ? ` · ${nb.path.split('/').slice(0, -1).join(' / ')}` : ''}
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <button type="button" onClick={() => setOpen(nb)} className="btn btn-primary btn-sm" data-gn-open>
+                    <button type="button" onClick={() => setOpen({ nb })} className="btn btn-primary btn-sm" data-gn-open>
                       Open
                     </button>
                     {fresh ? (
@@ -452,7 +1022,7 @@ export function GoodnotesBox({ job, marks, onMark }: { job: CurrentJob; marks: M
                         <span className="text-accent">✓</span> On the ServiceM8 job
                       </span>
                     ) : (
-                      <button type="button" disabled={sending[nb.path]} onClick={() => void attach(nb)} className="h-9 text-[14px] text-accent underline disabled:no-underline disabled:opacity-60" data-gn-attach>
+                      <button type="button" disabled={sending[nb.path]} onClick={() => void attach(nb)} className="h-9 text-left text-[14px] text-accent underline disabled:no-underline disabled:opacity-60" data-gn-attach>
                         {sending[nb.path] ? 'Putting it on…' : on ? 'Changed since: put the new version on ServiceM8' : 'Put it on the ServiceM8 job'}
                       </button>
                     )}
@@ -468,42 +1038,50 @@ export function GoodnotesBox({ job, marks, onMark }: { job: CurrentJob; marks: M
             );
           })}
         </ul>
-      ) : s.at && !s.error ? (
+      ) : null}
+
+      {!count && ready ? (
         <p className="mt-3 text-[14.5px] leading-snug" data-gn-none>
-          No notebook for this job yet. In Goodnotes’ Clients folder, start a notebook’s name with <b className="font-semibold">{job.number || 'the job number'}</b>
-          {job.number ? ` (e.g. “${job.number} ${job.name.split(' ').slice(-1)[0] || 'client'}”)` : ''} and it shows here a minute or two after you write.
+          Nothing for this job yet. Link its pages from a notebook below, or in Goodnotes’ Clients folder start a notebook’s name with <b className="font-semibold">{job.number || 'the job number'}</b>
+          {job.number ? ` (e.g. “${job.number} ${job.name.split(' ').slice(-1)[0] || 'client'}”)` : ''}.
         </p>
       ) : null}
 
-      {s.at && !s.error && loose.length ? (
+      {ready && choices.length ? (
         <div className="mt-3 border-t border-line pt-3">
-          {!picking ? (
-            <button type="button" onClick={() => setPicking(true)} className="h-9 text-[14px] text-accent underline" data-gn-pick>
-              Link a notebook without a number ({loose.length})
+          {!choosing ? (
+            <button type="button" onClick={() => setChoosing(true)} className="h-9 text-[14px] text-accent underline" data-gn-pick>
+              {pageRows.length ? 'Link pages from another notebook' : 'Link pages from a notebook'}
             </button>
           ) : (
             <>
-              <p className={label}>Notebooks without a job number</p>
-              <ul className="mt-2 divide-y divide-line" data-gn-loose>
-                {shown.map((nb) => (
-                  <li key={nb.id} className="flex items-center gap-3 py-2">
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[15px]">{nb.name}</span>
-                      <span className="block font-mono text-[11.5px] text-faint">changed {ago(nb.at)}</span>
-                    </span>
-                    <button type="button" onClick={() => link(nb)} className="btn btn-ghost btn-sm shrink-0" data-gn-link>
-                      Link
+              <p className={label}>Which notebook? Then tap this job’s pages</p>
+              <ul className="mt-2 divide-y divide-line" data-gn-choices>
+                {shownChoices.map((nb) => (
+                  <li key={nb.id}>
+                    <button type="button" onClick={() => setPicker(nb)} className="flex w-full items-center gap-3 py-2.5 text-left" data-gn-choice={nb.path}>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[15px]">{nb.name}</span>
+                        <span className="block truncate font-mono text-[11.5px] text-faint">
+                          changed {ago(nb.at)}
+                          {nb.path.includes('/') ? ` · ${nb.path.split('/').slice(0, -1).join(' / ')}` : ''}
+                          {nb.number ? ` · named for job ${nb.number}` : ''}
+                        </span>
+                      </span>
+                      <span aria-hidden className="shrink-0 font-mono text-[13px] text-accent">
+                        Pages →
+                      </span>
                     </button>
                   </li>
                 ))}
               </ul>
               <div className="mt-1 flex gap-4">
-                {loose.length > shown.length ? (
-                  <button type="button" onClick={() => setAllLoose(true)} className="h-9 text-[14px] text-accent underline">
-                    Show all {loose.length}
+                {choices.length > shownChoices.length ? (
+                  <button type="button" onClick={() => setAllChoices(true)} className="h-9 text-[14px] text-accent underline">
+                    Show all {choices.length}
                   </button>
                 ) : null}
-                <button type="button" onClick={() => setPicking(false)} className="h-9 text-[14px] text-muted underline">
+                <button type="button" onClick={() => setChoosing(false)} className="h-9 text-[14px] text-muted underline">
                   Cancel
                 </button>
               </div>
@@ -512,8 +1090,34 @@ export function GoodnotesBox({ job, marks, onMark }: { job: CurrentJob; marks: M
         </div>
       ) : null}
 
+      {pageRows.length ? <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint">Pages are linked by their number. If you add a page in the middle of a notebook, the pages after it move on one: check them with Open.</p> : null}
       {books.length ? <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint">On the ServiceM8 job it’s “{attachName(books[0])}”, in the Job diary.</p> : null}
-      {open ? <Viewer nb={open} onClose={() => setOpen(null)} /> : null}
+      {open ? (
+        <Viewer
+          nb={open.nb}
+          pages={open.pages}
+          onClose={() => setOpen(null)}
+          onCover={(page, c) => {
+            const nb = open.nb;
+            void smallBlob(c).then((b) => keepCover(nb.path, page, b));
+          }}
+        />
+      ) : null}
+      {picker ? (
+        <PagePicker
+          nb={picker}
+          initial={cleanPages(pageLinks[picker.path])}
+          elsewhere={(() => {
+            const m = pagesElsewhere(gnPagesAll, picker.path, job.uuid);
+            return new Map([...m].map(([p, us]) => [p, us.map((u) => jobLabel?.(u) || 'another job')]));
+          })()}
+          jobTitle={title}
+          canWhole={!picker.number && !linkedAnywhere.includes(picker.path) && loose.some((n) => n.path === picker.path)}
+          onLink={(pages, cover) => linkPages(picker, pages, cover)}
+          onWhole={() => link(picker)}
+          onClose={() => setPicker(null)}
+        />
+      ) : null}
     </section>
   );
 }

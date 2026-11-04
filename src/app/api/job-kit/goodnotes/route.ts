@@ -1,7 +1,7 @@
 import { guard } from '@/lib/job-kit-server';
-import { GnError, notebookFile, notebookLink, notebooks, notebookThumb } from '@/lib/goodnotes';
-import { attachName } from '@/lib/goodnotes-match';
-import { attachPhoto, sm8SetUp, Sm8Error, touchJob } from '@/lib/servicem8';
+import { GnError, notebookFile, notebookLink, notebookPages, notebooks, notebookThumb } from '@/lib/goodnotes';
+import { attachName, cleanPages, pagesSlug } from '@/lib/goodnotes-match';
+import { attachFile, sm8SetUp, Sm8Error, touchJob } from '@/lib/servicem8';
 import { stableUuid } from '@/lib/brief-token';
 
 /* Goodnotes notebooks on the Job Kit's job cards (src/lib/goodnotes.ts), behind the PIN:
@@ -9,8 +9,13 @@ import { stableUuid } from '@/lib/brief-token';
    { action: 'thumb', id }        a small picture of the first page (image bytes)
    { action: 'open', id }         a short-lived link the phone fetches the PDF from: { url, name, size, at }
    { action: 'pdf', id }          the PDF through here instead (up to 4 MB), if the phone couldn't use that link
-   { action: 'attach', id, job }  the PDF onto the ServiceM8 job ('Goodnotes - <name>.pdf'); the same version twice is
-                                  one attachment (its uuid comes from the notebook and when it last changed) */
+   { action: 'pages', id, pages } some pages as a PDF of their own (up to 4 MB), so a job's pages open without the phone
+                                  downloading the whole notebook (4 Nov 2026: one notebook for the year, a job a page)
+   { action: 'attach', id, job, pages? }
+                                  the PDF onto the ServiceM8 job ('Goodnotes - <name>.pdf'), or only those pages
+                                  ('Goodnotes - <name> p14-15.pdf'); the same version twice is one attachment (its uuid
+                                  comes from the notebook and when it last changed, or from what's on those pages):
+                                  { uuid, at, same } */
 export const maxDuration = 60;
 
 const noStore = { 'Cache-Control': 'no-store' };
@@ -50,14 +55,29 @@ export async function POST(req: Request) {
       const f = await notebookFile(id, 4 * 1048576);
       return new Response(f.blob, { headers: { 'content-type': 'application/pdf', 'Cache-Control': 'private, no-store' } });
     }
+    const pages = cleanPages(body.pages);
+    if (body.action === 'pages') {
+      if (!pages.length) return Response.json({ error: 'bad' }, { status: 400, headers: noStore });
+      const f = await notebookPages(id, pages);
+      if (f.blob.size > 4 * 1048576) throw new GnError('gn-too-big', 413, `${f.blob.size}`);
+      return new Response(f.blob, { headers: { 'content-type': 'application/pdf', 'Cache-Control': 'private, no-store', 'x-gn-count': String(f.count), 'x-gn-at': f.at } });
+    }
     if (body.action === 'attach') {
       const job = text(body.job, 40);
       if (!isUuid(job)) return Response.json({ error: 'bad' }, { status: 400, headers: noStore });
+      if (Array.isArray(body.pages) && !pages.length) return Response.json({ error: 'bad' }, { status: 400, headers: noStore });
       if (!sm8SetUp()) return Response.json({ error: 'sm8-not-set-up' }, { status: 503, headers: noStore });
+      if (pages.length) {
+        // only those pages; the uuid comes from what's on them, so sending them again unchanged adds nothing
+        const f = await notebookPages(id, pages);
+        const r = await attachFile(job, f.blob, attachName(f, pages), stableUuid(`goodnotes|${job}|${id}|${pagesSlug(pages)}|${f.hash}`));
+        if (!r.existed) await touchJob(job);
+        return Response.json({ uuid: r.uuid, at: f.at, same: r.existed }, { headers: noStore });
+      }
       const f = await notebookFile(id);
-      const uuid = await attachPhoto(job, f.blob, attachName(f), stableUuid(`goodnotes|${job}|${id}|${f.at}`));
+      const r = await attachFile(job, f.blob, attachName(f), stableUuid(`goodnotes|${job}|${id}|${f.at}`));
       await touchJob(job);
-      return Response.json({ uuid, at: f.at }, { headers: noStore });
+      return Response.json({ uuid: r.uuid, at: f.at, same: r.existed }, { headers: noStore });
     }
   } catch (e) {
     return fail(e);

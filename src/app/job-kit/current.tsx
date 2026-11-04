@@ -46,7 +46,8 @@ export type Marks = Record<
     progressAt?: number;
     visitsDone?: string[];
     gn?: string[]; // Goodnotes notebooks linked to the job by hand (their paths in OneDrive), goodnotes.tsx
-    gnSent?: Record<string, string>; // notebook path -> the version (last changed) put on the ServiceM8 job
+    gnSent?: Record<string, string>; // notebook path (or 'path#p14-15' for pages) -> the version (last changed) put on the ServiceM8 job
+    gnPages?: Record<string, number[]>; // pages of a notebook on this job: notebook path -> page numbers (4 Nov 2026, a job a page)
   }
 >;
 
@@ -1113,6 +1114,7 @@ export function CurrentView({
   onPay,
   otherJobs = 0,
   onRemove,
+  jobLabel,
 }: {
   job: CurrentJob;
   marks: Marks;
@@ -1138,6 +1140,7 @@ export function CurrentView({
   onCustomer?: () => void; // everything for this customer in ServiceM8
   info?: { line: string; subject: string; open: () => void }; // their latest email in the info@ Inbox
   methods?: string[]; // how payments come in, for Add a payment (payments.tsx methodsFrom)
+  jobLabel?: (uuid: string) => string; // '#101 Sarah Jones' for another job, for the Goodnotes page picker
   onPay?: (p: NewPayment) => Promise<string>;
   otherJobs?: number; // the customer's other jobs on this device (Current jobs and customers opened)
   onRemove?: (alsoClient: boolean) => Promise<string>; // a Quote job made by mistake: '' when it's gone, else why not
@@ -1318,7 +1321,7 @@ export function CurrentView({
 
       <JobNotes job={job} staff={staff} />
 
-      <GoodnotesBox job={job} marks={marks} onMark={onMark} />
+      <GoodnotesBox job={job} marks={marks} onMark={onMark} jobLabel={jobLabel} />
 
       {extra}
 
