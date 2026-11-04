@@ -29,7 +29,7 @@ import {
   type Split,
 } from '@/lib/quote-sums';
 import { Icon } from './icons';
-import { field, label } from './parts';
+import { field, fieldSized, label } from './parts';
 import { post, problemText } from './sm8-post';
 import { readPin } from './uploader';
 import { SecIcon } from './job-menu';
@@ -1476,7 +1476,7 @@ export function QuotePrices({ prices, savedAt, onSave, onCworkshop }: { prices: 
                   <span className="block text-[15px] font-semibold leading-snug">{r.label}</span>
                   <span className="block text-[12.5px] leading-snug text-muted">
                     {r.guess ? <b className="font-semibold text-ink">My guess. </b> : null}
-                    {r.from}
+                    {r.guess ? r.from.replace(/^My guess[:.]?\s*/, '').replace(/^./, (c) => c.toUpperCase()) : r.from}
                     {Number(form[r.key]) !== PRICE_BASE[r.key] ? ` · started at ${fmt(r.key, PRICE_BASE[r.key])}` : ''}
                   </span>
                 </span>
@@ -1487,7 +1487,7 @@ export function QuotePrices({ prices, savedAt, onSave, onCworkshop }: { prices: 
                     value={form[r.key]}
                     onChange={(e) => setForm({ ...form, [r.key]: e.target.value })}
                     aria-label={r.label}
-                    className={`${field} h-11 w-[96px] text-right font-mono text-[15px]`}
+                    className={`${fieldSized} h-11 w-[96px] text-right font-mono text-[15px]`}
                   />
                   <span className="w-[58px] font-mono text-[11.5px] leading-tight text-faint">{r.unit}</span>
                 </span>

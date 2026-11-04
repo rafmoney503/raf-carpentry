@@ -9,6 +9,8 @@ import { mb, type Item, type Job } from './store';
 
 export const field =
   'w-full min-w-0 rounded-sm border border-line-strong bg-mount px-3 text-[16px] text-ink placeholder:text-faint/55 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20';
+/* The same for a box with its own width (w-full would win over a w-[..] and stretch it across its row). */
+export const fieldSized = field.replace('w-full ', '');
 export const label = 'font-mono text-[12.5px] uppercase tracking-[0.06em] text-faint';
 
 

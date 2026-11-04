@@ -5,7 +5,7 @@ import { BOARDS, BOARDS_CHECKED, CHANGES, CW, CWORKSHOP_CUTLIST, CWORKSHOP_PHONE
 import { money2, ownPrices, SHEET_YIELD, type Board, type PriceKey, type Prices } from '@/lib/quote-sums';
 import { matches } from '@/lib/search';
 import { Icon } from './icons';
-import { field, label } from './parts';
+import { field, fieldSized, label } from './parts';
 
 /* The Job Kit's Cworkshop screen (4 Nov 2026, Raf: 'can we create section where you will check Cworkshop decor
    finishes find prices and in quotes laminated project finish based on one or two boards ... and also add edge
@@ -101,7 +101,7 @@ export function CworkshopView({ prices, savedAt, onSave }: { prices: Prices; sav
                     placeholder={s.price.toFixed(2)}
                     onChange={(e) => setSvc({ ...svc, [s.key]: e.target.value })}
                     aria-label={`Your price: ${s.label}`}
-                    className={`${field} h-11 w-[88px] text-right font-mono text-[15px]`}
+                    className={`${fieldSized} h-11 w-[88px] text-right font-mono text-[15px]`}
                   />
                   <span className="w-[46px] font-mono text-[11.5px] leading-tight text-faint">{s.unit}</span>
                 </span>
@@ -239,7 +239,7 @@ function Decor({ b, value, onChange }: { b: Board; value: string; onChange: (v: 
             placeholder={b.exVat.toFixed(2)}
             onChange={(e) => onChange(e.target.value)}
             aria-label={`Your price for ${b.name}`}
-            className={`${field} h-10 w-[92px] text-right font-mono text-[14.5px]`}
+            className={`${fieldSized} h-10 w-[92px] text-right font-mono text-[14.5px]`}
           />
         </label>
       </span>
