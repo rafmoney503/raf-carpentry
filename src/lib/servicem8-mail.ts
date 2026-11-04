@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { asciiJson, sm8Base, sm8Call, sm8List, sm8Str as str, sm8When as when, Sm8Error, statusError, tidy, type Sm8Row as Row } from './servicem8';
-import { e164, freshPart, htmlToText, looksHtml, signOff, SMS_SIGN_OFF, textOnly, withoutSignOff } from './mail-text';
+import { e164, freshPart, htmlToText, looksHtml, photoKey, photoMarks, signOff, SMS_SIGN_OFF, textOnly, withoutSignOff } from './mail-text';
 
 /* A job's emails and texts in the Job Kit (Current jobs, the job, Emails and texts): Raf writes there, it goes out through ServiceM8's
    own email (the Messaging API, POST /platform_service_email, the same one the website's emails use, which works
@@ -35,7 +35,10 @@ export type Mail = {
   full: string; // the whole email when `text` leaves something out, else ''
   copy?: boolean; // a copy kept as a note on the job (emails can't be read on this account)
   keys?: string[]; // only when no text could be found: the email's field names
+  files?: FileRef[]; // attachments the record itself points to (see fileRefs)
 };
+/* An attachment a message's record points to: its uuid, and its name and type when the record says. */
+export type FileRef = { uuid: string; name?: string; type?: string };
 /* readable: ServiceM8 lets the account read its emails; texts: the same for texts (missing before texts). */
 export type Thread = { mails: Mail[]; readable: boolean; texts?: boolean; detail?: string };
 
@@ -137,6 +140,68 @@ function rawText(r: Row) {
   return guess ? (looksHtml(guess) ? htmlToText(guess) : guess) : '';
 }
 
+/* The photos and files a message's record points to. ServiceM8 shows an emailed photo under its email in the job
+   diary, but doesn't publish where it keeps it: it may be an attachment filed on the email rather than on the job,
+   or named in the email's record (an `attachments` list, an attachment uuid, a JSON string of them). So any field
+   whose name says attachment, photo, image, media or file is searched for record uuids (with a name and type where
+   the record gives them), leaving out the record's own uuid and the job, client and staff it belongs to.
+   Raf, 4 Nov 2026: a customer's photos showed in ServiceM8 but not in the Job Kit's diary. */
+const UUID_IN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+const REF_KEY = /attach|photo|image|picture|media|file/i;
+const NOT_REF_KEY = /^(file_type|photo_width|photo_height|message_html|html_body|body_html)$/i;
+const REF_NAME_KEYS = ['attachment_name', 'name', 'file_name', 'filename', 'original_name', 'title'];
+const REF_TYPE_KEYS = ['file_type', 'content_type', 'mime_type', 'mimetype', 'extension', 'type'];
+export function fileRefs(r: Row): FileRef[] {
+  const own = new Set(
+    [r.uuid, r.related_object_uuid, r.regarding_object_uuid, r.regardingJobUUID, r.job_uuid, r.company_uuid, r.created_by_staff_uuid, r.staff_uuid, r.sent_by_staff_uuid]
+      .map((x) => str(x).toLowerCase())
+      .filter(Boolean),
+  );
+  const out = new Map<string, FileRef>();
+  const add = (uuid: string, name = '', type = '') => {
+    const k = uuid.toLowerCase();
+    if (own.has(k)) return;
+    const had = out.get(k);
+    out.set(k, { uuid: k, ...(name || had?.name ? { name: name || had?.name } : {}), ...(type || had?.type ? { type: type || had?.type } : {}) });
+  };
+  const walk = (v: unknown, depth: number): void => {
+    if (depth > 4 || v === null || v === undefined) return;
+    if (typeof v === 'string') {
+      const s = v.trim();
+      if (/^[[{]/.test(s) && s.length < 200_000) {
+        try {
+          return walk(JSON.parse(s), depth + 1);
+        } catch {
+          /* not JSON: read it as words */
+        }
+      }
+      for (const m of s.matchAll(UUID_IN)) add(m[0]);
+      return;
+    }
+    if (Array.isArray(v)) {
+      for (const x of v.slice(0, 50)) walk(x, depth + 1);
+      return;
+    }
+    if (typeof v === 'object') {
+      const o = v as Row;
+      const id = [o.uuid, o.attachment_uuid, o.file_uuid, o.id].map(str).find((x) => /^[0-9a-f-]{36}$/i.test(x));
+      if (id) return add(id, first(o, REF_NAME_KEYS), first(o, REF_TYPE_KEYS));
+      for (const x of Object.values(o)) walk(x, depth + 1);
+    }
+  };
+  for (const [k, v] of Object.entries(r)) if (REF_KEY.test(k) && !NOT_REF_KEY.test(k)) walk(v, 0);
+  return [...out.values()].slice(0, 20);
+}
+
+/* Photos the HTML version of an email shows (src="cid:...") that its plain text doesn't name: iPhone Mail and
+   Outlook often leave them out of the plain text, so the diary wouldn't know the email had any. */
+function htmlOnlyPhotos(r: Row, words: string): string[] {
+  const html = first(r, HTML_KEYS);
+  if (!html || !/cid:/i.test(html)) return [];
+  const named = new Set(photoMarks(words).photos.map(photoKey));
+  return photoMarks(freshPart(htmlToText(html)).text).photos.filter((n) => !named.has(photoKey(n)));
+}
+
 function dirOf(r: Row, customer: string): 'in' | 'out' {
   const d = first(r, DIR_KEYS).toLowerCase();
   if (/^(in|inbound|incoming|received|reply)/.test(d)) return 'in';
@@ -150,7 +215,9 @@ export function mailOf(r: Row, customer: string, dir?: 'in' | 'out'): Mail {
   const way = dir ?? dirOf(r, customer);
   const raw = rawText(r);
   const part = freshPart(raw);
-  const text = way === 'out' ? withoutSignOff(part.text) : part.text;
+  let text = way === 'out' ? withoutSignOff(part.text) : part.text;
+  const extra = htmlOnlyPhotos(r, raw);
+  if (extra.length) text = [text, ...extra.map((n) => `[image: ${n}]`)].filter(Boolean).join('\n');
   const mail: Mail = {
     id: str(r.uuid),
     via: 'email',
@@ -163,6 +230,8 @@ export function mailOf(r: Row, customer: string, dir?: 'in' | 'out'): Mail {
     full: part.cut ? part.all : '',
   };
   if (!text) mail.keys = Object.keys(r).slice(0, 40);
+  const files = fileRefs(r);
+  if (files.length) mail.files = files;
   return mail;
 }
 
@@ -177,6 +246,8 @@ export function textOf(r: Row, mobile: string, dir?: 'in' | 'out'): Mail {
   const text = way === 'out' ? textOnly(raw) : raw;
   const mail: Mail = { id: str(r.uuid), via: 'sms', dir: way, at: dateOf(r), from, to, subject: '', text, full: '' };
   if (!text) mail.keys = Object.keys(r).slice(0, 40);
+  const files = fileRefs(r);
+  if (files.length) mail.files = files;
   return mail;
 }
 
@@ -247,7 +318,9 @@ async function noteCopies(jobUuid: string): Promise<Mail[]> {
 
 /* One kind (emails or texts) of a job's conversation, oldest first (the newest 40), or null if ServiceM8 won't let
    the account read that kind. */
-async function jobHistory(kind: 'email' | 'sms', jobUuid: string, read: (r: Row) => Mail): Promise<{ mails: Mail[] | null; detail?: string }> {
+/* `onRow` sees each record as ServiceM8 sent it (the diary uses it to say what an email record holds). */
+export type RowSeen = (kind: 'email' | 'sms', mail: Mail, row: Row) => void;
+async function jobHistory(kind: 'email' | 'sms', jobUuid: string, read: (r: Row) => Mail, onRow?: RowSeen): Promise<{ mails: Mail[] | null; detail?: string }> {
   const got = await historyRows(kind, [['related_object_uuid', jobUuid]], true);
   if (!got.ok) return { mails: null, detail: got.detail };
   const rows = got.rows.map((r) => ({ r, m: read(r) })).sort((a, b) => byTime(a.m, b.m)).slice(-40);
@@ -258,19 +331,23 @@ async function jobHistory(kind: 'email' | 'sms', jobUuid: string, read: (r: Row)
       const one = await sm8Call(`${kind}/${x.m.id}.json`)
         .then((res) => listOf(res.data)[0])
         .catch(() => undefined);
-      if (one) x.m = read({ ...x.r, ...one });
+      if (one) {
+        x.r = { ...x.r, ...one };
+        x.m = read(x.r);
+      }
     }),
   );
+  if (onRow) for (const x of rows) onRow(kind, x.m, x.r);
   return { mails: rows.map((x) => x.m) };
 }
 
 /* A job's conversation, emails and texts together, oldest first (the newest 40). `customer` and `mobile` are the
    job's, to tell their messages from Raf's when ServiceM8 doesn't say which way one went. What can't be read
    comes from the copies kept as notes. */
-export async function jobMail(jobUuid: string, customer = '', mobile = ''): Promise<Thread> {
+export async function jobMail(jobUuid: string, customer = '', mobile = '', onRow?: RowSeen): Promise<Thread> {
   const [emails, texts] = await Promise.all([
-    jobHistory('email', jobUuid, (r) => mailOf(r, customer)),
-    jobHistory('sms', jobUuid, (r) => textOf(r, mobile)).catch((e) => {
+    jobHistory('email', jobUuid, (r) => mailOf(r, customer), onRow),
+    jobHistory('sms', jobUuid, (r) => textOf(r, mobile), onRow).catch((e) => {
       // texts are extra: if reading them fails for any other reason, the emails still come
       if (e instanceof Sm8Error && e.code === 'sm8-key') throw e;
       return { mails: null, detail: e instanceof Sm8Error ? e.detail : '' };

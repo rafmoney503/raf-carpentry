@@ -111,8 +111,9 @@ export function e164(raw: string) {
 
 /* Photos in an email's words: Gmail's "[image: IMG_4821.jpeg]", Outlook's "[cid:image001.jpg@01DB...]", Apple
    Mail's "<IMG_4821.jpeg>" and an HTML email's own photos (htmlToText). Each becomes "[photo: IMG_4821.jpeg]", and
-   the names come back so the Job Kit's diary can show the photos themselves (ServiceM8 keeps an emailed photo as
-   an attachment on the job). Raf, 3 Nov 2026: customers' photos showed as "just img something". */
+   the names come back so the Job Kit's diary can show the photos themselves (an emailed photo is an attachment
+   in ServiceM8, on the job or on the email: src/lib/servicem8-diary.ts messageFiles). Raf, 3 Nov 2026: customers'
+   photos showed as "just img something". */
 export function photoMarks(text: string): { text: string; photos: string[] } {
   const photos: string[] = [];
   const mark = (name: string) => {

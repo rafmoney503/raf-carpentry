@@ -1,5 +1,6 @@
 import { sm8Base, sm8Call, sm8List, sm8Str as str, Sm8Error, statusError, tidy, type Sm8Row as Row } from './servicem8';
-import { jobMail, NOTE_HEAD, stampOf, TEXT_NOTE_HEAD } from './servicem8-mail';
+import { fileRefs, jobMail, NOTE_HEAD, stampOf, TEXT_NOTE_HEAD, type FileRef, type Mail, type RowSeen } from './servicem8-mail';
+import { photoKey, photoMarks } from './mail-text';
 import { jpegOf, sniff } from './photo-jpeg';
 
 /* A job's notes and its whole diary in ServiceM8, for the Job Kit's job screen (Current jobs, the job: Notes and Job
@@ -30,6 +31,7 @@ export type DiaryEntry = {
   end?: string | null; // a booking's or check-in's end
   staff?: string; // the staff uuid on a booking
   file?: DiaryFile;
+  of?: string; // on a file: the message it came with (that entry's id, "msg-<uuid>")
 };
 export type Missing = 'notes' | 'files' | 'messages' | 'bookings';
 export type JobDiary = { entries: DiaryEntry[]; missing: Missing[] };
@@ -85,7 +87,7 @@ const PHOTO = /(^|[./])(jpe?g|png|gif|webp|heic|heif|hei[cf]s|avif|tiff?)$/i;
 const NOT_PHOTO = /(^|[./])(pdf|docx?|xlsx?|csv|txt|rtf|pages|numbers|key|zip|mov|mp4|m4v|mp3|m4a|wav|eml|msg|skp|dwg|dxf)$/i;
 function fileOf(a: Row): DiaryEntry | null {
   const uuid = str(a.uuid);
-  if (!uuid) return null;
+  if (!uuid || str(a.active) === '0') return null;
   const type = str(a.file_type).toLowerCase().trim();
   const name = str(a.attachment_name) || `File${type.startsWith('.') ? type : ''}`;
   const typed = type.replace(/^\./, '');
@@ -94,14 +96,134 @@ function fileOf(a: Row): DiaryEntry | null {
   return { id: `file-${uuid}`, kind: 'file', at: stampOf(a.timestamp) ?? stampOf(a.create_date) ?? stampOf(a.edit_date), file: { uuid, name, photo } };
 }
 
-/* The job's photos, oldest first (the brief's own photos come first), for the Job Kit's Quotes. */
+/* The job's photos, oldest first (the brief's own photos come first), for the Job Kit's Quotes: the ones filed on
+   the job and the ones that came with the customer's emails and texts (messageFiles). */
 export async function jobPhotos(job: string): Promise<{ uuid: string; name: string; at: string | null }[]> {
-  return (await onJob('attachment.json', 'related_object_uuid', job))
-    .map(fileOf)
-    .filter((e): e is DiaryEntry => e !== null && Boolean(e.file?.photo))
+  const [own, mails] = await Promise.all([onJob('attachment.json', 'related_object_uuid', job), jobMail(job).catch(() => null)]);
+  const files = own.map(fileOf).filter((e): e is DiaryEntry => e !== null);
+  if (mails) files.push(...(await messageFiles(mails.mails, files)).added);
+  return files
+    .filter((e) => Boolean(e.file?.photo))
     .map((e) => ({ uuid: e.file!.uuid, name: e.file!.name, at: e.at }))
     .sort((a, b) => (a.at ?? '').localeCompare(b.at ?? ''));
 }
+
+/* ---------- photos and files that came with a message ----------
+   ServiceM8 shows a customer's emailed (or texted) photos under their message in the job's diary, but the API
+   doesn't say where it keeps them, and they needn't be filed on the job: Raf, 4 Nov 2026, "i still don't see some
+   pictures being shown in service m8 ... like becki ponting message not showing in diary pictures". So for their
+   newest messages (MESSAGES_ASKED) this asks for the attachments filed on each message (related_object_uuid = the
+   message's uuid, whatever ServiceM8 calls the kind), and looks up one by one (REFS_ASKED) any attachment the
+   message's record points to (fileRefs). Each one found says which message it came with (`of`), and a file that is
+   on the job as well is marked rather than shown twice. Three asked at a time; one that fails is skipped. */
+const MESSAGES_ASKED = 12;
+const REFS_ASKED = 12;
+const isUuid = (v: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+
+async function threeAtATime<T, R>(items: T[], work: (x: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(3, items.length) }, async () => {
+      while (next < items.length) {
+        const i = next++;
+        out[i] = await work(items[i]);
+      }
+    }),
+  );
+  return out;
+}
+
+const refEntry = (ref: FileRef, row: Row | undefined): DiaryEntry | null => {
+  if (row) return fileOf(row);
+  // the record named it but ServiceM8 wouldn't hand over the attachment's record: only a file with a name is shown
+  const name = ref.name ?? '';
+  if (!name) return null;
+  const type = (ref.type ?? '').toLowerCase();
+  return fileOf({ uuid: ref.uuid, attachment_name: name, file_type: /^\.?[a-z0-9]{2,5}$/.test(type) ? type : '' });
+};
+
+export async function messageFiles(mails: Mail[], onJobFiles: DiaryEntry[]): Promise<{ added: DiaryEntry[]; asked: number; refs: number }> {
+  const known = new Map(onJobFiles.filter((e) => e.file).map((e) => [e.file!.uuid.toLowerCase(), e]));
+  const added = new Map<string, DiaryEntry>();
+  const put = (e: DiaryEntry | null, m: Mail) => {
+    if (!e?.file) return;
+    const k = e.file.uuid.toLowerCase();
+    const of = `msg-${m.id}`;
+    const there = known.get(k);
+    if (there) {
+      there.of ??= of;
+      return;
+    }
+    if (!added.has(k)) added.set(k, { ...e, of, at: e.at ?? m.at });
+  };
+  // theirs first (newest first), then Raf's to make up the number: a message whose direction ServiceM8 didn't say is
+  // read as his, and his own emails can carry files too (a quote's PDF)
+  const real = mails.filter((m) => !m.copy && isUuid(m.id)).reverse();
+  const theirs = [...real.filter((m) => m.dir === 'in'), ...real.filter((m) => m.dir !== 'in')].slice(0, MESSAGES_ASKED);
+  const filed = await threeAtATime(theirs, (m) => onJob('attachment.json', 'related_object_uuid', m.id).catch((): Row[] => []));
+  theirs.forEach((m, i) => filed[i].forEach((a) => put(fileOf(a), m)));
+  // attachments a record points to, newest messages first
+  const refs: { ref: FileRef; m: Mail }[] = [];
+  for (const m of [...mails].reverse()) for (const ref of m.files ?? []) if (!known.has(ref.uuid) && !added.has(ref.uuid) && !refs.some((x) => x.ref.uuid === ref.uuid)) refs.push({ ref, m });
+  const rows = await threeAtATime(refs.slice(0, REFS_ASKED), ({ ref }) =>
+    sm8Call(`attachment/${ref.uuid}.json`)
+      .then((r) => (Array.isArray(r.data) ? (r.data[0] as Row) : (r.data as Row)))
+      .catch((): Row | undefined => undefined),
+  );
+  refs.slice(0, REFS_ASKED).forEach((x, i) => put(refEntry(x.ref, rows[i] && str(rows[i]!.uuid) ? rows[i] : undefined), x.m));
+  return { added: [...added.values()], asked: theirs.length, refs: Math.min(refs.length, REFS_ASKED) };
+}
+
+/* What a diary's messages and attachments looked like, for Vercel's logs when a customer's message names photos
+   the diary couldn't find, or has a field that looks like attachments: the record's field names, the shape of
+   those fields, and where the job's attachments are filed. Field names, kinds and counts only: never a value, a
+   name or an address. Until ServiceM8 says where it keeps emailed photos. */
+type Seen = { kind: 'email' | 'sms'; mail: Mail; row: Row };
+const shapeOf = (v: unknown): string =>
+  v === null || v === undefined
+    ? 'null'
+    : Array.isArray(v)
+      ? `array(${v.length})${v.length && typeof v[0] === 'object' && v[0] ? `{${Object.keys(v[0] as object).slice(0, 12).join(',')}}` : v.length ? `<${typeof v[0]}>` : ''}`
+      : typeof v === 'object'
+        ? `{${Object.keys(v as object).slice(0, 12).join(',')}}`
+        : typeof v === 'string'
+          ? `string(${v.length}${(v.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi) ?? []).length ? `, ${(v.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi) ?? []).length} uuid` : ''})`
+          : typeof v;
+function logPhotos(job: string, seen: Seen[], jobFiles: Row[], entries: DiaryEntry[], got: { asked: number; refs: number }) {
+  const found = new Set(entries.filter((e) => e.kind === 'file' && e.file).map((e) => photoKey(e.file!.name)));
+  const theirs = seen.filter((x) => x.mail.dir === 'in' && !x.mail.copy);
+  const missing = theirs.filter((x) => photoMarks(`${x.mail.text}\n${x.mail.full}`).photos.some((n) => !found.has(photoKey(n))));
+  const refLike = theirs.filter((x) => Object.keys(x.row).some((k) => REF_LIKE.test(k)));
+  if (!missing.length && !refLike.length) return;
+  const sample = (missing[0] ?? refLike[0]).row;
+  const count = (rows: Row[], k: string) => {
+    const m: Record<string, number> = {};
+    for (const r of rows) m[str(r[k]) || '-'] = (m[str(r[k]) || '-'] ?? 0) + 1;
+    return m;
+  };
+  console.log(
+    '[diary-photos]',
+    JSON.stringify({
+      job: job.slice(0, 8),
+      messages: theirs.length,
+      missing: missing.length,
+      asked: got.asked,
+      refs: got.refs,
+      fromMessages: entries.filter((e) => e.kind === 'file' && e.of).length,
+      jobFiles: jobFiles.length,
+      jobFilesFiled: count(jobFiles, 'related_object'),
+      jobFilesSource: count(jobFiles, 'attachment_source'),
+      jobFilesClass: count(jobFiles, 'class_name'),
+      kind: (missing[0] ?? refLike[0]).kind,
+      fields: Object.keys(sample).slice(0, 60),
+      shapes: shapesOf(sample),
+      ...(refLike[0] && refLike[0].row !== sample ? { refFields: Object.keys(refLike[0].row).slice(0, 60), refShapes: shapesOf(refLike[0].row) } : {}),
+    }),
+  );
+}
+const REF_LIKE = /attach|photo|image|picture|media|file/i;
+const shapesOf = (r: Row) => Object.fromEntries(Object.entries(r).filter(([k]) => REF_LIKE.test(k) || /related|regarding|object/i.test(k)).map(([k, v]) => [k, shapeOf(v)]));
 
 /* Bookings (scheduled) and check-ins (recorded: the time ServiceM8's app logged on site). Others (travel and the
    like that ServiceM8 adds by itself) are left out. */
@@ -117,10 +239,12 @@ function activityOf(a: Row): DiaryEntry | null {
 
 /* The whole diary, newest first. `email` and `mobile` are the job's, to tell their messages from Raf's. */
 export async function jobDiary(job: string, email = '', mobile = ''): Promise<JobDiary> {
+  const seen: Seen[] = [];
+  const onRow: RowSeen = (kind, mail, row) => seen.push({ kind, mail, row });
   const [notes, files, mails, acts] = await Promise.allSettled([
     jobNotes(job),
     onJob('attachment.json', 'related_object_uuid', job),
-    jobMail(job, email, mobile),
+    jobMail(job, email, mobile, onRow),
     onJob('jobactivity.json', 'job_uuid', job),
   ]);
   const all = [notes, files, mails, acts];
@@ -133,8 +257,16 @@ export async function jobDiary(job: string, email = '', mobile = ''): Promise<Jo
   const entries: DiaryEntry[] = [];
   if (notes.status === 'fulfilled') entries.push(...notes.value.map((n): DiaryEntry => ({ id: `note-${n.uuid}`, kind: 'note', at: n.at, text: n.text })));
   else missing.push('notes');
-  if (files.status === 'fulfilled') entries.push(...files.value.map(fileOf).filter((x): x is DiaryEntry => x !== null));
+  const jobFiles = files.status === 'fulfilled' ? files.value.map(fileOf).filter((x): x is DiaryEntry => x !== null) : [];
+  if (files.status === 'fulfilled') entries.push(...jobFiles);
   else missing.push('files');
+  // the photos and files that came with their messages (not always filed on the job itself)
+  let got = { asked: 0, refs: 0 };
+  if (mails.status === 'fulfilled' && mails.value.mails.length) {
+    const more = await messageFiles(mails.value.mails, jobFiles).catch(() => ({ added: [] as DiaryEntry[], asked: 0, refs: 0 }));
+    entries.push(...more.added);
+    got = more;
+  }
   if (mails.status === 'fulfilled') {
     entries.push(
       ...mails.value.mails.map(
@@ -153,6 +285,11 @@ export async function jobDiary(job: string, email = '', mobile = ''): Promise<Jo
   } else missing.push('messages');
   if (acts.status === 'fulfilled') entries.push(...acts.value.map(activityOf).filter((x): x is DiaryEntry => x !== null));
   else missing.push('bookings');
+  try {
+    logPhotos(job, seen, files.status === 'fulfilled' ? files.value : [], entries, got);
+  } catch {
+    /* only a log line */
+  }
   return { entries: entries.sort(newest), missing };
 }
 

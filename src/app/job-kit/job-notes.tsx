@@ -155,6 +155,7 @@ type Item = {
   end?: string | null;
   staff?: string;
   file?: DiaryFile;
+  of?: string; // a file that came with this message (its entry id)
   amount?: number;
   method?: string;
   deposit?: boolean;
@@ -487,6 +488,37 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
     for (const x of items) if (x.kind === 'file' && x.file?.photo) m.set(photoKey(x.file.name), x.file);
     return m;
   }, [items]);
+  /* What shows under each message: the photos and files ServiceM8 keeps with it (`of`), the ones it names found by
+     name, and, for one of theirs that names photos still not found, the job's photos added within 3 minutes of it
+     that no other message has. Those aren't shown again on their own in All (Photos and files lists them all). */
+  const under = useMemo(() => {
+    const out = new Map<string, DiaryFile[]>();
+    const claimed = new Set<string>();
+    const put = (id: string, f: DiaryFile) => {
+      const l = out.get(id) ?? [];
+      if (!l.some((g) => g.uuid === f.uuid)) l.push(f);
+      out.set(id, l);
+      claimed.add(f.uuid);
+    };
+    const files = items.filter((x) => x.kind === 'file' && x.file);
+    for (const x of files) if (x.of) put(x.of, x.file!);
+    const short: Item[] = [];
+    for (const m of items) {
+      if (m.kind !== 'email' && m.kind !== 'sms') continue;
+      let notFound = 0;
+      for (const n of photoMarks(m.text ?? '').photos) {
+        const f = byName.get(photoKey(n));
+        if (f) put(m.id, f);
+        else notFound++;
+      }
+      if (notFound && m.dir === 'in' && m.at && !(out.get(m.id)?.length)) short.push(m);
+    }
+    for (const m of short) {
+      const t = Date.parse(m.at!);
+      for (const x of files) if (x.file!.photo && !claimed.has(x.file!.uuid) && x.at && Math.abs(Date.parse(x.at) - t) <= 3 * 60e3) put(m.id, x.file!);
+    }
+    return { out, claimed };
+  }, [items, byName]);
 
   /* Days, newest first; photos in a row on the same day go together in a grid. */
   /* Bookings still to come go first under Coming up (soonest first), then the diary newest first. */
@@ -494,7 +526,9 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
     const now = londonNow();
     const ahead = (x: Item) => x.kind === 'visit' && Boolean(x.at && x.at > now);
     const out: { key: string; blocks: (Item | { id: string; photos: Item[] })[] }[] = [];
-    for (const x of [...list.filter(ahead).reverse(), ...list.filter((y) => !ahead(y))].slice(0, page)) {
+    // in All, a photo shown under its message isn't shown again on its own
+    const shown = filter === 'all' ? list.filter((y) => !(y.kind === 'file' && y.file && under.claimed.has(y.file.uuid))) : list;
+    for (const x of [...shown.filter(ahead).reverse(), ...shown.filter((y) => !ahead(y))].slice(0, page)) {
       const key = ahead(x) ? 'soon' : x.at ? x.at.slice(0, 10) : 'none';
       let day = out[out.length - 1];
       if (!day || day.key !== key) out.push((day = { key, blocks: [] }));
@@ -505,7 +539,7 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
       } else day.blocks.push(x);
     }
     return out;
-  }, [list, page]);
+  }, [list, page, filter, under]);
 
   const openFile = async (file: DiaryFile) => {
     setShown({ file, url: '', error: '' });
@@ -716,7 +750,7 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
                           <li key={b.id} data-entry={b.kind} className="grid grid-cols-[44px_minmax(0,1fr)] gap-x-2 border-b border-line py-2.5 last:border-b-0">
                             <span className="pt-0.5 font-mono text-[12.5px] text-faint">{b.at && d.key !== 'soon' && !((b.kind === 'payment' || b.kind === 'job') && b.at.endsWith('00:00')) ? hm(b.at) : ''}</span>
                             <div className="min-w-0 [overflow-wrap:anywhere]">
-                              <Entry item={b} soon={d.key === 'soon'} who={who} staffName={staffName} whole={Boolean(whole[b.id])} onWhole={() => setWhole((w) => ({ ...w, [b.id]: !w[b.id] }))} onFile={(f) => void openFile(f)} photoNamed={(n) => byName.get(photoKey(n))} jobKind={job.status === 'Quote' || job.status === 'Unsuccessful' ? 'Visit' : 'Work'} />
+                              <Entry item={b} soon={d.key === 'soon'} who={who} staffName={staffName} whole={Boolean(whole[b.id])} onWhole={() => setWhole((w) => ({ ...w, [b.id]: !w[b.id] }))} onFile={(f) => void openFile(f)} shots={under.out.get(b.id) ?? []} photoNamed={(n) => byName.get(photoKey(n))} jobKind={job.status === 'Quote' || job.status === 'Unsuccessful' ? 'Visit' : 'Work'} />
                             </div>
                           </li>
                         ),
@@ -787,7 +821,7 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
   );
 }
 
-function Entry({ item: x, soon, who, staffName, whole, onWhole, onFile, photoNamed, jobKind }: { item: Item; soon: boolean; who: string; staffName: (u?: string) => string; whole: boolean; onWhole: () => void; onFile: (f: DiaryFile) => void; photoNamed: (name: string) => DiaryFile | undefined; jobKind: 'Visit' | 'Work' }) {
+function Entry({ item: x, soon, who, staffName, whole, onWhole, onFile, shots, photoNamed, jobKind }: { item: Item; soon: boolean; who: string; staffName: (u?: string) => string; whole: boolean; onWhole: () => void; onFile: (f: DiaryFile) => void; shots: DiaryFile[]; photoNamed: (name: string) => DiaryFile | undefined; jobKind: 'Visit' | 'Work' }) {
   const head = 'text-[13.5px] font-semibold';
   if (x.kind === 'note')
     return (
@@ -810,14 +844,17 @@ function Entry({ item: x, soon, who, staffName, whole, onWhole, onFile, photoNam
   if (x.kind === 'email' || x.kind === 'sms') {
     const what = x.kind === 'sms' ? 'Text' : 'Email';
     const marks = photoMarks(x.text ?? '');
-    const shots = [...new Set(marks.photos.map(photoNamed).filter((f): f is DiaryFile => Boolean(f)))];
-    // a line that only named a photo shown under it goes; one ServiceM8 didn't keep stays as '[photo: name]'
+    const photos = shots.filter((f) => f.photo).length;
+    // a line that only named a photo goes when the photo is shown under it (found by name, or the photos shown are
+    // as many as it names); one the Job Kit couldn't get says so
+    const covered = (n: string) => Boolean(photoNamed(n) && shots.some((f) => f.uuid === photoNamed(n)!.uuid)) || photos >= marks.photos.length;
     const words = marks.text
       .split('\n')
       .filter((l) => {
         const only = /^\s*\[photo: ([^\]]+)\]\s*$/.exec(l);
-        return !(only && photoNamed(only[1]));
+        return !(only && covered(only[1]));
       })
+      .map((l) => l.replace(/\[photo: ([^\]]+)\]/g, (m, n: string) => (covered(n) ? '' : `(photo ${n}: open it in ServiceM8)`)).replace(/\s{2,}/g, ' '))
       .join('\n')
       .replace(/\n{2,}/g, '\n') // the diary is a log: paragraphs one under another, no gaps
       .trim();
@@ -833,10 +870,25 @@ function Entry({ item: x, soon, who, staffName, whole, onWhole, onFile, photoNam
           </button>
         ) : null}
         {shots.length ? (
-          <div className="mt-1.5 grid grid-cols-3 gap-1.5 sm:grid-cols-4" data-email-photos>
-            {shots.map((f) => (
-              <Thumb key={f.uuid} file={f} onOpen={() => onFile(f)} />
-            ))}
+          <div className="mt-1.5 grid gap-1.5" data-email-photos>
+            {photos ? (
+              <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+                {shots
+                  .filter((f) => f.photo)
+                  .map((f) => (
+                    <Thumb key={f.uuid} file={f} onOpen={() => onFile(f)} />
+                  ))}
+              </div>
+            ) : null}
+            {shots
+              .filter((f) => !f.photo)
+              .map((f) => (
+                <button key={f.uuid} type="button" onClick={() => onFile(f)} data-email-file className="flex w-full items-center gap-2 rounded-sm border border-line-strong bg-paper px-2.5 py-2 text-left">
+                  <Icon name="file" className="h-5 w-5 shrink-0 text-accent" />
+                  <span className="min-w-0 flex-1 truncate text-[14.5px]">{f.name}</span>
+                  <span className="shrink-0 text-[13.5px] text-accent">Open</span>
+                </button>
+              ))}
           </div>
         ) : null}
       </>
