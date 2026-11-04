@@ -66,7 +66,7 @@ export type FullMail = InboxMail & {
 
 /* ---------- signing in (client credentials), kept for the life of the server instance ---------- */
 
-let token: { value: string; until: number; roles: string[] } | null = null;
+let token: { value: string; until: number; roles: string[]; at: number } | null = null;
 
 function rolesOf(jwt: string): string[] {
   try {
@@ -108,7 +108,7 @@ async function getToken(): Promise<{ value: string; roles: string[] }> {
     if (res.status >= 500 || res.status === 429) throw new OutlookError('outlook-busy', 503, `${res.status}`);
     throw new OutlookError('outlook-error', 502, d.split(/\r?\n/)[0].slice(0, 200));
   }
-  token = { value: body.access_token, until: Date.now() + (body.expires_in ?? 3600) * 1000, roles: rolesOf(body.access_token) };
+  token = { value: body.access_token, until: Date.now() + (body.expires_in ?? 3600) * 1000, roles: rolesOf(body.access_token), at: Date.now() };
   return token;
 }
 
@@ -121,9 +121,22 @@ const NEEDS: Record<Need, { ok: string[]; name: string }> = {
   // the mailbox's OneDrive, for Goodnotes' backups (src/lib/goodnotes.ts)
   files: { ok: ['Files.Read.All', 'Files.ReadWrite.All', 'Sites.Read.All', 'Sites.ReadWrite.All'], name: 'Files.Read.All' },
 };
+function has(roles: string[], what: Need): boolean {
+  return !roles.length || roles.some((r) => NEEDS[what].ok.includes(r)); // a token we can't read (or a test): let Graph decide
+}
 function need(roles: string[], what: Need) {
-  if (!roles.length) return; // a token we can't read (or a test): let Graph decide
-  if (!roles.some((r) => NEEDS[what].ok.includes(r))) throw new OutlookError('outlook-consent', 403, `${NEEDS[what].name} isn’t granted (the app has: ${roles.join(', ') || 'nothing'})`);
+  if (!has(roles, what)) throw new OutlookError('outlook-consent', 403, `${NEEDS[what].name} isn’t granted (the app has: ${roles.join(', ') || 'nothing'})`);
+}
+/* A token kept from before a permission was granted (Files.Read.All for Goodnotes, say) lacks it for up to an hour:
+   when one is missing, sign in again once before saying it isn't granted. */
+async function tokenFor(...whats: Need[]): Promise<{ value: string; roles: string[] }> {
+  let t = await getToken();
+  if (whats.some((w) => !has(t.roles, w)) && token && Date.now() - token.at > 5_000) {
+    token = null;
+    t = await getToken();
+  }
+  for (const w of whats) need(t.roles, w);
+  return t;
 }
 
 /* ---------- Graph ---------- */
@@ -131,8 +144,7 @@ function need(roles: string[], what: Need) {
 type GraphInit = { method?: string; body?: unknown; text?: boolean; html?: boolean; raw?: boolean };
 
 async function graph<T>(path: string, init: GraphInit = {}, what: Need = 'read', again = true): Promise<T> {
-  const t = await getToken();
-  need(t.roles, what);
+  const t = await tokenFor(what);
   const headers: Record<string, string> = { Authorization: `Bearer ${t.value}` };
   if (init.body !== undefined) headers['content-type'] = 'application/json';
   if (init.text) headers.Prefer = 'outlook.body-content-type="text"';
@@ -384,9 +396,7 @@ export function replyHtml(text: string, signOff: string) {
    one Raf sent himself (from his iPhone, info@ copied in), and Outlook would address that back to him, so it goes
    to the people he sent it to instead (his own addresses taken off). */
 export async function reply(id: string, text: string, signOff: string, send: boolean): Promise<{ to: Who[]; subject: string; draft: boolean; at: string }> {
-  const t = await getToken();
-  need(t.roles, 'read');
-  if (send) need(t.roles, 'send');
+  await tokenFor(...(send ? (['read', 'send'] as Need[]) : (['read'] as Need[])));
   const orig = await graph<GMessage>(`/messages/${encodeURIComponent(id)}?$select=from,sender,toRecipients,ccRecipients`);
   let readdress: { toRecipients: GAddress[]; ccRecipients: GAddress[] } | null = null;
   if (isMine(who(orig.from ?? orig.sender))) {
