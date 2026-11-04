@@ -12,7 +12,8 @@ export type Section = {
   to: number;
   front: Front; // doors = a pair, door = one
   hinge?: 'left' | 'right'; // one door: which side it hangs on
-  drawers?: number;
+  drawers?: number; // how many high, one above the other
+  across?: number; // how many side by side (4 Nov 2026, Raf: 'I told him three drawers in a row and not three drawers in one column'); 1 when missing
   worktop?: boolean; // an open section standing on a solid oak top
   shelves: number[]; // heights from the floor
   rail?: number; // a hanging rail's height
@@ -183,7 +184,12 @@ function cleanBay(b: Record<string, unknown>, width: number, runH: number): Bay 
     const front: Front = x.front === 'door' || x.front === 'drawers' || x.front === 'open' ? x.front : 'doors';
     const sec: Section = { from: at, to, front: front === 'doors' && width < 500 ? 'door' : front === 'door' && width > 700 ? 'doors' : front, shelves: [] };
     if (sec.front === 'door') sec.hinge = x.hinge === 'right' ? 'right' : 'left';
-    if (sec.front === 'drawers') sec.drawers = clamp(Math.round(num(x.drawers) || 3), 1, 6);
+    if (sec.front === 'drawers') {
+      sec.drawers = clamp(Math.round(num(x.drawers) || 3), 1, 6);
+      const across = Math.round(num(x.across));
+      const most = Math.min(6, Math.floor(width / 250)); // no drawer narrower than 250
+      if (across >= 2 && most >= 2) sec.across = Math.min(across, most);
+    }
     if (sec.front === 'open' && x.worktop === true) sec.worktop = true;
     sec.shelves = (Array.isArray(x.shelves) ? x.shelves : [])
       .map((h) => r5(num(h)))
@@ -203,6 +209,36 @@ function cleanBay(b: Record<string, unknown>, width: number, runH: number): Bay 
   sections[sections.length - 1].to = height;
   return { width, height, boxedAbove: b.boxed_above === true || b.boxedAbove === true || height < runH - 100, sections };
 }
+
+/* How a bank of drawers is laid out: rows (one above the other) by columns (side by side). A plan that doesn't say
+   (drawn before 'across' was there, or Claude leaving it out) with drawers that would be thin strips wider than any
+   drawer Raf makes, like three stacked in a 1,500 bench, has them side by side instead: the same number of drawers. */
+export function drawerGrid(s: Pick<Section, 'from' | 'to' | 'drawers' | 'across'>, bayWidth: number): { rows: number; cols: number } {
+  const n = Math.max(1, s.drawers ?? 3);
+  if (s.across && s.across >= 2) return { rows: n, cols: Math.max(1, Math.min(s.across, Math.floor(bayWidth / 250))) };
+  if (n >= 2 && bayWidth > 1000 && (s.to - s.from) / n < 200 && bayWidth / n >= 300) return { rows: 1, cols: n };
+  return { rows: n, cols: 1 };
+}
+/* The plan with every bank of drawers written as it's drawn, for sending the current design back to Claude. */
+export const asDrawn = (plan: Plan): Plan => ({
+  ...plan,
+  options: plan.options.map((o) => ({
+    ...o,
+    bays: o.bays.map((b) => ({
+      ...b,
+      sections: b.sections.map((x) => {
+        if (x.front !== 'drawers') return x;
+        const g = drawerGrid(x, b.width);
+        return { ...x, drawers: g.rows, across: g.cols };
+      }),
+    })),
+  })),
+});
+export const drawerCount = (s: Section, bayWidth: number) => {
+  if (s.front !== 'drawers') return 0;
+  const g = drawerGrid(s, bayWidth);
+  return g.rows * g.cols;
+};
 
 /* ---------- Raf's own size: the drawing stretched to it ---------- */
 
@@ -259,7 +295,7 @@ export function priceOption(o: Option, p: Prices, stripOut: boolean, own?: numbe
   const rate = o.style === 'shaker' ? p.shakerPerM : p.plainPerM;
   if (closed) lines.push({ label: `${o.style === 'shaker' ? 'Shaker doors' : 'Flat doors'}, ${m1(closed)} at ${money(rate)} a metre`, amount: (closed / 1000) * rate });
   if (open) lines.push({ label: `Open shelving, ${m1(open)} at ${money(p.openPerM)} a metre`, amount: (open / 1000) * p.openPerM });
-  const drawers = o.bays.reduce((n, b) => n + b.sections.reduce((k, x) => k + (x.front === 'drawers' ? (x.drawers ?? 0) : 0), 0), 0);
+  const drawers = o.bays.reduce((n, b) => n + b.sections.reduce((k, x) => k + drawerCount(x, b.width), 0), 0);
   if (drawers) lines.push({ label: `${drawers} drawer${drawers === 1 ? '' : 's'} at ${money(p.drawer)}`, amount: drawers * p.drawer });
   if (o.oak) lines.push({ label: `Solid oak worktop shelf, ${o.oak.toLocaleString('en-GB')} m at ${money(p.oakPerM)}`, amount: o.oak * p.oakPerM });
   if (o.racks) lines.push({ label: `${o.racks} door rack${o.racks === 1 ? '' : 's'} at ${money(p.rack)}`, amount: o.racks * p.rack });
