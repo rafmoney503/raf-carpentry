@@ -1094,6 +1094,7 @@ export function CurrentView({
   onStatus,
   onMark,
   onDesign,
+  onConcept,
   onLibrary,
   onKit,
   onTimeline,
@@ -1121,6 +1122,7 @@ export function CurrentView({
   onStatus: (s: Status) => Promise<void>;
   onMark: (patch: Marks[string]) => void;
   onDesign: () => void;
+  onConcept?: () => void; // Design with Claude, filled in from this job (concepts.tsx)
   onLibrary: () => void;
   onKit: () => void;
   onTimeline?: () => void; // the Job timeline, this job's sheet open
@@ -1369,6 +1371,11 @@ export function CurrentView({
             Make a 3D design for them
           </button>
         )}
+        {onConcept ? (
+          <button type="button" className="btn btn-ghost w-full" onClick={onConcept}>
+            Quick drawings with Claude (about a minute)
+          </button>
+        ) : null}
         <button type="button" className="btn btn-ghost w-full" onClick={onLibrary}>
           Send them a design from the library
         </button>

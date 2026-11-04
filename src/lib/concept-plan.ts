@@ -57,8 +57,13 @@ export type Brief = {
   styles: string[]; // empty: Claude picks
   count: number; // 1 to 3 options
   first: string; // the customer's first name
-  mail?: string; // the Outlook email it came from (Inbox)
+  mail?: string; // the Outlook email it came from (Inbox), or their newest email when it started from a job
   photos?: string[]; // that email's photos (attachment ids)
+  sm8?: string; // the ServiceM8 job it started from (Find their job; src/lib/concept-from-job.ts)
+  jobPhotos?: string[]; // photos on that job in ServiceM8 (attachment uuids); with `photos`, 4 at most
+  // On the phone only (the server drops it): where each box was filled from, Quotes' guesses for empty sizes, what
+  // was found on the job. Shown while the brief is filled in.
+  found?: { at: number; from: Partial<Record<'want' | 'first' | 'width' | 'height' | 'depth' | 'other' | 'must', string>>; guess: { width?: number; height?: number; depth?: number }; lines: string[]; none: string[]; problems: string[]; photos: { src: 'job' | 'mail'; id: string; name: string; at: string | null }[] };
 };
 export type ConceptData = {
   brief: Brief;
@@ -316,8 +321,8 @@ export function sizesFromText(text: string): { width?: number; height?: number; 
     const k = /wid|long/i.test(m[3]) ? 'width' : /hig|tall/i.test(m[3]) ? 'height' : 'depth';
     put(k, v);
   }
-  const re2 = /(width|height|depth)\s*(?:of|is|:)?\s*(?:about|roughly|approx\.?)?\s*(\d+(?:\.\d+)?)\s*(mm|cm|m(?:etres?|eters?)?)?\b/gi;
-  for (let m = re2.exec(t); m; m = re2.exec(t)) put(m[1].toLowerCase() as 'width' | 'height' | 'depth', toMm(Number.parseFloat(m[2]), m[3] ?? ''));
+  const re2 = /(width|height|depth|ceiling(?: height)?)\s*(?:of|is|:)?\s*(?:about|roughly|approx\.?)?\s*(\d+(?:\.\d+)?)\s*(mm|cm|m(?:etres?|eters?)?)?\b/gi;
+  for (let m = re2.exec(t); m; m = re2.exec(t)) put(/^ceiling/i.test(m[1]) ? 'height' : (m[1].toLowerCase() as 'width' | 'height' | 'depth'), toMm(Number.parseFloat(m[2]), m[3] ?? ''));
   const x = /(\d+(?:\.\d+)?)\s*(mm|cm|m)?\s*[x×]\s*(\d+(?:\.\d+)?)\s*(mm|cm|m)?\b/i.exec(t);
   if (x && !out.width && !out.height) {
     put('width', toMm(Number.parseFloat(x[1]), x[2] ?? x[4] ?? ''));
@@ -346,6 +351,11 @@ export function cleanBrief(raw: unknown): Brief {
   const words = (v: unknown) => (Array.isArray(v) ? v.map((x) => s(x, 60)).filter(Boolean).slice(0, 8) : []);
   const ids = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && /^[A-Za-z0-9_=+/-]{8,400}$/.test(x)).slice(0, 4) : []);
   const mail = typeof b.mail === 'string' && /^[A-Za-z0-9_=+/-]{8,400}$/.test(b.mail) ? b.mail : undefined;
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const sm8 = typeof b.sm8 === 'string' && uuid.test(b.sm8) ? b.sm8.toLowerCase() : undefined;
+  const mailPhotos = mail ? ids(b.photos) : [];
+  // the job's photos only with the job, and 4 photos at most altogether
+  const jobPhotos = sm8 && Array.isArray(b.jobPhotos) ? b.jobPhotos.filter((x): x is string => typeof x === 'string' && uuid.test(x)).slice(0, Math.max(0, 4 - mailPhotos.length)) : [];
   return {
     want: text(b.want, 3000),
     width: size(b.width, MAX_W),
@@ -356,6 +366,9 @@ export function cleanBrief(raw: unknown): Brief {
     styles: words(b.styles).slice(0, 3),
     count: clamp(Math.round(num(b.count) || 3), 1, 3),
     first: s(b.first, 40),
-    ...(mail ? { mail, photos: ids(b.photos) } : {}),
+    ...(mail ? { mail, photos: mailPhotos } : {}),
+    ...(sm8 ? { sm8, jobPhotos } : {}),
   };
 }
+/* Photos that go to Claude with this brief: the email's and the job's. */
+export const photoCount = (b: Pick<Brief, 'photos' | 'jobPhotos' | 'mail' | 'sm8'>) => (b.mail ? (b.photos ?? []).length : 0) + (b.sm8 ? (b.jobPhotos ?? []).length : 0);

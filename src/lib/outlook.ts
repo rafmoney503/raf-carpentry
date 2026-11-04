@@ -251,6 +251,26 @@ export async function inbox(skip = 0): Promise<{ mails: InboxMail[]; more: boole
   return { mails: (list.value ?? []).filter((m) => !m.isDraft).map(listItem), more: Boolean(list['@odata.nextLink']), unread: folder?.unreadItemCount ?? null, mailbox: MAILBOX() };
 }
 
+/* The newest emails from one address anywhere in the mailbox (Inbox, folders, archive), for Design with Claude's
+   Find their job: their email to info@ may be older than the Inbox list on the phone. Graph only sorts a filtered
+   list when the sort's field is filtered on first, hence the date in the filter; if Graph still turns it down, a
+   search for the address, sorted here. */
+export async function mailsFrom(email: string, top = 10): Promise<InboxMail[]> {
+  const e = email.trim().toLowerCase();
+  if (!/^[^\s@'"]+@[^\s@'"]+\.[^\s@'"]+$/.test(e)) return [];
+  const fields = `${LIST_FIELDS},isDraft`;
+  let list: GMessage[];
+  try {
+    const q = new URLSearchParams({ $select: fields, $filter: `receivedDateTime ge 2000-01-01T00:00:00Z and from/emailAddress/address eq '${e}'`, $orderby: 'receivedDateTime desc', $top: String(top) });
+    list = (await graph<{ value: GMessage[] }>(`/messages?${q}`)).value ?? [];
+  } catch (err) {
+    if (!(err instanceof OutlookError) || err.code !== 'outlook-error') throw err;
+    const q = new URLSearchParams({ $select: fields, $search: `"from:${e}"`, $top: String(top) });
+    list = ((await graph<{ value: GMessage[] }>(`/messages?${q}`)).value ?? []).sort((a, b) => (b.receivedDateTime ?? '').localeCompare(a.receivedDateTime ?? ''));
+  }
+  return list.filter((m) => !m.isDraft && who(m.from ?? m.sender).email === e).map(listItem);
+}
+
 /* One email: the new part and the whole text, its attachments, and the rest of its conversation in this mailbox
    (what Raf sent from Outlook or the Job Kit included). Opening it marks it read, as Outlook does. */
 export async function message(id: string, markRead = true): Promise<FullMail> {

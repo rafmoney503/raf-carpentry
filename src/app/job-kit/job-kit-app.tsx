@@ -72,7 +72,7 @@ import {
 import { CLIENTS_FRESH, CustomerSearch, fetchClients, savedClients, savedCustomers, withCurrent, type Clients, type CustomerDetail } from './customers';
 import { CustomerView } from './customer-view';
 import type { InboxMail } from '@/lib/outlook';
-import { ConceptsBox, ConceptView, startConcept } from './concepts';
+import { ConceptsBox, ConceptView, startConcept, type JobSource } from './concepts';
 import { ClaudeCreditView, creditLine, creditTodayLine, fetchCredit, useCredit } from './claude-credit';
 import { binOnServer, conceptBriefFromMail, customerEmails, dropHere, EmailView, enquiryFromMail, putReplyDraft, fetchInbox, firstOf, freshUnread, INBOX_FRESH, InboxList, inboxLine, inboxTodayLine, lastWith, markReadHere, openedMail, putBackHere, savedInbox, unbinOnServer, whenSaid, type Inbox } from './inbox';
 import type { CurrentJob } from '@/lib/servicem8';
@@ -116,7 +116,7 @@ type Screen =
   | { name: 'quotes' } // rough quotes Claude worked out for new enquiries (quotes.tsx)
   | { name: 'quote'; id: string; from?: 'job' | 'home' } // one, by its ServiceM8 job
   | { name: 'quote-prices' } // Raf's price list the quotes are worked out from
-  | { name: 'concept'; id: string; mail?: string } // Design with Claude (concepts.tsx); mail: started from that email
+  | { name: 'concept'; id: string; mail?: string; job?: string } // Design with Claude (concepts.tsx); mail: started from that email; job: from that ServiceM8 job's screen
   | { name: 'claude' } // Claude credit: what's left and what used it (claude-credit.tsx)
   | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer' | 'timeline' | 'board' | 'wa' | 'design'; client?: string; chat?: string; design?: string }
   | { name: 'enquiry'; client?: string; named?: string; mail?: string; wa?: string } // client: started from a customer's page; named: from a search that found nobody; mail: from an email in the Inbox
@@ -160,7 +160,7 @@ function listFor(s: Screen): Screen | null {
     case 'quote-prices':
       return { name: 'quotes' };
     case 'concept':
-      return s.mail ? { name: 'inbox' } : { name: 'designs' };
+      return s.mail ? { name: 'inbox' } : s.job ? { name: 'current' } : { name: 'designs' };
     case 'new':
       return s.design ? { name: 'designs' } : s.from ? { name: 'current' } : { name: 'kit' };
     default:
@@ -183,7 +183,9 @@ const parentOf = (s: Screen): Screen =>
     : s.name === 'concept'
     ? s.mail
       ? { name: 'email', id: s.mail }
-      : { name: 'designs' }
+      : s.job
+        ? { name: 'sm8', id: s.job }
+        : { name: 'designs' }
     : s.name === 'wa-chat'
     ? { name: 'whatsapp' }
     : (s.name === 'enquiry' || s.name === 'new-design') && s.wa
@@ -758,6 +760,27 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   const job = screen.name === 'job' || screen.name === 'design' ? jobs.find((j) => j.id === screen.id) : undefined;
   // A ServiceM8 job: in the Current jobs, or from a customer opened from the search (an older one).
   const findJob = (uuid: string) => sm8.jobs.find((j) => j.uuid === uuid) ?? customerJobs.find((j) => j.uuid === uuid) ?? (leaving?.uuid === uuid ? leaving : undefined);
+  // Design with Claude's Find their job (concepts.tsx): the Current jobs, the Job Kit's own jobs and the Quotes readings
+  const findJobRef = useRef(findJob);
+  findJobRef.current = findJob;
+  const conceptJobs = useMemo<JobSource>(
+    () => ({
+      list: sm8.jobs,
+      at: sm8.at,
+      loading: sm8Loading,
+      refresh: () => checkSm8(),
+      find: (uuid) => findJobRef.current(uuid),
+      kit: jobs,
+      quote: (uuid) => {
+        const r = rowOf(quotes, uuid);
+        const read = r?.data?.read;
+        return read ? { runs: read.runs ?? [], own: ((r?.edits ?? {}) as { runs?: { w?: number; h?: number; d?: number }[] }).runs ?? [] } : null;
+      },
+      open: (uuid) => go({ name: 'sm8', id: uuid }),
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- go is the app's own navigation, the same every render
+    [sm8.jobs, sm8.at, sm8Loading, checkSm8, jobs, quotes],
+  );
   const cur = screen.name === 'sm8' ? findJob(screen.id) : undefined;
   const allClients = useMemo(() => withCurrent(clients.clients, sm8.jobs), [clients.clients, sm8.jobs]);
   const customerOf = (uuid: string) => allClients.find((c) => c.uuid === uuid) ?? savedCustomers()[uuid]?.client;
@@ -1213,6 +1236,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 key={screen.id}
                 id={screen.id}
                 prices={pricesOf(quotes)}
+                src={conceptJobs}
                 onEmail={(mail, text) => {
                   putReplyDraft(mail, text);
                   go({ name: 'email', id: mail });
@@ -1539,6 +1563,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                     if (patch.hidden) back();
                   }}
                   onDesign={() => go({ name: 'new-design', from: cur.uuid })}
+                  onConcept={() => go({ name: 'concept', id: startConcept({ sm8: cur.uuid }), job: cur.uuid })}
                   onLibrary={() => {
                     checkDesigns();
                     go({ name: 'library', for: cur.uuid });

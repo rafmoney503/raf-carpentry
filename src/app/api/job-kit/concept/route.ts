@@ -2,7 +2,7 @@ import { after } from 'next/server';
 import { pinGuard } from '@/lib/job-kit-server';
 import { SyncError } from '@/lib/job-kit-sync-server';
 import { conceptsRpc, conceptsSetUp, runConcept } from '@/lib/concept-maker';
-import { cleanBrief, CODE_RE, type ConceptData, type ConceptRow } from '@/lib/concept-plan';
+import { cleanBrief, CODE_RE, photoCount, type ConceptData, type ConceptRow } from '@/lib/concept-plan';
 
 /* Design with Claude in the Job Kit, behind the PIN (src/lib/concept-maker.ts, src/app/job-kit/concepts.tsx).
    { action: 'list' }                       every design of the last 180 days
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
         if (!id) return Response.json({ error: 'bad' }, { status: 400, headers: noStore });
         const brief = cleanBrief(body.brief);
         const note = typeof body.note === 'string' ? body.note.replace(/\r\n?/g, '\n').trim().slice(0, 800) : '';
-        if (!brief.want && !brief.width && !(brief.photos ?? []).length) return Response.json({ error: 'no-text' }, { status: 400, headers: noStore });
+        if (!brief.want && !brief.width && !photoCount(brief)) return Response.json({ error: 'no-text' }, { status: 400, headers: noStore });
         const now = (await conceptsRpc('get', { id }).catch(() => null)) as ConceptRow | null;
         const current = note && now?.data?.plan ? now.data.plan : undefined;
         const data: ConceptData = { brief };

@@ -1,9 +1,10 @@
 import { guard } from '@/lib/job-kit-server';
-import { attachment, binMail, inbox, message, OutlookError, outlookSetUp, outlookMissing, reply, restoreMail, setRead } from '@/lib/outlook';
+import { attachment, binMail, inbox, mailsFrom, message, OutlookError, outlookSetUp, outlookMissing, reply, restoreMail, setRead } from '@/lib/outlook';
 import { signOff } from '@/lib/mail-text';
 
 /* The Job Kit's Inbox: Raf's info@rafcarpentry.com mailbox (Microsoft 365) through src/lib/outlook.ts, behind the PIN.
    { action: 'list', skip? }               the newest 30 emails in the Inbox (and the unread count)
+   { action: 'from', email }               the newest 10 emails from that address, any folder (Design with Claude)
    { action: 'open', id }                  one email, its attachments and conversation; marks it read
    { action: 'read', id, read }            mark read or unread
    { action: 'file', id, att }             an attachment's bytes (photos made smaller when big)
@@ -34,6 +35,7 @@ export async function POST(req: Request) {
       const skip = Math.max(0, Math.min(600, Math.floor(Number(body.skip) || 0)));
       return Response.json({ ...(await inbox(skip)), at: Date.now() }, { headers: noStore });
     }
+    if (body.action === 'from') return Response.json({ mails: await mailsFrom(str(body.email, 160)), at: Date.now() }, { headers: noStore });
     if (!idOk(id)) return Response.json({ error: 'bad' }, { status: 400 });
     if (body.action === 'open') return Response.json({ mail: await message(id, body.markRead !== false) }, { headers: noStore });
     if (body.action === 'read') {

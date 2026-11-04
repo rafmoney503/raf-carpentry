@@ -11,6 +11,7 @@ import {
   MUST_IDEAS,
   newBrief,
   newCode,
+  photoCount,
   priceOption,
   rangeText,
   sizedPlan,
@@ -21,9 +22,17 @@ import {
 } from '@/lib/concept-plan';
 import { VAT, type Prices } from '@/lib/quote-sums';
 import { SITE_URL } from '@/lib/seo';
+import { dayOf, fillFromJob, MAX_PHOTOS, mergeFill, missingOf, type JobFacts, type PhotoPick } from '@/lib/concept-from-job';
+import type { CurrentJob } from '@/lib/servicem8';
+import type { JobDiary } from '@/lib/servicem8-diary';
+import type { FullMail, InboxMail } from '@/lib/outlook';
 import { field, label } from './parts';
 import { post, problemText } from './sm8-post';
 import { readPin } from './uploader';
+import { whatOf } from './current';
+import { openedMail, savedInbox } from './inbox';
+import { fileBlob } from './job-notes';
+import type { Job } from './store';
 
 /* Design with Claude (Raf, 3 Nov 2026: 'in jobkit i paste what client wants, then there is a small window where
    claude is ... creating design, and once design is created i can send email from jobkit from info@ and just attach
@@ -161,7 +170,7 @@ export function ConceptsBox({ onNew, onOpen }: { onNew: () => void; onOpen: (id:
 
 /* ---------- one design ---------- */
 
-export function ConceptView({ id, prices, onEmail, onClose }: { id: string; prices: Prices; onEmail: (mail: string, text: string) => void; onClose: () => void }) {
+export function ConceptView({ id, prices, src, onEmail, onClose }: { id: string; prices: Prices; src?: JobSource; onEmail: (mail: string, text: string) => void; onClose: () => void }) {
   const [row, setRow] = useState<ConceptRow | null>(() => localRow(id) ?? null);
   const [problem, setProblem] = useState('');
   const [loading, setLoading] = useState(!localRow(id));
@@ -209,7 +218,9 @@ export function ConceptView({ id, prices, onEmail, onClose }: { id: string; pric
     setRow(next);
     keepRow(next);
     setEditingBrief(false);
-    const r = await post<{ state: string }>(readPin(), { action: 'draw', id, brief, note }, API);
+    const { found: _found, ...send } = brief; // what was found on the job stays on the phone
+    void _found;
+    const r = await post<{ state: string }>(readPin(), { action: 'draw', id, brief: send, note }, API);
     if (!r.ok) {
       const back = prev ?? { ...next, state: 'brief' as const };
       setRow(back);
@@ -283,6 +294,7 @@ export function ConceptView({ id, prices, onEmail, onClose }: { id: string; pric
           key={id}
           brief={brief}
           drawn={Boolean(plan)}
+          src={src}
           onDraw={(b) => void draw(b)}
           onKeep={(b) => {
             const next = { ...row, data: { ...(row.data ?? {}), brief: b }, updated: Date.now() };
@@ -375,82 +387,583 @@ function Chips({ items, on, onToggle, onAdd, addLabel }: { items: string[]; on: 
   );
 }
 
-function BriefForm({ brief, drawn, onDraw, onKeep, onCancel, onDrop }: { brief: Brief; drawn: boolean; onDraw: (b: Brief) => void; onKeep: (b: Brief) => void; onCancel?: () => void; onDrop?: () => void }) {
+/* ---------- Find their job: everything on it fills the brief ---------- */
+
+/* What the app hands Design with Claude about Raf's jobs (job-kit-app.tsx): the Current jobs list, the Job Kit's
+   own jobs, the Quotes readings and a way to the job's screen. */
+export type JobSource = {
+  list: CurrentJob[];
+  at: number;
+  loading: boolean;
+  refresh: () => void;
+  find: (uuid: string) => CurrentJob | undefined;
+  kit: Job[];
+  quote: (uuid: string) => JobFacts['quote'];
+  open: (uuid: string) => void;
+};
+
+const INBOX_API = '/api/job-kit/inbox';
+const DIARY_KEY = 'raf_jobkit_diary'; // job-notes.tsx keeps each job's last diary here; used with no signal
+const STATUS_ORDER: Record<string, number> = { Quote: 0, 'Work Order': 1, Completed: 2, Unsuccessful: 3 };
+const STATUS_WORD: Record<string, string> = { Quote: 'Quote', 'Work Order': 'Work Order', Completed: 'Completed', Unsuccessful: 'Lost' };
+const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/* Current jobs matching what's typed (every word somewhere in the name, area, address, description or job
+   number); nothing typed: the newest enquiries and quotes. */
+export function findJobs(list: CurrentJob[], q: string): CurrentJob[] {
+  const words = fold(q).split(/\s+/).filter(Boolean);
+  const newest = (a: CurrentJob, b: CurrentJob) => (b.created ?? '').localeCompare(a.created ?? '');
+  if (!words.length) return list.filter((j) => j.status === 'Quote').sort(newest).slice(0, 6);
+  return list
+    .filter((j) => {
+      const hay = fold(`${j.name} ${j.area} ${j.address} ${j.description} ${j.number} #${j.number}`);
+      return words.every((w) => hay.includes(w));
+    })
+    .sort((a, b) => {
+      const named = (j: CurrentJob) => (words.some((w) => fold(j.name).split(/\s+/).some((n) => n.startsWith(w))) ? 0 : 1);
+      return named(a) - named(b) || (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9) || newest(a, b);
+    })
+    .slice(0, 12);
+}
+
+type Step = 'working' | 'done' | 'failed' | 'skip';
+type Steps = { diary: Step; mail: Step };
+const MISSING_WORD: Record<string, string> = { notes: 'notes', files: 'photos', messages: 'emails and texts', bookings: 'bookings' };
+
+function savedDiary(job: string): { diary: JobDiary; at: number } | undefined {
+  try {
+    return (JSON.parse(localStorage.getItem(DIARY_KEY) || '{}') as Record<string, { diary: JobDiary; at: number }>)[job];
+  } catch {
+    return undefined;
+  }
+}
+const theirEmail = (m: InboxMail) => (m.replyTo?.email || m.from.email).toLowerCase();
+
+/* Everything on one job: its diary from ServiceM8 (notes, their messages, photos), their newest email to info@
+   with its photos, the Job Kit's visit and design request for it and the Quotes reading, all on this phone or
+   through the Job Kit's own server. A part that can't be had is said, not fatal. */
+async function gatherJob(job: CurrentJob, src: JobSource, onStep: (s: Partial<Steps>) => void): Promise<{ facts: JobFacts; problems: string[] }> {
+  const pin = readPin();
+  const problems: string[] = [];
+  const diaryP = (async () => {
+    const r = await post<{ diary: JobDiary; at: number }>(pin, { action: 'diary', job: job.uuid, email: job.email, mobile: job.mobile });
+    if (r.ok) {
+      const miss = r.data.diary.missing.filter((m) => m !== 'bookings');
+      if (miss.length) problems.push(`ServiceM8 wouldn’t give the job’s ${miss.map((m) => MISSING_WORD[m] ?? m).join(' or ')} this time.`);
+      onStep({ diary: 'done' });
+      return r.data.diary.entries;
+    }
+    const kept = savedDiary(job.uuid);
+    problems.push(`ServiceM8: ${problemText(r.error, r.detail)}${kept ? ` Used the job’s diary kept on this phone (${dayOf(new Date(kept.at).toISOString())}).` : ''}`);
+    onStep({ diary: 'failed' });
+    return kept?.diary.entries ?? null;
+  })();
+  const mailP = (async (): Promise<JobFacts['mail']> => {
+    const email = job.email.trim().toLowerCase();
+    if (!email) {
+      onStep({ mail: 'skip' });
+      return null;
+    }
+    const r = await post<{ mails: InboxMail[] }>(pin, { action: 'from', email }, INBOX_API);
+    // with no answer, the Inbox list kept on this phone
+    const newest = r.ok ? r.data.mails[0] : savedInbox().mails.find((m) => !m.mine && theirEmail(m) === email);
+    if (!r.ok) problems.push(r.error === 'outlook-not-set-up' ? 'The Inbox isn’t connected here, so only emails already on this phone were looked at.' : `The Inbox: ${problemText(r.error, r.detail)}`);
+    if (!newest) {
+      onStep({ mail: r.ok ? 'done' : 'failed' });
+      return null;
+    }
+    let full = openedMail(newest.id);
+    if (!full) {
+      const o = await post<{ mail: FullMail }>(pin, { action: 'open', id: newest.id, markRead: false }, INBOX_API);
+      if (o.ok) full = o.data.mail;
+      else problems.push(`Their email to info@ couldn’t be opened: ${problemText(o.error, o.detail)}`);
+    }
+    onStep({ mail: full ? 'done' : 'failed' });
+    if (!full) return null;
+    return { id: full.id, subject: full.subject, text: full.text, at: full.at, photos: full.files.filter((f) => /^image\//i.test(f.type) && !f.inline).map((f) => ({ id: f.id, name: f.name })) };
+  })();
+  const [diary, mail] = await Promise.all([diaryP, mailP]);
+  const kit = src.kit.filter((k) => k.sm8 === job.uuid).map((k) => ({ kind: k.kind, what: k.what, notes: k.notes, design: k.design }));
+  return { facts: { job: { uuid: job.uuid, number: job.number, name: job.name, first: job.first, description: job.description }, diary, kit, quote: src.quote(job.uuid), mail }, problems };
+}
+
+function JobFinder({ src, onPick }: { src: JobSource; onPick: (j: CurrentJob) => void }) {
+  const [q, setQ] = useState('');
+  const { refresh } = src;
+  useEffect(() => refresh(), [refresh]); // the app asks ServiceM8 at most once a minute
+  const list = useMemo(() => findJobs(src.list, q), [src.list, q]);
+  return (
+    <section className="rounded-sm border-2 border-[var(--sec)] bg-mount" aria-labelledby="cj-find-h">
+      <div className="jk-band-head flex items-center gap-2 px-3.5 py-2.5">
+        <h2 id="cj-find-h" className="font-mono text-[12.5px] uppercase tracking-[0.06em] jk-sec-ink">
+          1 · Find their job
+        </h2>
+        <span className="ml-auto font-mono text-[12px] text-faint">{src.loading ? 'Checking ServiceM8…' : `${src.list.length} current`}</span>
+      </div>
+      <div className="grid gap-2.5 p-3.5">
+        <p className="text-[14.5px] leading-relaxed text-muted">Pick the job and everything on it fills the brief: their enquiry, your notes, their messages and email, the photos and the quote’s sizes. Then you fill in what’s missing.</p>
+        <input
+          type="search"
+          aria-label="Find their job"
+          className={`${field} h-11`}
+          value={q}
+          enterKeyHint="search"
+          placeholder="Name, area, what or job number"
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            if (list.length === 1) onPick(list[0]);
+          }}
+        />
+        {!q.trim() && list.length ? <p className="font-mono text-[11.5px] uppercase tracking-[0.06em] text-faint">Newest enquiries and quotes</p> : null}
+        {list.length ? (
+          <ul className="divide-y divide-line">
+            {list.map((j) => (
+              <li key={j.uuid}>
+                <button type="button" onClick={() => onPick(j)} className="flex w-full items-center gap-3 py-2.5 text-left" data-job={j.uuid}>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">
+                      {j.name}
+                      {j.area ? <span className="font-normal text-muted"> · {j.area}</span> : null}
+                    </span>
+                    <span className="block truncate text-[13.5px] text-muted">{j.description ? whatOf(j.description) : 'No description yet'}</span>
+                  </span>
+                  <span className="shrink-0 text-right font-mono text-[11.5px] leading-tight text-faint">
+                    {STATUS_WORD[j.status] ?? j.status}
+                    <br />
+                    {dayOf(j.created)}
+                  </span>
+                  <span aria-hidden className="text-[18px] jk-sec-ink">
+                    →
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-[14px] text-muted">
+            {q.trim() ? `No current job matches “${q.trim()}”.` : src.list.length ? 'No enquiries waiting on Quote.' : src.loading ? 'Getting your jobs from ServiceM8…' : 'No current jobs on this phone yet.'}{' '}
+            {!src.loading ? (
+              <button type="button" className="underline" onClick={() => src.refresh()}>
+                Check again
+              </button>
+            ) : null}
+          </p>
+        )}
+        <p className="text-[13.5px] text-muted">Not from a job? Skip this and fill in the brief below.</p>
+      </div>
+    </section>
+  );
+}
+
+const STEP_MARK: Record<Step, string> = { working: '…', done: '✓', failed: '!', skip: '–' };
+function Gathering({ name, steps }: { name: string; steps: Steps }) {
+  const rows: [string, Step][] = [
+    ['ServiceM8: the job, its notes, their messages, photos', steps.diary],
+    ['Their emails to info@', steps.mail],
+    ['Your Job Kit visit and the quote, on this phone', 'done'],
+  ];
+  return (
+    <section role="status" className="rounded-sm border border-line-strong bg-mount p-3.5">
+      <p className="flex items-center gap-2.5 text-[15px] font-semibold">
+        <svg viewBox="0 0 24 24" className="jk-spin h-5 w-5 shrink-0 jk-sec-ink" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round">
+          <path d="M12 3 a9 9 0 1 1 -9 9" />
+        </svg>
+        Looking through {name}’s job…
+      </p>
+      <ul className="mt-2 grid gap-1 text-[14px] text-muted">
+        {rows.map(([t, s]) => (
+          <li key={t} className="flex gap-2">
+            <span aria-hidden className={`w-4 shrink-0 text-center font-mono ${s === 'done' ? 'jk-sec-ink' : ''}`}>
+              {STEP_MARK[s]}
+            </span>
+            {t}
+            {s === 'skip' ? ' (no email on the job)' : ''}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function FoundBox({ name, status, found, onChange, onOpen }: { name: string; status?: string; found: NonNullable<Brief['found']>; onChange: () => void; onOpen?: () => void }) {
+  return (
+    <section className="rounded-sm border border-line-strong bg-mount" aria-labelledby="cj-found-h" data-found>
+      <div className="jk-band-head flex flex-wrap items-center gap-x-3 gap-y-1 px-3.5 py-2.5">
+        <h2 id="cj-found-h" className="min-w-0 font-mono text-[12.5px] uppercase tracking-[0.06em] jk-sec-ink">
+          1 · From {name}’s job{status ? ` · ${STATUS_WORD[status] ?? status}` : ''}
+        </h2>
+        <button type="button" onClick={onChange} className="ml-auto h-8 text-[14px] text-muted underline">
+          Another job
+        </button>
+      </div>
+      <ul className="grid gap-1.5 px-3.5 pb-3 pt-2.5 text-[14.5px] leading-snug">
+        {found.lines.map((l) => (
+          <li key={l} className="flex gap-2">
+            <span aria-hidden className="w-4 shrink-0 text-center jk-sec-ink">
+              ✓
+            </span>
+            <span className="min-w-0 [overflow-wrap:anywhere]">{l}</span>
+          </li>
+        ))}
+        {found.none.map((l) => (
+          <li key={l} className="flex gap-2 text-muted">
+            <span aria-hidden className="w-4 shrink-0 text-center">
+              –
+            </span>
+            {l}
+          </li>
+        ))}
+        {found.problems.map((l) => (
+          <li key={l} className="flex gap-2 text-muted">
+            <span aria-hidden className="w-4 shrink-0 text-center font-semibold text-ink">
+              !
+            </span>
+            {l}
+          </li>
+        ))}
+        {!found.lines.length && !found.none.length ? <li className="text-muted">Nothing on the job yet: fill the brief in below.</li> : null}
+      </ul>
+      {onOpen ? (
+        <button type="button" onClick={onOpen} className="mx-3.5 mb-3 h-9 text-[14px] underline jk-sec-ink">
+          Open the job
+        </button>
+      ) : null}
+    </section>
+  );
+}
+
+/* A photo on the job (ServiceM8) or in their email (Inbox), small, with a tick when it goes to Claude. */
+const tileUrls = new Map<string, string>();
+async function inboxThumb(mail: string, att: string): Promise<Blob | null> {
+  try {
+    const res = await fetch(INBOX_API, { method: 'POST', headers: { 'x-job-kit-pin': readPin(), 'content-type': 'application/json' }, body: JSON.stringify({ action: 'file', id: mail, att }), cache: 'no-store' });
+    return res.ok ? await res.blob() : null;
+  } catch {
+    return null;
+  }
+}
+function PhotoTile({ p, mail, on, onToggle }: { p: PhotoPick; mail?: string; on: boolean; onToggle: () => void }) {
+  const key = `${p.src}:${p.id}`;
+  const [url, setUrl] = useState(() => tileUrls.get(key) ?? '');
+  const [none, setNone] = useState(false);
+  useEffect(() => {
+    if (url) return;
+    let gone = false;
+    void (async () => {
+      let blob: Blob | null = null;
+      if (p.src === 'job') {
+        const r = await fileBlob(p.id, 'thumb');
+        blob = 'blob' in r ? r.blob : null;
+      } else if (mail) blob = await inboxThumb(mail, p.id);
+      if (gone) return;
+      if (!blob) return setNone(true);
+      const u = URL.createObjectURL(blob);
+      tileUrls.set(key, u);
+      setUrl(u);
+    })();
+    return () => {
+      gone = true;
+    };
+  }, [key, url, p.src, p.id, mail]);
+  return (
+    <button type="button" aria-pressed={on} onClick={onToggle} data-photo={p.id} className={`relative aspect-square overflow-hidden rounded-sm border bg-raised ${on ? 'border-[var(--sec)]' : 'border-line'}`} aria-label={`Photo ${p.name}${p.src === 'mail' ? ' from their email' : ''}`}>
+      {url ? (
+        // eslint-disable-next-line @next/next/no-img-element -- a blob URL fetched behind the PIN
+        <img src={url} alt="" className={`h-full w-full object-cover ${on ? '' : 'opacity-45'}`} />
+      ) : (
+        <span className="absolute inset-0 grid place-items-center p-1 text-center font-mono text-[10.5px] leading-tight text-faint">{none ? p.name : ''}</span>
+      )}
+      <span aria-hidden className={`absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full border-2 border-white text-[13px] font-bold shadow-sm ${on ? 'bg-[var(--sec)] text-white' : 'bg-white/80 text-transparent'}`}>
+        ✓
+      </span>
+      {p.src === 'mail' ? <span className="absolute bottom-0 left-0 bg-ink/70 px-1 font-mono text-[10px] text-white">email</span> : null}
+    </button>
+  );
+}
+
+function PhotoPicker({ b, onChange }: { b: Brief; onChange: (patch: Partial<Brief>) => void }) {
+  const [full, setFull] = useState(false);
+  const all = (b.found?.photos ?? []).filter((p) => p.src === 'job' || b.mail);
+  const mailOn = b.mail ? (b.photos ?? []) : [];
+  const jobOn = b.jobPhotos ?? [];
+  const n = mailOn.length + jobOn.length;
+  if (!all.length) return null;
+  const toggle = (p: PhotoPick) => {
+    const on = p.src === 'job' ? jobOn.includes(p.id) : mailOn.includes(p.id);
+    if (!on && n >= MAX_PHOTOS) {
+      setFull(true);
+      setTimeout(() => setFull(false), 2500);
+      return;
+    }
+    setFull(false);
+    if (p.src === 'job') onChange({ jobPhotos: on ? jobOn.filter((x) => x !== p.id) : [...jobOn, p.id] });
+    else onChange({ photos: on ? mailOn.filter((x) => x !== p.id) : [...mailOn, p.id] });
+  };
+  return (
+    <div className="grid gap-2" data-photos>
+      <span className={`${label} flex flex-wrap items-baseline gap-x-2`}>
+        Photos for Claude
+        <span className="font-sans text-[13px] normal-case tracking-normal text-muted">
+          {n} of {MAX_PHOTOS} picked{all.length > MAX_PHOTOS ? `, from ${all.length}` : ''}
+        </span>
+      </span>
+      <div className="grid grid-cols-4 gap-2">
+        {all.slice(0, 12).map((p) => (
+          <PhotoTile key={`${p.src}:${p.id}`} p={p} mail={b.mail} on={p.src === 'job' ? jobOn.includes(p.id) : mailOn.includes(p.id)} onToggle={() => toggle(p)} />
+        ))}
+      </div>
+      <p className="text-[13px] text-muted" aria-live="polite">
+        {full ? `${MAX_PHOTOS} at most: untick one first.` : 'Tap a photo to add it or take it out. The ones of the space help most.'}
+      </p>
+    </div>
+  );
+}
+
+const NEEDS_LABEL: Record<string, string> = { want: 'What they want', first: 'First name', width: 'Width', height: 'Height', depth: 'Depth' };
+
+function BriefForm({
+  brief,
+  drawn,
+  src,
+  onDraw,
+  onKeep,
+  onCancel,
+  onDrop,
+}: {
+  brief: Brief;
+  drawn: boolean;
+  src?: JobSource;
+  onDraw: (b: Brief) => void;
+  onKeep: (b: Brief) => void;
+  onCancel?: () => void;
+  onDrop?: () => void;
+}) {
   const [b, setB] = useState<Brief>(brief);
-  const set = (patch: Partial<Brief>) =>
-    setB((cur) => {
-      const next = { ...cur, ...patch };
-      onKeep(next);
-      return next;
-    });
+  const bRef = useRef(b);
+  const keepRef = useRef(onKeep); // the latest, for a job looked through while the screen moved on
+  keepRef.current = onKeep;
+  const put = (next: Brief) => {
+    bRef.current = next;
+    setB(next);
+    keepRef.current(next);
+  };
+  const set = (patch: Partial<Brief>) => put({ ...bRef.current, ...patch });
+  // a box Raf changes is his now: its "from ..." note goes
+  const setField = (k: 'want' | 'first' | 'width' | 'height' | 'depth' | 'other', patch: Partial<Brief>) => {
+    const f = bRef.current.found;
+    if (!f?.from[k]) return set(patch);
+    const from = { ...f.from };
+    delete from[k];
+    set({ ...patch, found: { ...f, from } });
+  };
   const toggle = (list: string[], x: string) => (list.includes(x) ? list.filter((y) => y !== x) : [...list, x]);
   const styleIdeas = ['Open dresser', 'Larder wall', 'Shaker with niche', 'Flat doors floor to ceiling', 'Doors below, open above'];
-  const can = Boolean(b.want.trim() || b.width || (b.photos ?? []).length);
+  const can = Boolean(b.want.trim() || b.width || photoCount(b));
+
+  // ---- the job it starts from ----
+  const job = b.sm8 ? src?.find(b.sm8) : undefined;
+  const jobName = job?.name || b.first || 'their';
+  const [steps, setSteps] = useState<Steps | null>(null);
+  const started = useRef(false);
+  const pick = useCallback(
+    async (j: CurrentJob) => {
+      if (!src) return;
+      started.current = true; // picked here: the look-through-on-open below mustn't run it a second time
+      setSteps({ diary: 'working', mail: j.email ? 'working' : 'skip' });
+      set({ sm8: j.uuid, found: undefined });
+      try {
+        const { facts, problems } = await gatherJob(j, src, (s) => setSteps((cur) => (cur ? { ...cur, ...s } : cur)));
+        const fill = fillFromJob(facts);
+        fill.found.problems = problems;
+        // the brief may have moved on while it looked: only fill the one still showing
+        if (bRef.current.sm8 === j.uuid) put(mergeFill(bRef.current, fill, Date.now()));
+      } catch (e) {
+        console.error('find their job', e);
+        if (bRef.current.sm8 === j.uuid) set({ found: { at: Date.now(), from: {}, guess: {}, lines: [], none: [], problems: ['Something went wrong looking through the job. Fill the brief in below, or pick the job again.'], photos: [] } });
+      } finally {
+        setSteps(null);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- put and set only read refs
+    [src],
+  );
+  // started from the job's own screen: look through it straight away
+  useEffect(() => {
+    if (started.current || drawn || !src || !b.sm8 || b.found) return;
+    const j = src.find(b.sm8);
+    if (!j) return;
+    started.current = true;
+    void pick(j);
+  }, [src, b.sm8, b.found, drawn, pick]);
+  const again = () => {
+    setSteps(null);
+    put(newBrief({ count: bRef.current.count, styles: bRef.current.styles }));
+  };
+
+  const found = b.found;
+  const missing = found ? missingOf(b) : [];
+  const miss = (k: string) => found && missing.includes(k as never);
+  const from = (k: 'want' | 'first' | 'width' | 'height' | 'depth' | 'other' | 'must') => found?.from[k];
+  const missStyle = (k: string) => (miss(k) ? { borderColor: 'var(--sec)', borderStyle: 'dashed', borderWidth: 2 } : undefined);
+  const Tag = ({ k }: { k: 'want' | 'first' | 'other' | 'must' }) =>
+    from(k) ? (
+      <span className="font-sans text-[12.5px] normal-case tracking-normal text-muted">from {from(k)}</span>
+    ) : miss(k) ? (
+      <span className="rounded-full bg-[var(--sec-soft)] px-2 py-0.5 font-sans text-[12px] font-semibold normal-case tracking-normal jk-sec-ink">Missing</span>
+    ) : null;
+  const goTo = (k: string) => {
+    const el = document.getElementById(`cb-${k}`);
+    if (!el) return;
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    (el as HTMLInputElement).focus({ preventScroll: true });
+  };
+  // the sizes' sources in one line (three boxes side by side leave no room for a note each)
+  const sizeFrom = (['width', 'height', 'depth'] as const).filter((k) => from(k));
+  const bySource = new Map<string, string[]>();
+  for (const k of sizeFrom) bySource.set(from(k)!, [...(bySource.get(from(k)!) ?? []), k]);
+  const sizeNote = [...bySource].map(([s, ks]) => `${ks.join(' and ')} from ${s}`).join(', ');
+  const guess = found?.guess ?? {};
+  const guessed = (['width', 'height', 'depth'] as const).filter((k) => guess[k] && (k === 'depth' ? !b.depth.trim() : !b[k]));
+  const showFinder = Boolean(src) && !drawn && !b.mail && !b.sm8;
+
   return (
     // not a form, so the keyboard's Go in a box doesn't send it to Claude half written
     <div className="mt-5 grid gap-4">
-      <p className="text-[15px] leading-relaxed text-muted">{b.mail ? 'Filled in from their email. Change anything, then draw.' : 'Paste what they want, add the sizes you know, then draw.'}</p>
-      <label className="grid gap-1.5">
-        <span className={label}>What they want</span>
-        <textarea className={`${field} min-h-[150px] py-2.5 text-[15.5px] leading-relaxed`} value={b.want} maxLength={3000} placeholder="Paste their message, or say it in your words" onChange={(e) => set({ want: e.target.value })} />
-      </label>
-      {b.mail ? (
-        <p className="text-[14px] text-muted">
-          {(b.photos ?? []).length ? `${(b.photos ?? []).length} photo${(b.photos ?? []).length === 1 ? '' : 's'} from their email go with it.` : 'Their email has no photos.'}
-        </p>
+      {showFinder && src ? <JobFinder src={src} onPick={(j) => void pick(j)} /> : null}
+      {steps ? <Gathering name={job?.name ?? 'their'} steps={steps} /> : null}
+      {found && !steps ? (
+        <>
+          <FoundBox name={jobName} status={job?.status} found={found} onChange={again} onOpen={src && b.sm8 && job ? () => src.open(b.sm8!) : undefined} />
+          <div className="rounded-sm border border-[var(--sec)] bg-[var(--sec-soft)] px-3.5 py-3" data-missing>
+            <p className="font-mono text-[12.5px] uppercase tracking-[0.06em] jk-sec-ink">2 · Fill in what’s missing</p>
+            {missing.length ? (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="text-[14.5px]">Still needed:</span>
+                {missing.map((k) => (
+                  <button key={k} type="button" onClick={() => goTo(k)} className="min-h-9 rounded-full border border-[var(--sec)] bg-mount px-3 text-[14px] font-semibold jk-sec-ink">
+                    {NEEDS_LABEL[k]}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-1.5 text-[14.5px]">Nothing missing. Check it over, then draw.</p>
+            )}
+            {guessed.length ? <p className="mt-2 text-[13.5px] text-muted">Quotes guessed some sizes from the photos: use them below if they look right.</p> : null}
+          </div>
+        </>
       ) : null}
-      <label className="grid gap-1.5">
-        <span className={label}>Their first name</span>
-        <input className={`${field} h-11`} value={b.first} maxLength={40} onChange={(e) => set({ first: e.target.value })} />
-      </label>
-      <fieldset className="grid gap-2">
-        <legend className={label}>Sizes in mm</legend>
-        <div className="grid grid-cols-3 gap-2.5">
-          {(
-            [
-              ['width', 'Width'],
-              ['height', 'Height'],
-            ] as const
-          ).map(([k, l]) => (
-            <label key={k} className="grid gap-1 text-[13px] text-muted">
-              {l}
-              <input inputMode="numeric" className={`${field} h-11 font-mono`} value={b[k] || ''} onChange={(e) => set({ [k]: Math.min(12000, Number(e.target.value.replace(/\D/g, '')) || 0) } as Partial<Brief>)} />
-            </label>
-          ))}
-          <label className="grid gap-1 text-[13px] text-muted">
-            Depth
-            <input className={`${field} h-11 font-mono`} value={b.depth} maxLength={30} placeholder="varies" onChange={(e) => set({ depth: e.target.value })} />
+      {!found && !steps ? <p className="text-[15px] leading-relaxed text-muted">{b.mail ? 'Filled in from their email. Change anything, then draw.' : showFinder ? 'Or paste what they want, add the sizes you know, then draw.' : 'Paste what they want, add the sizes you know, then draw.'}</p> : null}
+      {steps ? null : (
+        <>
+          <label className="grid gap-1.5">
+            <span className={`${label} flex flex-wrap items-baseline gap-x-2 gap-y-1`}>
+              What they want <Tag k="want" />
+            </span>
+            <textarea
+              id="cb-want"
+              className={`${field} ${found && b.want.length > 400 ? 'min-h-[260px]' : 'min-h-[150px]'} py-2.5 text-[15.5px] leading-relaxed`}
+              style={missStyle('want')}
+              value={b.want}
+              maxLength={3000}
+              placeholder="Paste their message, or say it in your words"
+              onChange={(e) => setField('want', { want: e.target.value })}
+            />
           </label>
-        </div>
-        <label className="grid gap-1 text-[13px] text-muted">
-          Other sizes and things to know
-          <input className={`${field} h-11 text-[15px]`} value={b.other} maxLength={600} placeholder="e.g. left end 1250 high under a boxing" onChange={(e) => set({ other: e.target.value })} />
-        </label>
-      </fieldset>
-      <div className="grid gap-2">
-        <span className={label}>Must have</span>
-        <Chips items={MUST_IDEAS} on={b.must} onToggle={(x) => set({ must: toggle(b.must, x) })} onAdd={(x) => set({ must: [...b.must.filter((y) => y !== x), x] })} addLabel="+ Add your own" />
-      </div>
-      <div className="grid gap-2">
-        <span className={label}>Options</span>
-        <div className="grid grid-cols-3 gap-2" role="group" aria-label="How many options">
-          {[1, 2, 3].map((n) => (
-            <button key={n} type="button" aria-pressed={b.count === n} onClick={() => set({ count: n, styles: b.styles.slice(0, n) })} className={`h-11 rounded-sm border font-mono text-[16px] ${b.count === n ? 'border-[var(--sec)] bg-[var(--sec)] text-white' : 'border-line-strong bg-mount'}`}>
-              {n}
-            </button>
-          ))}
-        </div>
-        <Chips items={styleIdeas} on={b.styles} onToggle={(x) => set({ styles: toggle(b.styles, x).slice(0, b.count) })} onAdd={(x) => set({ styles: [...b.styles.filter((y) => y !== x), x].slice(-b.count) })} addLabel="+ A style" />
-        <p className="text-[13.5px] text-muted">{b.styles.length ? `One option each for ${b.styles.join(', ')}${b.styles.length < b.count ? '; Claude picks the rest' : ''}.` : 'No styles picked: Claude picks them.'}</p>
-      </div>
-      <button type="button" disabled={!can} onClick={() => can && onDraw(b)} className="btn w-full bg-[var(--sec)] text-white hover:opacity-90 disabled:opacity-50">
-        <Spark className="h-4 w-4" /> {drawn ? 'Draw it again from this brief' : `Draw ${b.count === 1 ? 'it' : `${b.count} options`}`}
-      </button>
-      <p className="text-center text-[13px] leading-relaxed text-muted">
-        About a minute, pence on your Claude credit. The prices come from your price list, never from Claude.
-        <br />
-        Their first name, these words and the photos go to Claude; phone numbers, emails and addresses are taken out.
-      </p>
+          {b.mail && !found ? (
+            <p className="text-[14px] text-muted">
+              {(b.photos ?? []).length ? `${(b.photos ?? []).length} photo${(b.photos ?? []).length === 1 ? '' : 's'} from their email go with it.` : 'Their email has no photos.'}
+            </p>
+          ) : null}
+          {found ? <PhotoPicker b={b} onChange={set} /> : null}
+          <label className="grid gap-1.5">
+            <span className={`${label} flex flex-wrap items-baseline gap-x-2 gap-y-1`}>
+              Their first name <Tag k="first" />
+            </span>
+            <input id="cb-first" className={`${field} h-11`} style={missStyle('first')} value={b.first} maxLength={40} placeholder={miss('first') ? 'Missing' : undefined} onChange={(e) => setField('first', { first: e.target.value })} />
+          </label>
+          <fieldset className="grid gap-2">
+            <legend className={label}>Sizes in mm</legend>
+            <div className="grid grid-cols-3 gap-2.5">
+              {(
+                [
+                  ['width', 'Width'],
+                  ['height', 'Height'],
+                ] as const
+              ).map(([k, l]) => (
+                <label key={k} className="grid gap-1 text-[13px] text-muted">
+                  {l}
+                  <input
+                    id={`cb-${k}`}
+                    inputMode="numeric"
+                    className={`${field} h-11 font-mono`}
+                    style={missStyle(k)}
+                    value={b[k] || ''}
+                    placeholder={miss(k) ? (guess[k] ? `≈${guess[k]}` : 'missing') : undefined}
+                    onChange={(e) => setField(k, { [k]: Math.min(12000, Number(e.target.value.replace(/\D/g, '')) || 0) } as Partial<Brief>)}
+                  />
+                </label>
+              ))}
+              <label className="grid gap-1 text-[13px] text-muted">
+                Depth
+                <input id="cb-depth" className={`${field} h-11 font-mono`} style={missStyle('depth')} value={b.depth} maxLength={30} placeholder={miss('depth') ? (guess.depth ? `≈${guess.depth}` : 'missing') : 'varies'} onChange={(e) => setField('depth', { depth: e.target.value })} />
+              </label>
+            </div>
+            {sizeNote ? <p className="text-[13px] text-muted">{sizeNote.charAt(0).toUpperCase() + sizeNote.slice(1)}.</p> : null}
+            {guessed.length ? (
+              <button
+                type="button"
+                className="justify-self-start rounded-sm border border-line-strong bg-mount px-3 py-2 text-left text-[14px]"
+                onClick={() => {
+                  const f = bRef.current.found!;
+                  const patch: Partial<Brief> = {};
+                  for (const k of guessed) {
+                    if (k === 'depth') patch.depth = String(guess.depth);
+                    else patch[k] = guess[k];
+                  }
+                  set({ ...patch, found: { ...f, from: { ...f.from, ...Object.fromEntries(guessed.map((k) => [k, 'a guess in Quotes'])) } } });
+                }}
+              >
+                Use the guesses: <span className="font-mono">{guessed.map((k) => `${guess[k]} ${k === 'width' ? 'wide' : k === 'height' ? 'high' : 'deep'}`).join(', ')}</span>
+              </button>
+            ) : null}
+            <label className="grid gap-1 text-[13px] text-muted">
+              <span className="flex flex-wrap items-baseline gap-x-2">
+                Other sizes and things to know {from('other') ? <span className="text-[12.5px]">· from {from('other')}</span> : null}
+              </span>
+              <input className={`${field} h-11 text-[15px]`} value={b.other} maxLength={600} placeholder="e.g. left end 1250 high under a boxing" onChange={(e) => setField('other', { other: e.target.value })} />
+            </label>
+          </fieldset>
+          <div className="grid gap-2">
+            <span className={`${label} flex flex-wrap items-baseline gap-x-2 gap-y-1`}>
+              Must have {from('must') ? <span className="font-sans text-[12.5px] normal-case tracking-normal text-muted">ticked from {from('must')}: check them</span> : null}
+            </span>
+            <Chips items={MUST_IDEAS} on={b.must} onToggle={(x) => set({ must: toggle(b.must, x) })} onAdd={(x) => set({ must: [...b.must.filter((y) => y !== x), x] })} addLabel="+ Add your own" />
+          </div>
+          <div className="grid gap-2">
+            <span className={label}>Options</span>
+            <div className="grid grid-cols-3 gap-2" role="group" aria-label="How many options">
+              {[1, 2, 3].map((n) => (
+                <button key={n} type="button" aria-pressed={b.count === n} onClick={() => set({ count: n, styles: b.styles.slice(0, n) })} className={`h-11 rounded-sm border font-mono text-[16px] ${b.count === n ? 'border-[var(--sec)] bg-[var(--sec)] text-white' : 'border-line-strong bg-mount'}`}>
+                  {n}
+                </button>
+              ))}
+            </div>
+            <Chips items={styleIdeas} on={b.styles} onToggle={(x) => set({ styles: toggle(b.styles, x).slice(0, b.count) })} onAdd={(x) => set({ styles: [...b.styles.filter((y) => y !== x), x].slice(-b.count) })} addLabel="+ A style" />
+            <p className="text-[13.5px] text-muted">{b.styles.length ? `One option each for ${b.styles.join(', ')}${b.styles.length < b.count ? '; Claude picks the rest' : ''}.` : 'No styles picked: Claude picks them.'}</p>
+          </div>
+          <button type="button" disabled={!can} onClick={() => can && onDraw(bRef.current)} className="btn w-full bg-[var(--sec)] text-white hover:opacity-90 disabled:opacity-50">
+            <Spark className="h-4 w-4" /> {drawn ? 'Draw it again from this brief' : `Draw ${b.count === 1 ? 'it' : `${b.count} options`}`}
+          </button>
+          {found && missing.length && can ? <p className="-mt-2 text-center text-[13.5px] text-muted">You can draw it now: Claude guesses what’s missing and says so.</p> : null}
+          <p className="text-center text-[13px] leading-relaxed text-muted">
+            About a minute, pence on your Claude credit. The prices come from your price list, never from Claude.
+            <br />
+            Their first name, these words and the photos go to Claude; phone numbers, emails and addresses are taken out.
+          </p>
+        </>
+      )}
       <div className="flex flex-wrap justify-center gap-4">
         {onCancel ? (
           <button type="button" onClick={onCancel} className="h-10 text-[14.5px] text-muted underline">

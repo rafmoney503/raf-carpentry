@@ -1,16 +1,19 @@
 import { noteClaude } from './ai-usage';
 import { attachment, outlookSetUp } from './outlook';
 import { jpegOf } from './photo-jpeg';
+import { sm8SetUp } from './servicem8';
+import { attachmentFile } from './servicem8-diary';
 import { redact } from './draft-reply';
 import { jobkitRpc, syncSetUp } from './job-kit-sync-server';
-import { cleanPlan, type Brief, type ConceptData, type Plan } from './concept-plan';
+import { cleanPlan, photoCount, type Brief, type ConceptData, type Plan } from './concept-plan';
 
 /* Design with Claude (Job Kit, 3 Nov 2026): Claude plans a customer's piece of fitted furniture from the brief Raf
    fills in (often straight from their email in the Inbox, with its photos) as a layout of bays and sections, through
    one forced tool. The drawing and the prices are worked out from that layout by the Job Kit and the customer's page
    (src/lib/concept-plan.ts, src/components/ConceptDrawing.tsx), never by Claude.
    - What goes to Claude (ANTHROPIC_API_KEY, the Job Kit's prepaid key): the brief with contact details and the
-     surname taken out (redact()), the customer's first name, up to 4 photos from the email made 1568 px, and for a
+     surname taken out (redact()), the customer's first name, up to 4 photos (from the email, or from the ServiceM8
+     job it started from: Find their job, src/lib/concept-from-job.ts) made 1568 px, and for a
      change the current layout and what Raf asked for.
    - Kept in Supabase (cabinetos project, jobkit.concepts through public.jobkit_concepts with the Job Kit secret):
      the brief, the layout, the model; Raf's changes beside it (prices, what the page shows, live).
@@ -48,6 +51,7 @@ How a layout works (all sizes in mm):
 Rules:
 - Follow the must-haves exactly ("No drawers" means no drawers anywhere, "Shelves only" means shelves inside, no pull-outs).
 - Use the sizes given. Guess sensibly where one is missing (a ceiling 2,400, pantry shelves 300 to 400 deep, a broom cupboard 500 to 900 wide) and say so in seen.
+- A brief started from a job has parts: their enquiry first, then 'From your visit (Job Kit)' and 'Your notes on the job' (Raf's own words and sizes from seeing it: they win where they differ from the customer's), 'Their messages' and 'Their email to info@' (newest first: a newer message wins over an older one), and 'Your 3D design request'. Other sizes may list more than one space (two alcoves): design the one the sizes are for, and say in seen if they want the others too.
 - Give exactly the number of options asked. If styles are named, one option per style in that order; else make them genuinely different (open or closed, budget, look). Mark one as your pick and say why.
 - style: flat (MDF flat doors) or shaker. handles: bar, knob, edge (edge pulls) or push (push to open).
 - Words are for a UK customer: plain English, short, no dashes, no prices, no timescales or guarantees. Never say Raf paints: the work is ready for their decorator.`;
@@ -140,7 +144,7 @@ function briefText(b: Brief) {
     .join('\n\n');
 }
 
-/* ---------- photos from the customer's email ---------- */
+/* ---------- photos from the customer's email and the job ---------- */
 
 async function photoOf(mail: string, att: string): Promise<string | null> {
   try {
@@ -150,6 +154,23 @@ async function photoOf(mail: string, att: string): Promise<string | null> {
   } catch {
     return null;
   }
+}
+async function jobPhotoOf(uuid: string): Promise<string | null> {
+  try {
+    const f = await attachmentFile(uuid, 'full');
+    if (!f.type.startsWith('image/')) return null;
+    return Buffer.from(await jpegOf(f.bytes, PHOTO_EDGE, 80)).toString('base64'); // iPhone photos (HEIC) too
+  } catch {
+    return null;
+  }
+}
+/* Up to 4: the email's first, then the job's (the phone picks them; cleanBrief keeps 4 at most). */
+async function photosFor(b: Brief): Promise<{ data: string; from: string }[]> {
+  const mail = b.mail && outlookSetUp() ? (b.photos ?? []).slice(0, MAX_PHOTOS).map((a) => ({ get: () => photoOf(b.mail as string, a), from: 'their email' })) : [];
+  const job = b.sm8 && sm8SetUp() ? (b.jobPhotos ?? []).map((u) => ({ get: () => jobPhotoOf(u), from: 'the job' })) : [];
+  const want = [...mail, ...job].slice(0, MAX_PHOTOS);
+  const got = await Promise.all(want.map((w) => w.get()));
+  return want.map((w, i) => ({ data: got[i] ?? '', from: w.from })).filter((x) => x.data);
 }
 
 /* ---------- asking Claude ---------- */
@@ -175,12 +196,12 @@ async function ask(model: string, content: Content[]) {
 export async function drawConcept(data: ConceptData, note = '', current?: Plan): Promise<ConceptData> {
   const started = Date.now();
   const b = data.brief;
-  if (!b.want.trim() && !b.width && !(b.photos ?? []).length) throw new ConceptError('no-text');
-  const photos = b.mail && outlookSetUp() ? (await Promise.all((b.photos ?? []).slice(0, MAX_PHOTOS).map((a) => photoOf(b.mail as string, a)))).filter((x): x is string => Boolean(x)) : [];
+  if (!b.want.trim() && !b.width && !photoCount(b)) throw new ConceptError('no-text');
+  const photos = await photosFor(b);
   const content: Content[] = [{ type: 'text', text: briefText(b) }];
   photos.forEach((p, i) => {
-    content.push({ type: 'text', text: `Photo ${i + 1} from their email:` });
-    content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: p } });
+    content.push({ type: 'text', text: `Photo ${i + 1} from ${p.from}:` });
+    content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: p.data } });
   });
   if (current && note.trim()) {
     content.push({ type: 'text', text: `The design as it is now (JSON):\n${JSON.stringify(current)}` });
