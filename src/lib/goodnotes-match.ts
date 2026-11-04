@@ -1,11 +1,11 @@
 /* Goodnotes notebooks on a job (26 Oct 2026, Raf: 'is there a way to connect goodnotes with jobkit so my notes go
    straight to client card', then 'go'): the sums shared by the server (src/lib/goodnotes.ts) and the Job Kit
-   (src/app/job-kit/goodnotes.tsx). No imports. Goodnotes' auto-backup puts each notebook in the mailbox's OneDrive as a
+   (src/app/job-kit/goodnotes.tsx). No imports. Goodnotes' auto-backup puts each notebook in Raf's Dropbox as a
    PDF, in folders like Goodnotes' own; a notebook whose name starts with the ServiceM8 job number ('1234 Smith kitchen',
    '#1234 - Smith', 'J1234 Smith') belongs to that job, and any other one can be linked to a job by hand. */
 
 export type Notebook = {
-  id: string; // OneDrive's item id
+  id: string; // Dropbox's file id ('id:...')
   name: string; // without .pdf
   path: string; // folders under the backup folder and the name: 'Clients/1234 Smith kitchen'
   size: number; // bytes

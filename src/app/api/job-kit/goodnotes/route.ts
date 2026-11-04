@@ -1,11 +1,15 @@
-import { guard } from '@/lib/job-kit-server';
+import { pinGuard } from '@/lib/job-kit-server';
 import { GnError, notebookFile, notebookLink, notebookPages, notebooks, notebookThumb } from '@/lib/goodnotes';
+import { disconnectDropbox, dropboxAccount, DropboxError, dropboxLoginUrl } from '@/lib/dropbox';
+import { connectOrigin } from '@/lib/meta-origin';
 import { attachName, cleanPages, pagesSlug } from '@/lib/goodnotes-match';
 import { attachFile, sm8SetUp, Sm8Error, touchJob } from '@/lib/servicem8';
 import { stableUuid } from '@/lib/brief-token';
 
 /* Goodnotes notebooks on the Job Kit's job cards (src/lib/goodnotes.ts), behind the PIN:
-   { action: 'list', fresh? }     every notebook PDF in the OneDrive backup folder: { notebooks, at }
+   { action: 'list', fresh? }     every notebook PDF in the Clients folder of Goodnotes' Dropbox backup: { notebooks, at, account }
+   { action: 'connect', again? }  Dropbox's page to allow the Job Kit to read it: { url } (back to dropbox/callback)
+   { action: 'disconnect' }       forget the Dropbox connection
    { action: 'thumb', id }        a small picture of the first page (image bytes)
    { action: 'open', id }         a short-lived link the phone fetches the PDF from: { url, name, size, at }
    { action: 'pdf', id }          the PDF through here instead (up to 4 MB), if the phone couldn't use that link
@@ -16,7 +20,7 @@ import { stableUuid } from '@/lib/brief-token';
                                   ('Goodnotes - <name> p14-15.pdf'); the same version twice is one attachment (its uuid
                                   comes from the notebook and when it last changed, or from what's on those pages):
                                   { uuid, at, same } */
-export const maxDuration = 60;
+export const maxDuration = 90; // a year notebook of a few hundred MB: download, then pick its pages out
 
 const noStore = { 'Cache-Control': 'no-store' };
 const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
@@ -24,12 +28,13 @@ const text = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slic
 
 function fail(e: unknown) {
   if (e instanceof GnError) return Response.json({ error: e.code, detail: e.detail.slice(0, 200) }, { status: e.status, headers: noStore });
+  if (e instanceof DropboxError) return Response.json({ error: e.code === 'dbx-not-set-up' ? 'gn-not-set-up' : e.code === 'dbx-store' ? 'gn-store' : 'gn-error', detail: e.detail.slice(0, 200) }, { status: e.status, headers: noStore });
   if (e instanceof Sm8Error) return Response.json({ error: e.code, detail: (e.detail ?? '').slice(0, 200) }, { status: e.status, headers: noStore });
   return Response.json({ error: 'gn-error' }, { status: 502, headers: noStore });
 }
 
 export async function POST(req: Request) {
-  const stop = await guard(req);
+  const stop = await pinGuard(req); // the PIN only: reading Dropbox doesn't need the inbox's settings
   if (stop) return stop;
   let body: Record<string, unknown>;
   try {
@@ -41,7 +46,14 @@ export async function POST(req: Request) {
   try {
     if (body.action === 'list') {
       const list = await notebooks(body.fresh === true);
-      return Response.json({ notebooks: list, at: Date.now() }, { headers: noStore });
+      return Response.json({ notebooks: list, at: Date.now(), account: dropboxAccount() }, { headers: noStore });
+    }
+    if (body.action === 'connect') {
+      return Response.json({ url: dropboxLoginUrl(connectOrigin(req), body.again === true) }, { headers: noStore });
+    }
+    if (body.action === 'disconnect') {
+      await disconnectDropbox();
+      return Response.json({ ok: true }, { headers: noStore });
     }
     if (body.action === 'thumb') {
       const t = await notebookThumb(id);
@@ -51,7 +63,7 @@ export async function POST(req: Request) {
       return Response.json(await notebookLink(id), { headers: noStore });
     }
     if (body.action === 'pdf') {
-      // the PDF through here, for a phone that can't fetch OneDrive's link itself (a Vercel answer stops at 4.5 MB)
+      // the PDF through here, for a phone that can't fetch Dropbox's link itself (a Vercel answer stops at 4.5 MB)
       const f = await notebookFile(id, 4 * 1048576);
       return new Response(f.blob, { headers: { 'content-type': 'application/pdf', 'Cache-Control': 'private, no-store' } });
     }
@@ -59,7 +71,7 @@ export async function POST(req: Request) {
     if (body.action === 'pages') {
       if (!pages.length) return Response.json({ error: 'bad' }, { status: 400, headers: noStore });
       const f = await notebookPages(id, pages);
-      if (f.blob.size > 4 * 1048576) throw new GnError('gn-too-big', 413, `${f.blob.size}`);
+      if (f.blob.size > 4 * 1048576) throw new GnError('gn-too-big', 413, `${f.blob.size}|${4 * 1048576}`);
       return new Response(f.blob, { headers: { 'content-type': 'application/pdf', 'Cache-Control': 'private, no-store', 'x-gn-count': String(f.count), 'x-gn-at': f.at } });
     }
     if (body.action === 'attach') {

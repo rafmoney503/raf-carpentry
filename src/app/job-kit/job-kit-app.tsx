@@ -98,6 +98,7 @@ import { startChores } from './chores-store';
 import { CworkshopView } from './cworkshop';
 import { askQuote, checkedQuotes, fetchQuotes, flushQuoteEdits, isWorking, keepRedo, ownNote, pricesOf, putInEmailBox, QUOTES_FRESH, QuoteJobBox, QuotePrices, QuotesList, quotesLine, quoteTodayLines, QuoteView, readyCount, rowOf, rulesOf, rulesWaiting, savedQuotes, savedRedo, toRead, workingHere, changeHere, type Quotes } from './quotes';
 import type { QuoteEdits } from '@/lib/quote-sums';
+import { dropboxBack } from './goodnotes';
 import './job-kit.css';
 
 type Tab = SectionId | 'notes' | 'send';
@@ -597,8 +598,11 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
       );
     }
     checkSocial(Boolean(fromLogin));
+    // Back from connecting Dropbox (a job's Goodnotes box): the same screen as before, with how it went in that box.
+    const fromDropbox = new URLSearchParams(window.location.search).get('dropbox');
+    if (fromDropbox) dropboxBack(fromDropbox);
     setScreenState(first);
-    history.replaceState({ ...history.state, jk: first }, '', fromLogin ? window.location.pathname : undefined);
+    history.replaceState({ ...history.state, jk: first }, '', fromLogin || fromDropbox ? window.location.pathname : undefined);
     /* Opening the app starts at the top (18 Oct 2026, Raf: 'when I open jobkit ... first thing it does goes to search
        bar in customers, I'd like it to be at the top of the app'): the phone mustn't put back an old scroll position,
        and a search box that had the keyboard when the app went into the background is let go, so coming back doesn't

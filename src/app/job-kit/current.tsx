@@ -45,7 +45,7 @@ export type Marks = Record<
     progress?: number;
     progressAt?: number;
     visitsDone?: string[];
-    gn?: string[]; // Goodnotes notebooks linked to the job by hand (their paths in OneDrive), goodnotes.tsx
+    gn?: string[]; // Goodnotes notebooks linked to the job by hand (their paths from the Clients folder of the Dropbox backup), goodnotes.tsx
     gnSent?: Record<string, string>; // notebook path (or 'path#p14-15' for pages) -> the version (last changed) put on the ServiceM8 job
     gnPages?: Record<string, number[]>; // pages of a notebook on this job: notebook path -> page numbers (4 Nov 2026, a job a page)
   }
@@ -86,7 +86,11 @@ const write = (key: string, v: unknown) => {
   }
 };
 
-export const savedSm8 = (): Sm8 => read<Sm8>(LIST_KEY, { jobs: [], at: 0 });
+export const savedSm8 = (): Sm8 => {
+  const s = read<Sm8>(LIST_KEY, { jobs: [], at: 0 });
+  // a list kept without its jobs (an answer cut off half way, before the fix of 4 Nov 2026) would stop the app opening
+  return s && Array.isArray(s.jobs) ? s : { jobs: [], at: 0 };
+};
 export const readMarks = (): Marks => read<Marks>(MARKS_KEY, {});
 export const saveMarks = (m: Marks) => write(MARKS_KEY, m);
 
@@ -94,6 +98,7 @@ export const saveMarks = (m: Marks) => write(MARKS_KEY, m);
 export async function fetchSm8(pin: string, before: Sm8): Promise<Sm8> {
   const r = await post<{ jobs: CurrentJob[]; at: number; bookings: Booking[] | null; staff: Staff[]; replies?: Record<string, string> | null }>(pin, { action: 'list' });
   if (!r.ok) return { ...before, error: r.error, detail: r.detail };
+  if (!Array.isArray(r.data.jobs)) return { ...before, error: 'offline' };
   const next: Sm8 = { jobs: r.data.jobs, at: r.data.at, bookings: r.data.bookings ?? null, staff: r.data.staff ?? [], replies: r.data.replies ?? null };
   write(LIST_KEY, next);
   return next;

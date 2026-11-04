@@ -7,8 +7,14 @@ export async function post<T>(pin: string, body: Record<string, unknown>, path =
   if (!pin) return { ok: false, error: 'no-pin' };
   try {
     const res = await fetch(path, { method: 'POST', headers: { 'x-job-kit-pin': pin, 'content-type': 'application/json' }, body: JSON.stringify(body), cache: 'no-store' });
-    const data = (await res.json().catch(() => ({}))) as T & { error?: string; detail?: string };
-    if (!res.ok) return { ok: false, error: data.error || 'sm8-error', detail: data.detail };
+    let data: (T & { error?: string; detail?: string }) | null = null;
+    try {
+      data = (await res.json()) as T & { error?: string; detail?: string };
+    } catch {
+      /* an answer cut off half way (signal lost, the app closed or moved on): not an answer */
+    }
+    if (!res.ok) return { ok: false, error: data?.error || 'sm8-error', detail: data?.detail };
+    if (!data || typeof data !== 'object') return { ok: false, error: 'offline' };
     return { ok: true, data };
   } catch {
     return { ok: false, error: 'offline' };

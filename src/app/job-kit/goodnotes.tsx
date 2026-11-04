@@ -10,7 +10,8 @@ import { SecIcon } from './job-menu';
 import { label } from './parts';
 
 /* Goodnotes on the job card (26 Oct 2026, Raf: 'is there a way to connect goodnotes with jobkit so my notes go straight
-   to client card', then 'go'). Goodnotes' Auto Backup puts each notebook in info@'s OneDrive as a PDF; the job card
+   to client card', then 'go'). Goodnotes' Auto Backup puts each notebook in Raf's Dropbox as a PDF (OneDrive until
+   4 Nov 2026, when info@'s Microsoft plan turned out to have none; connected once with Connect Dropbox); the job card
    shows the ones for this job (named with its number first, or linked here by hand) with the first page, opens the
    pages here (pdf.js, loaded only then), and puts the PDF on the ServiceM8 job with one tap. Server side:
    src/lib/goodnotes.ts and /api/job-kit/goodnotes; the matching: src/lib/goodnotes-match.ts.
@@ -24,8 +25,8 @@ const KEY = 'raf_jobkit_goodnotes';
 const THUMBS = 'raf-jobkit-thumbs-v1';
 const FRESH = 90_000;
 
-type Kept = { at: number; notebooks: Notebook[]; error?: string; detail?: string };
-type State = Kept & { busy: boolean };
+type Kept = { at: number; notebooks: Notebook[]; error?: string; detail?: string; account?: string };
+type State = Kept & { busy: boolean; note?: string };
 
 /* ---------- the list of notebooks, shared by every job card ---------- */
 
@@ -46,7 +47,7 @@ function set(s: Partial<State>) {
   state = { ...state, ...s };
   if (!s.busy) {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ at: state.at, notebooks: state.notebooks, error: state.error, detail: state.detail }));
+      localStorage.setItem(KEY, JSON.stringify({ at: state.at, notebooks: state.notebooks, error: state.error, detail: state.detail, account: state.account }));
     } catch {
       /* kept for this visit */
     }
@@ -71,33 +72,64 @@ async function check(fresh = false) {
   if (state.busy) return;
   if (!fresh && state.at && Date.now() - state.at < FRESH && !state.error) return;
   set({ busy: true });
-  const r = await post<{ notebooks: Notebook[]; at: number }>(readPin(), { action: 'list', fresh }, ROUTE);
-  if (r.ok) set({ busy: false, at: r.data.at, notebooks: r.data.notebooks, error: undefined, detail: undefined });
-  else set({ busy: false, error: r.error, detail: r.detail });
+  const r = await post<{ notebooks: Notebook[]; at: number; account?: string }>(readPin(), { action: 'list', fresh }, ROUTE);
+  if (r.ok) set({ busy: false, at: r.data.at, notebooks: r.data.notebooks, error: undefined, detail: undefined, account: r.data.account || state.account });
+  else set({ busy: false, error: r.error, detail: r.detail, ...(['gn-not-connected', 'gn-expired'].includes(r.error) ? { notebooks: [], at: 0 } : {}) });
+}
+
+/* Back from Dropbox's 'allow' page (job-kit-app.tsx reads ?dropbox= and takes it off the address): a line to show in
+   the Goodnotes box, and the notebooks checked again. */
+export function dropboxBack(result: string) {
+  load();
+  const note =
+    result === 'ok'
+      ? `Dropbox connected: your Goodnotes backup shows here now.${readPin() ? '' : ' If this opened in a browser window, close it and go back to the Job Kit app: it’s connected there too.'}`
+      : result === 'cancelled'
+        ? 'Dropbox wasn’t connected (cancelled). Tap Connect Dropbox to try again.'
+        : result === 'expired'
+          ? 'That took too long or Dropbox turned it down. Tap Connect Dropbox again.'
+          : gnProblem(result);
+  set({ note });
+  void check(true);
+}
+
+async function connectDropbox(again: boolean): Promise<string> {
+  const r = await post<{ url: string }>(readPin(), { action: 'connect', again }, ROUTE);
+  if (!r.ok) return gnProblem(r.error, r.detail);
+  window.location.assign(r.data.url);
+  return '';
 }
 
 function gnProblem(error?: string, detail?: string): string {
   switch (error) {
     case undefined:
       return '';
-    case 'gn-consent':
-      return 'The Job Kit can’t read OneDrive yet. In Entra: Raf Job Kit, API permissions, Add a permission, Microsoft Graph, Application permissions, Files.Read.All, then Grant admin consent.';
-    case 'gn-no-drive':
-      return 'info@rafcarpentry.com has no OneDrive yet. Open onedrive.com signed in as info@ once to set it up, or check the Microsoft 365 plan includes OneDrive.';
+    case 'gn-not-connected':
+      return 'Connect your Dropbox once, so the Job Kit can read Goodnotes’ backup of your notebooks. Easiest on the computer: the phone uses the same connection.';
+    case 'gn-expired':
+      return 'Dropbox wants you to connect again (the connection was removed or ran out).';
+    case 'gn-scope':
+      return 'The Dropbox app isn’t allowed to read files yet. In dropbox.com/developers/apps: Raf Job Kit, Permissions, tick files.metadata.read and files.content.read, Submit, then Connect Dropbox again.';
+    case 'gn-store':
+      return 'The Job Kit couldn’t reach its own store to read the Dropbox connection. Try again in a minute.';
     case 'gn-no-folder':
-      return 'No Goodnotes folder in OneDrive yet. On the iPad: Goodnotes, Settings, Cloud & Backup, Auto Backup, OneDrive (signed in as info@), format PDF, and Increase Auto Backup frequency.';
+      return 'No Goodnotes backup in your Dropbox yet. On the iPad: Goodnotes, Settings, Cloud & Backup, Auto Backup, Storage Provider Dropbox, format PDF. The first backup can take a while. (If it is there, check the Dropbox app has Full Dropbox access, not App folder.)';
     case 'gn-no-work':
-      return 'Goodnotes is backing up, but there’s no Clients folder yet. In Goodnotes make a folder called Clients and move your work notebooks into it: only those show here.';
-    case 'gn-secret':
-      return problemText('outlook-secret', detail);
+      return 'Goodnotes is backing up to Dropbox, but there’s no Clients folder in it yet. In Goodnotes make a folder called Clients and move your work notebooks into it: only those show here.';
     case 'gn-not-set-up':
-      return problemText('outlook-not-set-up', detail);
+      return `Dropbox isn’t set up yet: ${detail || 'DROPBOX_APP_KEY and DROPBOX_APP_SECRET'} missing in Vercel.`;
     case 'gn-gone':
-      return 'That notebook isn’t in OneDrive any more (renamed, moved or deleted in Goodnotes). Refresh.';
-    case 'gn-too-big':
-      return 'Over 40 MB, too big to send from here. Add it to the job in ServiceM8 itself.';
+      return 'That notebook isn’t in Dropbox any more (renamed, moved or deleted in Goodnotes). Refresh.';
+    case 'gn-too-big': {
+      const [size, max] = (detail ?? '').split('|').map(Number);
+      const mb = (n: number) => `${Math.round(n / 1048576)} MB`;
+      if (!size || !max) return 'Too big to send from here. Add it to the job in ServiceM8 itself.';
+      return max > 100 * 1048576
+        ? `This notebook is ${mb(size)}, more than the ${mb(max)} the Job Kit can pick pages out of. Start a new notebook in Goodnotes for the rest of the year, and link the pages from there.`
+        : `This notebook is ${mb(size)}, more than the ${mb(max)} the Job Kit can send. Add it to the job in ServiceM8 itself.`;
+    }
     case 'gn-too-big-here':
-      return 'This notebook is over 4 MB and OneDrive’s link didn’t open here. Open it in Goodnotes or OneDrive.';
+      return 'This notebook is over 4 MB and Dropbox’s link didn’t open here. Open it in Goodnotes or Dropbox.';
     case 'gn-pages-gone': {
       const [count, missing] = (detail ?? '').split('|');
       const ps = cleanPages((missing ?? '').split(','));
@@ -105,10 +137,14 @@ function gnProblem(error?: string, detail?: string): string {
     }
     case 'gn-bad-pdf':
       return 'That PDF couldn’t be read to pick its pages out. Open it in Goodnotes.';
+    case 'gn-bad-pdf-here':
+      return 'This PDF couldn’t be opened here.';
+    case 'closed':
+      return '';
     case 'gn-busy':
-      return 'Microsoft didn’t answer. Try again in a minute.';
+      return 'Dropbox didn’t answer. Try again in a minute.';
     case 'gn-error':
-      return `Microsoft sent back an error${detail ? `: ${detail}` : '.'}`;
+      return `Dropbox sent back an error${detail ? `: ${detail}` : '.'}`;
     case 'offline':
       return 'No signal: showing what was here last.';
     default:
@@ -195,16 +231,18 @@ function Cover({ nb, onOpen }: { nb: Notebook; onOpen: () => void }) {
 /* ---------- the pages, drawn here with pdf.js ---------- */
 
 type PdfDoc = { numPages: number; getPage: (n: number) => Promise<PdfPage> };
-type PdfTask = { promise: Promise<PdfDoc>; destroy: () => Promise<void> }; // pdf.js 6: destroy is on the loading task
+type PdfTask = { promise: Promise<PdfDoc>; destroy: () => Promise<void>; onProgress?: (p: { loaded: number; total: number }) => void }; // pdf.js 6: destroy is on the loading task
+type PdfSource = { data: ArrayBuffer } | { url: string; disableAutoFetch: boolean; disableStream: boolean; rangeChunkSize: number };
+type PdfLib = { getDocument: (o: PdfSource) => PdfTask };
 type PdfPage = { getViewport: (o: { scale: number }) => { width: number; height: number }; render: (o: { canvas: HTMLCanvasElement; viewport: unknown }) => { promise: Promise<void> } };
 
-let pdfjs: Promise<{ getDocument: (o: { data: ArrayBuffer }) => PdfTask }> | null = null;
+let pdfjs: Promise<PdfLib> | null = null;
 function loadPdfjs() {
   if (!pdfjs) {
     // the legacy build: the modern one needs JavaScript newer than an iPhone's Safari has (Map.getOrInsertComputed)
     pdfjs = import('pdfjs-dist/legacy/build/pdf.mjs').then((m) => {
       m.GlobalWorkerOptions.workerPort = new Worker(new URL('pdfjs-dist/legacy/build/pdf.worker.min.mjs', import.meta.url), { type: 'module' });
-      return m as unknown as { getDocument: (o: { data: ArrayBuffer }) => PdfTask };
+      return m as unknown as PdfLib;
     });
     pdfjs.catch(() => {
       pdfjs = null;
@@ -219,24 +257,98 @@ let closing: Promise<unknown> = Promise.resolve();
 const closeTask = (t: PdfTask | null) => {
   if (t) closing = Promise.all([closing, t.destroy().catch(() => {})]);
 };
-async function openTask(lib: { getDocument: (o: { data: ArrayBuffer }) => PdfTask }, data: ArrayBuffer): Promise<PdfTask> {
+async function openTask(lib: PdfLib, src: ArrayBuffer | string): Promise<PdfTask> {
   await closing;
-  return lib.getDocument({ data });
+  // a link: pdf.js asks Dropbox for just the parts of the file it needs (Range), so a year notebook of a few hundred MB
+  // shows its pages without the phone downloading all of it
+  return lib.getDocument(typeof src === 'string' ? { url: src, disableAutoFetch: true, disableStream: true, rangeChunkSize: 512 * 1024 } : { data: src });
 }
 
-const pdfBytes = new Map<string, ArrayBuffer>(); // this visit's notebooks, by id and version
+/* A notebook opened in pdf.js: straight from Dropbox's link, fetching only what's drawn; if that doesn't work here,
+   the job's pages picked out on the server (when `pick` is given), else the whole file (from Dropbox, else through the
+   website up to 4 MB). `progress` hears about a whole download. `picked`: the PDF is just those pages, 1..n. */
+type Opened = { task: PdfTask; doc: PdfDoc; picked?: boolean } | { error: string; detail?: string };
+async function openNotebook(nb: Notebook, o: { progress?: (loaded: number, total: number) => void; gone?: () => boolean; pick?: number[] } = {}): Promise<Opened> {
+  const lib = await loadPdfjs();
+  const r = await post<{ url: string; size: number }>(readPin(), { action: 'open', id: nb.id }, ROUTE);
+  if (!r.ok && r.error !== 'offline') return { error: r.error, detail: r.detail };
+  const open = async (src: ArrayBuffer | string, picked = false): Promise<Opened | null> => {
+    let task: PdfTask | null = null;
+    try {
+      task = await openTask(lib, src);
+      // pdf.js downloading it all itself (a link that can't be read in parts): how far it's got
+      if (typeof src === 'string' && o.progress) task.onProgress = ({ loaded, total }) => total && o.progress?.(loaded, total);
+      const doc = await task.promise;
+      return { task, doc, picked };
+    } catch {
+      closeTask(task);
+      return null;
+    }
+  };
+  if (r.ok && !o.gone?.()) {
+    const got = await open(r.data.url); // no Range or no CORS from here: on to the next way
+    if (got) return got;
+  }
+  if (o.gone?.()) return { error: 'closed' };
+  if (o.pick?.length) {
+    const bytes = await fetchPages(nb, o.pick);
+    if (bytes instanceof ArrayBuffer) return (await open(bytes, true)) ?? { error: 'gn-bad-pdf-here' };
+    if (bytes && bytes.error !== 'offline') return bytes;
+  }
+  if (o.gone?.()) return { error: 'closed' };
+  const bytes = await fetchPdf(nb, o.progress, r.ok ? r.data.url : undefined);
+  if (!(bytes instanceof ArrayBuffer)) return bytes;
+  return (await open(bytes)) ?? { error: 'gn-bad-pdf-here' };
+}
 
-async function fetchPdf(nb: Notebook): Promise<ArrayBuffer | { error: string; detail?: string }> {
+const mbWords = (n: number) => (n >= 10 * 1048576 ? `${Math.round(n / 1048576)}` : (n / 1048576).toFixed(1));
+// only once it's clearly a big download (opening in parts fetches a little first, not worth a count)
+const progressWords = (p: [number, number] | null) => (p && p[1] && p[0] >= 2 * 1048576 ? ` ${mbWords(p[0])} of ${mbWords(p[1])} MB` : '');
+
+const pdfBytes = new Map<string, ArrayBuffer>(); // this visit's whole notebooks, by id and version
+
+/* The whole notebook, counting as it comes so a big one shows how far it's got. */
+async function readAll(res: Response, progress?: (loaded: number, total: number) => void): Promise<ArrayBuffer> {
+  const total = Number(res.headers.get('content-length') || 0);
+  if (!progress || !res.body) return res.arrayBuffer();
+  const reader = res.body.getReader();
+  const parts: Uint8Array[] = [];
+  let at = 0;
+  let last = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    parts.push(value);
+    at += value.length;
+    if (total && at - last > 1048576) {
+      last = at;
+      progress(at, total);
+    }
+  }
+  const out = new Uint8Array(at);
+  let k = 0;
+  for (const p of parts.splice(0)) {
+    out.set(p, k);
+    k += p.length;
+  }
+  return out.buffer;
+}
+
+async function fetchPdf(nb: Notebook, progress?: (loaded: number, total: number) => void, link?: string): Promise<ArrayBuffer | { error: string; detail?: string }> {
   const key = `${nb.id}|${nb.at}`;
   const had = pdfBytes.get(key);
   if (had) return had.slice(0);
-  const r = await post<{ url: string; size: number }>(readPin(), { action: 'open', id: nb.id }, ROUTE);
-  if (!r.ok) return { error: r.error, detail: r.detail };
+  let url = link;
+  if (!url) {
+    const r = await post<{ url: string; size: number }>(readPin(), { action: 'open', id: nb.id }, ROUTE);
+    if (!r.ok) return { error: r.error, detail: r.detail };
+    url = r.data.url;
+  }
   let buf: ArrayBuffer | null = null;
   try {
-    // straight from OneDrive (its pre-signed link), so a big notebook doesn't pass through the website
-    const res = await fetch(r.data.url, { cache: 'no-store' });
-    if (res.ok) buf = await res.arrayBuffer();
+    // straight from Dropbox (its 4-hour link), so a big notebook doesn't pass through the website
+    const res = await fetch(url, { cache: 'no-store' });
+    if (res.ok) buf = await readAll(res, progress);
     else if (res.status === 404) return { error: 'gn-gone' };
   } catch {
     if (navigator.onLine === false) return { error: 'offline' };
@@ -429,42 +541,25 @@ function Viewer({ nb, pages, onClose, onCover }: { nb: Notebook; pages?: number[
   const [width, setWidth] = useState(0);
   const area = useRef<HTMLDivElement>(null);
   const pagesKey = only ? only.join(',') : '';
+  const [progress, setProgress] = useState<[number, number] | null>(null);
   useEffect(() => {
     let gone = false;
     let task: PdfTask | null = null;
     const end = () => closeTask(task);
     void (async () => {
       const want = !whole && pagesKey ? pagesKey.split(',').map(Number) : null;
-      let bytes: ArrayBuffer | { error: string; detail?: string } | undefined;
-      let picked = false;
-      if (want) {
-        bytes = await fetchPages(nb, want);
-        picked = bytes instanceof ArrayBuffer;
-        if (bytes && !(bytes instanceof ArrayBuffer) && bytes.error !== 'offline') {
-          if (!gone) setError(gnProblem(bytes.error, bytes.detail));
-          return;
-        }
-      }
-      if (!picked) bytes = await fetchPdf(nb);
-      if (gone) return;
-      if (!(bytes instanceof ArrayBuffer)) return setError(gnProblem(bytes?.error, bytes?.detail));
-      try {
-        const lib = await loadPdfjs();
-        if (gone) return;
-        task = await openTask(lib, bytes);
-        if (gone) return end();
-        const opened = await task.promise;
-        if (gone) return end();
-        if (want && !picked) {
-          // the whole notebook came: show only the job's pages that are in it
-          const there = want.filter((p) => p <= opened.numPages);
-          setMissing(want.filter((p) => p > opened.numPages));
-          setShown({ doc: opened, labels: there, total: opened.numPages });
-        } else if (want) setShown({ doc: opened, labels: want });
-        else setShown({ doc: opened, labels: Array.from({ length: opened.numPages }, (_, i) => i + 1), total: opened.numPages });
-      } catch {
-        if (!gone) setError('This PDF couldn’t be opened here.');
-      }
+      const r = await openNotebook(nb, { progress: (l, t) => !gone && setProgress([l, t]), gone: () => gone, pick: want ?? undefined });
+      if ('task' in r) task = r.task;
+      if (gone) return end();
+      if (!('task' in r)) return setError(gnProblem(r.error, r.detail));
+      const opened = r.doc;
+      if (want && !r.picked) {
+        // the whole notebook: show only the job's pages that are in it
+        const there = want.filter((p) => p <= opened.numPages);
+        setMissing(want.filter((p) => p > opened.numPages));
+        setShown({ doc: opened, labels: there, total: opened.numPages });
+      } else if (want) setShown({ doc: opened, labels: want });
+      else setShown({ doc: opened, labels: Array.from({ length: opened.numPages }, (_, i) => i + 1), total: opened.numPages });
     })();
     return () => {
       gone = true;
@@ -509,6 +604,7 @@ function Viewer({ nb, pages, onClose, onCover }: { nb: Notebook; pages?: number[
                 setShown(null);
                 setError('');
                 setMissing([]);
+                setProgress(null);
                 setWhole((w) => !w);
               }}
               className="h-11 px-2 text-[13.5px] text-on-accent/85 underline"
@@ -528,7 +624,9 @@ function Viewer({ nb, pages, onClose, onCover }: { nb: Notebook; pages?: number[
             {error}
           </p>
         ) : !shown || !width ? (
-          <p className="mt-16 text-center font-mono text-[13px] text-on-accent/70">Opening…</p>
+          <p className="mt-16 text-center font-mono text-[13px] text-on-accent/70" data-gn-opening>
+            Opening…{progressWords(progress)}
+          </p>
         ) : (
           <div className="mx-auto grid gap-3 pt-1" style={{ width }}>
             {missing.length ? (
@@ -659,23 +757,19 @@ function PagePicker({
   const [width, setWidth] = useState(0);
   const area = useRef<HTMLDivElement>(null);
   const placed = useRef(false);
+  const [progress, setProgress] = useState<[number, number] | null>(null);
   useEffect(() => {
     let gone = false;
     let task: PdfTask | null = null;
     const end = () => closeTask(task);
     void (async () => {
-      const bytes = await fetchPdf(nb);
-      if (gone) return;
-      if (!(bytes instanceof ArrayBuffer)) return setError(gnProblem(bytes.error, bytes.detail));
+      const r = await openNotebook(nb, { progress: (l, t) => !gone && setProgress([l, t]), gone: () => gone });
+      if ('task' in r) task = r.task;
+      if (gone) return end();
+      if (!('task' in r)) return setError(gnProblem(r.error, r.detail));
       try {
-        const lib = await loadPdfjs();
-        if (gone) return;
-        task = await openTask(lib, bytes);
-        if (gone) return end();
-        const d = await task.promise;
-        if (gone) return end();
-        const v = (await d.getPage(1)).getViewport({ scale: 1 });
-        if (!gone) setDoc({ d, ratio: v.height / v.width });
+        const v = (await r.doc.getPage(1)).getViewport({ scale: 1 });
+        if (!gone) setDoc({ d: r.doc, ratio: v.height / v.width });
       } catch {
         if (!gone) setError('This PDF couldn’t be opened here.');
       }
@@ -787,7 +881,9 @@ function PagePicker({
         {error ? (
           <p className="mx-auto mt-16 max-w-sm px-3 text-center text-[15px] leading-relaxed">{error}</p>
         ) : !doc || !tw ? (
-          <p className="mt-16 text-center font-mono text-[13px] text-on-accent/70">Opening the notebook…</p>
+          <p className="mt-16 text-center font-mono text-[13px] text-on-accent/70" data-gn-opening>
+            Opening the notebook…{progressWords(progress)}
+          </p>
         ) : (
           <div className="mx-auto grid pt-1" style={{ width, gap, gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }} data-gn-grid>
             {Array.from({ length: total }, (_, i) => {
@@ -850,6 +946,8 @@ export function GoodnotesBox({ job, marks, onMark, jobLabel }: { job: CurrentJob
   const [allChoices, setAllChoices] = useState(false);
   const [picker, setPicker] = useState<Notebook | null>(null);
   const [confirmOff, setConfirmOff] = useState('');
+  const [connecting, setConnecting] = useState(false);
+  const [connectProblem, setConnectProblem] = useState('');
 
   useEffect(() => {
     void check();
@@ -938,7 +1036,37 @@ export function GoodnotesBox({ job, marks, onMark, jobLabel }: { job: CurrentJob
         </p>
       ) : null}
       {s.error === 'offline' && s.at ? <p className="mt-2 font-mono text-[12.5px] text-faint">{err}</p> : null}
-      {firstLoad ? <p className="mt-3 font-mono text-[13px] text-faint">Checking OneDrive…</p> : null}
+      {s.note ? (
+        <div className="mt-3 flex items-start gap-2 rounded-sm border border-accent bg-paper px-3 py-2.5" data-gn-back>
+          <p className="min-w-0 flex-1 text-[14.5px] leading-snug">{s.note}</p>
+          <button type="button" onClick={() => set({ note: undefined })} aria-label="Hide" className="-my-1 h-8 w-8 shrink-0 text-[18px] leading-none text-muted">
+            ×
+          </button>
+        </div>
+      ) : null}
+      {s.error === 'gn-not-connected' || s.error === 'gn-expired' || s.error === 'gn-scope' ? (
+        <div className="mt-3">
+          <button
+            type="button"
+            disabled={connecting}
+            onClick={async () => {
+              setConnecting(true);
+              setConnectProblem('');
+              const msg = await connectDropbox(s.error !== 'gn-not-connected');
+              if (msg) {
+                setConnecting(false);
+                setConnectProblem(msg);
+              }
+            }}
+            className="btn btn-primary btn-sm disabled:opacity-60"
+            data-gn-connect
+          >
+            {connecting ? 'Opening Dropbox…' : s.error === 'gn-not-connected' ? 'Connect Dropbox' : 'Connect Dropbox again'}
+          </button>
+          {connectProblem ? <p className="mt-1.5 text-[13.5px] leading-snug text-ink">{connectProblem}</p> : null}
+        </div>
+      ) : null}
+      {firstLoad ? <p className="mt-3 font-mono text-[13px] text-faint">Checking Dropbox…</p> : null}
 
       {pageRows.length ? (
         <ul className="mt-3 grid gap-3" data-gn-page-list>
@@ -1092,6 +1220,11 @@ export function GoodnotesBox({ job, marks, onMark, jobLabel }: { job: CurrentJob
 
       {pageRows.length ? <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint">Pages are linked by their number. If you add a page in the middle of a notebook, the pages after it move on one: check them with Open.</p> : null}
       {books.length ? <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint">On the ServiceM8 job it’s “{attachName(books[0])}”, in the Job diary.</p> : null}
+      {ready ? (
+        <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint" data-gn-from>
+          From Goodnotes’ backup in Dropbox{s.account ? ` (${s.account})` : ''}.
+        </p>
+      ) : null}
       {open ? (
         <Viewer
           nb={open.nb}
