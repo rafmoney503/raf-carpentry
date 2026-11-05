@@ -66,7 +66,7 @@ export default function MenuPanelView({ panel, onPick }: { panel: MenuPanel; onP
             <ul className="mt-2.5 grid gap-1.5">
               {panel.list.map((l) => (
                 <li key={l.href}>
-                  <Link href={l.href} onClick={onPick} className="text-[15px] text-ink hover:text-accent">
+                  <Link href={l.href} onClick={onPick} className="text-[15px] text-ink hover:text-accent" {...(l.href.startsWith('http') ? { target: '_blank', rel: 'noopener' } : {})}>
                     {l.label}
                   </Link>
                 </li>

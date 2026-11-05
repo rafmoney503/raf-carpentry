@@ -8,6 +8,7 @@ import { EXTENSION_HREF, EXTENSION_STILL_SQUARE, EXTENSION_STILL_WIDE } from './
 import { getServices, jobsFor } from './services';
 import { COST_JOBS, fromPrice } from './cost-calculator';
 import { COST_LINK } from './cost-link';
+import { BUILD_IT_IN_3D_URL } from './site';
 
 /* What each main menu item shows when the mouse rests on it (computer) or its + is tapped (phone menu):
    that page in a line, its sections as # tags that jump straight there, sometimes a short list (newest
@@ -158,6 +159,7 @@ export function getMenuPanels(): Record<string, MenuPanel> {
         { label: 'Spirit level on your phone', href: '/tools/spirit-level' },
         { label: 'Workshop tips', href: '/tips' },
         { label: 'Workshop Games, six free games', href: '/tools/games' },
+        { label: 'Build It in 3D, free 3D drawing lessons', href: BUILD_IT_IN_3D_URL },
       ],
       image: toolImage?.image ? { src: toolImage.image, alt: '', caption: toolImage.name ?? 'From my kit' } : undefined,
       feature: { href: PLANNER_HREF, src: PLANNER_IMAGE, square: PLANNER_IMAGE_SQUARE, kicker: 'Free planner', title: 'Plan your own wardrobe in 3D', line: 'Your sizes, units and doors. Then send it to me.' },
