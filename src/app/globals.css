@@ -6041,3 +6041,10 @@ h3 {
   font-weight: 600;
   letter-spacing: 0;
 }
+.sp-sum dt {
+  font-family: var(--f-body);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
