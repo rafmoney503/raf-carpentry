@@ -16,6 +16,7 @@ import { field, fieldSized, label } from './parts';
    (scripts/CWORKSHOP.md); his own prices are kept with his price list (row '_prices'), only the ones he changed, so a
    Cworkshop price that moves still reaches every quote unless he has typed his own. */
 
+const PAGE = 30; // decors shown at a time: there are a few hundred
 const day = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 const num = (s: string) => {
   const v = Number.parseFloat(s.replace(/[£,\s]/g, ''));
@@ -32,6 +33,7 @@ export function CworkshopView({ prices, savedAt, onSave }: { prices: Prices; sav
   const [fam, setFam] = useState('');
   const [saved, setSaved] = useState('');
   const [allChanges, setAllChanges] = useState(false);
+  const [limit, setLimit] = useState(PAGE);
 
   const svcValue = (k: PriceKey) => {
     const v = num(svc[k] ?? '');
@@ -52,7 +54,7 @@ export function CworkshopView({ prices, savedAt, onSave }: { prices: Prices; sav
   };
 
   const families = FAMILY_ORDER.filter((f) => BOARDS.some((b) => b.family === f));
-  const shown = useMemo(() => BOARDS.filter((b) => (!fam || b.family === fam) && (!q.trim() || matches([b.name, b.code, b.brand ?? '', b.family, b.describe].join(' '), q))), [q, fam]);
+  const shown = useMemo(() => BOARDS.filter((b) => (!fam || b.family === fam) && (!q.trim() || matches([b.name, b.code, b.brand ?? '', b.family, FAMILY_NAME[b.family] ?? '', b.describe].join(' '), q))), [q, fam]);
   const changes = [...CHANGES].reverse();
 
   return (
@@ -149,7 +151,10 @@ export function CworkshopView({ prices, savedAt, onSave }: { prices: Prices; sav
         <input
           type="search"
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setLimit(PAGE);
+          }}
           placeholder="Search: oak, grey, walnut, U702…"
           aria-label="Search the decors"
           className={`${field} mt-2 h-11 w-full`}
@@ -160,7 +165,10 @@ export function CworkshopView({ prices, savedAt, onSave }: { prices: Prices; sav
               key={f || 'all'}
               type="button"
               aria-pressed={fam === f}
-              onClick={() => setFam(f)}
+              onClick={() => {
+                setFam(f);
+                setLimit(PAGE);
+              }}
               className={`min-h-9 rounded-sm border px-2.5 font-mono text-[12.5px] ${fam === f ? 'border-ink bg-ink text-paper' : 'border-line-strong text-muted'}`}
             >
               {f ? FAMILY_NAME[f] : 'All'} {f ? BOARDS.filter((b) => b.family === f).length : BOARDS.length}
@@ -169,12 +177,17 @@ export function CworkshopView({ prices, savedAt, onSave }: { prices: Prices; sav
         </div>
         {!shown.length ? <p className="mt-3 font-mono text-[13.5px] text-faint">No decor matches. Try another word.</p> : null}
         <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {shown.map((b) => (
+          {shown.slice(0, limit).map((b) => (
             <li key={b.code}>
               <Decor b={b} value={boards[b.code] ?? ''} onChange={(v) => setBoards({ ...boards, [b.code]: v })} />
             </li>
           ))}
         </ul>
+        {shown.length > limit ? (
+          <button type="button" onClick={() => setLimit(limit + PAGE)} className="btn btn-ghost btn-sm mt-3" data-cw-more>
+            Show {Math.min(PAGE, shown.length - limit)} more ({shown.length - limit} left)
+          </button>
+        ) : null}
         <p className="mt-3 text-[13.5px] leading-relaxed text-muted">
           A decor that isn&rsquo;t here: tell Claude its name or code from{' '}
           <a href={CWORKSHOP_URL} target="_blank" rel="noreferrer" className="text-accent underline">

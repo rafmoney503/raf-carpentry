@@ -6,7 +6,9 @@ import { DEFAULT_PRICES, type Board, type PriceKey, type Prices } from './quote-
    check Cworkshop decor finishes find prices and in quotes laminated project finish based on one or two boards ...
    and also add edge banding prices, cutting and other extra services they add').
    Everything is in content/cworkshop.json, so the weekly check (scripts/CWORKSHOP.md) changes one data file and
-   nothing else. Boards: 18 mm (18.5 mm for Feelwood and some woodgrains), 2800 x 2070 sheets, the price before VAT
+   nothing else. Boards: every Egger and Kronospan chipboard decor Cworkshop lists (5 Nov 2026, Raf: 'How many decors
+   can you import from their website update prices'), 18 mm (18.5 mm for Feelwood and some woodgrains, 19 mm for
+   Egger's supermatt TM boards, which come in nothing else), 2800 x 2070 sheets, the price before VAT
    that Cworkshop's own pages showed on the board's 'checked' day. A board page without its script shows the 8 mm
    price first, so a price is only taken from the page for the right thickness or from a listing page (which shows
    the 18 mm one). Services: cutting is on their pages (a sheet costs £47.30 more on the cutting list); edging,
@@ -36,16 +38,19 @@ export const PRICE_BASE: Prices = { ...DEFAULT_PRICES, ...Object.fromEntries(SER
 /* The usual inside: white unless Raf picks otherwise. */
 export const INSIDE_DEFAULT = 'W1000 ST9';
 
-/* Families in the order the screens show them. */
-export const FAMILY_ORDER = ['white', 'plain', 'colour', 'stone', 'light oak', 'warm oak', 'grey oak', 'dark oak', 'walnut'];
+/* Families in the order the screens show them. The wood families are by tone, so an ash or an elm sits with the oaks
+   of its colour (the keys still say oak; only the names on screen changed). */
+export const FAMILY_ORDER = ['white', 'plain', 'colour', 'light oak', 'warm oak', 'grey oak', 'dark oak', 'walnut', 'stone', 'textile', 'metal'];
 export const FAMILY_NAME: Record<string, string> = {
   white: 'Whites',
-  plain: 'Plain colours',
+  plain: 'Greys, beiges and blacks',
   colour: 'Colours',
-  stone: 'Stone and marble',
-  'light oak': 'Light oak',
-  'warm oak': 'Warm oak',
-  'grey oak': 'Grey oak',
-  'dark oak': 'Dark oak',
+  'light oak': 'Light woods',
+  'warm oak': 'Warm woods',
+  'grey oak': 'Grey woods',
+  'dark oak': 'Dark woods',
   walnut: 'Walnut',
+  stone: 'Stone, concrete and marble',
+  textile: 'Linen and textile',
+  metal: 'Metal look',
 };

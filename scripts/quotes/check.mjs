@@ -52,15 +52,17 @@ for (const r of PRICE_ROWS) ok(!/[—–]/.test(r.label + r.from), `no dashes in
 
 /* the boards */
 ok(BOARDS.length >= 25, 'at least 25 boards');
+ok(new Set(BOARDS.map((b) => `${b.name}|${b.brand}`)).size === BOARDS.length, 'no two boards of one maker share a name');
 ok(new Set(BOARDS.map((b) => b.code)).size === BOARDS.length, 'board codes unique');
 ok(BOARDS.some((b) => b.code === INSIDE_DEFAULT), 'the inside board is in the list');
 ok(/^\d{4}-\d{2}-\d{2}$/.test(BOARDS_CHECKED), 'the list says when it was checked');
 for (const b of BOARDS) {
-  ok(b.exVat > 50 && b.exVat < 200, `${b.code} price looks like a sheet`);
-  ok(/^https:\/\/cworkshop\.co\.uk\/sheet-materials\/(egger|kronospan)\/[a-z0-9-]+-chipboard-2800-x-2070mm\/(18(\.5)?mm\/)?$/.test(b.url), `${b.code} links to its Cworkshop page`);
+  ok(b.exVat > 50 && b.exVat < 250, `${b.code} price looks like a sheet`);
+  ok(/^https:\/\/cworkshop\.co\.uk\/sheet-materials\/(egger|kronospan)\/[a-z0-9-]+-chipboard-2800-x-2070mm\/((18(\.5)?|19)mm\/)?$/.test(b.url), `${b.code} links to its Cworkshop page`);
   ok(['Egger', 'Kronospan'].includes(b.brand), `${b.code} has its maker`);
   ok(FAMILY_ORDER.includes(b.family), `${b.code} is in a family the screens show`);
-  ok(b.thick === 18 || b.thick === 18.5, `${b.code} is 18 or 18.5 mm`);
+  ok(b.thick === 18 || b.thick === 18.5 || b.thick === 19, `${b.code} is 18, 18.5 or 19 mm`);
+  ok(b.thick !== 19 || /19mm\/$/.test(b.url), `${b.code} links to its 19 mm page`);
   ok(b.thick !== 18.5 || /18\.5mm\/$/.test(b.url), `${b.code} links to its 18.5 mm page`);
   ok(/^\d{4}-\d{2}-\d{2}$/.test(b.checked ?? '') && b.checked <= BOARDS_CHECKED, `${b.code} says when its price was read`);
   ok(/^#[0-9a-f]{6}$/.test(b.hex), `${b.code} has a swatch colour`);

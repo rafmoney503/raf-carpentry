@@ -5,6 +5,7 @@ import type { CurrentJob } from '@/lib/servicem8';
 import type { QuoteData, QuoteRow } from '@/lib/quote-maker';
 import { BOARDS, BOARDS_CHECKED, FAMILY_NAME, FAMILY_ORDER, INSIDE_DEFAULT, PRICE_BASE } from '@/lib/cworkshop-boards';
 import { fillWall } from '@/lib/pax-brief';
+import { matches } from '@/lib/search';
 import {
   boardWork,
   fromPrice,
@@ -1257,9 +1258,61 @@ function BoardSwatch({ b, why, on, price, onPick }: { b: Board; why?: string; on
       <span aria-hidden className="h-8 w-8 shrink-0 rounded-sm border border-line-strong" style={{ background: b.hex }} />
       <span className="min-w-0">
         <span className="block text-[14px] font-semibold leading-tight">{b.name}</span>
-        <span className="block text-[12.5px] leading-snug text-muted">{why || `${money2(price)} a sheet`}</span>
+        <span className="block text-[12.5px] leading-snug text-muted">{why || `${b.brand ?? 'Egger'} ${b.code} · ${money2(price)} a sheet`}</span>
       </span>
     </button>
+  );
+}
+
+/* Every Cworkshop decor to pick from: a search, the families and a page at a time, as there are a few hundred. */
+function ColourFinder({ on, price, onPick }: { on: string; price: (b: Board) => number; onPick: (code: string) => void }) {
+  const PAGE = 24;
+  const [q, setQ] = useState('');
+  const [fam, setFam] = useState('');
+  const [limit, setLimit] = useState(PAGE);
+  const families = FAMILY_ORDER.filter((f) => BOARDS.some((b) => b.family === f));
+  const list = BOARDS.filter((b) => (!fam || b.family === fam) && (!q.trim() || matches([b.name, b.code, b.brand ?? '', FAMILY_NAME[b.family] ?? '', b.describe].join(' '), q)));
+  return (
+    <div className="mt-2" data-colour-finder>
+      <input
+        type="search"
+        value={q}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setLimit(PAGE);
+        }}
+        placeholder="Search: oak, sage, grey, U702…"
+        aria-label="Search the colours"
+        className={`${field} h-11 w-full`}
+      />
+      <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label="Families">
+        {['', ...families].map((f) => (
+          <button
+            key={f || 'all'}
+            type="button"
+            aria-pressed={fam === f}
+            onClick={() => {
+              setFam(f);
+              setLimit(PAGE);
+            }}
+            className={`min-h-9 rounded-sm border px-2.5 font-mono text-[12px] ${fam === f ? 'border-ink bg-ink text-paper' : 'border-line-strong text-muted'}`}
+          >
+            {f ? FAMILY_NAME[f] : 'All'} {f ? BOARDS.filter((b) => b.family === f).length : BOARDS.length}
+          </button>
+        ))}
+      </div>
+      {!list.length ? <p className="mt-2 font-mono text-[13px] text-faint">No colour matches. Try another word.</p> : null}
+      <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+        {list.slice(0, limit).map((b) => (
+          <BoardSwatch key={b.code} b={b} on={on === b.code} price={price(b)} onPick={() => onPick(b.code)} />
+        ))}
+      </div>
+      {list.length > limit ? (
+        <button type="button" onClick={() => setLimit(limit + PAGE)} className="mt-2 font-mono text-[12.5px] text-accent underline">
+          Show {Math.min(PAGE, list.length - limit)} more ({list.length - limit} left)
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -1317,23 +1370,7 @@ function BoardBits({ read: r, prices, edits, set, onCworkshop }: { read: QuoteRe
       <button type="button" onClick={() => setAll(!all)} aria-expanded={all} className="mt-2 font-mono text-[12.5px] text-accent underline">
         {all ? 'Fewer colours' : `All ${BOARDS.length} colours`}
       </button>
-      {all ? (
-        <div className="mt-2 grid grid-cols-1 gap-3">
-          {FAMILY_ORDER.map((f) => {
-            const list = BOARDS.filter((b) => b.family === f);
-            return list.length ? (
-              <div key={f}>
-                <p className="font-mono text-[11.5px] uppercase tracking-[0.06em] text-faint">{FAMILY_NAME[f]}</p>
-                <div className="mt-1.5 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                  {list.map((b) => (
-                    <BoardSwatch key={b.code} b={b} on={colour === b.code} price={price(b)} onPick={() => set({ colour: b.code })} />
-                  ))}
-                </div>
-              </div>
-            ) : null;
-          })}
-        </div>
-      ) : null}
+      {all ? <ColourFinder on={colour} price={price} onPick={(code) => set({ colour: code })} /> : null}
       {chosen ? (
         <p className="mt-2 text-[13px] text-muted">
           {chosen.brand ?? 'Egger'} {chosen.code} · {chosen.describe} · {money2(price(chosen))} a sheet
@@ -1353,7 +1390,7 @@ function BoardBits({ read: r, prices, edits, set, onCworkshop }: { read: QuoteRe
                 <optgroup key={f} label={FAMILY_NAME[f]}>
                   {list.map((b) => (
                     <option key={b.code} value={b.code}>
-                      {b.name} ({money2(price(b))})
+                      {b.name}, {b.code} ({money2(price(b))})
                     </option>
                   ))}
                 </optgroup>
