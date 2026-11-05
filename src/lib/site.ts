@@ -32,6 +32,9 @@ export const COMPANY = {
 };
 export const RAFAL_SOLUTIONS_URL = 'https://www.rafalsolutions.co.uk';
 export const CABINETOS_URL = 'https://www.cabinetos.co.uk';
+// Build It in 3D: my free 3D drawing lessons (bird box, planter, shelves, log store, raised bed, a wardrobe).
+// The tag shows these visits as coming from here in its own visit counts.
+export const BUILD_IT_IN_3D_URL = 'https://builditin3d.com/?utm_source=rafcarpentry';
 
 export const PHONE_DISPLAY = '07792 860221';
 export const PHONE_HREF = 'tel:07792860221';

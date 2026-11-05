@@ -272,7 +272,7 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
                       <ul className="mt-3 grid gap-1">
                         {p.list.map((x) => (
                           <li key={x.href}>
-                            <Link href={x.href} onClick={() => setOpen(false)} className="block py-1.5 text-[15px] text-muted">
+                            <Link href={x.href} onClick={() => setOpen(false)} className="block py-1.5 text-[15px] text-muted" {...(x.href.startsWith('http') ? { target: '_blank', rel: 'noopener' } : {})}>
                               {x.label}
                             </Link>
                           </li>

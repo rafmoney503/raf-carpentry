@@ -10,6 +10,7 @@ import PlannerTeaser from '@/components/PlannerTeaser';
 import { TradeNudge } from '@/components/AlsoByMe';
 import AppNudge from '@/components/AppNudge';
 import ExtensionTeaser from '@/components/ExtensionTeaser';
+import { BUILD_IT_IN_3D_URL } from '@/lib/site';
 
 type ToolEntry = {
   name: string;
@@ -55,7 +56,7 @@ export default function ToolsPage() {
       </PageHeader>
 
       <Container className="pb-8">
-        {/* Teasers for the wardrobe planner, the Workshop Tools app, my SketchUp extension, the free calculator, the workshop tips and Workshop Games */}
+        {/* Teasers for the wardrobe planner, the Workshop Tools app, my SketchUp extension, the free calculator, the workshop tips, Workshop Games and Build It in 3D */}
         <div className="mb-12 grid grid-cols-1 gap-4 md:mb-16 lg:grid-cols-2">
           <PlannerTeaser variant="feature" className="lg:col-span-2" />
           {/* the Workshop Tools app for phones (25 Oct 2026) */}
@@ -132,6 +133,35 @@ export default function ToolsPage() {
               <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
             </div>
           </Link>
+          {/* Build It in 3D, my free 3D drawing lessons on their own site (5 Nov 2026) */}
+          <a
+            href={BUILD_IT_IN_3D_URL}
+            target="_blank"
+            rel="noopener"
+            data-build-it-in-3d
+            className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6 lg:col-span-2"
+          >
+            <div>
+              <p className="font-mono text-[13px] text-accent">Free 3D lessons</p>
+              <h2 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Build It in 3D</h2>
+              <p className="mt-1 max-w-[62ch] text-[15px] text-muted">
+                Learn to draw in 3D in your browser, one real build at a time: a bird box, a planter, alcove shelves, a log store, a raised bed and a wardrobe. Then print the cut list and make it. Free, no sign-up.
+              </p>
+              <p className="mt-2 font-mono text-[13px] text-faint">builditin3d.com · opens in a new tab</p>
+            </div>
+            <div className="flex items-center gap-5">
+              {/* A board being pulled up in 3D, the first thing every lesson teaches */}
+              <svg viewBox="0 0 64 58" className="w-[64px] sm:w-[76px]" aria-hidden="true">
+                <path d="M25 6 L56.2 24 L38.9 34 L7.7 16 Z" className="fill-none stroke-accent" strokeWidth="1.2" strokeDasharray="3 2.5" />
+                <path d="M25 20 L25 6 M56.2 38 L56.2 24 M38.9 48 L38.9 34 M7.7 30 L7.7 16" className="stroke-accent/50" strokeWidth="1" strokeDasharray="2 2.5" />
+                <path d="M7.7 37 L38.9 55 L38.9 48 L7.7 30 Z" className="fill-raised stroke-ink" strokeWidth="1.4" strokeLinejoin="round" />
+                <path d="M56.2 45 L38.9 55 L38.9 48 L56.2 38 Z" className="fill-paper stroke-ink" strokeWidth="1.4" strokeLinejoin="round" />
+                <path d="M25 20 L56.2 38 L38.9 48 L7.7 30 Z" className="fill-mount stroke-ink" strokeWidth="1.4" strokeLinejoin="round" />
+                <path d="M31.9 33 L31.9 21.5 M28.6 25 L31.9 21 L35.2 25" className="fill-none stroke-accent" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">↗</span>
+            </div>
+          </a>
         </div>
         {d.categories.map((cat, ci) => (
           <section key={ci} id={toolsSectionId(cat.name)} className="grid grid-cols-1 gap-8 border-t border-line py-12 md:grid-cols-12 md:gap-6 md:py-16">
