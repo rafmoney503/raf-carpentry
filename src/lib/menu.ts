@@ -126,7 +126,7 @@ const page = (href: string) => PAGES.find((p) => p.href === href)!;
 export const MENU: MenuItem[] = [
   {
     href: '/#steps',
-    label: 'Five steps',
+    label: 'Products',
     kicker: 'One company, five steps',
     title: 'Learn, design, make, fit, run',
     line: 'One tool for each part of a job, from your first 3D click to a fitted, paid-for wardrobe. Three are free.',

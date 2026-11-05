@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Bricolage_Grotesque, Geist, Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import Header from '@/components/Header';
@@ -8,9 +8,8 @@ import StartSheet from '@/components/start/StartSheet';
 import MotionObserver from '@/components/MotionObserver';
 import { ADDRESS, COMPANY, COMPANY_NO, PHONE_DISPLAY, SITE_URL, CABINETOS_URL, RAFCARPENTRY_URL } from '@/lib/site';
 
-/* The same three families as rafcarpentry.com. next/font downloads them at build time and serves them from this
-   site, so visitors never load anything from Google. */
-const bricolage = Bricolage_Grotesque({ subsets: ['latin'], variable: '--font-bricolage', weight: ['500', '700'], display: 'swap' });
+/* Geist for everything, Geist Mono for the odd number. next/font downloads them at build time and serves them from
+   this site, so visitors never load anything from Google. */
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist', display: 'swap' });
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono', weight: ['400', '500'], display: 'swap' });
 
@@ -31,7 +30,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#fffaf1',
+  themeColor: '#ffffff',
 };
 
 const jsonLd = {
@@ -51,7 +50,7 @@ const jsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-GB" className={`${bricolage.variable} ${geist.variable} ${geistMono.variable}`} suppressHydrationWarning>
+    <html lang="en-GB" className={`${geist.variable} ${geistMono.variable}`} suppressHydrationWarning>
       <head>
         {/* Pieces that rise in as they reach the screen are hidden only while the page script runs; if it has not
             started after 5 seconds, everything is simply shown (MotionObserver sets __mo). */}

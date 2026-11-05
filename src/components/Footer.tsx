@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { ADDRESS, COMPANY, COMPANY_NO, EMAIL, PHONE_DISPLAY, PHONE_HREF, RAFCARPENTRY_URL, VAT_NO, whatsappUrl } from '@/lib/site';
 import { STEPS5 } from '@/lib/steps';
 
-/* The bottom of every page: the five steps in their colours, the systems pages, the company and how to reach Rafal. */
+/* The bottom of every page: the products with their colour marks, the systems pages, the company and how to reach
+   Rafal. */
 
 const BUILT = [
   { href: '/systems', label: 'Systems running today' },
@@ -15,22 +16,13 @@ const BUILT = [
 export default function Footer() {
   return (
     <footer className="foot">
-      <div className="foot-planks" aria-hidden="true">
-        {STEPS5.map((s) => (
-          <span key={s.id} className={`fp fp-${s.id}`} />
-        ))}
-      </div>
       <div className="wrap foot-grid">
         <div className="foot-col foot-about" style={{ gap: 8 }}>
-          <span className="foot-brand">rafal solutions</span>
+          <span className="foot-brand">Rafal Solutions</span>
           <span>Software for people who build things. Made in a working London workshop.</span>
-          <Link href="/start" className="btn btn-sm" style={{ marginTop: 12, alignSelf: 'flex-start' }}>
-            <span className="dot" aria-hidden="true" />
-            Start a project
-          </Link>
         </div>
-        <nav className="foot-col" aria-label="The five steps">
-          <span className="foot-head">The five steps</span>
+        <nav className="foot-col" aria-label="Products">
+          <span className="foot-head">Products</span>
           {STEPS5.map((s) =>
             s.external ? (
               <a key={s.id} href={s.href} target="_blank" rel="noopener" className={`foot-step fs-${s.id}`}>

@@ -6,8 +6,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { CONTACT_ITEM, MENU, tagHref, type MenuItem } from '@/lib/menu';
 import SearchSheet from './search/SearchSheet';
 import MenuSearch from './search/MenuSearch';
-import BounceCta from './BounceCta';
-import StepsMark from './StepsMark';
 
 /* The menu, the same way rafcarpentry.com works.
    Computer (mouse): resting on a menu item for a moment drops a panel under the header with what the page is and its
@@ -18,13 +16,17 @@ import StepsMark from './StepsMark';
 const OPEN_DELAY = 160;
 const CLOSE_DELAY = 260;
 
-/* The logo is three planks stacked as rising steps with the yellow ball on top. The ball climbs three times while the
-   stairs move down under it, rolls off the right end, drops beside the steps, rolls back along the bottom and hops up
-   one, two, three (StepsMark 'climb'). It does that twice, climbs three more times and comes to rest on the top step.
-   It starts again when a mouse comes back into the top bar, on each new page and when the phone menu opens.
-   People who ask their phone for less motion see it still. */
-const LOGO_REPLAY = 'logo-replay';
-const replayLogo = () => window.dispatchEvent(new Event(LOGO_REPLAY));
+/* The logo: three planks stacked as rising steps with the yellow ball on top, standing still. */
+function LogoMark() {
+  return (
+    <svg className="logo-static" viewBox="0 0 34 28" aria-hidden="true">
+      <rect x="0" y="21" width="18" height="5" rx="1.5" fill="var(--ink)" />
+      <rect x="7" y="14" width="18" height="5" rx="1.5" fill="var(--ink)" />
+      <rect x="14" y="7" width="18" height="5" rx="1.5" fill="var(--ink)" />
+      <circle cx="27" cy="3.2" r="3.2" fill="var(--hl)" />
+    </svg>
+  );
+}
 
 export default function Header() {
   const pathname = usePathname();
@@ -44,19 +46,15 @@ export default function Header() {
     setOpen(false);
   }, []);
 
-  // A new page closes everything, and the logo plays again (not on the first page: it starts by itself there).
-  const firstPage = useRef(true);
+  // A new page closes everything.
   useEffect(() => {
     closeAll();
     setExpanded(null);
-    if (firstPage.current) firstPage.current = false;
-    else replayLogo();
   }, [pathname, closeAll]);
 
-  // Opening the phone menu plays the logo again; closing it clears its search.
+  // Closing the phone menu clears its search.
   useEffect(() => {
-    if (open) replayLogo();
-    else setMenuQ('');
+    if (!open) setMenuQ('');
   }, [open]);
 
   useEffect(() => {
@@ -82,12 +80,12 @@ export default function Header() {
   const isHere = (item: MenuItem) => [item.href, ...(item.also ?? [])].some((href) => pathname === href || pathname.startsWith(`${href}/`));
 
   return (
-    <header className="site-head" onPointerEnter={(e) => e.pointerType === 'mouse' && replayLogo()}>
+    <header className="site-head">
       <div className="wrap">
         <div className="head-row">
           <Link href="/" className="logo" aria-label="Rafal Solutions home">
-            <StepsMark play="climb" rounds={2} replayEvent={LOGO_REPLAY} className="logo-mark" />
-            <span className="logo-name">rafal solutions</span>
+            <LogoMark />
+            <span className="logo-name">Rafal Solutions</span>
           </Link>
 
           <nav className="nav" aria-label="Main" onPointerLeave={hoverOut} onPointerEnter={keep}>
@@ -119,7 +117,9 @@ export default function Header() {
                 setOpen(false);
               }}
             />
-            <BounceCta onPointerEnter={() => setPanel(null)} />
+            <Link href="/start" className="btn btn-sm head-start" onPointerEnter={() => setPanel(null)}>
+              Start a project
+            </Link>
             <button type="button" className="menu-btn" aria-label={open ? 'Close the menu' : 'Menu'} aria-expanded={open} aria-controls="mobile-menu" onClick={() => setOpen((v) => !v)}>
               <span className="menu-word">{open ? 'Close' : 'Menu'}</span>
               <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
