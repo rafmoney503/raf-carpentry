@@ -82,14 +82,19 @@ export function CworkshopView({ prices, savedAt, onSave }: { prices: Prices; sav
                 <span className="min-w-0 flex-1">
                   <span className="block text-[15px] font-semibold leading-snug">{s.label}</span>
                   <span className="block text-[12.5px] leading-snug text-muted">
-                    {s.published ? (
+                    {s.source === 'basket' ? (
+                      <>
+                        From your basket{s.checked ? `, ${day(s.checked)}` : ''}: {s.list ? `${money2(s.list)} ${s.unit}` : ''}
+                        {s.discount ? `, less your ${s.discount}%` : ''} = <b className="font-semibold text-ink">{money2(s.price)}</b>.
+                      </>
+                    ) : s.published ? (
                       <>
                         On their website: <b className="font-semibold text-ink">{money2(s.price)}</b> {s.unit}
                         {s.checked ? `, ${day(s.checked)}` : ''}.
                       </>
                     ) : (
                       <>
-                        <b className="font-semibold text-ink">My guess {money2(s.price)}</b>: not on their website.
+                        <b className="font-semibold text-ink">My guess {money2(s.price)}</b>: not on their website or your basket yet.
                       </>
                     )}
                     {mine ? ' Yours is used.' : ''}
@@ -112,7 +117,7 @@ export function CworkshopView({ prices, savedAt, onSave }: { prices: Prices; sav
           })}
         </ul>
         <p className="mt-2 text-[13.5px] leading-relaxed text-muted">
-          Edging, drilling and delivery are only priced in their cutting list app. Put one job in it, then type what it charges here: every quote uses yours from then on.{' '}
+          Edging and drilling are from your basket of 6 Nov, with your discount. 2 mm edging, Fast Flow and delivery are only priced in their cutting list app: send me a basket that has them, or type what it charges here, and every quote uses it from then on.{' '}
           <a href={CWORKSHOP_CUTLIST} target="_blank" rel="noreferrer" className="text-accent underline">
             Their cutting list
           </a>{' '}

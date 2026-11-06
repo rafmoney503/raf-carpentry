@@ -34,6 +34,8 @@ export type PriceKey =
   | 'edgeThinM'
   | 'edgeThickM'
   | 'hingeHole'
+  | 'narrowEdge'
+  | 'tapeM'
   | 'fastFlow'
   | 'delivery'
   | 'hardwareUnit'
@@ -73,9 +75,11 @@ export const PRICE_ROWS: Row[] = [
   { key: 'runner', label: 'Drawer runners', unit: 'a pair', group: 'Finished board', from: 'My guess', guess: true },
   { key: 'boardMarkup', label: 'On top of the board', unit: '%', group: 'Finished board', from: 'Nothing to start with' },
   { key: 'cutEdgeSheet', label: 'Cutting', unit: 'a sheet', group: 'Cworkshop', from: 'Cworkshop’s pages: a sheet costs £47.30 more on the cutting list', step: 0.01 },
-  { key: 'edgeThinM', label: 'Edging, 1 mm ABS (carcass and shelves)', unit: 'a metre', group: 'Cworkshop', from: 'My guess: not on their website, priced in their cutting list', guess: true, step: 0.01 },
-  { key: 'edgeThickM', label: 'Edging, 2 mm ABS (doors and frame)', unit: 'a metre', group: 'Cworkshop', from: 'My guess: not on their website, priced in their cutting list', guess: true, step: 0.01 },
-  { key: 'hingeHole', label: 'Hinge holes drilled', unit: 'each', group: 'Cworkshop', from: 'My guess: their CNC, no price on the website', guess: true, step: 0.01 },
+  { key: 'edgeThinM', label: 'Edging, 1 mm ABS (carcass and shelves)', unit: 'a metre', group: 'Cworkshop', from: 'Your Cworkshop basket, 6 Nov: £3.26 a metre less your 10%', step: 0.01 },
+  { key: 'edgeThickM', label: 'Edging, 2 mm ABS (doors and frame)', unit: 'a metre', group: 'Cworkshop', from: 'My guess: the same as 1 mm until a basket shows 2 mm', guess: true, step: 0.01 },
+  { key: 'hingeHole', label: 'Hinge holes drilled', unit: 'each', group: 'Cworkshop', from: 'Your Cworkshop basket, 6 Nov: £2.66 each less your 10%', step: 0.01 },
+  { key: 'narrowEdge', label: 'Edging a narrow panel (under 65 mm)', unit: 'an edge', group: 'Cworkshop', from: 'Your Cworkshop basket, 6 Nov: £3.47 an edge less your 10%', step: 0.01 },
+  { key: 'tapeM', label: 'Edging tape to take away', unit: 'a metre', group: 'Cworkshop', from: 'Your Cworkshop basket, 6 Nov: £1.50 a metre less 5%', step: 0.01 },
   { key: 'fastFlow', label: 'Fast Flow, next day', unit: 'a job', group: 'Cworkshop', from: 'My guess: no price on the website', guess: true },
   { key: 'delivery', label: 'Delivery', unit: 'a job', group: 'Cworkshop', from: 'My guess: worked out by distance, no prices on the website', guess: true },
   { key: 'kitchen', label: 'Kitchen fit, labour only', unit: 'standard kitchen', group: 'Other jobs', from: 'Your price, 1 Nov' },
@@ -106,9 +110,11 @@ export const DEFAULT_PRICES: Prices = {
   boardDaysPerM: 1,
   labourX: 0,
   cutEdgeSheet: 47.3,
-  edgeThinM: 1.5,
-  edgeThickM: 2,
-  hingeHole: 1.5,
+  edgeThinM: 2.934, // Cworkshop basket 6 Nov 2026: £3.26 a metre less Raf's 10%
+  edgeThickM: 2.934, // not seen yet: the same as 1 mm
+  hingeHole: 2.394, // £2.66 less 10%
+  narrowEdge: 3.123, // £3.47 less 10%
+  tapeM: 1.425, // £1.50 less 5%
   fastFlow: 50,
   delivery: 60,
   hardwareUnit: 50,

@@ -1236,7 +1236,7 @@ const SPLIT_WORDS: Record<Split, { first: string; second: string; sheets: [strin
   outside: { first: 'Colour, outside', second: 'Inside', sheets: ['Sheets outside', 'Sheets inside'] },
   doors: { first: 'Doors', second: 'Frame and inside', sheets: ['Sheets for doors', 'Sheets for the rest'] },
 };
-const GUESSED: PriceKey[] = ['edgeThinM', 'edgeThickM', 'hingeHole', 'fastFlow', 'delivery'];
+const GUESSED: PriceKey[] = ['edgeThickM', 'fastFlow', 'delivery']; // 1 mm edging and drilling came from Raf's basket, 6 Nov 2026
 
 function BoardChoice({ on, onClick, title, sub }: { on: boolean; onClick: () => void; title: string; sub: string }) {
   return (
@@ -1420,7 +1420,7 @@ function BoardBits({ read: r, prices, edits, set, onCworkshop }: { read: QuoteRe
         <ExtraTick data="delivery" on={edits.delivery !== false} onChange={(v) => set({ delivery: v ? undefined : false })} title="Delivery" sub={`${money(prices.delivery)}. Untick when you collect.`} />
       </div>
       <p className="mt-2 text-[12.5px] leading-snug text-muted">
-        Cutting is Cworkshop’s own price{guessing ? '; edging, drilling and delivery are my guesses until you type yours' : ''}.{' '}
+        Cutting is Cworkshop’s own price; 1 mm edging and drilling are from your basket{guessing ? '; 2 mm edging, Fast Flow and delivery are my guesses until you type yours' : ''}.{' '}
         {onCworkshop ? (
           <button type="button" onClick={onCworkshop} className="text-accent underline" data-open-cworkshop>
             Cworkshop prices and decors

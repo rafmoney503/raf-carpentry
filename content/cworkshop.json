@@ -1,5 +1,5 @@
 {
-  "_about": "Cworkshop (cworkshop.co.uk): the decors Raf can buy cut and edged, and what their services cost. Read by src/lib/cworkshop-boards.ts for the Job Kit's Cworkshop screen and Quotes. Prices before VAT, 18 mm boards (18.5 mm for Feelwood and some woodgrains), 2800 x 2070 sheets. A board's price is the one Cworkshop's own pages showed on its 'checked' day. A service with 'published': false isn't on Cworkshop's website (they price it live in their cutting list app), so its price is a guess until Raf types his own. Updated by the weekly check (scripts/CWORKSHOP.md).",
+  "_about": "Cworkshop (cworkshop.co.uk): the decors Raf can buy cut and edged, and what their services cost. Read by src/lib/cworkshop-boards.ts for the Job Kit's Cworkshop screen and Quotes. Prices before VAT, 18 mm boards (18.5 mm for Feelwood and some woodgrains), 2800 x 2070 sheets. A board's price is the one Cworkshop's own pages showed on its 'checked' day. A service's 'source' says where its price comes from: 'website' (their own pages), 'basket' (a basket or invoice Raf sent: 'list' is their price, 'discount' the % off Raf got, 'price' what he pays, which quotes use) or 'guess' (not seen yet, 'published' false). Raf can type his own on the Cworkshop screen. Updated by the weekly check (scripts/CWORKSHOP.md).",
   "checked": "2026-11-05",
   "checkedBy": "Claude",
   "services": [
@@ -10,31 +10,65 @@
       "price": 47.3,
       "published": true,
       "checked": "2026-11-04",
-      "from": "Their board pages: a sheet costs £47.30 more once it's on the cutting list (e.g. Greige Castello Oak £92.51, on the cutting list £139.81)."
+      "from": "Their board pages: a sheet costs £47.30 more once it's on the cutting list (e.g. Greige Castello Oak £92.51, on the cutting list £139.81).",
+      "source": "website"
     },
     {
       "key": "edgeThinM",
-      "label": "Edging, 1 mm ABS",
+      "label": "Edging, 1 mm ABS (22 mm, matched)",
       "unit": "a metre",
-      "price": 1.5,
-      "published": false,
-      "from": "Not on their website: priced in the cutting list app. Matching 1 mm ABS, square or radius, PUR glue."
+      "price": 2.934,
+      "published": true,
+      "from": "Your Cworkshop basket, 6 Nov 2026 (3+ sheets of Egger H1732 ST9 Sand Birch): Standard ABS edging 22 x 1 mm, £3.26 a metre put on, less your 10%. 118.3 m on that job: £347.09.",
+      "list": 3.26,
+      "discount": 10,
+      "source": "basket",
+      "checked": "2026-11-06"
     },
     {
       "key": "edgeThickM",
       "label": "Edging, 2 mm ABS",
       "unit": "a metre",
-      "price": 2,
+      "price": 2.934,
       "published": false,
-      "from": "Not on their website: priced in the cutting list app. Matching 2 mm ABS, radius."
+      "from": "Not seen yet: your basket only had 1 mm. My guess: the same as 1 mm until a basket with 2 mm shows it.",
+      "source": "guess"
     },
     {
       "key": "hingeHole",
-      "label": "Hinge holes drilled",
+      "label": "Hinge holes drilled (35 mm cup)",
       "unit": "each",
-      "price": 1.5,
-      "published": false,
-      "from": "Their CNC service; no prices on the website."
+      "price": 2.394,
+      "published": true,
+      "from": "Your Cworkshop basket, 6 Nov 2026 (3+ sheets of Egger H1732 ST9 Sand Birch): HNG-35 drilling a 35 mm hinge cup hole, £2.66 each, less your 10%. 25 holes: £59.85.",
+      "list": 2.66,
+      "discount": 10,
+      "source": "basket",
+      "checked": "2026-11-06"
+    },
+    {
+      "key": "narrowEdge",
+      "label": "Edging a narrow panel (under 65 mm wide)",
+      "unit": "an edge",
+      "price": 3.123,
+      "list": 3.47,
+      "discount": 10,
+      "source": "basket",
+      "published": true,
+      "checked": "2026-11-06",
+      "from": "Your Cworkshop basket, 6 Nov 2026 (3+ sheets of Egger H1732 ST9 Sand Birch): NRW-EDG edging one long edge of a panel narrower than 65 mm, £3.47 each on top of the edging, less your 10%. 2 on that job: £6.25."
+    },
+    {
+      "key": "tapeM",
+      "label": "Edging tape to take away",
+      "unit": "a metre",
+      "price": 1.425,
+      "list": 1.5,
+      "discount": 5,
+      "source": "basket",
+      "published": true,
+      "checked": "2026-11-06",
+      "from": "Your Cworkshop basket, 6 Nov 2026 (3+ sheets of Egger H1732 ST9 Sand Birch): the same 22 x 1 mm ABS on a roll for you to put on, £1.50 a metre, less 5%. 5 m: £7.12."
     },
     {
       "key": "fastFlow",
@@ -42,7 +76,8 @@
       "unit": "a job",
       "price": 50,
       "published": false,
-      "from": "Next-day or 2-day cut and edge when they're not busy; no price on the website."
+      "from": "Next-day or 2-day cut and edge when they're not busy; no price on the website.",
+      "source": "guess"
     },
     {
       "key": "delivery",
@@ -50,7 +85,8 @@
       "unit": "a job",
       "price": 60,
       "published": false,
-      "from": "Worked out by distance from their North or South London branch; no prices on the website."
+      "from": "Worked out by distance from their North or South London branch; no prices on the website.",
+      "source": "guess"
     }
   ],
   "leadTimes": [
@@ -71,6 +107,10 @@
     {
       "at": "2026-11-05",
       "text": "142 more decors added from Cworkshop's own pages (Egger and Kronospan chipboard), 180 in all: more plain colours, Egger's supermatt TM boards (19 mm only, about £138 to £201 a sheet), stone, linen and metal looks, and the cheaper Kronospan colours and woods (about £81 to £93). None of the 25 already there and read again had changed. Not in yet, of the 321 they list: 3 out of stock, 36 whose page couldn't be found, 21 whose page wouldn't show its 18 mm price and 81 their site refused to show this time; the weekly check adds them."
+    },
+    {
+      "at": "2026-11-06",
+      "text": "Edging and drilling now from your own basket instead of guesses: edging 1 mm £3.26 a metre (£2.93 after your 10%), was a £1.50 guess; hinge holes £2.66 each (£2.39), was £1.50; new: narrow panel edging £3.47 an edge and tape to take away £1.50 a metre. 2 mm edging, Fast Flow and delivery are still guesses."
     }
   ],
   "boards": [
@@ -2238,5 +2278,13 @@
       "hex": "#b48a5e",
       "checked": "2026-11-05"
     }
-  ]
+  ],
+  "basket": {
+    "seen": "2026-11-06",
+    "notes": [
+      "Edging is put on by Cworkshop and charged by the metre of edge; tape to take away is cheaper but you put it on.",
+      "Your account showed 10% off edging and services and 5% off tape on this basket.",
+      "Offcuts can be ticked on the cutting plans to come with the order, free."
+    ]
+  }
 }

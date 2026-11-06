@@ -11,11 +11,24 @@ import { DEFAULT_PRICES, type Board, type PriceKey, type Prices } from './quote-
    Egger's supermatt TM boards, which come in nothing else), 2800 x 2070 sheets, the price before VAT
    that Cworkshop's own pages showed on the board's 'checked' day. A board page without its script shows the 8 mm
    price first, so a price is only taken from the page for the right thickness or from a listing page (which shows
-   the 18 mm one). Services: cutting is on their pages (a sheet costs £47.30 more on the cutting list); edging,
-   drilling and delivery aren't (priced live in their cutting list app), so those start as guesses until Raf types
-   his own. The colour (hex) is only a swatch for the screen, picked by eye. */
+   the 18 mm one). Services: cutting is on their pages (a sheet costs £47.30 more on the cutting list); edging and
+   drilling come from a basket Raf sent (6 Nov 2026, with his account's discount); 2 mm edging, Fast Flow and delivery
+   are still guesses until a basket shows them or Raf types his own. The colour (hex) is only a swatch for the screen, picked by eye. */
 
-export type Service = { key: PriceKey; label: string; unit: string; price: number; published: boolean; from: string; checked?: string };
+/* source: 'website' (their own pages), 'basket' (a basket or invoice Raf sent, 6 Nov 2026: list = their price, discount
+   = the % off his account got, price = what he pays, which the quotes use) or 'guess'. */
+export type Service = {
+  key: PriceKey;
+  label: string;
+  unit: string;
+  price: number;
+  published: boolean;
+  from: string;
+  checked?: string;
+  source?: 'website' | 'basket' | 'guess';
+  list?: number;
+  discount?: number;
+};
 export type Change = { at: string; text: string };
 type Data = { checked: string; checkedBy: string; services: Service[]; leadTimes: string[]; edging: string; changes: Change[]; boards: Board[] };
 
