@@ -3,8 +3,9 @@
    may carry, the due day and the words the order puts on its ServiceM8 job. No imports, so the page (to show the
    price) and the server (to charge it) use the same numbers.
 
-   Prices are the same as CabinetOS's Done for you packs (£75 / £195 / £395 before VAT, each for up to 3 units, then
-   £20 / £45 / £45 a unit), shown here with VAT because most buyers are people building their own furniture.
+   Prices are the same as CabinetOS's Done for you packs (£40 / £195 / £395 before VAT, each for up to 3 units, then
+   £10 / £45 / £45 a unit; the cut list was £75 and £20 until 6 Nov 2026, Raf: "just cutlist for 90 i think is a lot",
+   then "go"), shown here with VAT because most buyers are people building their own furniture.
    Paid in full upfront by card. Raf's promises (6 Nov 2026): within 2 working days, 2 rounds of changes free (6 Nov 21:19: "lets make 2 revisions full price upfront, match both websites"; CabinetOS's Done for you has the same terms). */
 
 export const PACKS = ['cutlist', 'drawings', 'design'] as const;
@@ -18,7 +19,7 @@ export const FREE_ROUNDS = 2;
 
 /** In pence before VAT: the price for up to INCLUDED_UNITS units, then each unit more. */
 const BEFORE_VAT: Record<Pack, { base: number; perExtra: number }> = {
-  cutlist: { base: 7500, perExtra: 2000 },
+  cutlist: { base: 4000, perExtra: 1000 },
   drawings: { base: 19500, perExtra: 4500 },
   design: { base: 39500, perExtra: 4500 },
 };
@@ -70,7 +71,7 @@ export function units(n: unknown) {
 
 export type Price = { beforeVat: number; vat: number; total: number; extraUnits: number };
 
-/** In pence. The VAT is worked out on the price before VAT, so £75 + £15 = £90. */
+/** In pence. The VAT is worked out on the price before VAT, so £40 + £8 = £48. */
 export function priceOf(pack: Pack, n: number): Price {
   const u = units(n);
   const p = BEFORE_VAT[pack];
