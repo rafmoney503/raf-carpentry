@@ -18,6 +18,7 @@ import {
   PRICE_ROWS,
   pricesWith,
   quoteMessage,
+  SHEET_KG,
   sizesOf,
   withVat,
   type Board,
@@ -1236,7 +1237,7 @@ const SPLIT_WORDS: Record<Split, { first: string; second: string; sheets: [strin
   outside: { first: 'Colour, outside', second: 'Inside', sheets: ['Sheets outside', 'Sheets inside'] },
   doors: { first: 'Doors', second: 'Frame and inside', sheets: ['Sheets for doors', 'Sheets for the rest'] },
 };
-const GUESSED: PriceKey[] = ['edgeThickM', 'fastFlow', 'delivery']; // 1 mm edging and drilling came from Raf's basket, 6 Nov 2026
+const GUESSED: PriceKey[] = ['fastFlow']; // edging and drilling came from Raf's basket and delivery is his figure, 6 Nov 2026 (2 mm edging is only used when a quote ticks it)
 
 function BoardChoice({ on, onClick, title, sub }: { on: boolean; onClick: () => void; title: string; sub: string }) {
   return (
@@ -1411,16 +1412,27 @@ function BoardBits({ read: r, prices, edits, set, onCworkshop }: { read: QuoteRe
       ) : null}
       {prices.labourX > 0 ? <p className="mt-1 text-[12.5px] text-muted">Labour is {prices.labourX} × the materials (Your prices).</p> : null}
       <p className="mt-3 text-[13px] leading-snug text-muted" data-board-parts>
-        Edging {parts.thickM} m of 2 mm at {money2(prices.edgeThickM)} and {parts.thinM} m of 1 mm at {money2(prices.edgeThinM)} · cutting {money2(prices.cutEdgeSheet)} a sheet · {parts.hinges} hinges on {parts.doors} doors
+        {edits.thick ? (
+          <>
+            Edging {parts.thickM} m of 2 mm at {money2(prices.edgeThickM)} and {parts.thinM} m of 1 mm at {money2(prices.edgeThinM)}
+          </>
+        ) : (
+          <>
+            Edging {parts.thickM + parts.thinM} m of 1 mm at {money2(prices.edgeThinM)}
+          </>
+        )}{' '}
+        · cutting {money2(prices.cutEdgeSheet)} a sheet · {parts.hinges} hinges on {parts.doors} doors
+        {prices.cwDiscount > 0 ? ` · your ${Math.round(prices.cwDiscount * 10) / 10}% off` : ''}
       </p>
       <p className={`${label} mt-3`}>Cworkshop extras</p>
       <div className="mt-1 grid grid-cols-1">
+        <ExtraTick data="thick" on={Boolean(edits.thick)} onChange={(v) => set({ thick: v || undefined })} title="2 mm edging on the doors and frame" sub={`${parts.thickM} m at ${money2(prices.edgeThickM)}${prices.edgeThickM === PRICE_BASE.edgeThickM ? ' (my guess)' : ''}. Off: 1 mm everywhere, as you usually do.`} />
         <ExtraTick data="holes" on={Boolean(edits.holes)} onChange={(v) => set({ holes: v || undefined })} title="They drill the hinge holes" sub={`${parts.hinges} at ${money2(prices.hingeHole)}, ${money(parts.hinges * prices.hingeHole)}. Leave it off when you drill them yourself.`} />
         <ExtraTick data="fast" on={Boolean(edits.fast)} onChange={(v) => set({ fast: v || undefined })} title="Fast Flow, next day" sub={`${money(prices.fastFlow)} on top`} />
-        <ExtraTick data="delivery" on={edits.delivery !== false} onChange={(v) => set({ delivery: v ? undefined : false })} title="Delivery" sub={`${money(prices.delivery)}. Untick when you collect.`} />
+        <ExtraTick data="delivery" on={edits.delivery !== false} onChange={(v) => set({ delivery: v ? undefined : false })} title="Delivery" sub={`About ${money(prices.delivery)}, your figure. ${work.out + work.in} sheets is about ${(work.out + work.in) * SHEET_KG} kg: a heavy order costs more. Untick when you collect.`} />
       </div>
       <p className="mt-2 text-[12.5px] leading-snug text-muted">
-        Cutting is Cworkshop’s own price; 1 mm edging and drilling are from your basket{guessing ? '; 2 mm edging, Fast Flow and delivery are my guesses until you type yours' : ''}.{' '}
+        Cutting is Cworkshop’s own price; edging and drilling are from your basket, before your discount; delivery is your figure{guessing ? '; Fast Flow is my guess until you type yours' : ''}.{' '}
         {onCworkshop ? (
           <button type="button" onClick={onCworkshop} className="text-accent underline" data-open-cworkshop>
             Cworkshop prices and decors
@@ -1498,7 +1510,7 @@ export function QuotePrices({ prices, savedAt, onSave, onCworkshop }: { prices: 
         <span className="min-w-0 flex-1">
           <span className="block text-[15px] font-semibold">Cworkshop</span>
           <span className="block text-[13px] leading-snug text-muted">
-            Cutting {money2(prices.cutEdgeSheet)} a sheet, edging {money2(prices.edgeThickM)} and {money2(prices.edgeThinM)} a metre, drilling, delivery and {BOARDS.length} decors
+            Your {Math.round(prices.cwDiscount * 10) / 10}% off, cutting {money2(prices.cutEdgeSheet)} a sheet, edging {money2(prices.edgeThinM)} a metre, drilling, delivery and {BOARDS.length} decors
           </span>
         </span>
         <span aria-hidden className="text-[18px] text-faint">›</span>

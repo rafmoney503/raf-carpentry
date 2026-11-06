@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { BOARDS, BOARDS_CHECKED, CHANGES, CW, CWORKSHOP_CUTLIST, CWORKSHOP_PHONE, CWORKSHOP_URL, FAMILY_NAME, FAMILY_ORDER, PRICE_BASE, SERVICES } from '@/lib/cworkshop-boards';
+import { BOARDS, BOARDS_CHECKED, CHANGES, CW, CWORKSHOP_CUTLIST, CWORKSHOP_PHONE, CWORKSHOP_URL, DISCOUNT, FAMILY_NAME, FAMILY_ORDER, PRICE_BASE, SERVICES } from '@/lib/cworkshop-boards';
 import { money2, ownPrices, SHEET_YIELD, type Board, type PriceKey, type Prices } from '@/lib/quote-sums';
 import { matches } from '@/lib/search';
 import { Icon } from './icons';
@@ -10,9 +10,9 @@ import { field, fieldSized, label } from './parts';
 /* The Job Kit's Cworkshop screen (4 Nov 2026, Raf: 'can we create section where you will check Cworkshop decor
    finishes find prices and in quotes laminated project finish based on one or two boards ... and also add edge
    banding prices, cutting and other extra services they add'). What the Quotes' finished-board option is worked out
-   from: Cworkshop's service prices (cutting is on their pages; edging, drilling and delivery aren't, so they start as
-   guesses until Raf types his own from their cutting list app) and every decor with its sheet price and his own
-   price if he has one. All of it comes from content/cworkshop.json, which Claude checks every Monday
+   from: his account discount (10% off the whole order, taken off the boards, cutting, edging and drilling), Cworkshop's
+   service prices (cutting from their pages, edging and drilling from his basket of 6 Nov 2026, delivery his own figure,
+   2 mm edging and Fast Flow still guesses) and every decor with its sheet price and his own price if he has one. All of it comes from content/cworkshop.json, which Claude checks every Monday
    (scripts/CWORKSHOP.md); his own prices are kept with his price list (row '_prices'), only the ones he changed, so a
    Cworkshop price that moves still reaches every quote unless he has typed his own. */
 
@@ -28,6 +28,7 @@ export function CworkshopView({ prices, savedAt, onSave }: { prices: Prices; sav
   const startSvc = () => Object.fromEntries(SERVICES.map((s) => [s.key, Math.abs(prices[s.key] - PRICE_BASE[s.key]) > 1e-9 ? String(prices[s.key]) : '']));
   const startBoards = () => Object.fromEntries(Object.entries(prices.boards).map(([k, v]) => [k, String(v)]));
   const [svc, setSvc] = useState<Record<string, string>>(startSvc);
+  const [disc, setDisc] = useState(String(prices.cwDiscount));
   const [boards, setBoards] = useState<Record<string, string>>(startBoards);
   const [q, setQ] = useState('');
   const [fam, setFam] = useState('');
@@ -45,9 +46,14 @@ export function CworkshopView({ prices, savedAt, onSave }: { prices: Prices; sav
         .map(([k, v]) => [k, num(v)] as const)
         .filter(([, v]) => v > 0 && v < 5000),
     );
-  const changed = SERVICES.some((s) => Math.abs(svcValue(s.key) - prices[s.key]) > 1e-9) || JSON.stringify(boardsNow()) !== JSON.stringify(prices.boards);
+  const discNow = () => {
+    const v = num(disc);
+    return v >= 0 && v <= 50 ? v : prices.cwDiscount;
+  };
+  const changed =
+    SERVICES.some((s) => Math.abs(svcValue(s.key) - prices[s.key]) > 1e-9) || Math.abs(discNow() - prices.cwDiscount) > 1e-9 || JSON.stringify(boardsNow()) !== JSON.stringify(prices.boards);
   const save = () => {
-    const full: Prices = { ...prices, boards: boardsNow() };
+    const full: Prices = { ...prices, boards: boardsNow(), cwDiscount: discNow() };
     for (const s of SERVICES) full[s.key] = svcValue(s.key);
     onSave(ownPrices(full, PRICE_BASE));
     setSaved('Saved. Every quote uses these now, on your phone and computer.');
@@ -72,8 +78,30 @@ export function CworkshopView({ prices, savedAt, onSave }: { prices: Prices; sav
         {savedAt ? ` · your prices changed ${new Date(savedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : ''}
       </p>
 
+      <section className="mt-7" data-cw-discount>
+        <h2 className={label}>Your account discount</h2>
+        <div className="mt-2 flex items-center gap-3 rounded-sm border border-line-strong bg-mount px-3.5 py-2.5">
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-semibold leading-snug">Off the whole order</span>
+            <span className="block text-[12.5px] leading-snug text-muted">
+              {DISCOUNT.from} A quote takes it off {DISCOUNT.on} as one line; Fast Flow and delivery stay as they are. Put 0 to keep it yourself.
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1.5">
+            <input
+              inputMode="decimal"
+              value={disc}
+              onChange={(e) => setDisc(e.target.value)}
+              aria-label="Your Cworkshop discount, per cent"
+              className={`${fieldSized} h-11 w-[64px] text-right font-mono text-[15px]`}
+            />
+            <span className="w-[46px] font-mono text-[11.5px] leading-tight text-faint">% off</span>
+          </span>
+        </div>
+      </section>
+
       <section className="mt-7" data-cw-services>
-        <h2 className={label}>Their services</h2>
+        <h2 className={label}>Their services, before your discount</h2>
         <ul className="mt-2 divide-y divide-line rounded-sm border border-line-strong bg-mount">
           {SERVICES.map((s) => {
             const mine = svc[s.key] !== '' && Math.abs(svcValue(s.key) - PRICE_BASE[s.key]) > 1e-9;
@@ -84,8 +112,11 @@ export function CworkshopView({ prices, savedAt, onSave }: { prices: Prices; sav
                   <span className="block text-[12.5px] leading-snug text-muted">
                     {s.source === 'basket' ? (
                       <>
-                        From your basket{s.checked ? `, ${day(s.checked)}` : ''}: {s.list ? `${money2(s.list)} ${s.unit}` : ''}
-                        {s.discount ? `, less your ${s.discount}%` : ''} = <b className="font-semibold text-ink">{money2(s.price)}</b>.
+                        From your basket{s.checked ? `, ${day(s.checked)}` : ''}: <b className="font-semibold text-ink">{money2(s.price)}</b> {s.unit}.
+                      </>
+                    ) : s.source === 'raf' ? (
+                      <>
+                        Your figure{s.checked ? `, ${day(s.checked)}` : ''}: <b className="font-semibold text-ink">about {money2(s.price)}</b> {s.unit}, more for a heavy order.
                       </>
                     ) : s.published ? (
                       <>
@@ -117,7 +148,7 @@ export function CworkshopView({ prices, savedAt, onSave }: { prices: Prices; sav
           })}
         </ul>
         <p className="mt-2 text-[13.5px] leading-relaxed text-muted">
-          Edging and drilling are from your basket of 6 Nov, with your discount. 2 mm edging, Fast Flow and delivery are only priced in their cutting list app: send me a basket that has them, or type what it charges here, and every quote uses it from then on.{' '}
+          Edging and drilling are from your basket of 6 Nov; delivery is your figure. 2 mm edging and Fast Flow are only priced in their cutting list app: send me a basket that has them, or type what it charges here, and every quote uses it from then on.{' '}
           <a href={CWORKSHOP_CUTLIST} target="_blank" rel="noreferrer" className="text-accent underline">
             Their cutting list
           </a>{' '}
@@ -132,8 +163,9 @@ export function CworkshopView({ prices, savedAt, onSave }: { prices: Prices; sav
           <ul className="mt-2 list-disc pl-5 text-[14px] leading-relaxed text-muted">
             <li>Sheets from the parts: the doors, the frame you see (plinth, top infill, fillers) and the inside (carcass, two shelves a unit, 18 mm backs), {Math.round(SHEET_YIELD * 100)}% of each sheet used. One board throughout shares its offcuts.</li>
             <li>Cutting for every sheet.</li>
-            <li>2 mm edging round every door and drawer front and on the edges of the frame you see; 1 mm on the carcass and shelf fronts and drawer box tops.</li>
+            <li>1 mm edging round every door and drawer front, the edges of the frame you see, and the carcass and shelf fronts. Tick 2 mm on a quote and the doors and frame get 2 mm.</li>
             <li>Hinge holes (when you tick it on the quote): a hinge per 600 mm or so of door height, 2 to 5 a door.</li>
+            <li>Your {Math.round(prices.cwDiscount * 10) / 10}% off the boards, cutting, edging and drilling, as one line.</li>
             <li>Fast Flow when you tick it; delivery unless you untick it.</li>
           </ul>
         </details>

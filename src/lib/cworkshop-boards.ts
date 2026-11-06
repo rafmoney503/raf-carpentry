@@ -12,11 +12,13 @@ import { DEFAULT_PRICES, type Board, type PriceKey, type Prices } from './quote-
    that Cworkshop's own pages showed on the board's 'checked' day. A board page without its script shows the 8 mm
    price first, so a price is only taken from the page for the right thickness or from a listing page (which shows
    the 18 mm one). Services: cutting is on their pages (a sheet costs £47.30 more on the cutting list); edging and
-   drilling come from a basket Raf sent (6 Nov 2026, with his account's discount); 2 mm edging, Fast Flow and delivery
-   are still guesses until a basket shows them or Raf types his own. The colour (hex) is only a swatch for the screen, picked by eye. */
+   drilling come from a basket Raf sent (6 Nov 2026); delivery is his own figure (about £60, more for a heavy order);
+   2 mm edging and Fast Flow are still guesses. Every price is Cworkshop's own, before his account discount (10% off the
+   whole order, Raf 6 Nov 2026), which a quote takes off the boards, cutting, edging and drilling in one line. The
+   colour (hex) is only a swatch for the screen, picked by eye. */
 
-/* source: 'website' (their own pages), 'basket' (a basket or invoice Raf sent, 6 Nov 2026: list = their price, discount
-   = the % off his account got, price = what he pays, which the quotes use) or 'guess'. */
+/* source: 'website' (their own pages), 'basket' (a basket or invoice Raf sent, 6 Nov 2026), 'raf' (a figure Raf gave)
+   or 'guess'. price is always Cworkshop's own, before his discount. */
 export type Service = {
   key: PriceKey;
   label: string;
@@ -25,18 +27,18 @@ export type Service = {
   published: boolean;
   from: string;
   checked?: string;
-  source?: 'website' | 'basket' | 'guess';
-  list?: number;
-  discount?: number;
+  source?: 'website' | 'basket' | 'raf' | 'guess';
 };
 export type Change = { at: string; text: string };
-type Data = { checked: string; checkedBy: string; services: Service[]; leadTimes: string[]; edging: string; changes: Change[]; boards: Board[] };
+export type Discount = { percent: number; on: string; from: string; checked: string };
+type Data = { checked: string; checkedBy: string; discount: Discount; services: Service[]; leadTimes: string[]; edging: string; changes: Change[]; boards: Board[]; basket?: { seen: string; notes: string[] } };
 
 export const CW = data as unknown as Data;
 export const BOARDS: Board[] = CW.boards;
 export const BOARDS_CHECKED = CW.checked;
 export const SERVICES: Service[] = CW.services;
 export const CHANGES: Change[] = CW.changes;
+export const DISCOUNT: Discount = CW.discount;
 export const CWORKSHOP_URL = 'https://cworkshop.co.uk';
 export const CWORKSHOP_CUTLIST = 'https://app.cworkshop.co.uk/cutlist';
 export const CWORKSHOP_PHONE = '0208 236 2313';
@@ -44,9 +46,14 @@ export const CWORKSHOP_PHONE = '0208 236 2313';
 const service = (k: PriceKey) => SERVICES.find((s) => s.key === k);
 export const CUT_CHARGE = service('cutEdgeSheet')?.price ?? DEFAULT_PRICES.cutEdgeSheet; // a sheet on the cutting list, 18 mm, before VAT
 
-/* Raf's price list starts from these: his own prices, with Cworkshop's service prices from the data file, so a price
-   Cworkshop changes reaches every quote unless he has typed his own. */
-export const PRICE_BASE: Prices = { ...DEFAULT_PRICES, ...Object.fromEntries(SERVICES.map((s) => [s.key, s.price])), boards: {} };
+/* Raf's price list starts from these: his own prices, with Cworkshop's service prices and his account discount from
+   the data file, so a price Cworkshop changes reaches every quote unless he has typed his own. */
+export const PRICE_BASE: Prices = {
+  ...DEFAULT_PRICES,
+  ...Object.fromEntries(SERVICES.map((s) => [s.key, s.price])),
+  cwDiscount: DISCOUNT?.percent ?? DEFAULT_PRICES.cwDiscount,
+  boards: {},
+};
 
 /* The usual inside: white unless Raf picks otherwise. */
 export const INSIDE_DEFAULT = 'W1000 ST9';

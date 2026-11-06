@@ -11,6 +11,8 @@ import {
   boardWork,
   DEFAULT_PRICES,
   hingesFor,
+  money,
+  money2,
   ownPrices,
   splitOf,
   splitSheets,
@@ -30,7 +32,7 @@ import {
 } from '../../src/lib/quote-sums.ts';
 
 const jiti = createJiti(import.meta.url);
-const { BOARDS, CUT_CHARGE, INSIDE_DEFAULT, PRICE_BASE, SERVICES, CHANGES, FAMILY_ORDER, BOARDS_CHECKED } = await jiti.import('../../src/lib/cworkshop-boards.ts');
+const { BOARDS, CUT_CHARGE, DISCOUNT, INSIDE_DEFAULT, PRICE_BASE, SERVICES, CHANGES, FAMILY_ORDER, BOARDS_CHECKED } = await jiti.import('../../src/lib/cworkshop-boards.ts');
 const { fillWall } = await jiti.import('../../src/lib/pax-brief.ts');
 const { cleanRead } = await jiti.import('../../src/lib/quote-maker.ts');
 
@@ -42,7 +44,7 @@ const ok = (cond, what) => {
 };
 
 /* Raf's prices (before VAT): 1 Nov 2026 for the calculator ones, his Wandsworth quote for PAX, Cworkshop's cutting. */
-const RAF = { plainPerM: 1200, shakerPerM: 1600, paxPerM: 1050, dayRate: 650, kitchen: 2200, laminateM2: 40, loftM2: 120, deckingM2: 250, door: 250, mediaBasic: 2800, mediaMid: 5400, roundTo: 50, cutEdgeSheet: 47.3 };
+const RAF = { plainPerM: 1200, shakerPerM: 1600, paxPerM: 1050, dayRate: 650, kitchen: 2200, laminateM2: 40, loftM2: 120, deckingM2: 250, door: 250, mediaBasic: 2800, mediaMid: 5400, roundTo: 50, cutEdgeSheet: 47.3, cwDiscount: 10, delivery: 60 };
 for (const [k, v] of Object.entries(RAF)) ok(DEFAULT_PRICES[k] === v, `default ${k} is ${v}`);
 ok(CUT_CHARGE === DEFAULT_PRICES.cutEdgeSheet, 'cutting charge matches the board list');
 ok(PRICE_ROWS.length === Object.keys(DEFAULT_PRICES).length - 1, 'a price row for every price');
@@ -80,17 +82,27 @@ for (const sv of SERVICES) {
   ok(typeof sv.published === 'boolean' && sv.from.length > 10, `${sv.key} says where its price comes from`);
   ok(!/[—–]/.test(sv.label + sv.from), `${sv.key} words have no dashes`);
 }
-for (const r of PRICE_ROWS.filter((x) => x.group === 'Cworkshop')) ok(SERVICES.some((sv) => sv.key === r.key), `${r.key} is in the data file`);
+for (const r of PRICE_ROWS.filter((x) => x.group === 'Cworkshop' && x.key !== 'cwDiscount')) ok(SERVICES.some((sv) => sv.key === r.key), `${r.key} is in the data file`);
+/* his account discount (Raf, 6 Nov 2026: '10 percent is for whole order') */
+ok(DISCOUNT && DISCOUNT.percent === 10 && raw.discount.percent === 10 && /^\d{4}-\d{2}-\d{2}$/.test(DISCOUNT.checked) && !/[—–]/.test(DISCOUNT.from + DISCOUNT.on), 'his 10% discount is in the data file');
+ok(PRICE_BASE.cwDiscount === 10 && PRICE_ROWS.some((r) => r.key === 'cwDiscount' && r.group === 'Cworkshop'), 'the quotes start from his 10%');
+ok(pricesWith({ cwDiscount: 99 }).cwDiscount === 50 && pricesWith({ cwDiscount: 0 }).cwDiscount === 0, 'the discount kept sensible, 0 allowed');
+ok(money2(-34.5) === '−£34.50' && money(-35.4) === '−£35' && money2(0) === '£0.00' && money(1234) === '£1,234', 'a discount reads −£34.50');
 ok(SERVICES.find((x) => x.key === 'cutEdgeSheet').published === true, 'cutting is Cworkshop’s published price');
-/* Raf's basket of 6 Nov 2026: each line's total comes out the same from the saved prices */
-for (const [key, qty, total] of [['edgeThinM', 118.3, 347.09], ['hingeHole', 25, 59.85], ['narrowEdge', 2, 6.25], ['tapeM', 5, 7.12]]) {
+/* Raf's basket of 6 Nov 2026: Cworkshop's own price, and each line's total after the basket's discount */
+for (const [key, qty, total, pc] of [['edgeThinM', 118.3, 347.09, 10], ['hingeHole', 25, 59.85, 10], ['narrowEdge', 2, 6.25, 10], ['tapeM', 5, 7.12, 5]]) {
   const sv = SERVICES.find((x) => x.key === key);
-  ok(sv && sv.source === 'basket' && sv.list > sv.price, `${key} is from the basket`);
-  ok(sv && Math.abs(sv.list * (1 - sv.discount / 100) - sv.price) < 1e-9, `${key}: ${sv?.list} less ${sv?.discount}% is ${sv?.price}`);
-  ok(sv && Math.abs(qty * sv.price - total) < 0.01, `${key}: ${qty} at ${sv?.price} is the basket's £${total}`);
+  ok(sv && sv.source === 'basket' && sv.published && !('list' in sv) && !('discount' in sv), `${key} is from the basket, at Cworkshop's own price`);
+  ok(sv && Math.abs(qty * sv.price * (1 - pc / 100) - total) < 0.01, `${key}: ${qty} at ${sv?.price} less ${pc}% is the basket's £${total}`);
   ok(PRICE_BASE[key] === sv?.price, `${key} reaches the quotes`);
 }
-for (const sv of SERVICES) ok(['website', 'basket', 'guess'].includes(sv.source) && (sv.source === 'guess') === !sv.published, `${sv.key} says where its price comes from (${sv.source})`);
+ok(SERVICES.find((x) => x.key === 'edgeThinM').price === 3.26 && SERVICES.find((x) => x.key === 'hingeHole').price === 2.66, 'edging £3.26 and drilling £2.66 before his discount');
+ok(/5 m/.test(SERVICES.find((x) => x.key === 'tapeM').label), 'tape says it comes in 5 m at least');
+{
+  const dl = SERVICES.find((x) => x.key === 'delivery');
+  ok(dl.source === 'raf' && dl.price === 60 && /weight/.test(dl.from) && !PRICE_ROWS.find((r) => r.key === 'delivery').guess, 'delivery is his figure, about £60 by weight');
+}
+for (const sv of SERVICES) ok(['website', 'basket', 'raf', 'guess'].includes(sv.source) && sv.published === ['website', 'basket'].includes(sv.source), `${sv.key} says where its price comes from (${sv.source})`);
 ok(CHANGES.length >= 1 && CHANGES.every((c) => /^\d{4}-\d{2}-\d{2}$/.test(c.at) && c.text.length > 5 && !/[—–]/.test(c.text)), 'changes dated and worded');
 ok(pricesWith({}, PRICE_BASE).edgeThinM === PRICE_BASE.edgeThinM, 'the Job Kit starts from Cworkshop’s prices');
 
@@ -147,10 +159,23 @@ const by = (opts, id) => opts.find((o) => o.id === id);
   const oak = BOARDS.find((b) => b.code === 'H3171 ST12').exVat;
   const white = BOARDS.find((b) => b.code === 'W1000 ST9').exVat;
   const days = Math.round((0.5 + 2.4) * 4) / 4;
-  const sum = s.out * oak + s.in * white + (s.out + s.in) * 47.3 + thick * 2.934 + thin * 2.934 + 3 * 50 + 60 + days * 650;
+  // Cworkshop's prices for the boards, cutting and 1 mm edging everywhere, less his 10%; then fittings, delivery, labour
+  const cw = s.out * oak + s.in * white + (s.out + s.in) * 47.3 + (thick + thin) * 3.26;
+  const off = Math.round(cw * 10) / 100;
+  const sum = cw - off + 3 * 50 + 60 + days * 650;
   ok(by(o, 'board').worked === roundUp(sum, 50), `board ${by(o, 'board').worked} = ${roundUp(sum, 50)} by hand`);
-  ok(by(o, 'board').lines.some((l) => /^Edging 2 mm, 30 m at £2\.93/.test(l.label)) && by(o, 'board').lines.some((l) => /^Edging 1 mm, 24 m at £2\.93/.test(l.label)), 'edging lines say the metres and the price');
-  ok(/30 m of 2 mm edging and 24 m of 1 mm; 20 hinges on 4 doors/.test(by(o, 'board').extra), `the note says the parts: ${by(o, 'board').extra}`);
+  const ed = by(o, 'board').lines.filter((l) => /^Edging/.test(l.label));
+  ok(ed.length === 1 && /^Edging 1 mm, 54 m at £3\.26$/.test(ed[0].label), `1 mm edging everywhere, one line: ${ed.map((l) => l.label).join(' | ')}`);
+  const dl = by(o, 'board').lines.find((l) => /discount/.test(l.label));
+  ok(dl && dl.label === 'Your Cworkshop discount, 10% off the boards, cutting, edging' && Math.abs(dl.amount + off) < 1e-9, `the discount line: ${dl?.label} ${dl?.amount}`);
+  ok(/54 m of 1 mm edging; 20 hinges on 4 doors/.test(by(o, 'board').extra), `the note says the parts: ${by(o, 'board').extra}`);
+  // 2 mm on the doors and frame when the quote asks for it
+  const two = by(wardrobeOptions(r, P, BOARDS, { thick: true }, fillWall), 'board');
+  ok(two.lines.some((l) => /^Edging 2 mm, 30 m at £3\.26 \(doors and frame\)$/.test(l.label)) && two.lines.some((l) => /^Edging 1 mm, 24 m at £3\.26 \(carcass and shelves\)$/.test(l.label)), '2 mm ticked: two edging lines with the metres and the price');
+  ok(/30 m of 2 mm edging and 24 m of 1 mm; 20 hinges on 4 doors/.test(two.extra), `2 mm note: ${two.extra}`);
+  // no discount: Cworkshop's prices as they are
+  const none = by(wardrobeOptions(r, pricesWith({ cwDiscount: 0 }, PRICE_BASE), BOARDS, {}, fillWall), 'board');
+  ok(!none.lines.some((l) => /discount/.test(l.label)) && none.worked === roundUp(cw + 3 * 50 + 60 + days * 650, 50), `0% keeps it all: ${none.worked}`);
   ok(/Every edge is finished to match/.test(by(o, 'board').says), 'board says the edges match');
   ok(/^Egger Oiled Kendal Oak outside \(a warm honey oak to go with your floor\), Premium White inside\./.test(by(o, 'board').says), `board says the colour and the inside: ${by(o, 'board').says}`);
   ok(/no painting/.test(by(o, 'board').says), 'board says nothing to paint');
@@ -252,7 +277,8 @@ const by = (opts, id) => opts.find((o) => o.id === id);
   const base = by(wardrobeOptions(r, P, BOARDS, {}, fillWall), 'board');
   const sumOf = (o) => o.lines.reduce((n, l) => n + l.amount, 0);
   const holes = by(wardrobeOptions(r, P, BOARDS, { holes: true }, fillWall), 'board');
-  ok(Math.abs(sumOf(holes) - sumOf(base) - parts.hinges * 2.394) < 1e-6, 'hinge holes: each hinge at £2.39 (£2.66 less 10%)');
+  ok(Math.abs(sumOf(holes) - sumOf(base) - parts.hinges * 2.66 * 0.9) < 0.011, 'hinge holes: each hinge at £2.66 less his 10%');
+  ok(holes.lines.some((l) => l.label === 'Your Cworkshop discount, 10% off the boards, cutting, edging and drilling'), 'the discount names the drilling when it’s in');
   const fast = by(wardrobeOptions(r, P, BOARDS, { fast: true }, fillWall), 'board');
   ok(Math.abs(sumOf(fast) - sumOf(base) - 50) < 1e-6 && fast.lines.some((l) => /Fast Flow/.test(l.label)), 'Fast Flow adds its price');
   const coll = by(wardrobeOptions(r, P, BOARDS, { delivery: false }, fillWall), 'board');
@@ -265,8 +291,10 @@ const by = (opts, id) => opts.find((o) => o.id === id);
   const lab = lx.lines.find((l) => /^Labour/.test(l.label));
   ok(lab && /2 × the materials/.test(lab.label) && Math.abs(lab.amount - 2 * mats) < 1e-6, `labour as twice the materials: ${lab?.label}`);
   ok(pricesWith({ labourX: 99 }).labourX === 10, 'times the materials kept sensible');
-  const dear = pricesWith({ edgeThickM: 3, edgeThinM: 2 });
-  ok(Math.abs(sumOf(by(wardrobeOptions(r, dear, BOARDS, {}, fillWall), 'board')) - sumOf(base) - (parts.thickM * (3 - 2.934) + parts.thinM * (2 - 2.934))) < 1e-6, 'his edging prices used');
+  const dear = pricesWith({ edgeThickM: 4, edgeThinM: 2 }, PRICE_BASE);
+  ok(Math.abs(sumOf(by(wardrobeOptions(r, dear, BOARDS, {}, fillWall), 'board')) - sumOf(base) - (parts.thickM + parts.thinM) * (2 - 3.26) * 0.9) < 0.011, 'his 1 mm edging price used everywhere');
+  const baseTwo = by(wardrobeOptions(r, P, BOARDS, { thick: true }, fillWall), 'board');
+  ok(Math.abs(sumOf(by(wardrobeOptions(r, dear, BOARDS, { thick: true }, fillWall), 'board')) - sumOf(baseTwo) - (parts.thickM * (4 - 3.26) + parts.thinM * (2 - 3.26)) * 0.9) < 0.011, 'his 2 mm price on the doors and frame when ticked');
   // top cupboards: short doors over tall ones, more edging and hinges
   const t = boardParts(sizesOf(r), 3, 0, true);
   ok(t.doors === 8 && t.hinges === 4 * hingesFor(1.9) + 4 * hingesFor(0.35) && t.thickM > parts.thickM, `top cupboards: ${t.doors} doors, ${t.hinges} hinges`);

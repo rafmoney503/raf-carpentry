@@ -11,9 +11,13 @@ Claude checks it, once a week (the scheduled task "Cworkshop prices") or when Ra
   VAT that Cworkshop's own pages showed for the thickness in `thick` (18; 18.5 for Feelwood and some
   woodgrains; 19 for Egger's PerfectSense TM boards, which don't come in 18) on the day in `checked`.
   `normalExVat` and `offerEnds` only while a board is on offer.
-- `services`: cutting, edging (1 mm and 2 mm), hinge holes, Fast Flow and delivery. `published: true` means
-  the price is on Cworkshop's website; `false` means it isn't (they price it live in their cutting list app),
-  so the price is a guess. Raf can type his own on the screen; his own always wins.
+- `discount`: Raf's account discount (10% off the whole order, his own figure of 6 Nov 2026). A quote takes it
+  off the boards, cutting, edging and drilling in one line. Never change it unless Raf says.
+- `services`: cutting, edging (1 mm, and 2 mm used only when a quote ticks it), hinge holes, narrow panel
+  edging, tape to take away (sold in 5 m at least), Fast Flow and delivery, all at Cworkshop's own price,
+  before his discount. `source` says where each came from: `website` (their pages), `basket` (a basket Raf
+  sent), `raf` (his own figure: delivery, about £60, more for a heavy order) or `guess`. Raf can type his own
+  on the screen; his own always wins.
 - `checked`, `checkedBy`: the last check.
 - `changes`: a short line per check, oldest first.
 
@@ -45,7 +49,9 @@ Claude checks it, once a week (the scheduled task "Cworkshop prices") or when Ra
 5. Services: on any board's own page, the cutting list total minus the sheet total is the cutting price
    (Greige Castello Oak: £139.81 less £92.51 = £47.30). Look at the edgebanding, delivery and CNC pages
    (`/services/panel-edgebanding/`, `/services/delivery/`, `/services/cnc-cutting/`) for any price. Only
-   change a service's `price` to a figure the page shows, then set `published: true` and `checked`.
+   change a service's `price` to a figure the page shows (their price, before Raf's discount), then set
+   `published: true`, `source: "website"` and `checked`. Leave `basket` and `raf` prices alone unless the
+   website shows a different figure for the same thing, and then say so in `changes` rather than change it.
 6. Set the top `checked` to today and add one line to `changes`: what changed, with old and new prices
    ("Sage Green £87.07 to £89.50"), how many were read and added, or "No price changes" with how many were
    read. No dashes.

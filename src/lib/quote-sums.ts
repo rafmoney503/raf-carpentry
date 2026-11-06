@@ -10,6 +10,9 @@
 
 export const VAT = 0.2;
 export const SHEET_M2 = 2.8 * 2.07; // an Egger board from Cworkshop, 2800 x 2070
+/* An 18 mm chipboard sheet, 2800 x 2070, weighs about this (5.8 m² at about 12 kg a m²): for the delivery note, as
+   Cworkshop's delivery goes by weight (Raf, 6 Nov 2026). */
+export const SHEET_KG = 70;
 export const SHEET_YIELD = 0.72; // what's left after cutting round grain, edges and offcuts
 
 /* ---------- Raf's price list ---------- */
@@ -30,6 +33,7 @@ export type PriceKey =
   | 'boardSetupDays'
   | 'boardDaysPerM'
   | 'labourX'
+  | 'cwDiscount'
   | 'cutEdgeSheet'
   | 'edgeThinM'
   | 'edgeThickM'
@@ -74,14 +78,15 @@ export const PRICE_ROWS: Row[] = [
   { key: 'hardwareUnit', label: 'Hinges, rail and fixings', unit: 'a unit', group: 'Finished board', from: 'My guess', guess: true },
   { key: 'runner', label: 'Drawer runners', unit: 'a pair', group: 'Finished board', from: 'My guess', guess: true },
   { key: 'boardMarkup', label: 'On top of the board', unit: '%', group: 'Finished board', from: 'Nothing to start with' },
+  { key: 'cwDiscount', label: 'Your Cworkshop discount', unit: '% off', group: 'Cworkshop', from: 'You, 6 Nov: 10% off the whole order. A quote takes it off the boards, cutting, edging and drilling', step: 0.5 },
   { key: 'cutEdgeSheet', label: 'Cutting', unit: 'a sheet', group: 'Cworkshop', from: 'Cworkshop’s pages: a sheet costs £47.30 more on the cutting list', step: 0.01 },
-  { key: 'edgeThinM', label: 'Edging, 1 mm ABS (carcass and shelves)', unit: 'a metre', group: 'Cworkshop', from: 'Your Cworkshop basket, 6 Nov: £3.26 a metre less your 10%', step: 0.01 },
-  { key: 'edgeThickM', label: 'Edging, 2 mm ABS (doors and frame)', unit: 'a metre', group: 'Cworkshop', from: 'My guess: the same as 1 mm until a basket shows 2 mm', guess: true, step: 0.01 },
-  { key: 'hingeHole', label: 'Hinge holes drilled', unit: 'each', group: 'Cworkshop', from: 'Your Cworkshop basket, 6 Nov: £2.66 each less your 10%', step: 0.01 },
-  { key: 'narrowEdge', label: 'Edging a narrow panel (under 65 mm)', unit: 'an edge', group: 'Cworkshop', from: 'Your Cworkshop basket, 6 Nov: £3.47 an edge less your 10%', step: 0.01 },
-  { key: 'tapeM', label: 'Edging tape to take away', unit: 'a metre', group: 'Cworkshop', from: 'Your Cworkshop basket, 6 Nov: £1.50 a metre less 5%', step: 0.01 },
+  { key: 'edgeThinM', label: 'Edging, 1 mm ABS', unit: 'a metre', group: 'Cworkshop', from: 'Your Cworkshop basket, 6 Nov: £3.26 a metre. You usually use 1 mm, so quotes edge everything in it', step: 0.01 },
+  { key: 'edgeThickM', label: 'Edging, 2 mm ABS (when a quote asks for it)', unit: 'a metre', group: 'Cworkshop', from: 'My guess: the same as 1 mm until a basket shows 2 mm', guess: true, step: 0.01 },
+  { key: 'hingeHole', label: 'Hinge holes drilled', unit: 'each', group: 'Cworkshop', from: 'Your Cworkshop basket, 6 Nov: £2.66 each', step: 0.01 },
+  { key: 'narrowEdge', label: 'Edging a narrow panel (under 65 mm)', unit: 'an edge', group: 'Cworkshop', from: 'Your Cworkshop basket, 6 Nov: £3.47 an edge', step: 0.01 },
+  { key: 'tapeM', label: 'Edging tape to take away (5 m at least)', unit: 'a metre', group: 'Cworkshop', from: 'Your Cworkshop basket, 6 Nov: £1.50 a metre', step: 0.01 },
   { key: 'fastFlow', label: 'Fast Flow, next day', unit: 'a job', group: 'Cworkshop', from: 'My guess: no price on the website', guess: true },
-  { key: 'delivery', label: 'Delivery', unit: 'a job', group: 'Cworkshop', from: 'My guess: worked out by distance, no prices on the website', guess: true },
+  { key: 'delivery', label: 'Delivery', unit: 'a job', group: 'Cworkshop', from: 'You, 6 Nov: about £60, more for a heavy order (it goes by weight)' },
   { key: 'kitchen', label: 'Kitchen fit, labour only', unit: 'standard kitchen', group: 'Other jobs', from: 'Your price, 1 Nov' },
   { key: 'laminateM2', label: 'Laminate laying, labour only', unit: 'a m²', group: 'Other jobs', from: 'Your price, 1 Nov' },
   { key: 'loftM2', label: 'Loft boarding, raised', unit: 'a m²', group: 'Other jobs', from: 'Your price, 1 Nov' },
@@ -109,14 +114,15 @@ export const DEFAULT_PRICES: Prices = {
   boardSetupDays: 0.5,
   boardDaysPerM: 1,
   labourX: 0,
+  cwDiscount: 10, // Raf 6 Nov 2026: 10% off the whole Cworkshop order
   cutEdgeSheet: 47.3,
-  edgeThinM: 2.934, // Cworkshop basket 6 Nov 2026: £3.26 a metre less Raf's 10%
-  edgeThickM: 2.934, // not seen yet: the same as 1 mm
-  hingeHole: 2.394, // £2.66 less 10%
-  narrowEdge: 3.123, // £3.47 less 10%
-  tapeM: 1.425, // £1.50 less 5%
+  edgeThinM: 3.26, // Cworkshop basket 6 Nov 2026, before his discount
+  edgeThickM: 3.26, // not seen yet: the same as 1 mm (he usually uses 1 mm)
+  hingeHole: 2.66,
+  narrowEdge: 3.47,
+  tapeM: 1.5, // sold in 5 m at least
   fastFlow: 50,
-  delivery: 60,
+  delivery: 60, // Raf: about £60, more for a heavy order
   hardwareUnit: 50,
   runner: 25,
   boardMarkup: 0,
@@ -143,6 +149,7 @@ export function pricesWith(saved: unknown, base: Prices = DEFAULT_PRICES): Price
   }
   if (out.roundTo < 1) out.roundTo = 1;
   if (out.labourX > 10) out.labourX = 10;
+  if (out.cwDiscount > 50) out.cwDiscount = 50;
   const b = s.boards && typeof s.boards === 'object' ? (s.boards as Record<string, unknown>) : {};
   for (const [k, v] of Object.entries(b)) if (Number.isFinite(Number(v)) && Number(v) > 0 && Number(v) < 5000) out.boards[k] = Number(v);
   return out;
@@ -202,6 +209,7 @@ export type QuoteEdits = {
   inside?: string; // the second board
   split?: Split; // how the two boards are shared out ('one' = the first board throughout)
   sheets?: { out?: number; in?: number }; // sheets of the first and second board (with one board, out is all of them)
+  thick?: boolean; // 2 mm edging on the doors and frame (Raf usually uses 1 mm everywhere)
   holes?: boolean; // Cworkshop drills the hinge holes
   fast?: boolean; // Cworkshop's Fast Flow, next day
   delivery?: boolean; // false: collected, no delivery
@@ -226,8 +234,9 @@ export const SPLITS: Split[] = ['one', 'outside', 'doors'];
 
 /* ---------- money ---------- */
 
-export const money = (n: number) => `£${Math.round(n).toLocaleString('en-GB')}`;
-export const money2 = (n: number) => `£${n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const minus = (n: number) => (n < 0 ? '−' : ''); // a discount line reads −£34.50
+export const money = (n: number) => `${minus(Math.round(n))}£${Math.abs(Math.round(n)).toLocaleString('en-GB')}`;
+export const money2 = (n: number) => `${minus(Math.round(n * 100))}£${Math.abs(n).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 export const roundUp = (n: number, to: number) => Math.ceil(Math.max(0, n) / Math.max(1, to) - 1e-9) * Math.max(1, to);
 export const withVat = (n: number) => Math.round(n * (1 + VAT));
 export const priceWords = (n: number) => `${money(n)} + VAT (${money(withVat(n))})`;
@@ -388,6 +397,28 @@ export function boardWork(read: QuoteRead, p: Prices, edits: QuoteEdits = {}) {
   };
 }
 
+/* Edging: Raf usually uses 1 mm everywhere (6 Nov 2026), so it's one line at the 1 mm price; a quote can tick 2 mm on
+   the doors and frame, which splits it in two. */
+export function edgingOf(parts: { thickM: number; thinM: number }, p: Prices, edits: QuoteEdits = {}) {
+  const lines: Line[] = edits.thick
+    ? [
+        { label: `Edging 2 mm, ${parts.thickM} m at ${money2(p.edgeThickM)} (doors and frame)`, amount: parts.thickM * p.edgeThickM },
+        { label: `Edging 1 mm, ${parts.thinM} m at ${money2(p.edgeThinM)} (carcass and shelves)`, amount: parts.thinM * p.edgeThinM },
+      ]
+    : [{ label: `Edging 1 mm, ${parts.thickM + parts.thinM} m at ${money2(p.edgeThinM)}`, amount: (parts.thickM + parts.thinM) * p.edgeThinM }];
+  return { lines, amount: lines.reduce((n, l) => n + l.amount, 0) };
+}
+export const edgingWords = (parts: { thickM: number; thinM: number }, edits: QuoteEdits = {}) =>
+  edits.thick ? `${parts.thickM} m of 2 mm edging and ${parts.thinM} m of 1 mm` : `${parts.thickM + parts.thinM} m of 1 mm edging`;
+
+/* His Cworkshop account discount (10% off the whole order, Raf 6 Nov 2026) as one line, taken off Cworkshop's prices
+   for the boards, cutting, edging and drilling. Fast Flow and delivery stay as they are. */
+export function discountOf(p: Prices, onAmount: number, drilling: boolean): Line | null {
+  const pc = Math.max(0, Math.min(50, p.cwDiscount || 0));
+  if (!pc || onAmount <= 0) return null;
+  return { label: `Your Cworkshop discount, ${pc}% off the boards, cutting, edging${drilling ? ' and drilling' : ''}`, amount: -Math.round(onAmount * pc) / 100 };
+}
+
 export function wardrobeOptions(read: QuoteRead, p: Prices, boards: Board[], edits: QuoteEdits = {}, fillWall?: FillWall): Option[] {
   const sizes = sizesOf(read, edits);
   const w = totalWidth(sizes);
@@ -486,10 +517,15 @@ export function wardrobeOptions(read: QuoteRead, p: Prices, boards: Board[], edi
       if (split !== 'one' && second && inSheets) lines.push({ label: `${s1(inSheets)} ${second.name} (${role2}) at ${money2(sheetPrice(second, p))}`, amount: inSheets * sheetPrice(second, p) * markup });
     }
     const sheets = outSheets + (split === 'one' ? 0 : inSheets);
+    // what the discount comes off: Cworkshop's own prices for the boards (before his markup), cutting, edging and drilling
+    const boardsList = colour ? outSheets * sheetPrice(colour, p) + (split !== 'one' && second && inSheets ? inSheets * sheetPrice(second, p) : 0) : 0;
     lines.push({ label: `Cworkshop cutting, ${s1(sheets)} at ${money2(p.cutEdgeSheet)}`, amount: sheets * p.cutEdgeSheet });
-    lines.push({ label: `Edging 2 mm, ${parts.thickM} m at ${money2(p.edgeThickM)} (doors and frame)`, amount: parts.thickM * p.edgeThickM });
-    lines.push({ label: `Edging 1 mm, ${parts.thinM} m at ${money2(p.edgeThinM)} (carcass and shelves)`, amount: parts.thinM * p.edgeThinM });
-    if (edits.holes) lines.push({ label: `Hinge holes drilled, ${parts.hinges} at ${money2(p.hingeHole)}`, amount: parts.hinges * p.hingeHole });
+    const edging = edgingOf(parts, p, edits);
+    lines.push(...edging.lines);
+    const holes = edits.holes ? parts.hinges * p.hingeHole : 0;
+    if (edits.holes) lines.push({ label: `Hinge holes drilled, ${parts.hinges} at ${money2(p.hingeHole)}`, amount: holes });
+    const off = discountOf(p, boardsList + sheets * p.cutEdgeSheet + edging.amount + holes, Boolean(edits.holes));
+    if (off) lines.push(off);
     lines.push({ label: `Hinges, rails and fixings, ${units} unit${units === 1 ? '' : 's'} at ${money(p.hardwareUnit)}`, amount: units * p.hardwareUnit });
     if (drawers) lines.push({ label: `Drawer runners, ${drawers} at ${money(p.runner)}`, amount: drawers * p.runner });
     const materials = lines.reduce((n, l) => n + l.amount, 0);
@@ -520,7 +556,7 @@ export function wardrobeOptions(read: QuoteRead, p: Prices, boards: Board[], edi
       offered: Boolean(colour),
       why: colour ? undefined : 'No boards in the list.',
       extra: colour
-        ? `Worked out from the parts: about ${m2}, ${Math.round(SHEET_YIELD * 100)}% of each sheet used; ${parts.thickM} m of 2 mm edging and ${parts.thinM} m of 1 mm; ${parts.hinges} hinges on ${parts.doors} doors.`
+        ? `Worked out from the parts: about ${m2}, ${Math.round(SHEET_YIELD * 100)}% of each sheet used; ${edgingWords(parts, edits)}; ${parts.hinges} hinges on ${parts.doors} doors.`
         : undefined,
     });
   }
