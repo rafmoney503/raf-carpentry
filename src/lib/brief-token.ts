@@ -30,6 +30,26 @@ export function readToken(token: string, now = Date.now()): { job: string; n: nu
   }
 }
 
+/* Any small record, signed the same way, good for `ttl` ms (the drawings service's order token). */
+export function signRecord(kind: string, rec: Record<string, unknown>, ttl: number, now = Date.now()) {
+  const body = Buffer.from(JSON.stringify({ k: kind, ...rec, e: now + ttl })).toString('base64url');
+  return `${body}.${sign(body)}`;
+}
+export function readRecord<T>(kind: string, token: string, now = Date.now()): T | null {
+  const [body, mac] = String(token || '').split('.');
+  if (!body || !mac) return null;
+  const want = Buffer.from(sign(body));
+  const got = Buffer.from(mac);
+  if (want.length !== got.length || !timingSafeEqual(want, got)) return null;
+  try {
+    const t = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (t.k !== kind || typeof t.e !== 'number' || t.e < now) return null;
+    return t as T;
+  } catch {
+    return null;
+  }
+}
+
 /* A uuid that is always the same for this job's photo number i. */
 export function photoUuid(job: string, i: number) {
   return stableUuid(`${job}:photo:${i}`);

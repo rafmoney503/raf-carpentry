@@ -17,6 +17,7 @@ import { JobMenu, SecIcon } from './job-menu';
 import { methodsFrom, PaidNote, PaymentForm, type NewPayment } from './payments';
 import { CustomerSearch, indexClients, personName, SameCustomer, type Client, type Clients } from './customers';
 import { daysBetween, rowOf, rowWords, spanWords, timelineRows, todayKey } from '@/lib/job-timeline';
+import { isDrawingsOrder } from '@/lib/drawings-service';
 
 export { problemText };
 
@@ -1821,6 +1822,13 @@ export function todayLines({
     if (behind.length === 1) lines.push({ text: `${behind[0].job.name} is behind: ${behind[0].progress}% done, about ${behind[0].expected}% by now`, go: 'timeline' });
     else if (behind.length) lines.push({ text: `${behind.length} jobs behind`, go: 'timeline' });
     if (plan.undated.length) lines.push({ text: `${n(plan.undated.length, 'job going ahead needs', 'jobs going ahead need')} dates`, go: 'timeline', urgent: true });
+  }
+  // Paid drawings orders (/drawings): who's waiting for files, and by when (the day is in the job's description).
+  const dayWords = (d: Date) => d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/London' });
+  const todayWords = dayWords(new Date());
+  for (const j of list.filter((j) => j.status === 'Work Order' && isDrawingsOrder(j.description))) {
+    const due = /Due by ([^.\n]+)\./.exec(j.description)?.[1];
+    lines.push({ text: `Drawings for ${j.name}${due ? `: due ${due === todayWords ? 'today' : due}` : ''}`, go: 'sm8', id: j.uuid, urgent: due === todayWords });
   }
   if (going) lines.push({ text: `${n(going, 'job', 'jobs')} on Work Order`, go: 'timeline' });
   const photoJobs = kit.filter((k) => k.kind !== 'design');

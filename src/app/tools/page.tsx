@@ -11,6 +11,7 @@ import { TradeNudge } from '@/components/AlsoByMe';
 import AppNudge from '@/components/AppNudge';
 import ExtensionTeaser from '@/components/ExtensionTeaser';
 import { BUILD_IT_IN_3D_URL } from '@/lib/site';
+import { WORKING_DAYS, gbp, packPrices } from '@/lib/drawings-service';
 
 type ToolEntry = {
   name: string;
@@ -132,6 +133,22 @@ export default function ToolsPage() {
               </div>
               <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
             </div>
+          </Link>
+          {/* Drawings and cut lists, done for you: the paid service (6 Nov 2026) */}
+          <Link
+            href="/drawings"
+            data-drawings-card
+            className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6 lg:col-span-2"
+          >
+            <div>
+              <p className="font-mono text-[13px] text-accent">Done for you</p>
+              <h2 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Drawings and cut lists</h2>
+              <p className="mt-1 max-w-[62ch] text-[15px] text-muted">
+                Send me your sizes and a sketch. Within {WORKING_DAYS} working days you get the drawings, 3D views, cut list, board layout and assembly guide, ready for your cutting company.
+              </p>
+              <p className="mt-2 font-mono text-[13px] text-faint">From {gbp(packPrices('cutlist').total)} with VAT · paid upfront</p>
+            </div>
+            <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
           </Link>
           {/* Build It in 3D, my free 3D drawing lessons on their own site (5 Nov 2026) */}
           <a

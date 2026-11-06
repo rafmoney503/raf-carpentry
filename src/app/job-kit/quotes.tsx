@@ -6,6 +6,7 @@ import type { QuoteData, QuoteRow } from '@/lib/quote-maker';
 import { BOARDS, BOARDS_CHECKED, FAMILY_NAME, FAMILY_ORDER, INSIDE_DEFAULT, PRICE_BASE } from '@/lib/cworkshop-boards';
 import { fillWall } from '@/lib/pax-brief';
 import { matches } from '@/lib/search';
+import { isDrawingsOrder } from '@/lib/drawings-service';
 import {
   boardWork,
   fromPrice,
@@ -251,20 +252,21 @@ export function quoteEntries(q: Quotes, sm8: Sm8, marks: Marks): Entry[] {
     out.push({ id: row.id, job, row, group });
   }
   for (const j of jobs) {
-    if (seen.has(j.uuid) || j.status !== 'Quote' || stage(j, marks) !== 'new') continue;
+    if (seen.has(j.uuid) || j.status !== 'Quote' || stage(j, marks) !== 'new' || isDrawingsOrder(j.description)) continue;
     out.push({ id: j.uuid, job: j, group: 'none' });
   }
   return out;
 }
 
 /* New Quote jobs the Job Kit reads by itself: in ServiceM8 for the last 14 days, quote not sent, nothing read yet.
-   Not in the first 15 minutes (photos from WhatsApp follow the job), and never one that failed (Raf asks again). */
+   Not in the first 15 minutes (photos from WhatsApp follow the job), and never one that failed (Raf asks again).
+   Never a drawings order from /drawings (it has its own price, paid online). */
 export function toRead(q: Quotes, sm8: Sm8, marks: Marks): string[] {
   if (!q.at || q.error) return [];
   const now = Date.now();
   return shown(sm8, marks)
     .filter((j) => {
-      if (j.status !== 'Quote' || stage(j, marks) !== 'new' || q.rows.some((r) => r.id === j.uuid && (r.data || r.state !== 'none'))) return false;
+      if (j.status !== 'Quote' || stage(j, marks) !== 'new' || isDrawingsOrder(j.description) || q.rows.some((r) => r.id === j.uuid && (r.data || r.state !== 'none'))) return false;
       const t = madeAt(j.created);
       return Number.isFinite(t) && now - t < NEW_DAYS * DAY && now - t > 15 * 60_000;
     })

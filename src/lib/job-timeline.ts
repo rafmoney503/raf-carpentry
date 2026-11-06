@@ -157,7 +157,8 @@ export function timelineRows(jobs: CurrentJob[], bookings: Booking[] | null | un
     if (j.status !== 'Work Order' && j.status !== 'Completed') continue;
     const r = rowOf(j, list, marks, now);
     if (r && (j.status === 'Work Order' || r.end >= since)) rows.push(r);
-    else if (!r && j.status === 'Work Order') undated.push(j);
+    // A paid drawings order (/drawings) is a Work Order with nothing to book on site: never "needs dates".
+    else if (!r && j.status === 'Work Order' && !/^Drawings order\b/.test((j.description ?? '').trim())) undated.push(j);
   }
   rows.sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end));
   return { rows, undated };

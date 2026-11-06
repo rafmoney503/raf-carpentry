@@ -70,6 +70,14 @@ export default function Privacy() {
             list. Ask me and I’ll delete it. Nothing is charged.
           </p>
 
+          <H>When you order drawings</H>
+          <p>
+            If you order <Link href="/drawings">drawings and a cut list</Link>, your name, email, mobile if you give it, what you told me about the job and the
+            files you send go into <b>ServiceM8</b> as an order, the same way a quote request does, and I email you about it through ServiceM8. You pay on a
+            page run by <b>Stripe</b>: your card details go to Stripe, never to me or this website, and Stripe tells me only that you paid, the amount and your
+            email. I keep the order and its payment as long as the law requires for accounts (six years).
+          </p>
+
           <H>Things kept on your own phone or computer</H>
           <p>
             Some parts of the site remember things in your browser only, never sent to me: designs you save with the heart for your brief, the last few pages
@@ -108,7 +116,7 @@ export default function Privacy() {
           <H>Who else handles the details</H>
           <p>
             Only the companies that run the tools above, under their own data protection terms: Vercel (hosting the website), Supabase (the visit counts and my job app),
-            ServiceM8, Microsoft and CabinetOS. Some of them may store data outside the UK, with the safeguards UK law requires.
+            ServiceM8, Microsoft, CabinetOS and Stripe (card payments for drawings). Some of them may store data outside the UK, with the safeguards UK law requires.
           </p>
 
           <H>Your rights</H>

@@ -11,6 +11,7 @@ const explore = [
   { href: '/designs', label: 'Designs in 3D' },
   { href: '/areas', label: 'Where I work' },
   COST_LINK,
+  { href: '/drawings', label: 'Drawings and cut lists' },
   { href: '/sketchup', label: 'SketchUp' },
   { href: '/cabinetos', label: 'CabinetOS' },
   { href: '/tools', label: 'Tools' },

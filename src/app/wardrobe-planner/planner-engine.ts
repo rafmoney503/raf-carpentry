@@ -12,6 +12,7 @@
    Since 23 Oct 2026 the Space and Send steps link to "Got an IKEA PAX design?" (pax-send.tsx, opened through
    opts.openPax) for someone who designed it on IKEA's website: they send the design code instead. */
 import * as THREE from 'three';
+import { gbp as dwGbp, packPrices as dwPrices } from '@/lib/drawings-service';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { COS, PLAN, SLIDE, slidingDoorsFor, slidingDrawerSpans, slidingLineUp, PRESETS, presetInside, presetOf, PAIR, canSplit, insideText, planPieces, payloadUnits, runFor } from '@/lib/cabinetos-wardrobe';
 
@@ -703,9 +704,13 @@ function stepSend(){
 const cutTest=(()=>{let on=location.hostname!=='www.rafcarpentry.com';
   try{if(/[?&]cutlist=test\b/.test(location.search))sessionStorage.setItem('raf_wp_cutlist_test','1');if(sessionStorage.getItem('raf_wp_cutlist_test')==='1')on=true;}catch(_){if(/[?&]cutlist=test\b/.test(location.search))on=true;}
   return on;})();
-function cutBox(){const K=S.cut;if(!CFG.cutlistLive&&!cutTest)return'';
+function cutBox(){const K=S.cut;if(!CFG.cutlistLive&&!cutTest)return drawingsBox();
   const flag=CFG.cutlistLive?'':'<p class="priv cuttest">Testing: customers don\'t see this box yet.</p>';
   return cutBoxInner(K).replace('<h3>Building it yourself?</h3>','<h3>Building it yourself?</h3>'+flag);}
+/* While the free cut list is off for customers: the paid drawings service instead (/drawings, Raf 6 Nov 2026). */
+function drawingsBox(){return `<div class="cutbox" id="dwBox"><h3>Building it yourself?</h3>
+    <p class="note">I can draw it for you: the drawings, 3D views, cut list, board layout and assembly guide, ready for your cutting company. From ${dwGbp(dwPrices('cutlist').total)} with VAT.</p>
+    <a class="wbtn" href="/drawings" style="align-self:flex-start;text-decoration:none" data-dw-planner>Get it drawn</a></div>`;}
 function cutBoxInner(K){
   if(K.sent){const what=K.mailed?`Sent to ${esc(K.sent)}${K.parts?`: ${K.parts} parts on ${K.boards} ${K.boards===1?'board':'boards'}`:''}.`:`Thanks. I'll email the cut list for this design to ${esc(K.sent)} shortly.`;
     const more=K.mailed?'It should be in your inbox in a minute (check the junk folder too), with a spreadsheet for your cutting company. Change the design and ask again any time.':'Change the design and ask again any time.';
