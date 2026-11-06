@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import type { MenuPanel, MenuTag } from '@/lib/menu-panels';
+import type { MenuAlso, MenuPanel, MenuTag } from '@/lib/menu-panels';
+import MiniIcon from './MiniIcon';
 
 /* What a main menu item shows when the mouse rests on it (computers): the page in a line, its sections as # tags
    that jump straight there, sometimes a short list, and a picture from the page. The data is built at deploy
@@ -44,6 +45,39 @@ export function MenuFeatureRow({ feature, onPick }: { feature: NonNullable<MenuP
   );
 }
 
+/** Links under the panel's picture, each with a mini icon (Tools: drawings and cut lists, Build It in 3D). */
+export function MenuAlsoRows({ rows, onPick, size = 44 }: { rows: MenuAlso[]; onPick?: () => void; size?: number }) {
+  return (
+    <ul className="grid gap-2" data-menu-also>
+      {rows.map((r) => {
+        const out = r.href.startsWith('http');
+        return (
+          <li key={r.href}>
+            <Link
+              href={r.href}
+              onClick={onPick}
+              {...(out ? { target: '_blank', rel: 'noopener' } : {})}
+              className="group grid items-center gap-3 rounded-sm border border-line-strong bg-mount p-1.5 pr-3 transition-colors hover:border-accent"
+              style={{ gridTemplateColumns: `${size}px minmax(0,1fr) auto` }}
+            >
+              <span className="block overflow-hidden rounded-[2px]" style={{ width: size, height: size }}>
+                <MiniIcon kind={r.icon} size={size} />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-mono text-[11.5px] leading-tight text-accent">{r.kicker}</span>
+                <span className="mt-0.5 block text-[15px] font-[620] leading-snug text-ink transition-colors group-hover:text-accent">{r.title}</span>
+              </span>
+              <span aria-hidden="true" className="text-accent">
+                {out ? '↗' : '→'}
+              </span>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 export default function MenuPanelView({ panel, onPick }: { panel: MenuPanel; onPick: () => void }) {
   return (
     <div className="mx-auto grid max-w-[1280px] grid-cols-[260px_minmax(0,1fr)_240px] gap-10 px-10 py-8 xl:grid-cols-[300px_minmax(0,1fr)_272px] xl:gap-11">
@@ -76,6 +110,7 @@ export default function MenuPanelView({ panel, onPick }: { panel: MenuPanel; onP
         ) : null}
       </div>
       {panel.feature ? (
+        <div>
         <Link href={panel.feature.href} onClick={onPick} className="group block">
           <div className="mount p-1.5">
             <div className="relative aspect-[4/3] overflow-hidden bg-white">
@@ -89,6 +124,12 @@ export default function MenuPanelView({ panel, onPick }: { panel: MenuPanel; onP
           </p>
           <p className="mt-1 text-[13.5px] leading-snug text-muted">{panel.feature.line}</p>
         </Link>
+        {panel.also?.length ? (
+          <div className="mt-4">
+            <MenuAlsoRows rows={panel.also} onPick={onPick} />
+          </div>
+        ) : null}
+        </div>
       ) : panel.image ? (
         <figure>
           <div className="mount p-1.5">

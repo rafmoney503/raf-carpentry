@@ -3,15 +3,19 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
-import { PHONE_DISPLAY, PHONE_HREF, QUOTE_HREF } from '@/lib/site';
+import { BUILD_IT_IN_3D_URL, PHONE_DISPLAY, PHONE_HREF, QUOTE_HREF } from '@/lib/site';
 import type { MenuPanel } from '@/lib/menu-panels';
-import MenuPanelView, { MenuFeatureRow, MenuTags } from './MenuPanel';
+import MenuPanelView, { MenuAlsoRows, MenuFeatureRow, MenuTags } from './MenuPanel';
+import MiniIcon, { type MiniIconKind } from './MiniIcon';
 import { PLANNER_HREF, PLANNER_IMAGE_SQUARE } from '@/lib/planner-picture';
 import { COST_LINK } from '@/lib/cost-link';
 import SiteSearch from './SiteSearch';
 import PullSearch from './PullSearch';
 import { MiniLevel } from './ScrollLevel';
 import { getDock, getUndocked, subscribeDock } from '@/lib/scroll-level';
+
+/* Phone menu lines with a mini icon, under the wardrobe planner's picture */
+const MINI: Record<string, MiniIconKind> = { '/drawings': 'drawings', [BUILD_IT_IN_3D_URL]: 'builditin3d' };
 
 const links = [
   { href: '/services', label: 'Services' },
@@ -233,7 +237,13 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
             )}
           </div>
           {phoneSearch ? null : [
-            ...links.flatMap((l) => (l.href === '/designs' ? [l, { href: '/wardrobe-planner', label: 'Wardrobe planner' }] : l.href === '/services' ? [l, COST_LINK] : [l])),
+            ...links.flatMap((l) =>
+              l.href === '/designs'
+                ? [l, { href: '/wardrobe-planner', label: 'Wardrobe planner' }, { href: '/drawings', label: 'Drawings and cut lists' }, { href: BUILD_IT_IN_3D_URL, label: 'Build It in 3D' }]
+                : l.href === '/services'
+                  ? [l, COST_LINK]
+                  : [l],
+            ),
             { href: '/how-it-works', label: 'Plan your project' },
             { href: '/contact', label: 'Contact' },
           ].map((l) => {
@@ -242,11 +252,23 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
             return (
               <div key={l.href} className="border-b border-line">
                 <div className="flex items-center">
-                  <Link href={l.href} onClick={() => setOpen(false)} className="flex flex-1 items-center justify-between gap-3 py-3.5 text-[17px] text-ink">
-                    {l.label}
+                  <Link
+                    href={l.href}
+                    onClick={() => setOpen(false)}
+                    {...(l.href.startsWith('http') ? { target: '_blank', rel: 'noopener' } : {})}
+                    className="flex flex-1 items-center justify-between gap-3 py-3.5 text-[17px] text-ink"
+                  >
+                    <span>
+                      {l.label}
+                      {l.href.startsWith('http') ? <span aria-hidden="true" className="ml-1.5 text-[14px] text-faint">↗</span> : null}
+                    </span>
                     {l.href === PLANNER_HREF ? (
                       <span className="relative -my-2 block h-12 w-12 shrink-0 overflow-hidden rounded-sm border border-line-strong bg-paper">
                         <Image src={PLANNER_IMAGE_SQUARE} alt="" fill sizes="48px" className="object-cover" />
+                      </span>
+                    ) : MINI[l.href] ? (
+                      <span className="-my-2 block h-12 w-12 shrink-0 overflow-hidden rounded-sm border border-line-strong bg-paper">
+                        <MiniIcon kind={MINI[l.href]} size={48} />
                       </span>
                     ) : null}
                   </Link>
@@ -267,6 +289,11 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
                 {p && isOpen ? (
                   <div className="pb-4">
                     {p.feature ? <MenuFeatureRow feature={p.feature} onPick={() => setOpen(false)} /> : null}
+                    {p.also?.length ? (
+                      <div className="mb-3">
+                        <MenuAlsoRows rows={p.also} size={56} onPick={() => setOpen(false)} />
+                      </div>
+                    ) : null}
                     <MenuTags tags={p.tags} small onPick={() => setOpen(false)} />
                     {p.list?.length ? (
                       <ul className="mt-3 grid gap-1">

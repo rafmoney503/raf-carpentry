@@ -9,6 +9,7 @@ import { getServices, jobsFor } from './services';
 import { COST_JOBS, fromPrice } from './cost-calculator';
 import { COST_LINK } from './cost-link';
 import { BUILD_IT_IN_3D_URL } from './site';
+import { gbp, packPrices } from './drawings-service';
 
 /* What each main menu item shows when the mouse rests on it (computer) or its + is tapped (phone menu):
    that page in a line, its sections as # tags that jump straight there, sometimes a short list (newest
@@ -30,7 +31,10 @@ export type MenuPanel = {
   image?: { src: string; alt: string; caption: string; contain?: boolean };
   /** A linked picture in place of `image` (Tools: the wardrobe planner), also shown in the phone menu under the + */
   feature?: { href: string; src: string; square: string; kicker: string; title: string; line: string };
+  /** Rows under the feature, each with a mini icon (Tools: drawings and cut lists, Build It in 3D) */
+  also?: MenuAlso[];
 };
+export type MenuAlso = { href: string; icon: 'drawings' | 'builditin3d'; kicker: string; title: string };
 
 const slug = (s: string) =>
   s
@@ -159,10 +163,13 @@ export function getMenuPanels(): Record<string, MenuPanel> {
         { label: 'Spirit level on your phone', href: '/tools/spirit-level' },
         { label: 'Workshop tips', href: '/tips' },
         { label: 'Workshop Games, six free games', href: '/tools/games' },
-        { label: 'Build It in 3D, free 3D drawing lessons', href: BUILD_IT_IN_3D_URL },
       ],
       image: toolImage?.image ? { src: toolImage.image, alt: '', caption: toolImage.name ?? 'From my kit' } : undefined,
       feature: { href: PLANNER_HREF, src: PLANNER_IMAGE, square: PLANNER_IMAGE_SQUARE, kicker: 'Free planner', title: 'Plan your own wardrobe in 3D', line: 'Your sizes, units and doors. Then send it to me.' },
+      also: [
+        { href: '/drawings', icon: 'drawings', kicker: `Done for you · from ${gbp(packPrices('cutlist').total)}`, title: 'Drawings and cut lists' },
+        { href: BUILD_IT_IN_3D_URL, icon: 'builditin3d', kicker: 'Free 3D lessons', title: 'Build It in 3D' },
+      ],
     },
     '/about': {
       href: '/about',
