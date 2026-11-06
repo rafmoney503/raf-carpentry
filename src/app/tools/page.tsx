@@ -13,8 +13,7 @@ import AppNudge from '@/components/AppNudge';
 import ExtensionTeaser from '@/components/ExtensionTeaser';
 import { BUILD_IT_IN_3D_URL } from '@/lib/site';
 import { WORKING_DAYS, gbp, packPrices } from '@/lib/drawings-service';
-import DrawingsIcon from '@/components/DrawingsIcon';
-import { BUILD_IT_IN_3D_ICON } from '@/components/MiniIcon';
+import { BUILD_IT_IN_3D_ICON, DRAWINGS_ICON } from '@/components/MiniIcon';
 
 type ToolEntry = {
   name: string;
@@ -200,7 +199,7 @@ export default function ToolsPage() {
             </div>
             <div className="flex items-center gap-5">
               <span className="block w-[64px] sm:w-[76px]">
-                <DrawingsIcon className="block h-auto w-full" />
+                <Image src={DRAWINGS_ICON} alt="" width={76} height={76} unoptimized className="block h-auto w-full" />
               </span>
               <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
             </div>
