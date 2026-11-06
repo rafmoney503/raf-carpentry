@@ -5,7 +5,7 @@ import { readPin } from './uploader';
 import { post } from './sm8-post';
 import { Icon } from './icons';
 import { BlogBand } from './blog-stats-view';
-import { type CardTaps, GOAL_LABEL, SOURCE_LABEL, placeName, statsOff, type Device, type Goal, type StatsPage, type StatsReport, type Tap, type Visit } from '@/lib/site-stats';
+import { type CardTaps, GAME_NAMES, GAMES_APP, GOAL_LABEL, type GamesStats, SOURCE_LABEL, gameScreenName, pageHref, placeName, statsOff, type Device, type Goal, type StatsPage, type StatsReport, type Tap, type Visit } from '@/lib/site-stats';
 
 /* The Job Kit's Website stats screen: the website's own visitor counter (src/components/SiteStats.tsx), read through
    /api/job-kit/stats behind the PIN. The overview (numbers, visits by day, where people come from, the ways to get in
@@ -31,7 +31,7 @@ type CutlistInfo = {
   sent?: number;
   recent: { id: number; at: string; email: string; summary: string; country: string | null; host: string | null; sent_at: string | null; parts?: number | null; boards?: number | null }[];
 };
-type Saved = { days: number; report: StatsReport | null; at: number; cutlist?: CutlistInfo | null; cards?: CardTaps | null };
+type Saved = { days: number; report: StatsReport | null; at: number; cutlist?: CutlistInfo | null; cards?: CardTaps | null; games?: GamesStats | null };
 
 export function savedStats(): Saved {
   try {
@@ -93,6 +93,8 @@ export const dayLong = (d: string) => new Date(`${d}T12:00`).toLocaleDateString(
 export function pageName(path: string, title?: string | null) {
   if (!path) return 'Left the website';
   if (path === '/') return 'Home';
+  const game = gameScreenName(path);
+  if (game) return game;
   const t = (title || '').replace(/\s*[|·]\s*Raf Carpentry.*$/i, '').replace(/^Raf Carpentry\s*[|·]\s*/i, '').trim();
   if (t) return t;
   const last = path.split('/').filter(Boolean).pop() || path;
@@ -365,6 +367,153 @@ function PlacesBand({ r }: { r: StatsReport }) {
   );
 }
 
+/* Workshop Games (rafcarpentry.com/tools/games): which games are played and for how long, where the players found
+   them, where they are, installs (the first open from a phone's home screen) and shared scores. Each game is counted
+   on its own from 6 Nov 2026; before that every game counted as the games' home screen. */
+const ORDER = Object.keys(GAME_NAMES);
+function GamesBand({ info, days, onPage }: { info: GamesStats | null; days: number; onPage: (path: string) => void }) {
+  const [more, setMore] = useState(false);
+  if (!info) return null;
+  const t = info.totals;
+  const games = [...info.games]
+    .filter((g) => g.game !== 'home' && GAME_NAMES[g.game])
+    .sort((a, b) => b.ms - a.ms || b.visits - a.visits || ORDER.indexOf(a.game) - ORDER.indexOf(b.game));
+  const home = info.games.find((g) => g.game === 'home');
+  const gameMs = games.reduce((a, g) => a + g.ms, 0);
+  const srcTotal = info.sources.reduce((a, s) => a + s.visits, 0);
+  const placeTotal = info.places.reduce((a, p) => a + p.visits, 0);
+  const cut = (n: number) => (more ? n : Math.min(n, 5));
+  // '45 s', '20 min', '1 h 52 min': short enough for the boxes
+  const mins = (ms: number) => {
+    const sec = Math.round(ms / 1000);
+    if (sec < 60) return `${sec} s`;
+    const m = Math.round(sec / 60);
+    return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ''}`;
+  };
+  const maxMs = Math.max(1, ...games.map((g) => g.ms));
+  return (
+    <Band label="Workshop Games" right={`${t.visits} visit${t.visits === 1 ? '' : 's'} played in ${days} days`}>
+      <div className="grid grid-cols-2 gap-2" data-games-totals>
+        <Num v={String(t.visits)} label="Visits that played" sub={`${t.people} visitor${t.people === 1 ? '' : 's'} a day`} />
+        <Num v={mins(t.ms)} label="Time played" sub={t.visits ? `about ${mins(t.ms / t.visits)} a visit` : undefined} />
+        <Num v={String(t.installs)} label="Put on a home screen" sub={`${t.home} open${t.home === 1 ? '' : 's'} from a home screen`} />
+        <Num v={String(t.shares)} label="Scores shared" sub={`${t.beat} friend${t.beat === 1 ? '' : 's'} opened one`} />
+      </div>
+
+      <h3 className="mt-4 font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">Which games</h3>
+      {games.length ? (
+        <ul className="divide-y divide-line" data-games-list>
+          {games.map((g) => (
+            <li key={g.game}>
+              <button type="button" onClick={() => onPage(`${GAMES_APP}/${g.game}`)} className="block w-full py-2 text-left">
+                <span className="flex items-baseline justify-between gap-3">
+                  <span className="min-w-0 truncate text-[15px] font-semibold">{GAME_NAMES[g.game]}</span>
+                  <span className="shrink-0 font-mono text-[13px] text-muted">
+                    {mins(g.ms)} · {g.visits} visit{g.visits === 1 ? '' : 's'}
+                    <span aria-hidden className="ml-2 text-accent">
+                      →
+                    </span>
+                  </span>
+                </span>
+                <span aria-hidden className="mt-1.5 block h-[6px] rounded-sm bg-raised">
+                  <span className="block h-full rounded-sm bg-accent" style={{ width: `${Math.max(2, (g.ms / maxMs) * 100)}%` }} />
+                </span>
+                <span className="mt-1 block font-mono text-[11.5px] text-faint">
+                  {pct(g.ms, gameMs)} of the time played
+                  {g.levels ? ` · levels opened ${g.levels}` : ''}
+                  {g.shares ? ` · shared ${g.shares}` : ''}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="py-2 text-[14.5px] text-muted" data-games-none>
+          {info.gamesFrom ? 'No game played in these days.' : 'Each game is counted from 6 November 2026: the next plays show here, game by game.'}
+        </p>
+      )}
+      {home && (home.visits || home.ms) ? (
+        <p className="mt-1 font-mono text-[12px] leading-relaxed text-faint">
+          Home screen: {home.visits} visit{home.visits === 1 ? '' : 's'}, {mins(home.ms)}
+          {info.gamesFrom && info.gamesFrom <= info.since ? '' : ' (before 6 Nov every game counted here)'}
+        </p>
+      ) : null}
+
+      <h3 className="mt-4 font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">How they found them</h3>
+      {info.sources.length ? (
+        <ul className="divide-y divide-line" data-games-sources>
+          {info.sources.slice(0, cut(info.sources.length)).map((s) => (
+            <ShareRow
+              key={`${s.kind}-${s.host ?? ''}`}
+              label={`${sourceName(s.kind)}${s.host && s.host !== `${s.kind}.com` ? `, via ${s.host}` : ''}`}
+              n={s.visits}
+              of={srcTotal}
+              note={s.played ? `${s.played} played, ${mins(s.ms)}` : 'looked at the page, didn’t play'}
+            />
+          ))}
+        </ul>
+      ) : (
+        <p className="py-2 text-[14.5px] text-muted">Nobody yet in these days.</p>
+      )}
+
+      <h3 className="mt-4 font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">Where they are</h3>
+      {info.places.length ? (
+        <ul className="divide-y divide-line" data-games-places>
+          {info.places.slice(0, cut(info.places.length)).map((p) => (
+            <ShareRow
+              key={`${p.country}-${p.city ?? ''}`}
+              label={placeName({ country: p.country === '?' ? null : p.country, city: p.city }, { district: false })}
+              n={p.visits}
+              of={placeTotal}
+              note={p.played ? `${p.played} played, ${mins(p.ms)}` : 'didn’t play'}
+            />
+          ))}
+        </ul>
+      ) : null}
+      {info.sources.length > 5 || info.places.length > 5 ? (
+        <button type="button" onClick={() => setMore((x) => !x)} className="mt-1 h-10 text-[14px] font-semibold text-accent">
+          {more ? 'Show fewer' : 'Show all'}
+        </button>
+      ) : null}
+
+      {info.latest.length ? (
+        <>
+          <h3 className="mt-4 font-mono text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">Latest players</h3>
+          <ul className="divide-y divide-line" data-games-latest>
+            {info.latest
+              .filter((v) => v.played)
+              .slice(0, more ? 30 : 6)
+              .map((v) => (
+                <li key={v.at} className="py-2.5">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="min-w-0 truncate text-[15px] font-semibold">{placeName(v, { district: false })}</p>
+                    <span className="shrink-0 font-mono text-[12px] text-muted">{whenWords(v.at)}</span>
+                  </div>
+                  <p className="mt-0.5 font-mono text-[12px] leading-snug text-faint">
+                    {v.device ?? 'screen not known'} · {fromWords(v.src)}
+                    {v.host && v.host !== `${v.src}.com` ? ` via ${v.host}` : ''} · {mins(v.ms)} played
+                  </p>
+                  {v.games.length || v.shares ? (
+                    <p className="mt-1 text-[14px] leading-snug">
+                      {v.games.map((g) => GAME_NAMES[g] ?? g).join(', ')}
+                      {v.shares ? <span className="ml-1 font-mono text-[12px] text-accent">· shared {v.shares}</span> : null}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+          </ul>
+        </>
+      ) : null}
+
+      <p className="mt-2 text-[13px] leading-relaxed text-faint">
+        Tap a game for its heatmap. A visitor is one connection and browser on one day, so a school class on the same computers can show as one or two. Put on a home
+        screen counts the first time the games open from a phone&apos;s home screen, since 6 Nov (your own phone counts once too). Scores shared counts the Share
+        buttons pressed; a friend opening the link shows as one opened.
+      </p>
+    </Band>
+  );
+}
+
 /* ---------- the overview ---------- */
 
 export function StatsView({ onPage, onBlog }: { onPage: (path: string) => void; onBlog?: () => void }) {
@@ -378,10 +527,10 @@ export function StatsView({ onPage, onBlog }: { onPage: (path: string) => void; 
   const [mine] = useState(() => statsOff());
 
   const fetchReport = useCallback(async (d: number) => {
-    const r = await post<{ report: StatsReport; at: number; cutlist?: CutlistInfo | null; cards?: CardTaps | null }>(readPin(), { action: 'report', days: d }, API);
+    const r = await post<{ report: StatsReport; at: number; cutlist?: CutlistInfo | null; cards?: CardTaps | null; games?: GamesStats | null }>(readPin(), { action: 'report', days: d }, API);
     setLoading(false);
     if (!r.ok) return setError(r.error);
-    const s = { days: d, report: r.data.report, at: r.data.at, cutlist: r.data.cutlist ?? null, cards: r.data.cards ?? null };
+    const s = { days: d, report: r.data.report, at: r.data.at, cutlist: r.data.cutlist ?? null, cards: r.data.cards ?? null, games: r.data.games ?? null };
     keep(s);
     setSaved(s);
   }, []);
@@ -552,6 +701,8 @@ export function StatsView({ onPage, onBlog }: { onPage: (path: string) => void; 
 
           {onBlog ? <BlogBand days={days} onOpen={onBlog} onPage={onPage} /> : null}
 
+          <GamesBand info={saved.days === days ? (saved.games ?? null) : null} days={days} onPage={onPage} />
+
           <Band label="Pages" right={`${r.pages.length} pages`}>
             <Chips
               label="Order"
@@ -689,7 +840,7 @@ export function StatsPageView({ path }: { path: string }) {
       <h1 className="mt-1 font-display text-[30px] font-[680] leading-[1.05] tracking-[-0.025em] [overflow-wrap:anywhere]">{name}</h1>
       <p className="mt-1.5 flex flex-wrap items-center gap-x-3 font-mono text-[12.5px] text-faint">
         <span className="[overflow-wrap:anywhere]">{path}</span>
-        <a href={path} target="_blank" rel="noopener" className="h-9 leading-9 text-accent underline">
+        <a href={pageHref(path)} target="_blank" rel="noopener" className="h-9 leading-9 text-accent underline">
           Open the page
         </a>
       </p>
@@ -1117,7 +1268,7 @@ function PageFrame({ path, device, layer, page }: { path: string; device: Device
             <iframe
               ref={frame}
               title={`${path} as on a ${device}`}
-              src={path}
+              src={pageHref(path)}
               onLoad={() => {
                 els.current.clear();
                 setReady(true);

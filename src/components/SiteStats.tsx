@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { goalOf, statsOff, type Tap } from '@/lib/site-stats';
+import { goalOf, statPath, statsOff, type Tap } from '@/lib/site-stats';
 
 /* The website's own visitor counter, for the Job Kit's Website stats screen. For each page view it notes how long the
    page was actually in use (on screen, touched in the last 15 seconds), how far down it was scrolled, where on the
@@ -11,12 +11,40 @@ import { goalOf, statsOff, type Tap } from '@/lib/site-stats';
    it's left or hidden; the server adds a visitor code that changes every day.
    No cookies and nothing kept in the browser. Not counted: the Job Kit and other private pages, pages shown inside
    the Job Kit (an iframe), robots, anyone who opted out on /privacy (raf_stats_off, also set on Raf's phone by the
-   Job Kit) and browsers sending Global Privacy Control. Words typed into boxes are never read. */
+   Job Kit) and browsers sending Global Privacy Control. Words typed into boxes are never read.
+   Since 6 Nov 2026: each Workshop Games screen counts as its own page (statPath: /tools/games/app#/stack is
+   /tools/games/app/stack), a game's buttons are read inside the app's shadow root (so Share taps can be counted), and
+   the first time one of the home-screen apps opens from a phone's home screen its visit is tagged as an install
+   (homeTag). */
 
 const PRIVATE = /^\/(job-kit|admin|editor|api|review\/send|pots)(\/|$)/;
 const ROBOT = /bot|crawl|spider|slurp|headless|lighthouse|pagespeed|prerender/i;
 const ACTIVE_MS = 15_000;
 const MAX_TAPS = 50;
+const MAX_LABELLED = 80; // buttons and links still count after the 50: a game's own taps fill those quickly
+const INTERACTIVE = 'a,button,[role="button"],input,select,textarea,label,summary,[data-stat]';
+
+/* The apps that can be put on a home screen, with the tag their start address carries. The first time one is opened
+   from the home screen on a phone its visit is tagged '<tag>-new' (an install; the phone keeps a note of the day),
+   every time after that '<tag>'. iPhones keep a home-screen app's storage apart from Safari's, so a first open there
+   really is the first. */
+const HOME_APPS = [
+  { scope: '/tools/games', tag: 'pwa-games', key: 'raf_games_home' },
+  { scope: '/tools/workshop', tag: 'pwa', key: 'rc-tools-home' },
+];
+function homeTag(path: string, utm: string) {
+  const app = HOME_APPS.find((a) => path === a.scope || path.startsWith(`${a.scope}/`));
+  if (!app) return utm;
+  const standalone = window.matchMedia?.('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  if (!standalone) return utm;
+  try {
+    if (localStorage.getItem(app.key)) return utm || app.tag;
+    localStorage.setItem(app.key, new Date().toISOString().slice(0, 10));
+  } catch {
+    return utm || app.tag; // storage blocked: can't tell, so not an install
+  }
+  return `${app.tag}-new`;
+}
 const BANDS = 20;
 
 type View = {
@@ -65,6 +93,14 @@ export default function SiteStats() {
   const view = useRef<View | null>(null);
   const lastPath = useRef('');
   const send = useRef<(final?: boolean) => void>(() => {});
+  // a new Workshop Games screen (the address after #) is a new page view too
+  const [hashTurn, setHashTurn] = useState(0);
+  const firstSend = useRef(0);
+  useEffect(() => {
+    const on = () => setHashTurn((n) => n + 1);
+    window.addEventListener('hashchange', on);
+    return () => window.removeEventListener('hashchange', on);
+  }, []);
 
   // listeners for the whole visit
   useEffect(() => {
@@ -80,7 +116,7 @@ export default function SiteStats() {
     };
     // only while the page on screen is still this view's page (when the page changes, the new one is already showing
     // as the last word on the old one goes)
-    const here = (v: View) => (location.pathname.replace(/\/+$/, '') || '/') === v.path;
+    const here = (v: View) => statPath(location.pathname, location.hash) === v.path;
     const measure = () => {
       const v = view.current;
       if (!v || !here(v)) return;
@@ -134,21 +170,25 @@ export default function SiteStats() {
       if (v.engaged - v.sentAt >= 30_000) send.current(); // now and then, in case the last one never arrives
     }, 1000);
 
+    const words = (el: Element) =>
+      clean(el.getAttribute('aria-label') || (el.matches('input,select,textarea') ? el.getAttribute('placeholder') || el.getAttribute('name') : (el as HTMLElement).innerText) || el.getAttribute('alt') || el.getAttribute('title'));
     const onTap = (e: MouseEvent) => {
       act();
       const v = view.current;
       const target = e.target as Element | null;
-      if (!v || !here(v) || !target?.closest || v.taps.length >= MAX_TAPS) return;
-      const el = target.closest('a,button,[role="button"],input,select,textarea,label,summary,[data-stat]') ?? target;
+      if (!v || !here(v) || !target?.closest || v.taps.length >= MAX_LABELLED) return;
+      const el = target.closest(INTERACTIVE) ?? target;
+      // Workshop Tools and Games are drawn in a shadow root: the page only sees the app's box, so the words (and the
+      // link) come from the button inside it; where it was stays on the box, which the Job Kit's heatmap can find
+      const inner = e.composedPath?.()[0];
+      const deep = inner instanceof Element && inner.getRootNode() instanceof ShadowRoot ? inner.closest(INTERACTIVE) : null;
       const r = el.getBoundingClientRect();
       const fx = r.width ? Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)) : 0.5;
       const fy = r.height ? Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)) : 0.5;
-      const interactive = el !== target || target.matches('a,button,[role="button"],input,select,textarea,label,summary,[data-stat]');
-      const box = el as HTMLElement;
-      const text = interactive
-        ? clean(el.getAttribute('aria-label') || (el.matches('input,select,textarea') ? el.getAttribute('placeholder') || el.getAttribute('name') : box.innerText) || el.getAttribute('alt') || el.getAttribute('title'))
-        : '';
-      const href = el.closest('a')?.getAttribute('href') ?? '';
+      const interactive = el !== target || target.matches(INTERACTIVE);
+      const text = deep ? words(deep) : interactive ? words(el) : '';
+      if (v.taps.length >= MAX_TAPS && !text) return;
+      const href = (deep ?? el).closest('a')?.getAttribute('href') ?? '';
       v.taps.push({
         s: selector(el),
         fx: Math.round(fx * 1000) / 1000,
@@ -189,7 +229,7 @@ export default function SiteStats() {
 
   // a new page view each time the page changes
   useEffect(() => {
-    const path = pathname.replace(/\/+$/, '') || '/';
+    const path = statPath(pathname, location.hash);
     if (path === lastPath.current) return;
     if (view.current) send.current(true);
     const first = !lastPath.current;
@@ -215,11 +255,14 @@ export default function SiteStats() {
     } catch {
       /* none */
     }
+    if (first) utm = homeTag(path, utm);
     view.current = { id: uid(), path, title: '', prev, ref, utm, engaged: 0, dwell: Array(BANDS).fill(0), scroll: 0, docH: docHeight(), taps: [], sentAt: 0 };
-    // after the title has changed for the new page
-    const t = window.setTimeout(() => send.current(), 1200);
-    return () => window.clearTimeout(t);
-  }, [pathname]);
+    // after the title has changed for the new page (a timer of its own: a hash change that isn't a new view, like a jump
+    // to #brief, re-runs this without clearing it)
+    window.clearTimeout(firstSend.current);
+    firstSend.current = window.setTimeout(() => send.current(), 1200);
+  }, [pathname, hashTurn]);
+  useEffect(() => () => window.clearTimeout(firstSend.current), []);
 
   return null;
 }

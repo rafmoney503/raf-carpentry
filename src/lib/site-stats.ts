@@ -59,6 +59,55 @@ export type Tap = { s: string; fx: number; fy: number; x: number; y: number; h: 
 /** Taps on the small card bottom left, by what it suggested (rafsite_cards). */
 export type CardTaps = { days: number; app: number; recent: number; posts: { slug: string; n: number; title?: string }[]; total: number };
 
+/* Workshop Games (/tools/games/app) is one page with the screen after '#' (#/stack, #/nail/levels ...). Since
+   6 Nov 2026 each screen is counted as a page of its own, /tools/games/app/stack, so the Job Kit shows which games
+   are played (Raf: 'is it possible to see which games have been used and being popular'). Before that every game
+   counted as /tools/games/app. */
+export const GAMES_APP = '/tools/games/app';
+export const GAME_NAMES: Record<string, string> = {
+  stack: 'Timber Stack',
+  nail: 'Nail Pop',
+  measure: 'Measure Up',
+  sheet: 'Sheet Saver',
+  level: 'Level Best',
+  diff: 'Find the Difference',
+};
+const GAME_MORE: Record<string, string> = { levels: 'levels', packs: 'practice packs', boards: 'boards' };
+const GAME_SCREEN = /^(stack|nail|measure|sheet|level|diff)(?:\/(levels|packs|boards))?$/;
+
+/* The path a page view is counted under: the page's own, or a game's for the games app (unknown screens are the
+   games' home screen, as the app shows it). */
+export function statPath(pathname: string, hash: string): string {
+  const p = pathname.replace(/\/+$/, '') || '/';
+  if (p !== GAMES_APP) return p;
+  const s = hash.replace(/^#\/?/, '').replace(/\/+$/, '').toLowerCase();
+  return GAME_SCREEN.test(s) ? `${p}/${s}` : p;
+}
+/* Back from a counted path to the address that opens it (the Job Kit's heatmaps and its Open the page). */
+export const pageHref = (path: string) => (path.startsWith(`${GAMES_APP}/`) ? `${GAMES_APP}#/${path.slice(GAMES_APP.length + 1)}` : path);
+/* 'Workshop Games: Timber Stack', 'Workshop Games: Timber Stack, levels', 'Workshop Games: home screen'; null when
+   the path isn't one of the games' screens. */
+export function gameScreenName(path: string): string | null {
+  if (path === GAMES_APP) return 'Workshop Games: home screen';
+  if (!path.startsWith(`${GAMES_APP}/`)) return null;
+  const m = GAME_SCREEN.exec(path.slice(GAMES_APP.length + 1));
+  return m ? `Workshop Games: ${GAME_NAMES[m[1]]}${m[2] ? `, ${GAME_MORE[m[2]]}` : ''}` : null;
+}
+
+/** Workshop Games in the Job Kit (rafsite_games): who played, which games, how they found them. ms = time in use. */
+export type GamesStats = {
+  days: number;
+  since: string;
+  today: string;
+  gamesFrom: string | null; // the first day a game was counted on its own
+  totals: { visits: number; people: number; ms: number; pageVisits: number; home: number; installs: number; shares: number; beat: number; fromBeat: number; qr: number };
+  games: { game: string; visits: number; people: number; opens: number; ms: number; levels: number; shares: number }[];
+  sources: { kind: string; host: string | null; visits: number; played: number; ms: number }[];
+  places: { country: string; city: string | null; visits: number; played: number; ms: number }[];
+  daily: { day: string; visits: number; ms: number }[];
+  latest: (Place & { at: string; device: Device | null; src: string; host: string | null; ms: number; games: string[]; shares: number; played: boolean })[];
+};
+
 export type Device = 'phone' | 'tablet' | 'computer';
 export const deviceOf = (vw: number): Device => (vw < 700 ? 'phone' : vw < 1024 ? 'tablet' : 'computer');
 
@@ -182,6 +231,9 @@ export const SOURCE_LABEL: Record<string, string> = {
   groups: 'Trade groups',
   // Workshop Games (25 Oct 2026)
   'pwa-games': 'Workshop Games, opened from the home screen',
+  // the first time on that phone (6 Nov 2026): an install
+  'pwa-games-new': 'Workshop Games, first opened from the home screen (installed)',
+  'pwa-new': 'Workshop Tools, first opened from the home screen (installed)',
   beat: 'A friend’s score link (Workshop Games)',
   'qr-games': 'QR code on the Workshop Games page',
 };

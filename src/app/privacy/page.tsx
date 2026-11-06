@@ -10,7 +10,7 @@ export const metadata = pageMeta({
   path: '/privacy',
 });
 
-const UPDATED = '25 October 2026';
+const UPDATED = '6 November 2026';
 
 function H({ id, children }: { id?: string; children: React.ReactNode }) {
   return (
@@ -74,8 +74,8 @@ export default function Privacy() {
           <p>
             Some parts of the site remember things in your browser only, never sent to me: designs you save with the heart for your brief, the last few pages
             you looked at (so search can offer them again), which suggestions the small card at the bottom has already shown you (so it doesn’t
-            repeat them), the calculator’s history, the sizes you last typed and the jobs you save in Workshop Tools, your stars, best scores and daily results in Workshop Games and whether you’ve seen the
-            planner’s quick guide. Clearing your browser’s data removes them.
+            repeat them), the calculator’s history, the sizes you last typed and the jobs you save in Workshop Tools, your stars, best scores and daily results in Workshop Games, the day you first opened Workshop Games or Workshop Tools
+            from your home screen (so that first open is counted once as an install) and whether you’ve seen the planner’s quick guide. Clearing your browser’s data removes them.
           </p>
 
           <H id="stats">How visits are counted</H>
@@ -85,7 +85,7 @@ export default function Privacy() {
           </p>
           <ul>
             <li>
-              <b>Its own counter.</b> For each page: which page it was and the one before it, where the visit came from (for example Google or Instagram), the
+              <b>Its own counter.</b> For each page (each game counts as a page in Workshop Games): which page it was and the one before it, where the visit came from (for example Google or Instagram), the
               screen size, roughly where from (the country, town or city and, in the UK, the first half of the postcode, such as N22, as your
               internet connection suggests; often only approximate), how long the page was in use, how far down it was scrolled, which part of the page the time went on, and what was tapped
               (the button or link and where on it, never anything you type). A visitor code made from your connection and browser ties together the pages of one

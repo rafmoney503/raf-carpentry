@@ -20,7 +20,7 @@ export class StatsError extends Error {
   }
 }
 
-export async function statsRpc<T>(fn: 'rafsite_hit' | 'rafsite_hit_place' | 'rafsite_report' | 'rafsite_page' | 'rafsite_indexnow' | 'rafsite_cutlist' | 'rafsite_recent' | 'rafsite_blog' | 'rafsite_cards', args: Record<string, unknown>, timeoutMs = 8000): Promise<T> {
+export async function statsRpc<T>(fn: 'rafsite_hit' | 'rafsite_hit_place' | 'rafsite_report' | 'rafsite_page' | 'rafsite_indexnow' | 'rafsite_cutlist' | 'rafsite_recent' | 'rafsite_blog' | 'rafsite_cards' | 'rafsite_games', args: Record<string, unknown>, timeoutMs = 8000): Promise<T> {
   const url = `${process.env.RAFSTATS_URL!.replace(/\/$/, '')}/rest/v1/rpc/${fn}`;
   const res = await fetch(url, {
     method: 'POST',
@@ -49,7 +49,7 @@ export function visitorCode(ip: string, ua: string, now = new Date()) {
   return createHash('sha256').update(`${process.env.RAFSTATS_SECRET}|${londonDay(now)}|${ip}|${ua}`).digest('hex').slice(0, 16);
 }
 
-const CAMPAIGN_TAGS = /^(pwa|pwa-games|beat|qr-[a-z0-9]{2,16}|email-[a-z0-9]{2,16}|quote|booked|invoice|review|launch-email|gbp|groups)$/;
+const CAMPAIGN_TAGS = /^(pwa|pwa-new|pwa-games|pwa-games-new|beat|qr-[a-z0-9]{2,16}|email-[a-z0-9]{2,16}|quote|booked|invoice|review|launch-email|gbp|groups)$/;
 
 /* Where a visit came from, from the referring address (or ?utm_source=). */
 export function sourceOf(ref: string, utm: string): { kind: string; host: string } {
@@ -61,7 +61,8 @@ export function sourceOf(ref: string, utm: string): { kind: string; host: string
   }
   const u = utm.toLowerCase();
   // the Workshop Tools and Workshop Games tags (QR codes, emails, the home-screen icons, score links) are kept as they are,
-  // so the Job Kit shows each one (SOURCE_LABEL in site-stats.ts)
+  // so the Job Kit shows each one (SOURCE_LABEL in site-stats.ts); '-new' = the app's first open from that phone's home
+  // screen (SiteStats homeTag), so an install
   if (CAMPAIGN_TAGS.test(u)) return { kind: u, host: host.slice(0, 80) };
   const test = (re: RegExp) => re.test(u) || re.test(host);
   const kind = test(/(^|\.)google\.|^google$/)
@@ -145,8 +146,9 @@ export function cleanHit(raw: unknown, ctx: { ip: string; ua: string; country: s
   if (!UUID.test(id) || !path || /^\/(job-kit|admin|editor|api|review\/send)(\/|$)/.test(path)) return null;
   const vw = Math.round(num(b.vw, 0, 10000));
   const src = sourceOf(str(b.ref, 300), str(b.utm, 40));
+  // 50 taps, plus up to 30 more on buttons and links (SiteStats: a game's own taps fill the 50 quickly)
   const taps: Tap[] = Array.isArray(b.clicks)
-    ? b.clicks.slice(0, 50).flatMap((c) => {
+    ? b.clicks.slice(0, 80).flatMap((c) => {
         if (!c || typeof c !== 'object') return [];
         const t = c as Record<string, unknown>;
         const s = str(t.s, 400);
