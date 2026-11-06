@@ -5,7 +5,7 @@
 
    Prices are the same as CabinetOS's Done for you packs (£75 / £195 / £395 before VAT, each for up to 3 units, then
    £20 / £45 / £45 a unit), shown here with VAT because most buyers are people building their own furniture.
-   Paid in full upfront by card. Raf's promises (6 Nov 2026): within 2 working days, 3 rounds of changes free. */
+   Paid in full upfront by card. Raf's promises (6 Nov 2026): within 2 working days, 2 rounds of changes free (6 Nov 21:19: "lets make 2 revisions full price upfront, match both websites"; CabinetOS's Done for you has the same terms). */
 
 export const PACKS = ['cutlist', 'drawings', 'design'] as const;
 export type Pack = (typeof PACKS)[number];
@@ -14,7 +14,7 @@ export const INCLUDED_UNITS = 3;
 export const MAX_UNITS = 20;
 export const VAT_RATE = 0.2;
 export const WORKING_DAYS = 2;
-export const FREE_ROUNDS = 3;
+export const FREE_ROUNDS = 2;
 
 /** In pence before VAT: the price for up to INCLUDED_UNITS units, then each unit more. */
 const BEFORE_VAT: Record<Pack, { base: number; perExtra: number }> = {
