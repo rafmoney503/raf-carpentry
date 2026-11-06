@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 import { readPageJson } from '@/lib/pages';
 import { Container, PageHeader, SectionHeading } from '@/components/ui';
 import { toolsSectionId } from '@/lib/menu-panels';
@@ -49,6 +50,24 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+/* One group of tool cards with its heading: number, free or paid, a title and a line. */
+function ToolGroup({ id, n, kicker, title, line, children }: { id: string; n: string; kicker: string; title: string; line: string; children: ReactNode }) {
+  return (
+    <section id={id} data-tool-group={id} className="mb-12 md:mb-16">
+      <div className="mb-5 grid grid-cols-1 items-end gap-x-6 gap-y-2 border-t border-line pt-6 md:grid-cols-[minmax(0,1fr)_auto]">
+        <div>
+          <p className="font-mono text-[13px] text-accent">
+            {n} · {kicker}
+          </p>
+          <h2 className="mt-1 font-display text-[27px] font-[680] leading-tight tracking-[-0.015em] md:text-[31px]">{title}</h2>
+        </div>
+        <p className="max-w-[46ch] text-[15px] leading-relaxed text-muted md:text-right">{line}</p>
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">{children}</div>
+    </section>
+  );
+}
+
 export default function ToolsPage() {
   const d = readPageJson<ToolsPageData>('tools.json');
 
@@ -59,65 +78,22 @@ export default function ToolsPage() {
       </PageHeader>
 
       <Container className="pb-8">
-        {/* Teasers for the wardrobe planner, drawings and cut lists done for you, Build It in 3D, the Workshop Tools app, my SketchUp extension, the free calculator, the workshop tips and Workshop Games */}
-        <div className="mb-12 grid grid-cols-1 gap-4 md:mb-16 lg:grid-cols-2">
+        {/* The free and paid tools in three groups (Raf, 6 Nov 2026: "Is this good order on tools page ... design paid
+            free paid", then "Go"): the wardrobe planner, the free tools, then what's paid. */}
+        <ToolGroup id="plan" n="01" kicker="Free" title="Plan your wardrobe" line="Your sizes, units and doors in 3D. Then send it to me for a quote.">
           <PlannerTeaser variant="feature" className="lg:col-span-2" />
-          {/* Drawings and cut lists, done for you: the paid service (6 Nov 2026) */}
-          <Link
-            href="/drawings"
-            data-drawings-card
-            className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6 lg:col-span-2"
-          >
-            <div>
-              <p className="font-mono text-[13px] text-accent">Done for you</p>
-              <h2 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Drawings and cut lists</h2>
-              <p className="mt-1 max-w-[62ch] text-[15px] text-muted">
-                Send me your sizes and a sketch. Within {WORKING_DAYS} working days you get the drawings, 3D views, cut list, board layout and assembly guide, ready for your cutting company.
-              </p>
-              <p className="mt-2 font-mono text-[13px] text-faint">From {gbp(packPrices('cutlist').total)} with VAT · paid upfront</p>
-            </div>
-            <div className="flex items-center gap-5">
-              <span className="block w-[64px] overflow-hidden rounded-sm border border-line-strong sm:w-[76px]">
-                <DrawingsIcon className="block h-auto w-full" />
-              </span>
-              <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
-            </div>
-          </Link>
-          {/* Build It in 3D, my free 3D drawing lessons on their own site (5 Nov 2026) */}
-          <a
-            href={BUILD_IT_IN_3D_URL}
-            target="_blank"
-            rel="noopener"
-            data-build-it-in-3d
-            className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6 lg:col-span-2"
-          >
-            <div>
-              <p className="font-mono text-[13px] text-accent">Free 3D lessons</p>
-              <h2 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Build It in 3D</h2>
-              <p className="mt-1 max-w-[62ch] text-[15px] text-muted">
-                Learn to draw in 3D in your browser, one real build at a time: a bird box, a planter, alcove shelves, a log store, a raised bed and a wardrobe. Then print the cut list and make it. Free, no sign-up.
-              </p>
-              <p className="mt-2 font-mono text-[13px] text-faint">builditin3d.com · opens in a new tab</p>
-            </div>
-            <div className="flex items-center gap-5">
-              {/* The icon of builditin3d.com itself */}
-              <span className="block w-[64px] overflow-hidden rounded-[14px] sm:w-[76px]">
-                <Image src={BUILD_IT_IN_3D_ICON} alt="" width={76} height={76} unoptimized className="block h-auto w-full" />
-              </span>
-              <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">↗</span>
-            </div>
-          </a>
+        </ToolGroup>
+
+        <ToolGroup id="free" n="02" kicker="Free, no sign-up" title="Free tools" line="For your own jobs: on your phone, in the workshop and in 3D.">
           {/* the Workshop Tools app for phones (25 Oct 2026) */}
           <AppNudge variant="card" className="lg:col-span-2" />
-          {/* CabinetOS Units, my extension for SketchUp (28 Oct 2026) */}
-          <ExtensionTeaser variant="feature" className="lg:col-span-2" />
           <Link
             href="/calculator"
             className="group grid grid-cols-1 items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent sm:grid-cols-[minmax(0,1fr)_auto] md:p-6"
           >
             <div>
               <p className="font-mono text-[13px] text-accent">Free tool</p>
-              <h2 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Workshop calculator in mm</h2>
+              <h3 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Workshop calculator in mm</h3>
               <p className="mt-1 text-[15px] text-muted">The quick calc from CabinetOS: answers in mm, cm and inches, and how many fit on a full board.</p>
             </div>
             <div className="flex items-center gap-5">
@@ -128,28 +104,12 @@ export default function ToolsPage() {
             </div>
           </Link>
           <Link
-            href="/tips"
-            className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6"
-          >
-            <div>
-              <p className="font-mono text-[13px] text-accent">Free tips</p>
-              <h2 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Workshop tips</h2>
-              <p className="mt-1 text-[15px] text-muted">Measuring alcoves, scribing to uneven walls, wardrobe door hinges and the screws I use.</p>
-            </div>
-            <div className="flex items-center gap-5">
-              <div className="w-[64px] sm:w-[76px]">
-                <Sketch name="compass" fallback="" />
-              </div>
-              <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
-            </div>
-          </Link>
-          <Link
             href="/tools/spirit-level"
             className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6"
           >
             <div>
               <p className="font-mono text-[13px] text-accent">Free phone tool</p>
-              <h2 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Spirit level</h2>
+              <h3 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Spirit level</h3>
               <p className="mt-1 text-[15px] text-muted">Set zero on any surface, so the phone&apos;s buttons don&apos;t matter. Then read the angle and the mm to pack.</p>
             </div>
             <div className="flex items-center gap-5">
@@ -166,12 +126,28 @@ export default function ToolsPage() {
             </div>
           </Link>
           <Link
+            href="/tips"
+            className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6"
+          >
+            <div>
+              <p className="font-mono text-[13px] text-accent">Free tips</p>
+              <h3 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Workshop tips</h3>
+              <p className="mt-1 text-[15px] text-muted">Measuring alcoves, scribing to uneven walls, wardrobe door hinges and the screws I use.</p>
+            </div>
+            <div className="flex items-center gap-5">
+              <div className="w-[64px] sm:w-[76px]">
+                <Sketch name="compass" fallback="" />
+              </div>
+              <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+            </div>
+          </Link>
+          <Link
             href="/tools/games"
             className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6"
           >
             <div>
               <p className="font-mono text-[13px] text-accent">Free games</p>
-              <h2 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Workshop Games</h2>
+              <h3 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Workshop Games</h3>
               <p className="mt-1 text-[15px] text-muted">Measure Up, Sheet Saver, Timber Stack, Nail Pop, Level Best and Find the Difference. New tapes, a new board and a new job every day, with real sizes.</p>
             </div>
             <div className="flex items-center gap-5">
@@ -181,9 +157,68 @@ export default function ToolsPage() {
               <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
             </div>
           </Link>
+          {/* Build It in 3D, my free 3D drawing lessons on their own site (5 Nov 2026) */}
+          <a
+            href={BUILD_IT_IN_3D_URL}
+            target="_blank"
+            rel="noopener"
+            data-build-it-in-3d
+            className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6 lg:col-span-2"
+          >
+            <div>
+              <p className="font-mono text-[13px] text-accent">Free 3D lessons</p>
+              <h3 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Build It in 3D</h3>
+              <p className="mt-1 max-w-[62ch] text-[15px] text-muted">
+                Learn to draw in 3D in your browser, one real build at a time: a bird box, a planter, alcove shelves, a log store, a raised bed and a wardrobe. Then print the cut list and make it. Free, no sign-up.
+              </p>
+              <p className="mt-2 font-mono text-[13px] text-faint">builditin3d.com · opens in a new tab</p>
+            </div>
+            <div className="flex items-center gap-5">
+              {/* The icon of builditin3d.com itself */}
+              <span className="block w-[64px] overflow-hidden rounded-[14px] sm:w-[76px]">
+                <Image src={BUILD_IT_IN_3D_ICON} alt="" width={76} height={76} unoptimized className="block h-auto w-full" />
+              </span>
+              <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">↗</span>
+            </div>
+          </a>
+        </ToolGroup>
+
+        <ToolGroup id="done-for-you" n="03" kicker={`Paid · from ${gbp(packPrices('cutlist').total)}`} title="Done for you" line="I draw your job for you, or you draw it yourself in SketchUp with my extension.">
+          {/* Drawings and cut lists, done for you: the paid service (6 Nov 2026) */}
+          <Link
+            href="/drawings"
+            data-drawings-card
+            className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6 lg:col-span-2"
+          >
+            <div>
+              <p className="font-mono text-[13px] text-accent">Drawn by me</p>
+              <h3 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Drawings and cut lists</h3>
+              <p className="mt-1 max-w-[62ch] text-[15px] text-muted">
+                Send me your sizes and a sketch. Within {WORKING_DAYS} working days you get the drawings, 3D views, cut list, board layout and assembly guide, ready for your cutting company.
+              </p>
+              <p className="mt-2 font-mono text-[13px] text-faint">From {gbp(packPrices('cutlist').total)} with VAT · paid upfront</p>
+            </div>
+            <div className="flex items-center gap-5">
+              <span className="block w-[64px] sm:w-[76px]">
+                <DrawingsIcon className="block h-auto w-full" />
+              </span>
+              <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+            </div>
+          </Link>
+          {/* CabinetOS Units, my extension for SketchUp (28 Oct 2026) */}
+          <ExtensionTeaser variant="feature" className="lg:col-span-2" />
+        </ToolGroup>
+
+        {/* My own kit, with the affiliate links */}
+        <div id="kit" data-tool-group="kit" className="grid grid-cols-1 items-end gap-x-6 gap-y-2 border-t border-line pt-6 md:grid-cols-[minmax(0,1fr)_auto]">
+          <div>
+            <p className="font-mono text-[13px] text-accent">04 · What I use</p>
+            <h2 className="mt-1 font-display text-[27px] font-[680] leading-tight tracking-[-0.015em] md:text-[31px]">My kit</h2>
+          </div>
+          <p className="max-w-[46ch] text-[15px] leading-relaxed text-muted md:text-right">The tools I use on every job, with a photo of mine on site.</p>
         </div>
         {d.categories.map((cat, ci) => (
-          <section key={ci} id={toolsSectionId(cat.name)} className="grid grid-cols-1 gap-8 border-t border-line py-12 md:grid-cols-12 md:gap-6 md:py-16">
+          <section key={ci} id={toolsSectionId(cat.name)} className={`grid grid-cols-1 gap-8 py-12 md:grid-cols-12 md:gap-6 md:py-16 ${ci ? 'border-t border-line' : ''}`}>
             <SectionHeading className="md:col-span-4">{cat.name}</SectionHeading>
             <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2 md:col-span-8">
               {cat.tools.map((tool, ti) => {

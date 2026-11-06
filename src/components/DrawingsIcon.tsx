@@ -1,23 +1,36 @@
-/* The little picture for "Drawings and cut lists, done for you" (/drawings): a drawing sheet with a two-door
-   wardrobe drawn front on, its width dimensioned in blue, a cut list beside it and a board layout under that.
-   Drawn in the site's sketch style, sharp at any size (48 px in the phone menu, 56 to 88 px elsewhere). */
+/* The little picture for "Drawings and cut lists, done for you" (/drawings), drawn as an app icon so it sits well
+   beside Build It in 3D's: a blueprint-blue tile with a faint grid, a two-door wardrobe drawn in white with its
+   width over it, and a cut list card in front (blue part codes, grey lines). Bold enough to read at 44 px in the
+   menus, sharp up to the Tools page's 76 px. Redrawn 6 Nov 2026 (Raf: "create better icon for drawings and cut
+   list"); the first one was a thin drawing sheet that went muddy small. */
 
 export default function DrawingsIcon({ className = '' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 48 48" className={className} aria-hidden="true">
-      {/* the sheet */}
-      <rect x="4" y="4" width="40" height="40" rx="1" className="fill-white stroke-ink/25" strokeWidth="1" />
-      {/* width over the wardrobe */}
-      <path d="M9 9.5 L26 9.5 M9 7.5 L9 11.5 M26 7.5 L26 11.5" className="fill-none stroke-accent" strokeWidth="1.2" strokeLinecap="round" />
-      {/* the wardrobe front: carcass, two doors, handles, plinth */}
-      <rect x="9" y="13.5" width="17" height="25" className="fill-mount stroke-ink" strokeWidth="1.4" strokeLinejoin="round" />
-      <path d="M17.5 13.5 L17.5 35.5 M9 35.5 L26 35.5" className="fill-none stroke-ink" strokeWidth="1.1" />
-      <path d="M15.6 22 L15.6 26 M19.4 22 L19.4 26" className="fill-none stroke-ink" strokeWidth="1.3" strokeLinecap="round" />
-      {/* the cut list */}
-      <path d="M30 14.5 L39 14.5 M30 18.5 L37 18.5 M30 22.5 L39 22.5" className="fill-none stroke-ink/45" strokeWidth="1.4" strokeLinecap="round" />
-      {/* a board with its parts laid out */}
-      <rect x="30" y="27.5" width="10" height="11" className="fill-raised stroke-ink" strokeWidth="1.1" />
-      <path d="M35 27.5 L35 38.5 M30 33 L35 33" className="fill-none stroke-accent" strokeWidth="1.1" strokeDasharray="1.6 1.2" />
+    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
+      {/* the tile and its grid */}
+      <rect width="64" height="64" rx="14" className="fill-accent" />
+      <path
+        d="M8 0V64M16 0V64M24 0V64M32 0V64M40 0V64M48 0V64M56 0V64M0 8H64M0 16H64M0 24H64M0 32H64M0 40H64M0 48H64M0 56H64"
+        className="fill-none stroke-white"
+        strokeOpacity="0.13"
+        strokeWidth="1"
+      />
+      {/* the wardrobe: its width, the carcass, two doors with handles, the plinth */}
+      <g className="fill-none stroke-white" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10 11.5H34M10 9V14M34 9V14" strokeWidth="2" />
+        <rect x="10" y="17" width="24" height="37" strokeWidth="2.6" />
+        <path d="M22 17V48.5M10 48.5H34" strokeWidth="2" />
+        <path d="M19.5 29V34M24.5 29V34" strokeWidth="2.6" />
+      </g>
+      {/* the cut list in front, with a soft shadow */}
+      <rect x="34.8" y="30.8" width="21.5" height="26" rx="2.5" className="fill-ink" fillOpacity="0.3" />
+      <rect x="33.5" y="29" width="21.5" height="26" rx="2.5" className="fill-mount" />
+      <g className="fill-accent">
+        <rect x="37" y="34.4" width="3.2" height="3.2" rx="0.6" />
+        <rect x="37" y="40.4" width="3.2" height="3.2" rx="0.6" />
+        <rect x="37" y="46.4" width="3.2" height="3.2" rx="0.6" />
+      </g>
+      <path d="M43 36H51M43 42H49M43 48H51" className="fill-none stroke-ink" strokeOpacity="0.6" strokeWidth="2.2" strokeLinecap="round" />
     </svg>
   );
 }

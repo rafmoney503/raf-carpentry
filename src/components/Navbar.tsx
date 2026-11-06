@@ -267,7 +267,7 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
                         <Image src={PLANNER_IMAGE_SQUARE} alt="" fill sizes="48px" className="object-cover" />
                       </span>
                     ) : MINI[l.href] ? (
-                      <span className="-my-2 block h-12 w-12 shrink-0 overflow-hidden rounded-sm border border-line-strong bg-paper">
+                      <span className="-my-2 block h-12 w-12 shrink-0">
                         <MiniIcon kind={MINI[l.href]} size={48} />
                       </span>
                     ) : null}

@@ -155,9 +155,8 @@ export function getMenuPanels(): Record<string, MenuPanel> {
       cta: 'Open the page',
       tagsTitle: 'My kit',
       tags: tools.categories.map((c) => ({ label: c.name.replace(/\s*&\s*/g, ' and '), href: `/tools#${slug(c.name)}`, count: c.tools.length })),
-      listTitle: 'Free to use',
+      listTitle: 'Free tools',
       list: [
-        { label: 'Wardrobe planner in 3D', href: '/wardrobe-planner' },
         { label: 'Workshop Tools app for your phone', href: '/tools/workshop' },
         { label: 'Workshop calculator in mm', href: '/calculator' },
         { label: 'Spirit level on your phone', href: '/tools/spirit-level' },
