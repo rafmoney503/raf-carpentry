@@ -1,5 +1,6 @@
 'use client';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { BackIcon } from '@/components/BackBar';
 import PlannerGuide, { GuideIcon } from './planner-guide';
 import PaxSend, { type PlannerBits } from './pax-send';
 import './planner.css';
@@ -104,6 +105,7 @@ export default function WardrobePlanner() {
   return (
     <div className="wp" ref={rootRef}>
       <div className="wp-head">
+        <BackIcon className="wp-back" />
         <h1>Wardrobe planner</h1>
         <p>Design your fitted wardrobe, then send it to me.</p>
         <button

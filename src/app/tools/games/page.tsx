@@ -77,11 +77,6 @@ export default async function WorkshopGamesPage() {
   return (
     <>
       <Container className="pb-16 pt-6 md:pb-20 md:pt-12">
-        <nav aria-label="Breadcrumb" className="mb-3 font-mono text-[13px] text-faint">
-          <Link href="/tools" className="transition-colors hover:text-accent">Tools</Link>
-          <span className="px-2 text-line-strong">/</span>
-          <span>Workshop Games</span>
-        </nav>
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-8">
           <div className="lg:col-span-7">
             <p className="font-mono text-[13px] text-accent">Free games · iPhone and Android</p>

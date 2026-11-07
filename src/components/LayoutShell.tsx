@@ -5,10 +5,13 @@ import Footer from './Footer';
 import WhatsAppFloat from './WhatsAppFloat';
 import HowItWorksFloat from './HowItWorksFloat';
 import RecentDesign from './RecentDesign';
+import BackBar, { useBackTrail } from './BackBar';
 import type { MenuPanel } from '@/lib/menu-panels';
 
 export default function LayoutShell({ children, menu }: { children: React.ReactNode; menu?: Record<string, MenuPanel> }) {
   const pathname = usePathname();
+  // every page shown goes on the tab's trail, for the back link at the top of the next one
+  useBackTrail();
   // The Instagram mini-site, Raf's Job Kit app, the Workshop Tools and Workshop Games apps and the simple calculator
   // stand alone: no menu, footer or floating buttons.
   const isMiniSite = pathname === '/ms' || pathname?.startsWith('/job-kit') || pathname?.startsWith('/tools/workshop/app') || pathname?.startsWith('/tools/games/app') || pathname === '/tools/calculator';
@@ -20,7 +23,10 @@ export default function LayoutShell({ children, menu }: { children: React.ReactN
   return (
     <>
       <Navbar menu={menu} />
-      <main className="min-h-screen">{children}</main>
+      <main className="min-h-screen">
+        <BackBar />
+        {children}
+      </main>
       <Footer />
       {/* Floating buttons: Get my free quote (the brief on /how-it-works) bottom-left, WhatsApp bottom-right. None on the calculator
           (they sat on the keypad on phones). Plan your project has its own WhatsApp button that sends

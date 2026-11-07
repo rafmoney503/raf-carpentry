@@ -100,13 +100,6 @@ export default async function AreaPage({ params }: { params: Promise<{ slug: str
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(ld)} />
       <PageHeader
-        top={
-          <nav aria-label="Breadcrumb" className="font-mono text-[13px] text-faint">
-            <Link href="/areas" className="transition-colors hover:text-accent">Where I work</Link>
-            <span className="px-2 text-line-strong">/</span>
-            <span>{a.name}</span>
-          </nav>
-        }
         kicker={a.postcode ? `${a.name} · ${a.postcode}` : a.name}
         title="Fitted furniture in"
         accent={`${a.name}.`}

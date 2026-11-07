@@ -80,15 +80,6 @@ export default function DeckingCalculatorPage() {
         title="Decking"
         accent="calculator"
         lede="Boards, joists, clips and screws for your deck, worked out to the mm. Free, no sign-up."
-        top={
-          <nav aria-label="Breadcrumb" className="font-mono text-[13px] text-faint">
-            <Link href="/tools" className="transition-colors hover:text-accent">
-              Tools
-            </Link>
-            <span className="px-2 text-line-strong">/</span>
-            <span>Decking calculator</span>
-          </nav>
-        }
       />
 
       <section>

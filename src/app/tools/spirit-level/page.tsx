@@ -59,11 +59,6 @@ export default async function SpiritLevelPage() {
   return (
     <Container className="pb-20 pt-6 md:pb-28 md:pt-12">
       <div className="mx-auto max-w-[720px]">
-        <nav aria-label="Breadcrumb" className="mb-3 font-mono text-[13px] text-faint">
-          <Link href="/tools" className="transition-colors hover:text-accent">Tools</Link>
-          <span className="px-2 text-line-strong">/</span>
-          <span>Spirit level</span>
-        </nav>
         <h1 className="font-display text-[34px] font-[680] leading-none tracking-[-0.03em] md:text-[44px]">Spirit level</h1>
         <p className="mb-6 mt-3 max-w-[56ch] text-[16px] leading-relaxed text-muted">
           Your phone as a level. Set zero on any surface, so the buttons and the case don&apos;t matter, then read the angle and how many mm to pack up the low end.

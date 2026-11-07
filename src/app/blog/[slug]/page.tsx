@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import Link from 'next/link';
 import { getPostBySlug, getAllPosts } from '@/lib/blog';
 import { notFound } from 'next/navigation';
 import ToolsUsed from '@/components/ToolsUsed';
@@ -49,11 +48,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
   return (
     <>
       <article className="mx-auto max-w-3xl px-5 pb-16 pt-12 md:px-6 md:pt-20">
-        <Link href="/blog" className="link-more text-[15px]">
-          <span aria-hidden="true">←</span> Back to the journal
-        </Link>
-
-        <p className="mt-8 font-mono text-[13px] text-faint">
+        <p className="font-mono text-[13px] text-faint">
           {formatDate(post.date)}
           <span className="text-line-strong"> / </span>
           {post.category}
