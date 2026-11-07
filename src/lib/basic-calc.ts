@@ -1,6 +1,6 @@
 /* The simple calculator at /tools/calculator (7 Nov 2026, Raf picked mockup C2, with C3 for night mode, on the
    'Basic calculator mockups' design canvas). A plain four-function calculator: type a number, press an operator,
-   type the next, press =. No imports, so it runs in tests. */
+   type the next, and the answer is there (= finishes the sum). No imports, so it runs in tests. */
 
 export type CalcOp = '÷' | '×' | '−' | '+';
 export type CalcKey = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '.' | 'back' | 'C' | CalcOp | '=';
@@ -115,20 +115,28 @@ export function pressKey(state: CalcState, k: CalcKey): CalcState {
 }
 
 export type CalcView = {
-  /** the big number */
+  /** the big number: what's typed, or once a sum is under way its answer, worked out as you type */
   big: string;
-  /** the small line above it: "600 −" while typing the next number, "600 − 36 =" after = */
+  /** the small line above it: the sum as typed ("600 − 36"), with = once it's finished ("600 − 36 =") */
   line: string;
+  /** the big number is the answer of the sum on the line, worked out before = (shown with a small = before it) */
+  live: boolean;
+  /** the sum on the line can't be worked out yet ("5 ÷ 0" before the next digit): the big line says why */
+  wait: boolean;
   /** the operator waiting for the next number, lit up */
   lit: CalcOp | null;
   err: boolean;
 };
 
+/* Calculates as you type (7 Nov 2026, Raf: "Make sure it calculates automatically"): once there's an operator and
+   the next number, the big line shows the answer straight away and = only finishes the sum. */
 export function calcView(s: CalcState): CalcView {
-  return {
-    big: s.err ? 'Error' : showNumber(s.cur),
-    line: s.op ? `${showNumber(s.prev)} ${s.op}` : s.done,
-    lit: s.op && s.fresh ? s.op : null,
-    err: s.err,
-  };
+  const base = { live: false, wait: false, lit: s.op && s.fresh ? s.op : null, err: s.err };
+  if (s.err) return { ...base, big: 'Error', line: s.done };
+  if (!s.op) return { ...base, big: showNumber(s.cur), line: s.done };
+  if (s.fresh) return { ...base, big: showNumber(s.prev), line: `${showNumber(s.prev)} ${s.op}` };
+  const line = `${showNumber(s.prev)} ${s.op} ${showNumber(s.cur)}`;
+  const r = calc(+s.prev!, s.op, +s.cur);
+  if (r === null) return { ...base, big: DIV_ZERO, line, wait: true };
+  return { ...base, big: showNumber(tidy(r)), line, live: true };
 }

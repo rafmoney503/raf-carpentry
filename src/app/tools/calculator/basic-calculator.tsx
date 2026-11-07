@@ -94,6 +94,7 @@ export default function BasicCalculator() {
   const displayRef = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const numRef = useRef<HTMLSpanElement>(null);
+  const sumRef = useRef<HTMLParagraphElement>(null);
   const view = calcView(s);
   const look: 'day' | 'night' = theme === 'auto' ? (systemNight ? 'night' : 'day') : theme;
 
@@ -130,6 +131,16 @@ export default function BasicCalculator() {
     const wrap = wrapRef.current;
     const num = numRef.current;
     if (!display || !wrap || !num) return;
+    // the sum line holds what's typed, so it shrinks to fit rather than cutting off the end
+    const sum = sumRef.current;
+    if (sum) {
+      let px = 22;
+      sum.style.fontSize = `${px}px`;
+      while (sum.scrollWidth > sum.clientWidth + 1 && px > 12) {
+        px--;
+        sum.style.fontSize = `${px}px`;
+      }
+    }
     const max = Math.max(40, Math.min(148, Math.round(display.clientHeight * 0.5)));
     const room = wrap.clientWidth * 0.98;
     // Bricolage changes its letters with the size (optical sizing), so measure again at the new size
@@ -141,7 +152,7 @@ export default function BasicCalculator() {
       size = Math.max(26, Math.min(size - 1, Math.floor((size * room) / w)));
     }
   }, []);
-  useLayoutEffect(fit, [view.big, fit]);
+  useLayoutEffect(fit, [view.big, view.line, view.live, fit]);
   useEffect(() => {
     const ro = new ResizeObserver(fit);
     if (displayRef.current) ro.observe(displayRef.current);
@@ -198,9 +209,12 @@ export default function BasicCalculator() {
         </header>
 
         <div className="bc-display" ref={displayRef} aria-live="polite" aria-atomic="true">
-          <p className="bc-sum">{view.line || ' '}</p>
+          <p className="bc-sum" ref={sumRef}>
+            {view.line || ' '}
+          </p>
           <div className="bc-num-wrap" ref={wrapRef}>
-            <span className="bc-num" ref={numRef} data-err={view.err || undefined}>
+            <span className="bc-num" ref={numRef} data-err={view.err || undefined} data-wait={view.wait || undefined}>
+              {view.live && <span className="bc-eqs">=</span>}
               {view.big}
             </span>
           </div>

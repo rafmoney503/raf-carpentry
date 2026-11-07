@@ -171,8 +171,9 @@
   margin: 0;
   max-width: 100%;
   font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 19px;
-  line-height: 25px;
+  /* 22 px, made smaller by the page when a long sum wouldn't fit */
+  font-size: 22px;
+  line-height: 28px;
   color: var(--bc-sum);
   white-space: nowrap;
   overflow: hidden;
@@ -196,6 +197,22 @@
   line-height: 0.95;
   padding-right: 0.02em;
   color: var(--bc-ink);
+}
+/* the answer worked out as you type, before = */
+.bc-eqs {
+  display: inline-block;
+  margin-right: 0.22em;
+  font-size: 0.42em;
+  font-weight: 500;
+  letter-spacing: 0;
+  vertical-align: 0.38em;
+  color: var(--bc-sum);
+}
+/* "5 ÷ 0" before the next digit: why there's no answer yet */
+.bc-num[data-wait] {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--bc-sum);
 }
 
 /* a dimension line under the number */
