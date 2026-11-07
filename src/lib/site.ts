@@ -55,6 +55,7 @@ export function whatsappText(path = '/', title = '') {
   if (path.startsWith('/portfolio/') && title) return `Hi Raf, I've just seen the "${title}" job on your website and I'd like something similar.${ask}`;
   if (path.startsWith('/services/') && title) return `Hi Raf, I found you on rafcarpentry.com and I'd like a quote for ${title.split(',')[0].trim().toLowerCase()}.${ask}`;
   if (path.startsWith('/blog/') && title) return `Hi Raf, I've just read "${title}" on your website and I've got a question.`;
+  if (path.startsWith('/tools/decking-calculator')) return `Hi Raf, I'd like a quote for a deck.${ask}`;
   if (path.startsWith('/tools')) return "Hi Raf, I've got a question about the tools on your website.";
   if (path.startsWith('/sketchup')) return "Hi Raf, I've got a question about your SketchUp drawings and plans.";
   if (path.startsWith('/cabinetos')) return "Hi Raf, I've got a question about CabinetOS.";

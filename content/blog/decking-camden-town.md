@@ -54,3 +54,5 @@ The job page has a before and after slider of the same corner: membrane in one, 
 [Every photo from this job is on its page](/portfolio/decking-camden-town).
 
 The [3D model of the deck](/portfolio/decking-camden-town#in-3d) is drawn in SketchUp at standard sizes, not measured ones. Slide the boards off to see the frame and the blocks underneath.
+
+Planning a deck of your own? The [decking calculator](/tools/decking-calculator) works out the boards, joists, clips and screws from its size, and draws it to scale.

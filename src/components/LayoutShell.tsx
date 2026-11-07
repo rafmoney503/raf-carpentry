@@ -26,9 +26,9 @@ export default function LayoutShell({ children, menu }: { children: React.ReactN
           (they sat on the keypad on phones). Plan your project has its own WhatsApp button that sends
           the customer's brief, so neither floats there either. Your readings has its own send bar at the bottom. */}
       {pathname?.startsWith('/editor') || pathname === '/calculator' || pathname === '/tools/spirit-level' || pathname === '/tools/workshop' || pathname?.startsWith('/tools/games') || pathname === '/tools/readings' || pathname === '/wardrobe-planner' || pathname === '/how-it-works' || pathname?.startsWith('/review') || pathname?.startsWith('/d/') || pathname?.startsWith('/ideas/') ? null : (
-        pathname?.startsWith('/cost/') || pathname?.startsWith('/drawings') ? (
+        pathname?.startsWith('/cost/') || pathname?.startsWith('/drawings') || pathname === '/tools/decking-calculator' ? (
           /* a cost calculator page has its own quote form, and the drawings service its own order form (Get my free
-             quote is for a fitting job), so only WhatsApp floats there */
+             quote is for a fitting job), so only WhatsApp floats there; the decking calculator has its own Get a quote */
           <WhatsAppFloat />
         ) : (
           <>

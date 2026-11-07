@@ -35,7 +35,8 @@ export function goalOf(href: string, text: string): Goal | '' {
   const h = href.toLowerCase();
   if (h.startsWith('tel:')) return 'call';
   if (h.startsWith('mailto:')) return 'email';
-  if (h.includes('wa.me/') || h.includes('whatsapp.com')) return 'whatsapp';
+  // a WhatsApp chat with Raf; wa.me/?text= with no number is the visitor sending something on (a list, readings)
+  if (/wa\.me\/\d/.test(h) || h.includes('whatsapp.com')) return 'whatsapp';
   if (/^send to raf\b/i.test(text.trim())) return 'send';
   if (/^get the cut list\b/i.test(text.trim())) return 'cutlist';
   let path = '';

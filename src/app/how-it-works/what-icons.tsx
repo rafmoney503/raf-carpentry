@@ -11,6 +11,7 @@ const P: [RegExp, React.ReactNode][] = [
   [/loft|eaves/i, <><path d="M2 22V12L16 2h10v20z" /><path d="M8 22v-8M15 22V8" /></>],
   [/panel/i, <><rect x="2" y="2" width="24" height="20" /><rect x="5" y="5" width="7" height="7" /><rect x="16" y="5" width="7" height="7" /><path d="M2 15h24" /></>],
   [/kitchen/i, <><rect x="2" y="12" width="24" height="10" /><path d="M2 12h24M10 12v10M18 12v10M3 3h22v5H3z" /></>],
+  [/deck/i, <><path d="M2 8h24M2 12h24M2 16h24" /><path d="M2 4h24M5 16v6M14 16v6M23 16v6" /></>],
 ];
 
 export function whatIcon(label: string) {

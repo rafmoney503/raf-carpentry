@@ -86,6 +86,30 @@ export default function ToolsPage() {
         <ToolGroup id="free" n="02" kicker="Free, no sign-up" title="Free tools" line="For your own jobs: on your phone, in the workshop and in 3D.">
           {/* the Workshop Tools app for phones (25 Oct 2026) */}
           <AppNudge variant="card" className="lg:col-span-2" />
+          {/* the decking calculator (7 Nov 2026), wide so the grid stays even */}
+          <Link
+            href="/tools/decking-calculator"
+            data-decking-card
+            className="group grid grid-cols-1 items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent sm:grid-cols-[minmax(0,1fr)_auto] md:p-6 lg:col-span-2"
+          >
+            <div>
+              <p className="font-mono text-[13px] text-accent">Free calculator</p>
+              <h3 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Decking calculator</h3>
+              <p className="mt-1 max-w-[62ch] text-[15px] text-muted">How many boards, joists, clips and screws your deck takes, with the deck drawn to scale from above. Composite or softwood.</p>
+            </div>
+            <div className="flex items-center gap-5">
+              {/* a small deck from above: the house wall, the boards and the size */}
+              <svg viewBox="0 0 132 78" className="w-[120px] sm:w-[132px]" aria-hidden="true">
+                <rect x="2" y="2" width="128" height="7" className="fill-raised-2" />
+                <path d="M2 9.5h128" className="stroke-ink" strokeWidth="1.6" />
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <rect key={i} x="2" y={12 + i * 9} width="128" height="7.4" className={i % 2 ? 'fill-raised-2 stroke-ink' : 'fill-mount stroke-ink'} strokeWidth="1" />
+                ))}
+                <path d="M2 72v6M130 72v6M2 75h128" className="stroke-accent" strokeWidth="1.3" />
+              </svg>
+              <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+            </div>
+          </Link>
           {/* the simple calculator, full screen (7 Nov 2026) */}
           <Link
             href="/tools/calculator"

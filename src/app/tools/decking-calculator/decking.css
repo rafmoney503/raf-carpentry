@@ -1,0 +1,139 @@
+/* The decking calculator's plan drawing (/tools/decking-calculator). The site's colours come from the theme; the
+   timber, membrane and frame colours are the drawing's own, as on the 'Decking calculator mockups' canvas (A). */
+
+.dk {
+  --dk-membrane: #2b2e31;
+  --dk-b1: #846f5c;
+  --dk-b2: #7a6553;
+  --dk-joist: #a4ae79;
+  --dk-joist-edge: #59642f;
+  --dk-pad: #e3e5e0;
+  --dk-post: #c4c7c2;
+  --dk-hatch: rgb(22 25 28 / 0.3);
+}
+.dk[data-board='softwood'] {
+  --dk-b1: #cca66f;
+  --dk-b2: #c29b63;
+}
+
+.dk-card {
+  container-type: inline-size;
+}
+
+/* the drawing, house wall above it, sizes under and beside it; as wide as the card allows, never taller than
+   --dk-maxh, so a long thin deck and a deep one both fit */
+.dk-plan {
+  --dk-maxh: 300px;
+  --dk-w: min(calc(100cqw - 52px), calc(var(--dk-ratio) * var(--dk-maxh)));
+  display: grid;
+  grid-template-columns: var(--dk-w) 40px;
+  grid-template-areas:
+    'house .'
+    'svg dimd'
+    'dimw .';
+  justify-content: center;
+  column-gap: 8px;
+}
+@media (min-width: 1024px) {
+  .dk-plan {
+    --dk-maxh: 420px;
+  }
+}
+
+.dk-house {
+  grid-area: house;
+  height: 16px;
+  box-sizing: border-box;
+  background: repeating-linear-gradient(135deg, var(--dk-hatch) 0 1.5px, transparent 1.5px 6px);
+  border-bottom: 2px solid var(--color-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dk-house span {
+  background: var(--color-mount);
+  padding: 0 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.dk-svg {
+  grid-area: svg;
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.dk-svg rect {
+  vector-effect: non-scaling-stroke;
+}
+.dk-membrane {
+  fill: var(--dk-membrane);
+}
+.dk-board {
+  fill: var(--dk-b1);
+}
+.dk-board2 {
+  fill: var(--dk-b2);
+}
+.dk-join {
+  fill: var(--color-ink);
+}
+.dk-joist {
+  fill: var(--dk-joist);
+  stroke: var(--dk-joist-edge);
+  stroke-width: 1;
+}
+.dk-pad {
+  fill: var(--dk-pad);
+  stroke: var(--color-ink);
+  stroke-width: 1;
+}
+.dk-post {
+  fill: var(--dk-post);
+  stroke: var(--color-ink);
+  stroke-width: 1;
+}
+
+.dk-dimw {
+  grid-area: dimw;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dk-dimd {
+  grid-area: dimd;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.dk-dimw > span:not(.dk-num),
+.dk-dimd > span:not(.dk-num) {
+  background: var(--color-accent);
+}
+.dk-dimw .dk-tick {
+  width: 1.5px;
+  height: 10px;
+}
+.dk-dimw .dk-line {
+  flex: 1;
+  height: 1.5px;
+}
+.dk-dimd .dk-tick {
+  width: 10px;
+  height: 1.5px;
+}
+.dk-dimd .dk-line {
+  flex: 1;
+  width: 1.5px;
+}
+.dk-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-accent);
+  white-space: nowrap;
+}

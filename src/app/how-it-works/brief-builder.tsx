@@ -253,6 +253,9 @@ export default function BriefBuilder({
     const w = mm('w');
     const h = mm('h');
     if (w || h) setSize((cur) => ({ ...cur, w: cur.w || w, h: cur.h || h }));
+    // From the decking calculator's Get a quote (deckBriefHref in src/lib/decking-calc.ts): ?note= starts the notes
+    const note = (q.get('note') ?? '').trim().slice(0, 300);
+    if (note) setNotes((cur) => cur || note);
   }, [options]);
 
   const one = (set: (v: string) => void, cur: string) => (v: string) => set(cur === v ? '' : v);
@@ -260,6 +263,8 @@ export default function BriefBuilder({
   const toggle = (set: React.Dispatch<React.SetStateAction<string[]>>) => (v: string) =>
     set((list) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]));
   const hasSize = Boolean(size.w || size.h || size.d);
+  // A deck has no height: when Decking is all they ticked, the sizes are along the house, out from it and off the ground
+  const deckOnly = what.length > 0 && what.every((w) => /deck/i.test(w));
   const wardrobeLabel = options.what.find((w) => /wardrobe/i.test(w)) ?? '';
   const wardrobeOn = Boolean(wardrobeLabel && what.includes(wardrobeLabel));
   const openPlanner = () => {
@@ -324,7 +329,12 @@ export default function BriefBuilder({
     if (ikea?.value) lines.push(`IKEA design ${ikea.kind === 'link' ? 'link' : 'code'}: ${ikea.value}`);
     if (room.length) lines.push(`${room.length > 1 ? 'Rooms' : 'Room'}: ${join(room)}`);
     if (uses.length) lines.push(`For: ${join(uses)}`);
-    if (hasSize) lines.push(`Rough size: ${size.w || '?'} wide x ${size.h || '?'} high x ${size.d || '?'} deep (mm)`);
+    if (hasSize)
+      lines.push(
+        deckOnly
+          ? `Rough size: ${size.w || '?'} along the house x ${size.h || '?'} out${size.d ? ` x ${size.d} off the ground` : ''} (mm)`
+          : `Rough size: ${size.w || '?'} wide x ${size.h || '?'} high x ${size.d || '?'} deep (mm)`,
+      );
     if (price) lines.push(`Price shown: ${priceWords} with VAT (${lowerFirst(price.finish)}, ${price.e.qty} m wide)`);
     if (material.length) lines.push(`Material: ${join(material)}`);
     if (finish.length) lines.push(`Finish: ${join(finish)}`);
@@ -342,7 +352,7 @@ export default function BriefBuilder({
     if (notes.trim()) lines.push('', notes.trim());
     lines.push('', 'I will send photos of the space next.');
     return lines.join('\n').replace(/\n{3,}/g, '\n\n'); // never two empty lines in a row
-  }, [job, liked, what, wardrobeOn, buildWords, wb.build, ikeaCode, room, uses, material, finish, hasSize, size, price, priceWords, planText, name, mobile, email, addressText, parking, access, timing, budget, notes]);
+  }, [job, liked, what, deckOnly, wardrobeOn, buildWords, wb.build, ikeaCode, room, uses, material, finish, hasSize, size, price, priceWords, planText, name, mobile, email, addressText, parking, access, timing, budget, notes]);
 
   const mailto = `mailto:${EMAIL}?subject=${encodeURIComponent(`My project brief${what.length ? `: ${what.join(' + ')}` : ''}`.slice(0, 120))}&body=${encodeURIComponent(message.replace('I will send photos of the space next.', 'Photos of the space attached.'))}`;
 
@@ -530,6 +540,7 @@ export default function BriefBuilder({
       case 'room':
         return [join(room), join(uses)].filter(Boolean).join(' · ');
       case 'size':
+        if (sizeOk && deckOnly) return `${size.w} along the house x ${size.h} out${size.d ? ` x ${size.d} off the ground` : ''} (mm)`;
         return sizeOk ? `${size.w} wide x ${size.h} high${size.d ? ` x ${size.d} deep` : ''} (mm)${price ? ` · about ${priceWords}` : ''}` : '';
       case 'material':
         return [join(material), join(finish)].filter(Boolean).join(' · ');
@@ -655,18 +666,22 @@ export default function BriefBuilder({
             {key === 'size' ? (
               <Ask
                 id="size"
-                title="Roughly how big is the space?"
-                why="Width and height, so I know the size of the job before I come. Rough is fine: I measure properly on the free visit."
-                err={errFor('size', 'Add the width and height in mm to carry on. A 2.4 metre wall is 2400.')}
+                title={deckOnly ? 'Roughly how big is the deck?' : 'Roughly how big is the space?'}
+                why={
+                  deckOnly
+                    ? 'Along the house and out from it, so I know the size of the job before I come. Rough is fine: I measure properly on the free visit.'
+                    : 'Width and height, so I know the size of the job before I come. Rough is fine: I measure properly on the free visit.'
+                }
+                err={errFor('size', deckOnly ? 'Add both sizes in mm to carry on. A 3.5 metre deck is 3500.' : 'Add the width and height in mm to carry on. A 2.4 metre wall is 2400.')}
               >
                 <div className="mt-5 grid grid-cols-3 gap-2">
                   {(['w', 'h', 'd'] as const).map((k) => (
                     <label key={k} className="block min-w-0">
-                      <span className={label}>{k === 'w' ? 'Width' : k === 'h' ? 'Height' : 'Depth'}</span>
+                      <span className={label}>{deckOnly ? (k === 'w' ? 'Along the house' : k === 'h' ? 'Out from it' : 'Off the ground') : k === 'w' ? 'Width' : k === 'h' ? 'Height' : 'Depth'}</span>
                       <input
                         className={`${input} mt-1 ${need === 'size' && k !== 'd' && !(Number(size[k]) >= 10) ? 'border-accent ring-2 ring-accent/20' : ''}`}
                         inputMode="numeric"
-                        placeholder={k === 'w' ? '2400' : k === 'h' ? '2500' : '600'}
+                        placeholder={deckOnly ? (k === 'w' ? '3500' : k === 'h' ? '3000' : '150') : k === 'w' ? '2400' : k === 'h' ? '2500' : '600'}
                         value={size[k]}
                         data-size={k}
                         aria-required={k !== 'd' || undefined}
@@ -677,7 +692,14 @@ export default function BriefBuilder({
                   ))}
                 </div>
                 <p className="mt-2 font-mono text-[12px] text-faint">
-                  In mm{smallMm(size.w) || smallMm(size.h) ? <span className="text-accent">: 2.4 metres is 2400</span> : '. Depth if you know it.'}
+                  In mm
+                  {smallMm(size.w) || smallMm(size.h) ? (
+                    <span className="text-accent">: {deckOnly ? '3.5 metres is 3500' : '2.4 metres is 2400'}</span>
+                  ) : deckOnly ? (
+                    '. How high off the ground if you know it.'
+                  ) : (
+                    '. Depth if you know it.'
+                  )}
                 </p>
                 {price ? (
                   <div className="mt-4 rounded-sm bg-ink p-4 text-on-accent" data-brief-price>

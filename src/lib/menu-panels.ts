@@ -160,6 +160,7 @@ export function getMenuPanels(): Record<string, MenuPanel> {
         { label: 'Workshop Tools app for your phone', href: '/tools/workshop' },
         { label: 'Workshop calculator in mm', href: '/calculator' },
         { label: 'Spirit level on your phone', href: '/tools/spirit-level' },
+        { label: 'Decking calculator', href: '/tools/decking-calculator' },
         { label: 'Workshop tips', href: '/tips' },
         { label: 'Workshop Games, six free games', href: '/tools/games' },
       ],
