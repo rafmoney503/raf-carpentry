@@ -22,21 +22,23 @@ export default function LayoutShell({ children, menu }: { children: React.ReactN
   }
 
   // What floats at the bottom of this page. None on the calculator and the tools with their own screens (they sat on
-  // the keypad on phones), on Plan your project (its own WhatsApp button sends the customer's brief), on Your
-  // readings (its own send bar) and on the private pages. A cost calculator page has its own quote form, the drawings
-  // service its own order form (Get my free quote is for a fitting job) and the decking calculator its own Get a
-  // quote, so only WhatsApp there.
+  // the keypad on phones), on Your readings (its own send bar) and on the private pages. A cost calculator page has
+  // its own quote form, the drawings service its own order form (Get my free quote is for a fitting job) and the
+  // decking calculator its own Get a quote, so only WhatsApp there. Plan your project ('brief') gets the phone bar,
+  // its quote end jumping to the brief, and nothing floating on a computer (the brief's message sits beside it there).
   const p = pathname || '/';
-  const floats: 'none' | 'wa' | 'all' =
-    p.startsWith('/editor') || p === '/calculator' || p === '/tools/spirit-level' || p === '/tools/workshop' || p.startsWith('/tools/games') || p === '/tools/readings' || p === '/wardrobe-planner' || p === '/how-it-works' || p.startsWith('/review') || p.startsWith('/d/') || p.startsWith('/ideas/')
+  const floats: 'none' | 'wa' | 'brief' | 'all' =
+    p.startsWith('/editor') || p === '/calculator' || p === '/tools/spirit-level' || p === '/tools/workshop' || p.startsWith('/tools/games') || p === '/tools/readings' || p === '/wardrobe-planner' || p.startsWith('/review') || p.startsWith('/d/') || p.startsWith('/ideas/')
       ? 'none'
-      : p.startsWith('/cost/') || p.startsWith('/drawings') || p === '/tools/decking-calculator'
-        ? 'wa'
-        : 'all';
+      : p === '/how-it-works'
+        ? 'brief'
+        : p.startsWith('/cost/') || p.startsWith('/drawings') || p === '/tools/decking-calculator'
+          ? 'wa'
+          : 'all';
 
   return (
     <>
-      <Navbar menu={menu} barQuote={floats === 'all'} />
+      <Navbar menu={menu} barQuote={floats === 'all' || floats === 'brief'} />
       <main className="min-h-screen">
         <BackBar />
         {children}
@@ -46,12 +48,14 @@ export default function LayoutShell({ children, menu }: { children: React.ReactN
         <>
           {/* phones: one bar along the bottom with Back, Top, Get my free quote and WhatsApp (src/components/PhoneBar.tsx),
               and room under the footer so it never covers the end of the page; computers: the floating buttons */}
-          <PhoneBar quote={floats === 'all'} />
+          <PhoneBar quote={floats === 'all' ? 'link' : floats === 'brief' ? 'jump' : false} />
           <div aria-hidden="true" className="h-[calc(66px+env(safe-area-inset-bottom))] md:hidden" />
-          <div className="hidden md:contents">
-            {floats === 'all' ? <HowItWorksFloat /> : null}
-            <WhatsAppFloat />
-          </div>
+          {floats === 'brief' ? null : (
+            <div className="hidden md:contents">
+              {floats === 'all' ? <HowItWorksFloat /> : null}
+              <WhatsAppFloat />
+            </div>
+          )}
           {/* once a visit: a job someone really looked at or saved lately, above Get my free quote */}
           {floats === 'all' ? <RecentDesign /> : null}
         </>
