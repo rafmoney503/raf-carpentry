@@ -4,14 +4,17 @@ import Image from 'next/image';
    Tools page). Build It in 3D uses the icon of its own website (public/images/build-it-in-3d/icon.svg, a copy of
    builditin3d's src/app/icon.svg). Drawings and cut lists has its own app-style icon (Raf picked option 1 of three
    on 6 Nov 2026: a drawing sheet with a wardrobe, its width in blue, the cut list beside it and a pencil, on a dark
-   tile); a new file name if it's ever redrawn, so no old copy is served. */
+   tile); a new file name if it's ever redrawn, so no old copy is served. The simple calculator's (Raf picked option 2
+   of three on 7 Nov 2026: plus, minus and times as outlined keys and a blue equals on the night look's dark tile)
+   is made by scripts/calculator/icons.mjs, which names it by its content. */
 
-export type MiniIconKind = 'drawings' | 'builditin3d';
+export type MiniIconKind = 'drawings' | 'builditin3d' | 'calculator';
 
 export const BUILD_IT_IN_3D_ICON = '/images/build-it-in-3d/icon.svg';
 export const DRAWINGS_ICON = '/images/drawings/icon-450f40d2.svg';
+export const CALCULATOR_ICON = '/images/tools/calculator/icon-64c4b050.svg';
 
 export default function MiniIcon({ kind, size }: { kind: MiniIconKind; size: number }) {
-  const src = kind === 'builditin3d' ? BUILD_IT_IN_3D_ICON : DRAWINGS_ICON;
+  const src = kind === 'builditin3d' ? BUILD_IT_IN_3D_ICON : kind === 'calculator' ? CALCULATOR_ICON : DRAWINGS_ICON;
   return <Image src={src} alt="" width={size} height={size} unoptimized className="block h-full w-full" />;
 }

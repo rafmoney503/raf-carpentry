@@ -49,7 +49,7 @@ export function visitorCode(ip: string, ua: string, now = new Date()) {
   return createHash('sha256').update(`${process.env.RAFSTATS_SECRET}|${londonDay(now)}|${ip}|${ua}`).digest('hex').slice(0, 16);
 }
 
-const CAMPAIGN_TAGS = /^(pwa|pwa-new|pwa-games|pwa-games-new|beat|qr-[a-z0-9]{2,16}|email-[a-z0-9]{2,16}|quote|booked|invoice|review|launch-email|gbp|groups)$/;
+const CAMPAIGN_TAGS = /^(pwa|pwa-new|pwa-games|pwa-games-new|pwa-calc|beat|qr-[a-z0-9]{2,16}|email-[a-z0-9]{2,16}|quote|booked|invoice|review|launch-email|gbp|groups)$/;
 
 /* Where a visit came from, from the referring address (or ?utm_source=). */
 export function sourceOf(ref: string, utm: string): { kind: string; host: string } {

@@ -234,6 +234,8 @@ export const SOURCE_LABEL: Record<string, string> = {
   // the first time on that phone (6 Nov 2026): an install
   'pwa-games-new': 'Workshop Games, first opened from the home screen (installed)',
   'pwa-new': 'Workshop Tools, first opened from the home screen (installed)',
+  // the simple calculator (7 Nov 2026)
+  'pwa-calc': 'Simple calculator, opened from the home screen',
   beat: 'A friend’s score link (Workshop Games)',
   'qr-games': 'QR code on the Workshop Games page',
 };

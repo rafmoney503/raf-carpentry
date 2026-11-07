@@ -61,6 +61,29 @@ function onSystem(cb: () => void) {
 }
 const never = () => () => {};
 
+// a copy for no signal (public/calculator-sw.js): the worker is told which scripts, styles and fonts the page loaded
+function keepOffline() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker
+    .register('/calculator-sw.js', { scope: '/tools/calculator' })
+    .then(() => navigator.serviceWorker.ready)
+    .then((reg) => {
+      const urls = performance
+        .getEntriesByType('resource')
+        .map((e) => e.name)
+        .filter((u) => {
+          try {
+            const x = new URL(u);
+            return x.origin === location.origin && x.pathname.startsWith('/_next/static/');
+          } catch {
+            return false;
+          }
+        });
+      reg.active?.postMessage({ type: 'keep', urls });
+    })
+    .catch(() => {});
+}
+
 export default function BasicCalculator() {
   const [s, setS] = useState<CalcState>(CALC_START);
   const theme = useSyncExternalStore(onTheme, readTheme, () => 'auto' as Theme);
@@ -75,6 +98,12 @@ export default function BasicCalculator() {
   const look: 'day' | 'night' = theme === 'auto' ? (systemNight ? 'night' : 'day') : theme;
 
   const press = useCallback((k: CalcKey) => setS((cur) => pressKey(cur, k)), []);
+
+  useEffect(() => {
+    // after the page has settled, so the list of what it loaded is complete
+    const t = setTimeout(keepOffline, 1500);
+    return () => clearTimeout(t);
+  }, []);
 
   // the page behind (iPhone's bounce) and the browser bar in the same colour; no page scroll while it's open
   useEffect(() => {

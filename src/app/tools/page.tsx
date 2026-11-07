@@ -13,7 +13,7 @@ import AppNudge from '@/components/AppNudge';
 import ExtensionTeaser from '@/components/ExtensionTeaser';
 import { BUILD_IT_IN_3D_URL } from '@/lib/site';
 import { WORKING_DAYS, gbp, packPrices } from '@/lib/drawings-service';
-import { BUILD_IT_IN_3D_ICON, DRAWINGS_ICON } from '@/components/MiniIcon';
+import { BUILD_IT_IN_3D_ICON, CALCULATOR_ICON, DRAWINGS_ICON } from '@/components/MiniIcon';
 
 type ToolEntry = {
   name: string;
@@ -97,15 +97,10 @@ export default function ToolsPage() {
               <p className="mt-1 text-[15px] text-muted">Big keys and a big display, on your phone or computer. A night look for dark mode.</p>
             </div>
             <div className="flex items-center gap-5">
-              {/* a small calculator: the answer over its dimension line, the keys, the operators down the right */}
-              <svg viewBox="0 0 56 76" className="w-[46px] sm:w-[54px]" aria-hidden="true">
-                <rect x="1" y="1" width="54" height="74" rx="8" className="fill-paper stroke-ink" strokeWidth="1.4" />
-                <text x="47" y="22" textAnchor="end" className="fill-ink font-display" fontSize="15" fontWeight="700">564</text>
-                <line x1="9" y1="27" x2="47" y2="27" className="stroke-accent" strokeWidth="1" />
-                {[0, 1, 2, 3].map((r) => [0, 1, 2].map((c) => <rect key={`${r}${c}`} x={6 + c * 11} y={32 + r * 10} width="9" height="8" rx="2" className="fill-mount stroke-line-strong" strokeWidth="0.8" />))}
-                {[0, 1, 2].map((r) => <rect key={r} x="40" y={32 + r * 10} width="10" height="8" rx="2" className="fill-accent/15" />)}
-                <rect x="40" y="62" width="10" height="8" rx="2" className="fill-accent" />
-              </svg>
+              {/* the calculator's own icon, as on a phone's home screen */}
+              <span className="block w-[64px] sm:w-[76px]">
+                <Image src={CALCULATOR_ICON} alt="" width={76} height={76} unoptimized className="block h-auto w-full" />
+              </span>
               <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
             </div>
           </Link>

@@ -15,7 +15,7 @@ import { MiniLevel } from './ScrollLevel';
 import { getDock, getUndocked, subscribeDock } from '@/lib/scroll-level';
 
 /* Phone menu lines with a mini icon, under the wardrobe planner's picture */
-const MINI: Record<string, MiniIconKind> = { '/drawings': 'drawings', [BUILD_IT_IN_3D_URL]: 'builditin3d' };
+const MINI: Record<string, MiniIconKind> = { '/drawings': 'drawings', '/tools/calculator': 'calculator', [BUILD_IT_IN_3D_URL]: 'builditin3d' };
 
 const links = [
   { href: '/services', label: 'Services' },
@@ -239,7 +239,7 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
           {phoneSearch ? null : [
             ...links.flatMap((l) =>
               l.href === '/designs'
-                ? [l, { href: '/wardrobe-planner', label: 'Wardrobe planner' }, { href: '/drawings', label: 'Drawings and cut lists' }, { href: BUILD_IT_IN_3D_URL, label: 'Build It in 3D' }]
+                ? [l, { href: '/wardrobe-planner', label: 'Wardrobe planner' }, { href: '/drawings', label: 'Drawings and cut lists' }, { href: '/tools/calculator', label: 'Simple calculator' }, { href: BUILD_IT_IN_3D_URL, label: 'Build It in 3D' }]
                 : l.href === '/services'
                   ? [l, COST_LINK]
                   : [l],

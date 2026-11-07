@@ -1,0 +1,19 @@
+{
+  "id": "/tools/calculator",
+  "name": "Simple calculator by Raf Carpentry",
+  "short_name": "Calculator",
+  "description": "A free, simple calculator with big keys and a big display. Works with no signal.",
+  "start_url": "/tools/calculator?utm_source=pwa-calc",
+  "scope": "/tools/calculator",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f1f2ef",
+  "theme_color": "#f1f2ef",
+  "categories": ["utilities"],
+  "lang": "en-GB",
+  "icons": [
+    { "src": "/images/tools/calculator/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/images/tools/calculator/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/images/tools/calculator/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
