@@ -35,7 +35,9 @@ const links = [
    goes straight to the page. On the phone menu the same tags open under a + beside each item.
    Search (src/components/SiteSearch.tsx): the magnifier on a computer (or / or Ctrl+K) opens it under the header;
    on a phone it is the box at the top of the menu. */
-export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel> }) {
+/* barQuote: the phone bar at the bottom (src/components/PhoneBar.tsx) has Get my free quote on this page, so the
+   header leaves its own out on phones and the name shows beside the R again. */
+export default function Navbar({ menu = {}, barQuote = false }: { menu?: Record<string, MenuPanel>; barQuote?: boolean }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const [shown, setShown] = useState<string | null>(null); // computer: the item whose panel is open
@@ -135,7 +137,7 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
           </span>
           {/* Very narrow phones (under 350 px) show the R only, so the header never runs off the side. While the small
               spirit level is docked the name makes way for it at every width (the menu bar is full from 1024 px). */}
-          <span className={docked ? 'sr-only' : 'max-[349px]:sr-only'}>Raf Carpentry</span>
+          <span className={docked ? 'sr-only' : barQuote ? '' : 'max-[349px]:sr-only'}>Raf Carpentry</span>
         </Link>
         {docked ? <MiniLevel /> : null}
 
@@ -178,7 +180,7 @@ export default function Navbar({ menu = {} }: { menu?: Record<string, MenuPanel>
           </a>
           <Link
             href={quoteHref}
-            className="btn btn-primary btn-sm max-[379px]:px-3.5"
+            className={`btn btn-primary btn-sm max-[379px]:px-3.5 ${barQuote ? 'max-md:hidden' : ''}`}
             onClick={(e) => {
               // Already on the page: go back to its top.
               if (pathname === QUOTE_HREF) {

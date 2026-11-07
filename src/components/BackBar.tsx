@@ -50,7 +50,7 @@ export function useBackTrail() {
 
 /* Where back goes from this page, and what it's called. Before the page has run in the browser (and on the
    server) it's the page above, so the first paint has a working link. */
-function useBack() {
+export function useBack() {
   const pathname = usePathname();
   const s = useSyncExternalStore(subscribe, () => snap, () => null);
   const p = pathKey(pathname || '/');
@@ -72,7 +72,7 @@ const back = (history: boolean) => (e: React.MouseEvent<HTMLAnchorElement>) => {
 
 /* Pages that have their own way back, or none at all: the home page, the planner (its own header has it),
    the private pages for one customer, Raf's own tools. */
-function hidden(p: string) {
+export function hidden(p: string) {
   return (
     p === '/' ||
     p === '/wardrobe-planner' ||
