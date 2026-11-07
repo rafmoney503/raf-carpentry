@@ -9,9 +9,9 @@ import type { MenuPanel } from '@/lib/menu-panels';
 
 export default function LayoutShell({ children, menu }: { children: React.ReactNode; menu?: Record<string, MenuPanel> }) {
   const pathname = usePathname();
-  // The Instagram mini-site, Raf's Job Kit app and the Workshop Tools and Workshop Games apps stand alone: no menu,
-  // footer or floating buttons.
-  const isMiniSite = pathname === '/ms' || pathname?.startsWith('/job-kit') || pathname?.startsWith('/tools/workshop/app') || pathname?.startsWith('/tools/games/app');
+  // The Instagram mini-site, Raf's Job Kit app, the Workshop Tools and Workshop Games apps and the simple calculator
+  // stand alone: no menu, footer or floating buttons.
+  const isMiniSite = pathname === '/ms' || pathname?.startsWith('/job-kit') || pathname?.startsWith('/tools/workshop/app') || pathname?.startsWith('/tools/games/app') || pathname === '/tools/calculator';
 
   if (isMiniSite) {
     return <main>{children}</main>;

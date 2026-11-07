@@ -86,6 +86,29 @@ export default function ToolsPage() {
         <ToolGroup id="free" n="02" kicker="Free, no sign-up" title="Free tools" line="For your own jobs: on your phone, in the workshop and in 3D.">
           {/* the Workshop Tools app for phones (25 Oct 2026) */}
           <AppNudge variant="card" className="lg:col-span-2" />
+          {/* the simple calculator, full screen (7 Nov 2026) */}
+          <Link
+            href="/tools/calculator"
+            className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6"
+          >
+            <div>
+              <p className="font-mono text-[13px] text-accent">Free tool</p>
+              <h3 className="mt-1 text-[21px] font-[620] leading-snug transition-colors group-hover:text-accent">Simple calculator</h3>
+              <p className="mt-1 text-[15px] text-muted">Big keys and a big display, on your phone or computer. A night look for dark mode.</p>
+            </div>
+            <div className="flex items-center gap-5">
+              {/* a small calculator: the answer over its dimension line, the keys, the operators down the right */}
+              <svg viewBox="0 0 56 76" className="w-[46px] sm:w-[54px]" aria-hidden="true">
+                <rect x="1" y="1" width="54" height="74" rx="8" className="fill-paper stroke-ink" strokeWidth="1.4" />
+                <text x="47" y="22" textAnchor="end" className="fill-ink font-display" fontSize="15" fontWeight="700">564</text>
+                <line x1="9" y1="27" x2="47" y2="27" className="stroke-accent" strokeWidth="1" />
+                {[0, 1, 2, 3].map((r) => [0, 1, 2].map((c) => <rect key={`${r}${c}`} x={6 + c * 11} y={32 + r * 10} width="9" height="8" rx="2" className="fill-mount stroke-line-strong" strokeWidth="0.8" />))}
+                {[0, 1, 2].map((r) => <rect key={r} x="40" y={32 + r * 10} width="10" height="8" rx="2" className="fill-accent/15" />)}
+                <rect x="40" y="62" width="10" height="8" rx="2" className="fill-accent" />
+              </svg>
+              <span className="text-accent transition-transform group-hover:translate-x-1" aria-hidden="true">→</span>
+            </div>
+          </Link>
           <Link
             href="/calculator"
             className="group grid grid-cols-1 items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent sm:grid-cols-[minmax(0,1fr)_auto] md:p-6"
@@ -162,7 +185,7 @@ export default function ToolsPage() {
             target="_blank"
             rel="noopener"
             data-build-it-in-3d
-            className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6 lg:col-span-2"
+            className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-sm border border-line-strong bg-mount p-5 transition-colors hover:border-accent md:p-6"
           >
             <div>
               <p className="font-mono text-[13px] text-accent">Free 3D lessons</p>

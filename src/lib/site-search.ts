@@ -54,6 +54,7 @@ const PAGES: { title: string; href: string; sub: string; words: string }[] = [
   { title: 'SketchUp extension', href: '/sketchup#extension', sub: 'CabinetOS Units: draw units in SketchUp, send them to CabinetOS', words: 'sketchup extension plugin plug in add on ruby rbz units wardrobe cabinet carcass draw fast quick component components opencutlist cabinetos cut list cutlist board layout' },
   { title: 'CabinetOS', href: '/cabinetos', sub: 'My cutting list app for cabinet makers', words: 'cabinetos app cut list cutlist cutting board optimise optimisation cabinet maker software' },
   { title: 'Drawings and cut lists, done for you', href: '/drawings', sub: 'Send your sizes, get the drawings, cut list and board layout', words: 'drawings drawing cut list cutlist cutting list board layout plans plan design designer service order buy pay 3d assembly guide diy shop drawings technical' },
+  { title: 'Simple calculator', href: '/tools/calculator', sub: 'Big keys and a big display, with a night look', words: 'calculator calc simple basic big keys add plus minus take away times divide sums maths phone dark night mode' },
   { title: 'Workshop calculator', href: '/calculator', sub: 'Sums in mm, how many fit on a board', words: 'calculator calc mm sums maths board sheet 2440 1220 inches' },
   { title: 'Workshop tips', href: '/tips', sub: 'For carpenters and DIYers', words: 'tips tricks diy how to advice' },
   { title: 'Tools I use', href: '/tools', sub: 'My kit, with links', words: 'tools kit amazon dewalt festool makita buy' },

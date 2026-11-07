@@ -17,7 +17,8 @@ const explore = [
   { href: '/tools', label: 'Tools' },
   { href: '/tools/workshop', label: 'Workshop Tools app' },
   { href: '/tools/games', label: 'Workshop Games' },
-  { href: '/calculator', label: 'Calculator' },
+  { href: '/tools/calculator', label: 'Simple calculator' },
+  { href: '/calculator', label: 'Workshop calculator' },
   { href: '/tips', label: 'Workshop tips' },
 ];
 const read = [

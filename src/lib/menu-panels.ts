@@ -158,6 +158,7 @@ export function getMenuPanels(): Record<string, MenuPanel> {
       listTitle: 'Free tools',
       list: [
         { label: 'Workshop Tools app for your phone', href: '/tools/workshop' },
+        { label: 'Simple calculator, big keys', href: '/tools/calculator' },
         { label: 'Workshop calculator in mm', href: '/calculator' },
         { label: 'Spirit level on your phone', href: '/tools/spirit-level' },
         { label: 'Workshop tips', href: '/tips' },
