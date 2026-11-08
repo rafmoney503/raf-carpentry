@@ -321,6 +321,25 @@ async function twoAtATime<T>(work: () => Promise<T>): Promise<T> {
 
 const SHOWN_AS_IS = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 
+/* One log line when a file can't be shown (Raf, 8 Nov 2026: a new job's pictures showed as links), so Vercel's logs
+   say why: ServiceM8's answer (status, type, size, where it came from), what the bytes are, and the converter's
+   error. No names, words or addresses: the host only, and the file's first bytes as hex. */
+function logFile(uuid: string, size: string, why: string, extra: Record<string, unknown>) {
+  try {
+    console.log('[diary-file]', JSON.stringify({ file: uuid.slice(0, 8), size, why, ...extra }));
+  } catch {
+    /* only a log line */
+  }
+}
+const hexOf = (b: Uint8Array) => Array.from(b.slice(0, 16), (x) => x.toString(16).padStart(2, '0')).join('');
+const hostOf = (u: string) => {
+  try {
+    return new URL(u).host;
+  } catch {
+    return '';
+  }
+};
+
 export async function attachmentFile(uuid: string, size: 'thumb' | 'full'): Promise<{ bytes: Uint8Array; type: string }> {
   let res: Response;
   try {
@@ -330,23 +349,34 @@ export async function attachmentFile(uuid: string, size: 'thumb' | 'full'): Prom
       redirect: 'follow',
       signal: AbortSignal.timeout(25_000),
     });
-  } catch {
+  } catch (e) {
+    logFile(uuid, size, 'fetch', { error: String((e as Error)?.message ?? e).slice(0, 160) });
     throw new Sm8Error('sm8-down', 502);
   }
+  const head = { status: res.status, type: res.headers.get('content-type') ?? '', length: res.headers.get('content-length') ?? '', host: hostOf(res.url), redirected: res.redirected };
   if (!res.ok) {
     const text = await res.text().catch(() => '');
+    logFile(uuid, size, 'status', head);
     throw statusError(res.status, text.replace(/\s+/g, ' ').slice(0, 240));
   }
-  if (Number(res.headers.get('content-length') ?? 0) > 30_000_000) throw new FileProblem('too-big', 413);
+  if (Number(res.headers.get('content-length') ?? 0) > 30_000_000) {
+    logFile(uuid, size, 'too-big', head);
+    throw new FileProblem('too-big', 413);
+  }
   const bytes = new Uint8Array(await res.arrayBuffer());
   const type = sniff(bytes);
   const image = type.startsWith('image/');
+  const seen = { ...head, bytes: bytes.length, sniffed: type, start: hexOf(bytes) };
   if (size === 'thumb') {
-    if (!image) throw new FileProblem('not-photo', 415);
+    if (!image) {
+      logFile(uuid, size, 'not-image', seen);
+      throw new FileProblem('not-photo', 415);
+    }
     try {
       return { bytes: await twoAtATime(() => jpegOf(bytes, 400, 70)), type: 'image/jpeg' };
-    } catch {
+    } catch (e) {
       // can't be read here: a small browser-ready photo goes as it is, anything else is a file tile
+      logFile(uuid, size, 'convert', { ...seen, error: String((e as Error)?.message ?? e).slice(0, 200) });
       if (bytes.length > 600_000 || !SHOWN_AS_IS.has(type)) throw new FileProblem('not-photo', 415);
       return { bytes, type };
     }
@@ -354,10 +384,14 @@ export async function attachmentFile(uuid: string, size: 'thumb' | 'full'): Prom
   if (image && (bytes.length > 2_500_000 || !SHOWN_AS_IS.has(type))) {
     try {
       return { bytes: await twoAtATime(() => jpegOf(bytes, 2000, 80)), type: 'image/jpeg' };
-    } catch {
+    } catch (e) {
+      logFile(uuid, size, 'convert', { ...seen, error: String((e as Error)?.message ?? e).slice(0, 200) });
       /* sent as it is below if it fits */
     }
   }
-  if (bytes.length > 4_000_000) throw new FileProblem('too-big', 413);
+  if (bytes.length > 4_000_000) {
+    logFile(uuid, size, 'too-big', seen);
+    throw new FileProblem('too-big', 413);
+  }
   return { bytes, type };
 }
