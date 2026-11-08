@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { cleanLinks } from './mail-text';
 
 /* ServiceM8 for the Job Kit's "Current jobs". Raf's customers, enquiries, job statuses and invoices live in
    ServiceM8; the Job Kit reads them and writes back through /api/job-kit/sm8 (behind the PIN) with the
@@ -236,7 +237,7 @@ function shape(j: Row, client?: Row, contact?: Row, pays?: Row[] | null): Curren
     email: str(contact?.email),
     address: str(j.job_address),
     area: areaOf(j),
-    description: str(j.job_description),
+    description: cleanLinks(str(j.job_description)), // signature icons and link addresses out (mail-text.ts)
     created: when(j.date) ?? when(j.quote_date) ?? when(j.edit_date),
     quoteSent: on(j.quote_sent) ? (when(j.quote_sent_stamp) ?? when(j.edit_date)) : null,
     workOrder: when(j.work_order_date),

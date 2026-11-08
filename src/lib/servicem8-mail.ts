@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { asciiJson, sm8Base, sm8Call, sm8List, sm8Str as str, sm8When as when, Sm8Error, statusError, tidy, type Sm8Row as Row } from './servicem8';
-import { e164, freshPart, htmlToText, looksHtml, photoKey, photoMarks, signOff, SMS_SIGN_OFF, textOnly, withoutSignOff } from './mail-text';
+import { cleanLinks, e164, freshPart, htmlToText, looksHtml, photoKey, photoMarks, signOff, SMS_SIGN_OFF, textOnly, withoutSignOff } from './mail-text';
 
 /* A job's emails and texts in the Job Kit (Current jobs, the job, Emails and texts): Raf writes there, it goes out through ServiceM8's
    own email (the Messaging API, POST /platform_service_email, the same one the website's emails use, which works
@@ -213,7 +213,7 @@ function dirOf(r: Row, customer: string): 'in' | 'out' {
 
 export function mailOf(r: Row, customer: string, dir?: 'in' | 'out'): Mail {
   const way = dir ?? dirOf(r, customer);
-  const raw = rawText(r);
+  const raw = cleanLinks(rawText(r));
   const part = freshPart(raw);
   let text = way === 'out' ? withoutSignOff(part.text) : part.text;
   const extra = htmlOnlyPhotos(r, raw);

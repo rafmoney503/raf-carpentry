@@ -8,7 +8,7 @@
    MS_CLIENT_SECRET (sensitive; made under Certificates & secrets, lasts 24 months at most), optional MS_MAILBOX
    (default info@rafcarpentry.com). MS_LOGIN_API and MS_GRAPH_API override the addresses for local tests. */
 
-import { freshPart } from './mail-text';
+import { cleanLinks, freshPart } from './mail-text';
 import { jpegOf } from './photo-jpeg';
 
 const MAILBOX = () => (process.env.MS_MAILBOX || 'info@rafcarpentry.com').trim().toLowerCase();
@@ -223,7 +223,7 @@ const plain = (b?: { contentType?: string; content?: string }) => {
     .replace(/&#39;/g, "'");
 };
 const tidy = (s: string) =>
-  s
+  cleanLinks(s)
     .replace(/\r\n?/g, '\n')
     .replace(/[​-‍⁠﻿]/g, '')
     .replace(/[ \t ]+$/gm, '')
@@ -240,7 +240,7 @@ function listItem(m: GMessage): InboxMail {
     to: (m.toRecipients ?? []).map(who),
     mine: isMine(from),
     subject: (m.subject ?? '').trim(),
-    preview: (m.bodyPreview ?? '').replace(/\s+/g, ' ').trim().slice(0, 220),
+    preview: cleanLinks(m.bodyPreview ?? '').replace(/\s+/g, ' ').trim().slice(0, 220),
     at: m.receivedDateTime ?? m.sentDateTime ?? '',
     read: m.isRead !== false,
     attachments: Boolean(m.hasAttachments),

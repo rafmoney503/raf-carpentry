@@ -129,5 +129,49 @@ export function photoMarks(text: string): { text: string; photos: string[] } {
   return { text: out, photos };
 }
 
+/* Pictures from the web and link addresses taken out of an email's plain text. Outlook writes a picture with no
+   words as its address in brackets ("[https://signaturehound.com/api/v1/png/mobile/default/177a68.png]": the
+   little phone, map and Instagram icons of an email signature, logos, tracking pixels) and a link as its words
+   followed by the address ("cayana.co.uk<http://www.cayana.co.uk>", "07706500926<tel:07706500926>"). They read
+   like photos that never load. Raf, 8 Nov 2026: a new job "showing signs of links as pictures but no pictures".
+   Kept: photos in the email itself ("[cid:...]", "[image: ...]": photoMarks), and every link address that isn't
+   just its own words again (a Pinterest board stays). */
+const bareLink = (s: string) => s.replace(/^(?:mailto|tel):/i, '');
+const sameLink = (word: string, url: string) => {
+  const n = (s: string) =>
+    bareLink(s)
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/[/.,;:]+$/, '')
+      .replace(/[\s()+-]/g, '');
+  const a = n(word);
+  const b = n(url);
+  if (!a || !b) return false;
+  // "07706 500926<tel:07706500926>": only the last part of a phone number is right before the address
+  return a === b || (/^\d{4,}$/.test(a) && /^\d+$/.test(b) && b.endsWith(a));
+};
+export function cleanLinks(text: string): string {
+  if (!/\[https?:\/\/|<(?:https?:\/\/|mailto:|tel:)/i.test(text)) return text;
+  const lines = text
+    .replace(/\[(?:https?:\/\/)[^\]\s]{1,2000}\]/gi, '')
+    .replace(/([^\s<>[\]]+)<((?:https?:\/\/|mailto:|tel:)[^<>\s]{1,2000})>/gi, (_, word: string, url: string) => (sameLink(word, url) ? word : `${word} ${bareLink(url)}`))
+    .replace(/<((?:https?:\/\/|mailto:|tel:)[^<>\s]{1,2000})>/gi, (_, url: string) => bareLink(url))
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((l) => l.replace(/[ \t]{2,}/g, ' ').replace(/[ \t]+$/, ''));
+  // the same address twice running (a logo linking to the website under the website's own line)
+  const out: string[] = [];
+  for (const l of lines) {
+    const prev = [...out].reverse().find((x) => x.trim());
+    if (l.trim() && prev && /^\S+$/.test(l.trim()) && sameLink(prev.trim(), l.trim()) && /[./@:]/.test(l)) continue;
+    out.push(l);
+  }
+  return out
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 /* The same photo by name, whatever its ending: an iPhone sends IMG_4821.HEIC as IMG_4821.jpeg. */
 export const photoKey = (name: string) => name.trim().toLowerCase().replace(/\.[a-z0-9]{2,5}$/, '');

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Client, CurrentJob } from '@/lib/servicem8';
 import type { FullMail, InboxMail, ThreadMail, Who } from '@/lib/outlook';
-import { SIGN_OFF } from '@/lib/mail-text';
+import { cleanLinks, SIGN_OFF } from '@/lib/mail-text';
 import { Icon } from './icons';
 import { field, label } from './parts';
 import { post, problemText } from './sm8-post';
@@ -377,8 +377,9 @@ const isPhoto = (type: string) => /^image\/(jpe?g|png|heic|heif|webp|gif)$/i.tes
 /* A new enquiry from an email: their name, email and anything the email says (a mobile, an address). */
 export function enquiryFromMail(m: FullMail): Enquiry {
   const w = replyWho(m);
-  const b = parseBrief(m.text);
-  const said = b.description.trim() || m.text.trim();
+  const text = cleanLinks(m.text); // an email kept on the phone from before the server cleaned it
+  const b = parseBrief(text);
+  const said = b.description.trim() || text.trim();
   return {
     name: b.name || (w.name && !w.name.includes('@') ? w.name : ''),
     mobile: b.mobile,
@@ -391,10 +392,11 @@ export function enquiryFromMail(m: FullMail): Enquiry {
 /* Design with Claude from this email (concepts.tsx): what they wrote, their first name, any sizes in it, its photos. */
 export function conceptBriefFromMail(m: FullMail): Partial<Brief> {
   const w = replyWho(m);
-  const sizes = sizesFromText(m.text);
+  const text = cleanLinks(m.text);
+  const sizes = sizesFromText(text);
   // their surname out on the phone (it's kept with the design and the server only knows the first name)
   const surnames = w.name.includes('@') ? [] : w.name.trim().split(/\s+/).slice(1).filter((x) => x.length > 1).map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const said = surnames.length ? m.text.replace(new RegExp(`\\b(${surnames.join('|')})\\b`, 'gi'), '').replace(/ {2,}/g, ' ').replace(/ +\n/g, '\n') : m.text;
+  const said = surnames.length ? text.replace(new RegExp(`\\b(${surnames.join('|')})\\b`, 'gi'), '').replace(/ {2,}/g, ' ').replace(/ +\n/g, '\n') : text;
   return {
     want: `${m.subject && !/^(re|fw|fwd):/i.test(m.subject) ? `${m.subject}\n\n` : ''}${said.trim()}`.slice(0, 3000),
     first: firstOf(w),
