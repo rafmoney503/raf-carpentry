@@ -109,6 +109,12 @@
       "lat": 51.527,
       "lng": -0.055,
       "postcode": "E2"
+    },
+    {
+      "name": "Barnet",
+      "lat": 51.6524,
+      "lng": -0.2003,
+      "postcode": "EN5"
     }
   ]
 }
