@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CurrentJob, Staff } from '@/lib/servicem8';
 import type { DiaryEntry, DiaryFile, DiaryKind, JobDiary, JobNote, Missing } from '@/lib/servicem8-diary';
+import type { MailPhoto } from '@/lib/email-photos';
 import { Icon } from './icons';
 import { field, label } from './parts';
 import { photoKey, photoMarks } from '@/lib/mail-text';
@@ -24,6 +25,7 @@ import { readPin } from './uploader';
 const DRAFTS_KEY = 'raf_jobkit_notes'; // job uuid -> Draft[]: notes written here, until ServiceM8 has them
 const LIST_KEY = 'raf_jobkit_notes_list'; // job uuid -> { notes, at }: the job's notes as ServiceM8 last sent them
 const DIARY_KEY = 'raf_jobkit_diary'; // job uuid -> { diary, at }: the last diary
+const MAIL_PHOTOS_KEY = 'raf_jobkit_mail_photos'; // job uuid -> { photos, at }: the photos in their emails to info@
 const THUMBS = 'raf-jobkit-thumbs-v1'; // the browser's cache: diary photos made small
 const SAVE_AFTER = 2000;
 const FINISHED_AFTER = 30 * 60e3;
@@ -245,7 +247,31 @@ async function keepThumb(uuid: string, blob: Blob) {
 const thumbUrls = new Map<string, string>(); // this visit's thumbnails
 const notPhotos = new Set<string>();
 
-export function Thumb({ file, onOpen }: { file: DiaryFile; onOpen: () => void }) {
+/* A photo a customer emailed to info@ (Outlook), through the Inbox's file action: for the job's Photos while it isn't
+   on the ServiceM8 job yet. */
+export async function mailBlob(mail: string, att: string): Promise<{ blob: Blob } | { error: string; detail?: string }> {
+  const pin = readPin();
+  if (!pin) return { error: 'no-pin' };
+  try {
+    const res = await fetch('/api/job-kit/inbox', { method: 'POST', headers: { 'x-job-kit-pin': pin, 'content-type': 'application/json' }, body: JSON.stringify({ action: 'file', id: mail, att }), cache: 'no-store' });
+    if (!res.ok) {
+      const e = (await res.json().catch(() => ({}))) as { error?: string; detail?: string };
+      return { error: e.error || 'outlook-error', detail: e.detail };
+    }
+    return { blob: await res.blob() };
+  } catch {
+    return { error: 'offline' };
+  }
+}
+
+/* A new enquiry made from an email: the email's photos go onto the new job too (src/lib/email-photos.ts), waited on
+   for up to 20 s; any still going are offered on the job's Photos (the same photo twice is one attachment). */
+export async function emailPhotosToJob(job: string, mail: string) {
+  await Promise.race([post(readPin(), { action: 'add', job, mail }, '/api/job-kit/mail-photos'), new Promise((ok) => setTimeout(ok, 20_000))]);
+}
+
+/* `load` fetches the picture some other way (a photo still in an email): it isn't kept in the browser's cache. */
+export function Thumb({ file, onOpen, load: loadOther }: { file: DiaryFile; onOpen: () => void; load?: () => Promise<{ blob: Blob } | { error: string; detail?: string }> }) {
   const box = useRef<HTMLButtonElement>(null);
   const [url, setUrl] = useState(() => thumbUrls.get(file.uuid) ?? '');
   const [state, setState] = useState<'wait' | 'none' | 'offline'>(notPhotos.has(file.uuid) ? 'none' : 'wait');
@@ -255,16 +281,16 @@ export function Thumb({ file, onOpen }: { file: DiaryFile; onOpen: () => void })
     if (!el) return;
     let gone = false;
     const load = async () => {
-      let blob = await cachedThumb(file.uuid);
+      let blob = loadOther ? null : await cachedThumb(file.uuid);
       if (!blob) {
-        const r = await fileBlob(file.uuid, 'thumb');
+        const r = loadOther ? await loadOther() : await fileBlob(file.uuid, 'thumb');
         if ('error' in r) {
           if (r.error === 'not-photo') notPhotos.add(file.uuid);
           if (!gone) setState(r.error === 'not-photo' ? 'none' : 'offline');
           return;
         }
         blob = r.blob;
-        void keepThumb(file.uuid, blob);
+        if (!loadOther) void keepThumb(file.uuid, blob);
       }
       const u = URL.createObjectURL(blob);
       thumbUrls.set(file.uuid, u);
@@ -284,6 +310,7 @@ export function Thumb({ file, onOpen }: { file: DiaryFile; onOpen: () => void })
       gone = true;
       seen.disconnect();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file.uuid, url, state]);
   return (
     <button ref={box} type="button" onClick={onOpen} data-thumb={file.uuid} className="relative aspect-square overflow-hidden rounded-sm border border-line bg-raised" aria-label={`Photo: ${file.name}`}>
@@ -311,6 +338,7 @@ export function Thumb({ file, onOpen }: { file: DiaryFile; onOpen: () => void })
 }
 
 type Shown = { file: DiaryFile; url: string; error: string; image?: boolean } | null;
+type View = { file: DiaryFile; load: () => Promise<{ blob: Blob } | { error: string; detail?: string }> };
 
 /* ---------- the two sections ---------- */
 
@@ -479,6 +507,58 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
     if (next && (!diary || Date.now() - diary.at > 2 * 60e3)) void loadDiary();
   };
 
+  /* Photos (Raf, 8 Nov 2026: a customer's pictures 'I don't see it'): the job's photos at the top of the job, from
+     the diary (fetched in the background when the job opens, if the phone's copy is over 10 minutes old), and the
+     photos in their emails to info@ that aren't on the ServiceM8 job yet, to put on it with one tap
+     (src/lib/email-photos.ts). */
+  const [mailShots, setMailShots] = useState<{ photos: MailPhoto[]; at: number } | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [mailNote, setMailNote] = useState('');
+  const [allShots, setAllShots] = useState(false);
+  const askMail = async (force = false) => {
+    if (!job.email || !readPin()) return;
+    const had = read<Record<string, { photos: MailPhoto[]; at: number }>>(MAIL_PHOTOS_KEY, {})[id];
+    if (had) setMailShots(had);
+    if (had && !force && Date.now() - had.at < 10 * 60e3) return;
+    const r = await post<{ photos: MailPhoto[]; at: number }>(readPin(), { action: 'list', job: id, email: job.email }, '/api/job-kit/mail-photos');
+    if (!r.ok) return; // no Inbox (or no signal): the job's own photos still show
+    setMailShots(r.data);
+    keep(MAIL_PHOTOS_KEY, id, r.data, 20);
+  };
+  useEffect(() => {
+    setMailShots(null);
+    setMailNote('');
+    setAllShots(false);
+    if (!readPin()) return;
+    const kept = read<Record<string, { diary: JobDiary; at: number }>>(DIARY_KEY, {})[id];
+    if (!kept || Date.now() - kept.at > 10 * 60e3) void loadDiary();
+    void askMail();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+  const shots = useMemo(() => items.filter((x) => x.kind === 'file' && x.file?.photo).map((x) => x.file!), [items]);
+  const onJobNow = useMemo(() => new Set(shots.map((f) => f.uuid.toLowerCase())), [shots]);
+  const notOnJob = (mailShots?.photos ?? []).filter((p) => !p.onJob && !onJobNow.has(p.uuid.toLowerCase()));
+  const mailView = (p: MailPhoto): View => ({ file: { uuid: `mail-${p.uuid}`, name: p.name, photo: true }, load: () => mailBlob(p.mail, p.att) });
+  const putOnJob = async () => {
+    if (adding || !job.email) return;
+    setAdding(true);
+    setMailNote('');
+    const r = await post<{ added: number; there: number; failed: number; photos: MailPhoto[]; at: number }>(readPin(), { action: 'add', job: id, email: job.email }, '/api/job-kit/mail-photos');
+    setAdding(false);
+    if (!r.ok) {
+      setMailNote(problemText(r.error, r.detail));
+      return;
+    }
+    const next = { photos: r.data.photos, at: r.data.at };
+    setMailShots(next);
+    keep(MAIL_PHOTOS_KEY, id, next, 20);
+    const n = r.data.added + r.data.there;
+    setMailNote(
+      `${n === 1 ? '1 photo is' : `${n} photos are`} on the job now, in its diary in ServiceM8 too.${r.data.failed ? ` ${r.data.failed === 1 ? '1 didn’t go' : `${r.data.failed} didn’t go`}: try again.` : ''}`,
+    );
+    await loadDiary();
+  };
+
   const counts = useMemo(() => Object.fromEntries(FILTERS.map((f) => [f.key, f.key === 'all' ? items.length : items.filter((x) => f.kinds.includes(x.kind)).length])) as Record<Filter, number>, [items]);
   const list = filter === 'all' ? items : items.filter((x) => FILTERS.find((f) => f.key === filter)!.kinds.includes(x.kind));
   const photos = list.filter((x) => x.kind === 'file' && x.file?.photo).map((x) => x.file!);
@@ -541,26 +621,35 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
     return out;
   }, [list, page, filter, under]);
 
-  const openFile = async (file: DiaryFile) => {
-    setShown({ file, url: '', error: '' });
-    const r = await fileBlob(file.uuid, 'full');
+  /* The viewer steps through the list it was opened from: the diary's photos (as filtered), the job's Photos, or
+     the photos still in their email. */
+  const [views, setViews] = useState<View[]>([]);
+  const fromSm8 = (f: DiaryFile): View => ({ file: f, load: () => fileBlob(f.uuid, 'full') });
+  const show = async (v: View) => {
+    setShown({ file: v.file, url: '', error: '' });
+    const r = await v.load();
     setShown((s) => {
-      if (!s || s.file.uuid !== file.uuid) return s; // moved on to another photo
-      if ('error' in r) return { ...s, error: r.error === 'too-big' ? 'Too big to show here: open it in ServiceM8.' : problemText(r.error, r.detail) };
+      if (!s || s.file.uuid !== v.file.uuid) return s; // moved on to another photo
+      if ('error' in r) return { ...s, error: r.error === 'too-big' || r.error === 'outlook-too-big' ? 'Too big to show here: open it in ServiceM8.' : problemText(r.error, r.detail) };
       return { ...s, url: URL.createObjectURL(r.blob), image: r.blob.type.startsWith('image/') };
     });
   };
+  const openFrom = (v: View, list: View[]) => {
+    setViews(list);
+    void show(v);
+  };
+  const openFile = (file: DiaryFile) => openFrom(fromSm8(file), photos.map(fromSm8));
   const closeFile = () => {
     if (shown?.url) URL.revokeObjectURL(shown.url);
     setShown(null);
   };
+  const viewAt = shown ? views.findIndex((v) => v.file.uuid === shown.file.uuid) : -1;
   const step = (by: number) => {
     if (!shown) return;
-    const i = photos.findIndex((p) => p.uuid === shown.file.uuid);
-    const next = photos[i + by];
+    const next = views[viewAt + by];
     if (!next) return;
     if (shown.url) URL.revokeObjectURL(shown.url);
-    void openFile(next);
+    void show(next);
   };
 
   useEffect(() => {
@@ -596,8 +685,68 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
               : '';
   const editing = current?.at;
 
+  const SHOTS = 8;
   return (
     <>
+      <section
+        id="photos"
+        data-jsec="photos"
+        data-jsec-note={shots.length + notOnJob.length ? String(shots.length + notOnJob.length) : ''}
+        data-jsec-alert={notOnJob.length ? '1' : undefined}
+        className="mt-6 scroll-mt-[calc(env(safe-area-inset-top)-20px)] rounded-sm border border-line-strong bg-mount p-4"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2.5 text-[19px] font-[650]">
+            <SecIcon k="photos" />
+            Photos
+            {shots.length ? <span className="font-mono text-[13px] font-normal text-faint">{shots.length}</span> : null}
+          </h2>
+          {loading ? <span className="font-mono text-[12px] text-faint">Checking ServiceM8…</span> : null}
+        </div>
+
+        {notOnJob.length ? (
+          <div data-mail-photos className="mt-3 rounded-sm border border-accent p-3">
+            <p className="text-[15px] font-semibold leading-snug">
+              {notOnJob.length === 1 ? `1 photo in ${job.first ? `${job.first}’s` : 'their'} email to info@` : `${notOnJob.length} photos in ${job.first ? `${job.first}’s` : 'their'} emails to info@`}
+            </p>
+            <p className="mt-0.5 text-[13.5px] leading-snug text-muted">Not on the job in ServiceM8 yet, so they’re not in its diary.</p>
+            <div className="mt-2.5 grid grid-cols-4 gap-1.5">
+              {notOnJob.map((p) => (
+                <Thumb key={p.uuid} file={mailView(p).file} load={mailView(p).load} onOpen={() => openFrom(mailView(p), notOnJob.map(mailView))} />
+              ))}
+            </div>
+            <button type="button" onClick={() => void putOnJob()} disabled={adding} data-add-mail-photos className="btn btn-primary btn-sm mt-3 w-full disabled:opacity-60">
+              {adding ? 'Putting them on the job…' : notOnJob.length === 1 ? 'Put it on the job' : `Put all ${notOnJob.length} on the job`}
+            </button>
+          </div>
+        ) : null}
+
+        {shots.length ? (
+          <>
+            <div className="mt-3 grid grid-cols-4 gap-1.5" data-job-photos>
+              {(allShots ? shots : shots.slice(0, SHOTS)).map((f) => (
+                <Thumb key={f.uuid} file={f} onOpen={() => openFrom(fromSm8(f), shots.map(fromSm8))} />
+              ))}
+            </div>
+            {shots.length > SHOTS ? (
+              <button type="button" onClick={() => setAllShots(!allShots)} className="mt-2 h-9 text-[14px] text-accent underline">
+                {allShots ? 'Show fewer' : `Show all ${shots.length} photos`}
+              </button>
+            ) : null}
+          </>
+        ) : !notOnJob.length ? (
+          <p className="mt-2 text-[14.5px] leading-snug text-muted" data-no-photos>
+            {loading && !diary ? 'Getting the photos from ServiceM8…' : diary ? `No photos on this job yet. Ask ${who} for a few on WhatsApp.` : 'Open the job with signal to see its photos.'}
+          </p>
+        ) : null}
+        {mailNote ? (
+          <p role="status" className="mt-2 text-[13.5px] leading-snug text-muted" data-mail-note>
+            {mailNote}
+          </p>
+        ) : null}
+        {shots.length ? <p className="mt-2 font-mono text-[12px] leading-snug text-faint">Newest first. The diary below has each one with its message.</p> : null}
+      </section>
+
       <section
         id="notes"
         data-jsec="notes"
@@ -804,13 +953,13 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
           )}
           {shown.file.photo ? (
             <div className="flex items-center justify-between gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)] pt-2 text-on-accent">
-              <button type="button" onClick={() => step(-1)} disabled={photos.findIndex((p) => p.uuid === shown.file.uuid) <= 0} className="h-11 px-3 text-[15px] disabled:opacity-30" aria-label="Newer photo">
+              <button type="button" onClick={() => step(-1)} disabled={viewAt <= 0} className="h-11 px-3 text-[15px] disabled:opacity-30" aria-label="Newer photo">
                 ← Newer
               </button>
               <span className="font-mono text-[12px] text-on-accent/70">
-                {photos.findIndex((p) => p.uuid === shown.file.uuid) + 1} of {photos.length}
+                {viewAt + 1} of {views.length}
               </span>
-              <button type="button" onClick={() => step(1)} disabled={photos.findIndex((p) => p.uuid === shown.file.uuid) >= photos.length - 1} className="h-11 px-3 text-[15px] disabled:opacity-30" aria-label="Older photo">
+              <button type="button" onClick={() => step(1)} disabled={viewAt >= views.length - 1} className="h-11 px-3 text-[15px] disabled:opacity-30" aria-label="Older photo">
                 Older →
               </button>
             </div>

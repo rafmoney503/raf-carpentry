@@ -84,7 +84,7 @@ import { setStatsOff } from '@/lib/site-stats';
 import { JobTimeline, TimelineMini } from './job-timeline';
 import { ClientBoard } from './client-board';
 import { methodsFrom, sendPayment, type NewPayment } from './payments';
-import { flushNotes } from './job-notes';
+import { emailPhotosToJob, flushNotes } from './job-notes';
 import { boardLine, buildBoard } from '@/lib/client-board';
 import { withoutGreeting } from '@/lib/whatsapp-chat';
 import { addSend, enquiryFromChat, WaChatView, waHomeLine, WaJobBox, WaList, waTodayLines } from './whatsapp';
@@ -1557,6 +1557,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                     go({ name: 'sm8', id: job.uuid, from: 'wa', chat: c.id }, false);
                     return '';
                   }
+                  // made from an email: its photos follow the new job into its diary
+                  if (screen.mail) await emailPhotosToJob(r.data.job.uuid, screen.mail);
                   go({ name: 'sm8', id: r.data.job.uuid }, false);
                   return '';
                 }}
