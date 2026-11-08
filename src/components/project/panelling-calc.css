@@ -1,0 +1,173 @@
+/* The batten grid calculator on a panelling job page (PanellingCalculator.tsx). The site's colours come from the
+   theme; the battens, skirting and the dark answer panel take the Workshop Tools app's own colours, so the page and
+   the app look like one tool. */
+
+.pg {
+  --pg-batten: #d9c9a6;
+  --pg-batten-edge: #a08f6e;
+  --pg-skirt: #ede5d3;
+  --pg-wall: #f1f2ef;
+  --pg-hatch: rgb(22 25 28 / 0.28);
+  --pg-blue: #8ea2ff;
+}
+
+/* the answer, dark like the app's: a faint blue grid and corner ticks */
+.pg-ans {
+  position: relative;
+  background-color: var(--color-ink);
+  background-image:
+    linear-gradient(rgb(142 162 255 / 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(142 162 255 / 0.08) 1px, transparent 1px);
+  background-size: 16px 16px;
+  color: #f6f7f4;
+  border-radius: 2px;
+}
+.pg-tk {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border: 0 solid rgb(142 162 255 / 0.6);
+  pointer-events: none;
+}
+.pg-tk.tl { top: 6px; left: 6px; border-top-width: 1.5px; border-left-width: 1.5px; }
+.pg-tk.tr { top: 6px; right: 6px; border-top-width: 1.5px; border-right-width: 1.5px; }
+.pg-tk.bl { bottom: 6px; left: 6px; border-bottom-width: 1.5px; border-left-width: 1.5px; }
+.pg-tk.br { bottom: 6px; right: 6px; border-bottom-width: 1.5px; border-right-width: 1.5px; }
+
+.pg-card {
+  container-type: inline-size;
+}
+
+/* the wall, the height beside it and the width under it; as wide as the card allows, never taller than --pg-maxh */
+.pg-wall {
+  --pg-maxh: 220px;
+  --pg-w: min(calc(100cqw - 48px), calc(var(--pg-ratio) * var(--pg-maxh)));
+  display: grid;
+  grid-template-columns: var(--pg-w) 40px;
+  grid-template-areas:
+    'svg dimh'
+    'dimw .';
+  justify-content: center;
+  column-gap: 8px;
+}
+@media (min-width: 1024px) {
+  .pg-wall {
+    --pg-maxh: 300px;
+  }
+}
+.pg-draw {
+  grid-area: svg;
+  position: relative;
+}
+.pg-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.pg-svg rect,
+.pg-svg line {
+  vector-effect: non-scaling-stroke;
+}
+.pg-wallfill {
+  fill: var(--pg-wall);
+}
+.pg-above {
+  fill: url(#pg-fade);
+}
+.pg-bat {
+  fill: var(--pg-batten);
+  stroke: var(--pg-batten-edge);
+  stroke-width: 1;
+}
+.pg-skirt {
+  fill: var(--pg-skirt);
+  stroke: var(--pg-batten-edge);
+  stroke-width: 1;
+}
+.pg-join {
+  stroke: var(--color-ink);
+  stroke-width: 1.5;
+}
+.pg-floor {
+  stroke: var(--color-ink);
+  stroke-width: 2;
+}
+.pg-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--color-accent);
+  background: rgb(241 242 239 / 0.9);
+  padding: 1px 4px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.pg-dimw {
+  grid-area: dimw;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pg-dimh {
+  grid-area: dimh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.pg-dimw > span:not(.pg-num),
+.pg-dimh > span:not(.pg-num):not(.pg-sp) {
+  background: var(--color-accent);
+}
+.pg-dimw .pg-tick {
+  width: 1.5px;
+  height: 10px;
+}
+.pg-dimw .pg-line {
+  flex: 1;
+  height: 1.5px;
+}
+.pg-dimh .pg-sp {
+  flex: none;
+  margin-bottom: -4px;
+}
+.pg-dimh .pg-tick {
+  width: 10px;
+  height: 1.5px;
+}
+.pg-dimh .pg-line {
+  flex: 1;
+  width: 1.5px;
+}
+.pg-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+/* each length to buy, with its cuts on it */
+.pg-len {
+  display: flex;
+  height: 14px;
+  gap: 0;
+  background: repeating-linear-gradient(135deg, var(--pg-hatch) 0 1px, transparent 1px 5px);
+  border: 1px solid var(--pg-batten-edge);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.pg-cut {
+  height: 100%;
+  flex: none;
+  border-right: 2px solid var(--color-mount);
+}
+.pg-cut[data-kind='rail'] {
+  background: #c6b28a;
+}
+.pg-cut[data-kind='upright'] {
+  background: var(--pg-batten);
+}

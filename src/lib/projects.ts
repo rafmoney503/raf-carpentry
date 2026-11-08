@@ -71,6 +71,19 @@ export type Project = {
      then leaves the Designs in 3D page (the finished job shows instead, with its photos), the Job Kit shows it as
      built, and its /d pages link here. */
   design?: string;
+  /* A calculator on the page, started with this job's own sizes (8 Nov 2026: the batten grid on the Barnet
+     panelling job, "Work out your own wall", after the steps; src/components/project/PanellingCalculator.tsx). */
+  calculator?: {
+    kind: 'batten-grid';
+    w: number;
+    h: number;
+    batten: number;
+    panels?: number;
+    rows?: number;
+    from?: 'floor' | 'skirting';
+    skirting?: number;
+    gap?: number;
+  };
 };
 
 const dir = path.join(process.cwd(), 'content/projects');

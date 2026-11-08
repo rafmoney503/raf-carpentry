@@ -168,6 +168,15 @@
       "caption": "The whole wall."
     }
   ],
+  "calculator": {
+    "kind": "batten-grid",
+    "w": 4105,
+    "h": 1000,
+    "batten": 69,
+    "panels": 6,
+    "rows": 1,
+    "from": "floor"
+  },
   "blogSlug": "wall-panelling-barnet",
   "jobKit": "2026-11-wall-panelling-barnet-hj5o",
   "model3d": {

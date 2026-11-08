@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import * as APP from '@/lib/workshop-tools/app.generated';
 import { DcRoot, type DCLogic, type DcApp } from '@/lib/workshop-tools/dc-runtime';
 import { canPrompt, isStandalone, justInstalled, keepOffline, onInstallChange, osOf, promptInstall, proOnSale } from '@/lib/workshop-tools/install';
+import { appStateFor } from '@/lib/panelling-calc';
 import SpiritLevel from '@/app/tools/spirit-level/spirit-level';
 import ReadingsList from '@/app/tools/readings/readings-list';
 import './workshop-app.css';
@@ -44,6 +45,17 @@ export default function WorkshopApp({ qrSvg }: { qrSvg: string }) {
     };
     inst.setState({ proLive: proOnSale() });
     sync();
+    // "Open these sizes in Workshop Tools" from a panelling job's calculator (src/lib/panelling-calc.ts
+    // gridAppHref): ?tool=grid&w=&h=&b=&n=&rows=&from=(&sk=&gap=) opens Wall panelling on the batten grid with those
+    // sizes, then comes off the address so a reload keeps whatever was changed in the app
+    const url = new URL(window.location.href);
+    const grid = appStateFor(url.searchParams);
+    if (grid) {
+      inst.setState(grid);
+      inst.go?.('panel');
+      for (const k of ['tool', 'w', 'h', 'b', 'n', 'rows', 'from', 'sk', 'gap']) url.searchParams.delete(k);
+      window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+    }
     const off = onInstallChange(() => {
       sync();
       if (justInstalled()) inst.setState({ instCan: false });
