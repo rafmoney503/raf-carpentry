@@ -357,6 +357,17 @@ export async function restoreMail(id: string): Promise<string> {
   return r?.id ?? '';
 }
 
+/* An email's attachments (photos pasted into the email are "inline" ones: Graph's hasAttachments leaves them out, so
+   this is asked whatever the list says). Files, not attached emails or links. */
+export async function mailFiles(id: string): Promise<Attachment[]> {
+  const r = await graph<{ value: { id: string; name?: string; contentType?: string; size?: number; isInline?: boolean; '@odata.type'?: string }[] }>(
+    `/messages/${encodeURIComponent(id)}/attachments?$select=id,name,contentType,size,isInline`,
+  );
+  return (r.value ?? [])
+    .filter((f) => !/itemAttachment|referenceAttachment/i.test(f['@odata.type'] ?? ''))
+    .map((f) => ({ id: f.id, name: f.name ?? 'attachment', type: f.contentType ?? '', size: f.size ?? 0, inline: Boolean(f.isInline) }));
+}
+
 /* An attachment's bytes, for the phone to show. Photos over 2.5 MB are made smaller here (2000 px JPEG), since
    a Vercel answer can't be over 4.5 MB; anything else over 4 MB is opened in Outlook instead. */
 export async function attachment(id: string, att: string): Promise<{ bytes: Uint8Array; type: string; name: string }> {
