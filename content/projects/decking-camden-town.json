@@ -298,5 +298,15 @@
     "shape": "tall",
     "standardSizes": true
   },
+  "calculator": {
+    "kind": "decking",
+    "along": 3600,
+    "out": 5000,
+    "board": "softwood",
+    "run": "out",
+    "height": "ground",
+    "centres": 400,
+    "standardSizes": true
+  },
   "blogSlug": "decking-camden-town"
 }

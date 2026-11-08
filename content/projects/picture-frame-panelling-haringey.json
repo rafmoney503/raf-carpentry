@@ -100,6 +100,20 @@
       "alt": "The far wall with panels either side of the doorway"
     }
   ],
+  "calculator": {
+    "kind": "picture-frames",
+    "w": 4200,
+    "ceiling": 2900,
+    "skirting": 180,
+    "railTop": 950,
+    "railH": 70,
+    "mould": 20,
+    "around": 100,
+    "between": 100,
+    "frames": 0,
+    "upper": true,
+    "standardSizes": true
+  },
   "blogSlug": "picture-frame-panelling-haringey",
   "model3d": {
     "src": "/models/picture-frame-panelling-haringey.glb",

@@ -4,6 +4,7 @@ import { normalise, plan, specLines, type WardrobeSpec } from '@/lib/wardrobe';
 import { alcoveLines, planAlcove, type AlcoveSpec } from '@/lib/planners/alcove';
 import { bookcaseLines, planBookcase, type BookcaseSpec } from '@/lib/planners/bookcase';
 import { chestLines, planChest, type ChestSpec } from '@/lib/planners/chest';
+import { calcKindsFor, calcNotesLine, fromDraft, type CalcDraft, type JobCalculator } from '@/lib/job-calculators';
 
 /* The Job Kit keeps its jobs on the phone in IndexedDB ("raf-job-kit"): jobs and items (small, with a
    240 px thumbnail each) and, in their own store, the photo and clip files themselves. A file is
@@ -22,6 +23,9 @@ export type Notes = {
   wanted: string;
   okToShow: string;
   review: string;
+  /* the calculator on the job page (src/lib/job-calculators.ts): picked and filled in on the Notes tab, for a wall
+     panelling or decking job; processing the job puts it in the job JSON as `calculator` */
+  calc?: CalcDraft;
 };
 export type Job = {
   id: string;
@@ -258,6 +262,7 @@ export function notesTxt(job: Job, items: Item[]) {
     `What was tricky: ${n.tricky}`,
     `What the client wanted: ${n.wanted}`,
     '',
+    ...calcLines(job),
     `OK to show photos: ${n.okToShow}`,
     `Google review: ${n.review}`,
     '',
@@ -301,6 +306,8 @@ export function jobJson(job: Job, items: Item[], ready: boolean) {
     month: job.month,
     kinds: job.kinds,
     notes: job.notes,
+    // the calculator for the job page, ready to go in the job JSON as it is (scripts/job-kit-fetch.py prints it)
+    ...(job.kind !== 'design' && jobCalculator(job) ? { calculator: jobCalculator(job) } : {}),
     ready,
     readyAt: job.readyAt ? new Date(job.readyAt).toISOString() : null,
     updatedAt: new Date(job.updatedAt).toISOString(),
@@ -328,6 +335,16 @@ export function jobJson(job: Job, items: Item[], ready: boolean) {
 }
 
 /* What Raf said into "Talk it through", kept as he said it. */
+/** the job page's calculator from the Notes tab, when it suits the job's kinds and its boxes are all sizes */
+export function jobCalculator(job: Job): JobCalculator | null {
+  const d = job.notes.calc;
+  if (!d || d.kind === 'none' || !calcKindsFor(job.kinds).includes(d.kind)) return null;
+  return fromDraft(d).calc;
+}
+const calcLines = (job: Job) => {
+  const c = jobCalculator(job);
+  return c ? [`Calculator on the job page: ${calcNotesLine(c)}`, `"calculator": ${JSON.stringify(c)}`, ''] : [];
+};
 const talkLines = (t?: string) => (t?.trim() ? ['Talked through (dictated, not sorted yet):', t.trim(), ''] : []);
 
 function designTxt(job: Job, items: Item[]) {

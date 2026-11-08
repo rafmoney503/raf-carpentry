@@ -25,7 +25,7 @@ import Reviews, { GoogleRating } from '@/components/Reviews';
 import { getReviews } from '@/lib/reviews';
 import { serviceForJob } from '@/lib/services';
 import Magnetic from '@/components/Magnetic';
-import PanellingCalculator from '@/components/project/PanellingCalculator';
+import JobCalculatorSection, { calcLinkWords } from '@/components/project/JobCalculatorSection';
 
 export function generateStaticParams() {
   return getAllProjects().map((p) => ({ slug: p.slug }));
@@ -106,7 +106,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
               </a>
               {p.calculator ? (
                 <a href="#calculator" className="link-more">
-                  Work out your wall <span aria-hidden="true">↓</span>
+                  {calcLinkWords(p.calculator)} <span aria-hidden="true">↓</span>
                 </a>
               ) : null}
             </div>
@@ -191,23 +191,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
         </section>
       ) : null}
 
-      {/* A calculator started with this job's sizes (the batten grid on a panelling job) */}
-      {p.calculator?.kind === 'batten-grid' ? (
-        <section id="calculator" className="scroll-mt-24 border-t border-line">
-          <Container className="py-16 md:py-24">
-            <div className="max-w-[640px]">
-              <p className="kicker">Free calculator</p>
-              <SectionHeading className="mt-3">Work out your own wall</SectionHeading>
-              <p className="mt-4 text-pretty text-muted">
-                The same batten grid I set this wall out with in my Workshop Tools app. It starts with this job&apos;s sizes: put in yours and the drawing, the openings and the cut list follow.
-              </p>
-            </div>
-            <div className="mt-10">
-              <PanellingCalculator start={p.calculator} job={p.slug} page={`/portfolio/${p.slug}`} />
-            </div>
-          </Container>
-        </section>
-      ) : null}
+      {/* A calculator started with this job's sizes (batten grid, picture frames or decking) */}
+      {p.calculator ? <JobCalculatorSection c={p.calculator} slug={p.slug} /> : null}
 
       {/* Clips from the job folder */}
       {clips.length ? (

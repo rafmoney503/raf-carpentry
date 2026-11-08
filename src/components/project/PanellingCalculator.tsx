@@ -1,9 +1,8 @@
 'use client';
 
-import Image from 'next/image';
-import Link from 'next/link';
 import { useState, type CSSProperties } from 'react';
 import { GRID, grid, gridAppHref, gridBriefHref, gridText, mm1, mmc, readMm, type GridFrom, type GridInput } from '@/lib/panelling-calc';
+import { AppLink, Choice, CountAuto, MmField, RatherCard, Step } from './calc-parts';
 import './panelling-calc.css';
 
 /* "Work out your own wall" on a panelling job page (8 Nov 2026, Raf: "Add to this job wall panelling calculator
@@ -14,82 +13,10 @@ import './panelling-calc.css';
 
 type Start = { w: number; h: number; batten: number; panels?: number; rows?: number; from?: GridFrom; skirting?: number; gap?: number };
 
-function Step({ n, title, children }: { n: string; title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="mb-2.5 font-mono text-[12px] uppercase tracking-[0.06em] text-muted">
-        {n} · {title}
-      </p>
-      {children}
-    </div>
-  );
-}
-
-function Choice<T extends string | number>({ options, value, onPick, cols = 2, mono = false }: { options: { v: T; label: string; sub?: string }[]; value: T; onPick: (v: T) => void; cols?: 2 | 4; mono?: boolean }) {
-  return (
-    <div className={`grid gap-2.5 ${cols === 4 ? 'grid-cols-4' : 'grid-cols-2'}`}>
-      {options.map((o) => {
-        const on = o.v === value;
-        return (
-          <button
-            key={String(o.v)}
-            type="button"
-            aria-pressed={on}
-            onClick={() => onPick(o.v)}
-            className={`flex min-h-12 flex-col justify-center gap-0.5 rounded-sm border-[1.5px] px-3 py-2.5 text-left transition-colors ${
-              on ? 'border-ink bg-ink text-on-accent' : 'border-line-strong bg-mount text-ink hover:border-accent'
-            } ${mono ? 'items-center font-mono text-[15px]' : ''}`}
-          >
-            <span className={mono ? '' : 'text-[15px] font-semibold leading-tight'}>{o.label}</span>
-            {o.sub ? <span className={`font-mono text-[11.5px] leading-snug ${on ? 'text-on-accent/80' : 'text-faint'}`}>{o.sub}</span> : null}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-/** a size in mm, typed or nudged with − and + */
-function MmField({ id, label, text, onText, step, onStep, min = 0 }: { id: string; label: string; text: string; onText: (t: string) => void; step: number; onStep: (by: number) => void; min?: number }) {
-  const v = readMm(text);
-  const bad = v === null || v < min;
-  return (
-    <div className="min-w-0">
-      <label htmlFor={id} className="mb-1.5 block text-[14px] font-medium">
-        {label}
-      </label>
-      <div
-        className={`flex h-12 overflow-hidden rounded-sm border bg-mount focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20 ${
-          bad ? 'border-accent ring-2 ring-accent/20' : 'border-line-strong'
-        }`}
-      >
-        <button type="button" aria-label={`${label}: ${step} mm less`} onClick={() => onStep(-step)} className="w-11 flex-none text-[20px] text-muted transition-colors hover:text-ink">
-          −
-        </button>
-        <input
-          id={id}
-          inputMode="decimal"
-          autoComplete="off"
-          value={text}
-          onChange={(e) => onText(e.target.value.slice(0, 7))}
-          aria-invalid={bad || undefined}
-          className="min-w-0 flex-1 bg-transparent text-center font-mono text-[18px] text-ink outline-none"
-        />
-        <span aria-hidden="true" className="flex items-center pr-1 font-mono text-[12px] text-faint">
-          mm
-        </span>
-        <button type="button" aria-label={`${label}: ${step} mm more`} onClick={() => onStep(step)} className="w-11 flex-none text-[20px] text-muted transition-colors hover:text-ink">
-          +
-        </button>
-      </div>
-    </div>
-  );
-}
-
 /** the text a box shows for a size: 4105, 603.7 */
 const show = (v: number) => mm1(v);
 
-export default function PanellingCalculator({ start, job, page }: { start: Start; job: string; page: string }) {
+export default function PanellingCalculator({ start, job, page, note }: { start: Start; job: string; page: string; note?: string }) {
   const first: GridInput = {
     w: start.w,
     h: start.h,
@@ -102,7 +29,6 @@ export default function PanellingCalculator({ start, job, page }: { start: Start
   };
   const [inp, setInp] = useState<GridInput>(first);
   const [text, setText] = useState({ w: show(first.w), h: show(first.h), batten: show(first.batten), skirting: show(first.skirting), gap: show(first.gap) });
-  const [copied, setCopied] = useState(false);
   type Key = keyof typeof text;
 
   const g = grid(inp);
@@ -129,16 +55,6 @@ export default function PanellingCalculator({ start, job, page }: { start: Start
   const y = (fromFloor: number) => vh - fromFloor; // svg y from a height off the floor
   const mid = ok ? Math.floor((g.n - 1) / 2) : 0;
   const label = ok && g.openW / g.W >= 0.075 && g.openH / vh >= 0.28;
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(gridText(g, page));
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
-    } catch {
-      /* the browser said no: Send this list to WhatsApp still works */
-    }
-  };
 
   // what to cut: rail pieces by length, then the uprights
   const railLines: { len: number; count: number }[] = [];
@@ -313,7 +229,7 @@ export default function PanellingCalculator({ start, job, page }: { start: Start
         {/* the questions */}
         <div className="flex flex-col gap-6">
           <Step n="01" title="The wall">
-            <MmField id="pg-w" label="Wall width" text={text.w} onText={typed('w')} step={10} onStep={stepped('w')} min={1} />
+            <MmField id="pg-w" label="Wall width" text={text.w} onText={typed('w')} step={10} onStep={stepped('w')} read={readMm} min={1} />
           </Step>
           <Step n="02" title="Height">
             <Choice
@@ -324,51 +240,23 @@ export default function PanellingCalculator({ start, job, page }: { start: Start
               value={inp.from}
               onPick={(from) => setInp((cur) => ({ ...cur, from }))}
             />
-            <div className={`mt-3 grid gap-3 ${fromSk ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            <div className={`mt-3 grid grid-cols-1 gap-3 ${fromSk ? 'min-[380px]:grid-cols-2' : ''}`}>
               {fromSk ? (
                 <>
-                  <MmField id="pg-sk" label="Skirting" text={text.skirting} onText={typed('skirting')} step={5} onStep={stepped('skirting')} />
-                  <MmField id="pg-gap" label="Gap above it" text={text.gap} onText={typed('gap')} step={5} onStep={stepped('gap')} />
+                  <MmField id="pg-sk" label="Skirting" text={text.skirting} onText={typed('skirting')} step={5} onStep={stepped('skirting')} read={readMm} />
+                  <MmField id="pg-gap" label="Gap above it" text={text.gap} onText={typed('gap')} step={5} onStep={stepped('gap')} read={readMm} />
                 </>
               ) : null}
-              <div className={fromSk ? 'col-span-2' : ''}>
-                <MmField id="pg-h" label={fromSk ? 'Top of the panelling, from the floor' : 'Height of the panelling'} text={text.h} onText={typed('h')} step={10} onStep={stepped('h')} min={1} />
+              <div className={fromSk ? 'min-[380px]:col-span-2' : ''}>
+                <MmField id="pg-h" label={fromSk ? 'Top of the panelling, from the floor' : 'Height of the panelling'} text={text.h} onText={typed('h')} step={10} onStep={stepped('h')} read={readMm} min={1} />
               </div>
             </div>
           </Step>
           <Step n="03" title="Battens">
-            <MmField id="pg-b" label="Batten width" text={text.batten} onText={typed('batten')} step={1} onStep={stepped('batten')} min={10} />
+            <MmField id="pg-b" label="Batten width" text={text.batten} onText={typed('batten')} step={1} onStep={stepped('batten')} read={readMm} min={10} />
           </Step>
           <Step n="04" title="Panels">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
-              <div>
-                <p className="mb-1.5 text-[14px] font-medium" id="pg-n-label">
-                  Panels across
-                </p>
-                <div className="flex h-12 overflow-hidden rounded-sm border border-line-strong bg-mount" role="group" aria-labelledby="pg-n-label">
-                  <button type="button" aria-label="One panel fewer" onClick={() => setPanels(Math.max(1, panelsNow - 1))} className="w-12 flex-none text-[20px] text-muted transition-colors hover:text-ink">
-                    −
-                  </button>
-                  <output className="flex flex-1 items-center justify-center font-mono text-[18px] text-ink" data-panel-n>
-                    {ok || g.n ? panelsNow : '–'}
-                  </output>
-                  <button type="button" aria-label="One panel more" onClick={() => setPanels(Math.min(GRID.maxPanels, panelsNow + 1))} className="w-12 flex-none text-[20px] text-muted transition-colors hover:text-ink">
-                    +
-                  </button>
-                </div>
-              </div>
-              <button
-                type="button"
-                aria-pressed={inp.panels === 0}
-                onClick={() => setPanels(0)}
-                className={`flex h-12 min-w-[96px] flex-col items-center justify-center rounded-sm border-[1.5px] px-3 transition-colors ${
-                  inp.panels === 0 ? 'border-ink bg-ink text-on-accent' : 'border-line-strong bg-mount text-ink hover:border-accent'
-                }`}
-              >
-                <span className="text-[14px] font-semibold leading-tight">Auto</span>
-                <span className={`font-mono text-[11px] leading-tight ${inp.panels === 0 ? 'text-on-accent/80' : 'text-faint'}`}>about {GRID.target} wide</span>
-              </button>
-            </div>
+            <CountAuto id="pg-n" label="Panels across" unit="panel" shown={ok || g.n ? panelsNow : null} auto={inp.panels === 0} autoSub={`about ${GRID.target} wide`} onSet={setPanels} max={GRID.maxPanels} dataAttr="data-panel-n" />
             <p className="mb-2.5 mt-4 text-[14px] font-medium">Rows</p>
             <Choice options={[1, 2, 3, 4].map((r) => ({ v: r, label: String(r) }))} value={inp.rows} onPick={(rows) => setInp((cur) => ({ ...cur, rows }))} cols={4} mono />
           </Step>
@@ -441,42 +329,10 @@ export default function PanellingCalculator({ start, job, page }: { start: Start
           </section>
         ) : null}
 
-        {/* Rather I fit it? */}
-        <div className="mt-8 rounded-sm bg-ink p-5 text-on-accent md:p-6">
-          <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-on-accent/70">Rather I fit it?</p>
-          <p className="mt-1.5 font-display text-[22px] font-[650] leading-tight tracking-[-0.01em]">I panel walls across London. Send me your sizes and I&apos;ll quote, free.</p>
-          <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-            <Link href={gridBriefHref(g, job)} className="btn btn-primary w-full">
-              Get a quote
-            </Link>
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(ok ? gridText(g, page) : `Batten grid: ${mmc(inp.w)} wide`)}`}
-              target="_blank"
-              rel="noopener"
-              className="inline-flex min-h-12 items-center justify-center rounded-sm border-[1.5px] border-on-accent/30 px-4 text-[15px] font-medium text-on-accent transition-colors hover:border-on-accent"
-            >
-              Send this list to WhatsApp
-            </a>
-          </div>
-          {ok ? (
-            <button type="button" onClick={copy} className="mt-3 font-mono text-[12.5px] text-on-accent/75 underline underline-offset-4 hover:text-on-accent">
-              {copied ? 'Copied the list' : 'Copy the list'}
-            </button>
-          ) : null}
-        </div>
-
-        <a href={gridAppHref(inp)} className="group mt-4 flex items-center gap-3 rounded-sm border border-line bg-mount p-3 transition-colors hover:border-accent" data-panel-app>
-          <Image src="/images/tools/workshop/icon-192.png" alt="" width={44} height={44} className="size-11 flex-none rounded-[10px]" />
-          <span className="min-w-0 flex-1">
-            <span className="block font-mono text-[11px] uppercase tracking-[0.06em] text-accent">Free app · works with no signal</span>
-            <span className="block text-[15px] font-semibold leading-snug transition-colors group-hover:text-accent">Open these sizes in Workshop Tools</span>
-          </span>
-          <span aria-hidden="true" className="text-accent">
-            →
-          </span>
-        </a>
+        <RatherCard line="I panel walls across London. Send me your sizes and I'll quote, free." briefHref={gridBriefHref(g, job)} text={ok ? gridText(g, page) : ''} fallback={`Batten grid: ${mmc(inp.w)} wide`} />
+        <AppLink href={gridAppHref(inp)} data="data-panel-app" />
         <p className="mt-3.5 text-[13.5px] leading-relaxed text-faint">
-          Measure the wall at the top and at the bottom: it&apos;s rarely the same. The sums are for a flat wall; a slope like the one on this job is cut to fit on site.
+          {note ?? 'Measure the wall at the top and at the bottom: it’s rarely the same. The sums are for a flat, square wall; a slope or a step is cut to fit on site.'}
         </p>
       </div>
     </div>

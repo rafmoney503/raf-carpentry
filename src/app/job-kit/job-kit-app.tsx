@@ -30,6 +30,8 @@ import type { Status as CurrentStatus } from '@/lib/servicem8';
 import Mark from './mark';
 import { Icon, type IconName } from './icons';
 import { Area, Chips, field, label, Missing, SectionView, TalkBox } from './parts';
+import JobCalc from './job-calc';
+import { CALC_NAMES, calcKindsFor } from '@/lib/job-calculators';
 import { PostsList, PostView, postedEverywhere, type Pack } from './posts';
 import { designFor, DesignsList, DesignView, designState, fetchDesigns, kitJobFor, NewDesign, savedLibrary, savedReady, similarDesigns, type DesignsReady } from './designs';
 import { DesignPlaces } from './design-places';
@@ -2396,6 +2398,11 @@ function NewJob({ onCancel, onCreate, initial }: { onCancel: () => void; onCreat
         <fieldset className="grid gap-2">
           <legend className={`${label} mb-2`}>Kind of job</legend>
           <Chips options={KINDS} value={kinds} onChange={setKinds} multi />
+          {calcKindsFor(kinds).length ? (
+            <span className="text-[13.5px] leading-snug text-faint" data-new-calc>
+              This job gets a calculator on its page ({calcKindsFor(kinds).map((k) => CALC_NAMES[k]).join(' or ')}): fill in its sizes on the Notes tab.
+            </span>
+          ) : null}
         </fieldset>
         <label className="grid gap-1.5">
           <span className={label}>Finished (month)</span>
@@ -2582,6 +2589,8 @@ function NotesForm({ job, onNotes }: { job: Job; onNotes: (n: Notes) => Promise<
           </button>
         </div>
       </fieldset>
+
+      <JobCalc kinds={job.kinds} sizes={n.sizes} value={n.calc} onChange={(calc) => save({ ...n, calc })} />
 
       <Area label="Before photo spots" value={n.spots} onChange={text('spots')} placeholder="e.g. Doorway, chest height. By the window. From the bed." />
       <Area label="Materials" value={n.materials} onChange={text('materials')} placeholder="e.g. 18 mm MDF, MR MDF for the plinth, birch ply shelves" />

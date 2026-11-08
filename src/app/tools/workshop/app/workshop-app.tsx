@@ -4,6 +4,7 @@ import * as APP from '@/lib/workshop-tools/app.generated';
 import { DcRoot, type DCLogic, type DcApp } from '@/lib/workshop-tools/dc-runtime';
 import { canPrompt, isStandalone, justInstalled, keepOffline, onInstallChange, osOf, promptInstall, proOnSale } from '@/lib/workshop-tools/install';
 import { appStateFor } from '@/lib/panelling-calc';
+import { framesAppStateFor } from '@/lib/picture-frames-calc';
 import SpiritLevel from '@/app/tools/spirit-level/spirit-level';
 import ReadingsList from '@/app/tools/readings/readings-list';
 import './workshop-app.css';
@@ -48,12 +49,13 @@ export default function WorkshopApp({ qrSvg }: { qrSvg: string }) {
     // "Open these sizes in Workshop Tools" from a panelling job's calculator (src/lib/panelling-calc.ts
     // gridAppHref): ?tool=grid&w=&h=&b=&n=&rows=&from=(&sk=&gap=) opens Wall panelling on the batten grid with those
     // sizes, then comes off the address so a reload keeps whatever was changed in the app
+    // (picture frames, from a picture frame job page, framesAppHref: ?tool=frames&w=&n=&ch=&sk=&rt=&rh=&mw=&ga=&gb=&up=)
     const url = new URL(window.location.href);
-    const grid = appStateFor(url.searchParams);
-    if (grid) {
-      inst.setState(grid);
+    const sizes = appStateFor(url.searchParams) ?? framesAppStateFor(url.searchParams);
+    if (sizes) {
+      inst.setState(sizes);
       inst.go?.('panel');
-      for (const k of ['tool', 'w', 'h', 'b', 'n', 'rows', 'from', 'sk', 'gap']) url.searchParams.delete(k);
+      for (const k of ['tool', 'w', 'h', 'b', 'n', 'rows', 'from', 'sk', 'gap', 'ch', 'rt', 'rh', 'mw', 'ga', 'gb', 'up']) url.searchParams.delete(k);
       window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
     }
     const off = onInstallChange(() => {

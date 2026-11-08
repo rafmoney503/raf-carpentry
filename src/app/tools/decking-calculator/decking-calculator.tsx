@@ -15,13 +15,16 @@ import {
   readMetres,
   type DeckBoard,
   type DeckHeight,
+  type DeckInput,
   type DeckRun,
 } from '@/lib/decking-calc';
 import './decking.css';
 
 /* The decking calculator (7 Nov 2026, Raf picked mockup A, "Drawing first", on the 'Decking calculator mockups'
    canvas): the deck drawn from above to scale (Boards, or Frame for the joists, noggins and pads), the five
-   questions, then what to buy, the checks and Get a quote. The sums are in src/lib/decking-calc.ts. */
+   questions, then what to buy, the checks and Get a quote. The sums are in src/lib/decking-calc.ts.
+   Also on decking job pages (8 Nov 2026), started with the job's sizes (`start`), Get a quote naming the job
+   (`job`) and its headings one level down (`inPage`). */
 
 const m1 = (x: number) => (Math.round(x * 10) / 10).toFixed(1);
 const n0 = (x: number) => Math.round(x).toLocaleString('en-GB');
@@ -106,15 +109,16 @@ function SizeField({ id, label, text, onText, onStep }: { id: string; label: str
   );
 }
 
-export default function DeckingCalculator() {
-  const [lenT, setLenT] = useState(m1(DECK_START.len));
-  const [depT, setDepT] = useState(m1(DECK_START.dep));
-  const [len, setLen] = useState(DECK_START.len);
-  const [dep, setDep] = useState(DECK_START.dep);
-  const [board, setBoard] = useState<DeckBoard>(DECK_START.board);
-  const [run, setRun] = useState<DeckRun>(DECK_START.run);
-  const [height, setHeight] = useState<DeckHeight>(DECK_START.height);
-  const [centres, setCentres] = useState<number>(DECK_START.centres);
+export default function DeckingCalculator({ start = DECK_START, job, inPage = false }: { start?: DeckInput; job?: string; inPage?: boolean }) {
+  const [lenT, setLenT] = useState(m1(start.len));
+  const [depT, setDepT] = useState(m1(start.dep));
+  const [len, setLen] = useState(start.len);
+  const [dep, setDep] = useState(start.dep);
+  const [board, setBoard] = useState<DeckBoard>(start.board);
+  const [run, setRun] = useState<DeckRun>(start.run);
+  const [height, setHeight] = useState<DeckHeight>(start.height);
+  const [centres, setCentres] = useState<number>(start.centres);
+  const H = inPage ? 'h3' : 'h2';
   const [view, setView] = useState<'boards' | 'frame'>('boards');
   const [copied, setCopied] = useState(false);
 
@@ -266,9 +270,9 @@ export default function DeckingCalculator() {
 
         {/* what to buy */}
         <section className="mt-9" aria-labelledby="deck-list">
-          <h2 id="deck-list" className="font-display text-[26px] font-[680] tracking-[-0.015em]">
+          <H id="deck-list" className="font-display text-[26px] font-[680] tracking-[-0.015em]">
             What you need
-          </h2>
+          </H>
           <div className="mt-3 rounded-sm border border-line bg-mount px-3.5 pb-2.5 pt-1 shadow-[0_1px_3px_rgb(22_25_28/0.08)] md:px-5" data-deck-list>
             {d.items.map((it, i) => {
               const first = i === 0 || d.items[i - 1].group !== it.group;
@@ -312,7 +316,7 @@ export default function DeckingCalculator() {
           <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-on-accent/70">Rather I build it?</p>
           <p className="mt-1.5 font-display text-[22px] font-[650] leading-tight tracking-[-0.01em]">I build decks across London. Send me the size and I&apos;ll quote, free.</p>
           <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-            <Link href={deckBriefHref(d)} className="btn btn-primary w-full">
+            <Link href={deckBriefHref(d, job)} className="btn btn-primary w-full">
               Get a quote
             </Link>
             <a

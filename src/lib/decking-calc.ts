@@ -335,10 +335,12 @@ export function deckText(d: Deck): string {
   return [head, ...d.items.map((it) => `- ${it.qty}  ${it.what}`), '', 'Worked out with the free decking calculator at rafcarpentry.com/tools/decking-calculator'].join('\n');
 }
 
-/** Get a quote: the brief on Plan your project, with Decking ticked, the size filled in and the deck in the notes. */
-export function deckBriefHref(d: Deck): string {
+/** Get a quote: the brief on Plan your project, with Decking ticked, the size filled in and the deck in the notes
+ *  (and, from a job page, the job it was opened from). */
+export function deckBriefHref(d: Deck, job?: string): string {
   const { len, dep, board, run, height } = d.input;
   const note = `From the decking calculator: ${board} boards ${run === 'along' ? 'along the house' : 'out from the house'}, ${height === 'raised' ? 'raised on posts' : 'on the ground'}. About ${d.boards} boards and ${d.joists} joists.`;
   const q = new URLSearchParams({ what: 'Decking', w: String(Math.round(len * 1000)), h: String(Math.round(dep * 1000)), note });
+  if (job) q.set('job', job);
   return `/how-it-works?${q.toString()}#brief`;
 }

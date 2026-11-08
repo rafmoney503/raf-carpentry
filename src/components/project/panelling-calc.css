@@ -171,3 +171,26 @@
 .pg-cut[data-kind='upright'] {
   background: var(--pg-batten);
 }
+
+/* the picture frames (PictureFramesCalculator.tsx): the wall to the ceiling, so a little taller than the grid */
+.pf-wall {
+  --pg-maxh: 260px;
+}
+@media (min-width: 1024px) {
+  .pf-wall {
+    --pg-maxh: 380px;
+  }
+}
+.pf-mould {
+  fill: var(--pg-batten);
+  stroke: var(--pg-batten-edge);
+  stroke-width: 1;
+}
+.pf-inner {
+  stroke: var(--pg-batten-edge);
+  stroke-width: 0.75;
+}
+.pf-ceil {
+  stroke: var(--color-line-strong);
+  stroke-width: 1.5;
+}

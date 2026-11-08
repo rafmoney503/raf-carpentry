@@ -16,7 +16,9 @@ Output: OUT/<YYYY-MM What Area>/ with 0 Before, 1 Finished (finished photos and 
 (stage photos and the other clips), 3 Drawings, notes.txt, photos.txt (file: slot, caption) and job.json.
 File times are set to when each photo was taken, as the app strips the photos' hidden data (EXIF, GPS).
 A job built from a customer's 3D design (job.json "fromDesign") prints that design's code: the job JSON gets
-"design": <code>, which keeps the website from showing the piece twice."""
+"design": <code>, which keeps the website from showing the piece twice.
+A job with a calculator picked on the Notes tab (job.json "calculator": batten grid, picture frames or decking, with
+the job's sizes) prints it: it goes in the job JSON as it is, and the job page shows it after the steps."""
 import json, os, re, shutil, subprocess, sys, tarfile, io
 from datetime import datetime
 
@@ -151,6 +153,11 @@ if missing:
     print(f"  still on the phone or on the way: {len(missing)} ({', '.join(missing[:6])}{'...' if len(missing) > 6 else ''})")
 if incomplete:
     print(f"  clips with pieces missing: {', '.join(incomplete)}")
+
+# The calculator for the job page, filled in on the Notes tab (src/lib/job-calculators.ts): copied into the job JSON
+# as it is ("calculator": {...}); the page puts it after the steps, started with these sizes.
+if job.get('calculator'):
+    print(f"  calculator for the job page: put \"calculator\": {json.dumps(job['calculator'])} in the job JSON")
 
 # Built from a customer's 3D design (started from the design in the Job Kit, or on the same ServiceM8 job): the job
 # page links it ("design": code), so /designs shows the finished job instead of the design and the design's /d
