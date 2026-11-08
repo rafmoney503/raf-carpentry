@@ -215,6 +215,16 @@ function logPhotos(job: string, seen: Seen[], jobFiles: Row[], entries: DiaryEnt
       jobFilesFiled: count(jobFiles, 'related_object'),
       jobFilesSource: count(jobFiles, 'attachment_source'),
       jobFilesClass: count(jobFiles, 'class_name'),
+      // what the job's files are (types and name endings only, never the names), and which the diary calls photos
+      jobFilesType: count(jobFiles, 'file_type'),
+      jobFilesExt: jobFiles.reduce<Record<string, number>>((m, r) => {
+        const n = str(r.attachment_name);
+        const k = /^https?:/i.test(n) ? 'link' : (/\.([a-z0-9]{1,6})$/i.exec(n)?.[1]?.toLowerCase() ?? (n ? 'none' : 'empty'));
+        m[k] = (m[k] ?? 0) + 1;
+        return m;
+      }, {}),
+      jobFilesPhotos: jobFiles.map(fileOf).filter((e) => e?.file?.photo).length,
+      jobFileFields: jobFiles[0] ? Object.keys(jobFiles[0]).slice(0, 40) : [],
       kind: (missing[0] ?? refLike[0]).kind,
       fields: Object.keys(sample).slice(0, 60),
       shapes: shapesOf(sample),
