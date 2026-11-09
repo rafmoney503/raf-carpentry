@@ -148,7 +148,7 @@ export const GUIDES: LearnGuide[] = [
         a: 'Yes. I fit wall cupboards, shelves, panelling and fitted furniture across London. Press Get a quote, or send me a photo of the wall on WhatsApp.',
       },
     ],
-    still: '/images/learn/hang-heavy-things-on-a-wall-71f33c25.jpg',
+    still: '/images/learn/hang-heavy-things-on-a-wall-13cfbf7e.jpg',
     words:
       'hang heavy mirror picture shelf shelves tv bracket wall cupboard cabinet wall plug plugs rawlplug screw screws fixing fixings plasterboard drywall stud studs brick block lath plaster cavity spring toggle hollow wall anchor drill masonry bit detector cable cables pipe pipes safe zones level',
   },
@@ -231,7 +231,7 @@ export const GUIDES: LearnGuide[] = [
         a: 'Yes. I build and fit cabinets, shelves and fitted furniture across London. Press Get a quote, or send me a photo of the wall on WhatsApp.',
       },
     ],
-    still: '/images/learn/french-cleat-cb3c5490.jpg',
+    still: '/images/learn/french-cleat-350b0ccd.jpg',
     words:
       'french cleat cleats hang hanging cabinet cupboard mirror heavy wall shelf shelves tool wall 45 degree bevel bevelled rip plywood batten hook spacer z clip split batten floating',
   },

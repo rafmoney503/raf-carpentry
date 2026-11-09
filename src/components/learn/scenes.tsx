@@ -3,203 +3,314 @@
 import { useId } from 'react';
 
 /* The moving drawings for the Learn guides (src/lib/learn.ts), one scene per step in the same order. Each scene acts
-   out its step on a 7 s loop (src/app/learn/learn.css: the mv-lg-* moves): parts come in, a tool does its job, the
-   result stays, then it starts again. Drawn like the rest of the site: pencil ink, the one blueprint blue for what
-   matters in the step, on graph paper. With reduced motion, or paused off screen, each scene is its finished state
-   (the base drawing), so it still makes sense standing still. 360 x 220, in the site's sketch style. */
+   out its step on a 7 s loop, in two or three beats, each with its own line of words along the top: parts come in,
+   a tool does its job, the result stays, then it starts again. Pencil ink on graph paper, the materials in their own
+   quiet colours (brick, timber, plywood, steel: learn.css), and the site's blue for whatever the step is about.
 
-type U = (name: string) => string;
-type Scene = (p: { u: U }) => React.JSX.Element;
+   Timing is in the class names (% of the loop: see scripts/learn/css.mjs, which writes learn.css from the classes
+   used here, so run it after changing a scene and write every class out in full). With reduced motion, or paused off
+   screen, each scene is its finished state, so it still makes sense standing still. 360 x 220. */
 
-const cv = (o: Record<string, string | number>) => o as React.CSSProperties;
+type Scene = (p: { u: (name: string) => string; k: (name: string) => string }) => React.JSX.Element;
+type Css = React.CSSProperties;
+
+const cv = (o: Record<string, string | number>) => o as Css;
 const move = (dx: number, dy = 0) => cv({ '--dx': `${dx}px`, '--dy': `${dy}px` });
-const turnAt = (x: number, y: number) => cv({ transformOrigin: `${x}px ${y}px` });
-const accent = 'text-accent';
+const turnAt = (x: number, y: number, r?: number) => cv({ transformOrigin: `${x}px ${y}px`, ...(r === undefined ? {} : { '--r': `${r}deg` }) });
+const r1 = (v: number) => Math.round(v * 10) / 10;
 
-function T({ x, y, children, anchor = 'middle', size = 10.5, weight = 500, className = '' }: { x: number; y: number; children: React.ReactNode; anchor?: 'start' | 'middle' | 'end'; size?: number; weight?: number; className?: string }) {
+const BLUE = 'var(--color-accent)';
+const PAPER = 'var(--color-paper)';
+const MOUNT = 'var(--color-mount)';
+
+function T({ x, y, children, anchor = 'middle', size = 9.5, weight = 500, faint = false }: { x: number; y: number; children: React.ReactNode; anchor?: 'start' | 'middle' | 'end'; size?: number; weight?: number; faint?: boolean }) {
   return (
-    <text x={x} y={y} textAnchor={anchor} fontSize={size} fontWeight={weight} stroke="none" fill="currentColor" className={className}>
+    <text x={x} y={y} textAnchor={anchor} fontSize={size} fontWeight={weight} stroke="none" fill="currentColor" fillOpacity={faint ? 0.62 : 1}>
       {children}
     </text>
   );
 }
 
+/* the beat's line of words, top left */
+function Cap({ cls, children }: { cls: string; children: React.ReactNode }) {
+  return (
+    <g className={cls}>
+      <T x={14} y={19} anchor="start" size={10.5} weight={650}>
+        {children}
+      </T>
+    </g>
+  );
+}
+
 /* a wall seen from the front, with its skirting and the floor */
-function Wall({ x = 16, w = 328, top = 14 }: { x?: number; w?: number; top?: number }) {
+function Wall({ x = 14, w = 332, top = 30 }: { x?: number; w?: number; top?: number }) {
   return (
     <>
-      <rect x={x} y={top} width={w} height={194 - top} fill="var(--color-mount)" strokeWidth="1.4" />
-      <rect x={x} y={182} width={w} height={12} strokeWidth="1.2" />
-      <path d="M6 194H354" />
+      <rect x={x} y={top} width={w} height={182 - top} fill="var(--lg-plaster)" strokeWidth="1.4" />
+      <rect x={x} y={182} width={w} height={12} fill={MOUNT} strokeWidth="1.2" />
+      <path d={`M${x - 8} 194H${x + w + 8}`} />
     </>
   );
 }
 
-/* hidden studs behind plasterboard, dashed */
-function Studs({ xs = [78, 158, 238], faint = false, cls = [] as string[] }: { xs?: number[]; faint?: boolean; cls?: string[] }) {
+/* a timber stud behind the plasterboard */
+function Stud({ x, top = 30, cls }: { x: number; top?: number; cls?: string }) {
   return (
-    <>
-      {xs.map((x, i) => (
-        <rect key={x} className={cls[i]} x={x - 6} y={14} width={12} height={168} strokeWidth="1.1" strokeDasharray="4 3" strokeOpacity={faint ? 0.38 : 0.6} />
-      ))}
-    </>
+    <g className={cls}>
+      <rect x={x - 7} y={top} width={14} height={182 - top} fill="var(--lg-timber)" fillOpacity="0.6" strokeWidth="1" strokeDasharray="4 3" strokeOpacity="0.65" />
+    </g>
   );
 }
 
-/* a spirit level bar, its bubble in the middle */
-function Level({ x, y, w, bubbleCls }: { x: number; y: number; w: number; bubbleCls?: string }) {
+/* a spirit level, its bubble in the middle */
+function Level({ x, y, w, bubbleCls, bubbleStyle }: { x: number; y: number; w: number; bubbleCls?: string; bubbleStyle?: Css }) {
   const cx = x + w / 2;
+  const cy = y + 6.5;
   return (
     <>
-      <rect x={x} y={y} width={w} height={11} rx="2" fill="var(--color-paper)" />
-      <rect x={cx - 13} y={y + 2.5} width={26} height={6} rx="3" strokeWidth="1.1" />
-      <path d={`M${cx - 4.5} ${y + 2.5}v6M${cx + 4.5} ${y + 2.5}v6`} strokeWidth="0.9" />
-      <g className={accent}>
-        <ellipse className={bubbleCls} cx={cx} cy={y + 5.5} rx="3.2" ry="2" fill="currentColor" fillOpacity="0.25" strokeWidth="1.1" />
+      <rect x={x} y={y} width={w} height={13} rx="2" fill={MOUNT} />
+      <rect x={x} y={y} width={9} height={13} rx="2" fill={BLUE} strokeWidth="1.2" />
+      <rect x={x + w - 9} y={y} width={9} height={13} rx="2" fill={BLUE} strokeWidth="1.2" />
+      <rect x={cx - 15} y={cy - 3.6} width={30} height={7.2} rx="3.6" fill="var(--lg-glass)" strokeWidth="1.1" />
+      <path d={`M${cx - 5} ${cy - 3.6}v7.2M${cx + 5} ${cy - 3.6}v7.2`} strokeWidth="0.9" />
+      <g className={bubbleCls} style={bubbleStyle}>
+        <ellipse cx={cx} cy={cy} rx="3.6" ry="2.3" fill={MOUNT} stroke={BLUE} strokeWidth="1.3" />
       </g>
     </>
   );
 }
 
+/* done: a blue disc with a tick */
 function Tick({ x, y, cls }: { x: number; y: number; cls?: string }) {
   return (
-    <g className={accent}>
-      <path className={cls} d={`M${x} ${y}l4 4 8-9`} strokeWidth="2.2" />
+    <g className={cls}>
+      <circle cx={x} cy={y} r="8" fill={BLUE} stroke="none" />
+      <path d={`M${x - 3.8} ${y + 0.4}l2.7 2.8 5-6.2`} stroke="var(--color-on-accent)" strokeWidth="1.9" />
     </g>
   );
 }
 
-function Screw({ x, y, cls }: { x: number; y: number; cls?: string }) {
+/* a screw head seen from the front */
+function Head({ x, y, cls }: { x: number; y: number; cls?: string }) {
   return (
     <g className={cls}>
-      <circle cx={x} cy={y} r="3.6" fill="var(--color-paper)" strokeWidth="1.2" />
-      <path d={`M${x - 2} ${y}h4M${x} ${y - 2}v4`} strokeWidth="0.9" />
+      <circle cx={x} cy={y} r="3.8" fill="var(--lg-steel)" strokeWidth="1.2" />
+      <path d={`M${x - 2.1} ${y}h4.2M${x} ${y - 2.1}v4.2`} strokeWidth="0.9" />
     </g>
+  );
+}
+
+/* a screw seen from the side, its head at x, pointing right */
+function Screw({ x, y, len, flat = false }: { x: number; y: number; len: number; flat?: boolean }) {
+  const end = x + len;
+  const threads: string[] = [];
+  for (let t = x + 11; t < end - 6; t += 4.5) threads.push(`M${r1(t)} ${y - 2.4}l1.8 4.8`);
+  return (
+    <>
+      <path d={flat ? `M${x + 4} ${y - 2.4}H${end}V${y + 2.4}H${x + 4}Z` : `M${x + 4} ${y - 2.4}H${end - 6}L${end} ${y}L${end - 6} ${y + 2.4}H${x + 4}Z`} fill="var(--lg-steel)" strokeWidth="1.1" />
+      <path d={threads.join('')} strokeWidth="0.8" />
+      <rect x={x} y={y - 6} width={4.5} height={12} rx="1.6" fill="var(--lg-steel)" strokeWidth="1.2" />
+    </>
+  );
+}
+
+function Arrow({ x1, y1, x2, y2, both = false, w = 2 }: { x1: number; y1: number; x2: number; y2: number; both?: boolean; w?: number }) {
+  const a = Math.atan2(y2 - y1, x2 - x1);
+  const head = (x: number, y: number, t: number) => `M${r1(x - 6 * Math.cos(t - 0.55))} ${r1(y - 6 * Math.sin(t - 0.55))}L${x} ${y}L${r1(x - 6 * Math.cos(t + 0.55))} ${r1(y - 6 * Math.sin(t + 0.55))}`;
+  return <path d={`M${x1} ${y1}L${x2} ${y2}${head(x2, y2, a)}${both ? head(x1, y1, a + Math.PI) : ''}`} strokeWidth={w} />;
+}
+
+/* a size, between two ticks */
+function HDim({ x1, x2, y, label, below = false }: { x1: number; x2: number; y: number; label: string; below?: boolean }) {
+  return (
+    <>
+      <path d={`M${x1} ${y}H${x2}M${x1} ${y - 4}v8M${x2} ${y - 4}v8`} strokeWidth="1.1" />
+      <T x={(x1 + x2) / 2} y={below ? y + 12 : y - 5} size={9}>
+        {label}
+      </T>
+    </>
+  );
+}
+function VDim({ x, y1, y2 }: { x: number; y1: number; y2: number }) {
+  return <path d={`M${x} ${y1}V${y2}M${x - 4} ${y1}h8M${x - 4} ${y2}h8`} strokeWidth="1.3" />;
+}
+
+/* a wall cupboard seen from the front */
+function Cupboard({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
+  const m = x + w / 2;
+  return (
+    <>
+      <rect x={x} y={y} width={w} height={h} fill="var(--lg-ply)" />
+      <path d={`M${m} ${y}V${y + h}`} strokeWidth="1.2" />
+      <rect x={x + 8} y={y + 8} width={w / 2 - 14} height={h - 16} strokeWidth="0.9" strokeOpacity="0.5" />
+      <rect x={m + 6} y={y + 8} width={w / 2 - 14} height={h - 16} strokeWidth="0.9" strokeOpacity="0.5" />
+      <circle cx={m - 6} cy={y + h / 2 + 8} r="2" fill="var(--lg-steel)" strokeWidth="1" />
+      <circle cx={m + 6} cy={y + h / 2 + 8} r="2" fill="var(--lg-steel)" strokeWidth="1" />
+    </>
   );
 }
 
 /* ---------------- How to hang something heavy on any wall ---------------- */
 
-function Fist({ x, y, cls }: { x: number; y: number; cls: string }) {
+/* knuckles on the wall, the arm coming up from below */
+function Fist({ x, y }: { x: number; y: number }) {
   return (
     <g transform={`translate(${x} ${y})`}>
-      <g className={cls}>
-        <rect x="0" y="0" width="24" height="18" rx="6" fill="var(--color-paper)" />
-        <path d="M7 1v7M12.5 1v7M18 1v7" strokeWidth="1.1" />
-        <path d="M1 11c3.5 0 5.5 2 6.5 6" strokeWidth="1.1" />
-      </g>
+      <path d="M-4 8L10 52H30L12 2Z" fill={PAPER} strokeWidth="1.4" />
+      <rect x="-13" y="-11" width="27" height="22" rx="7" fill={PAPER} />
+      <path d="M-5.5 -10v9M1 -10v9M7.5 -10v9" strokeWidth="1.1" />
+      <path d="M-12 2.5c4 0 7 2 8 6" strokeWidth="1.1" />
     </g>
   );
 }
 
-const WINDOW = 'M44 88L60 86 72 90 90 85 108 89 126 86 144 90 146 108 142 126 146 146 144 162 126 160 108 164 90 160 72 163 56 160 42 162 44 144 40 126 44 108Z';
+const Knock: Scene = ({ u, k }) => (
+  <>
+    <defs>
+      <clipPath id={k('wa')}>
+        <circle cx="94" cy="110" r="38" />
+      </clipPath>
+      <clipPath id={k('wb')}>
+        <circle cx="266" cy="110" r="38" />
+      </clipPath>
+    </defs>
+    <Cap cls="mv-lg-win-0-40">Knock where it’s going, and listen</Cap>
+    <Cap cls="mv-lg-show-44">A dull knock: brick, block or a stud</Cap>
+    <Wall x={14} w={160} top={44} />
+    <Wall x={186} w={160} top={44} />
 
-const Knock: Scene = ({ u }) => {
-  const id = u('win').slice(5, -1); // this drawing's own prefix, for the two clip paths
-  return (
-    <>
-      <defs>
-        <clipPath id={`${id}a`}>
-          <path d={WINDOW} />
-        </clipPath>
-        <clipPath id={`${id}b`}>
-          <path d={WINDOW} transform="translate(172 0)" />
-        </clipPath>
-      </defs>
-      <Wall x={16} w={156} top={30} />
-      <Wall x={188} w={156} top={30} />
-      <T x={94} y={22} weight={600}>HOLLOW KNOCK</T>
-      <T x={266} y={22} weight={600}>SOLID KNOCK</T>
-
-      {/* plasterboard: the window opens on the studs behind */}
-      <g className="mv-lg-open-35">
-        <g clipPath={`url(#${id}a)`}>
-          <rect x="30" y="80" width="130" height="90" fill="var(--color-raised)" stroke="none" />
-          {[56, 120].map((sx) => (
-            <g key={sx}>
-              <rect x={sx} y="80" width="14" height="90" fill="var(--color-paper)" strokeWidth="1.2" />
-              <path d={`M${sx + 4} 82c2 20-2 40 0 60s2 20 0 26M${sx + 9.5} 82c-2 24 2 44 0 64`} strokeWidth="0.7" strokeOpacity="0.55" />
-            </g>
-          ))}
-        </g>
-        <path d={WINDOW} strokeWidth="1.3" />
+    {/* hollow: the wall opens on the studs and the gap behind the board */}
+    <g className="mv-lg-pop-30">
+      <g clipPath={u('wa')}>
+        <rect x="50" y="66" width="90" height="90" fill="var(--lg-cavity)" stroke="none" />
+        {[62, 110].map((sx) => (
+          <g key={sx}>
+            <rect x={sx} y="66" width="15" height="90" fill="var(--lg-timber)" strokeWidth="1.2" />
+            <path d={`M${sx + 4.5} 68c2 20-2 40 0 60s2 20 0 26M${sx + 10} 68c-2 24 2 44 0 64s1 16 0 22`} stroke="var(--lg-grain)" strokeWidth="0.8" />
+          </g>
+        ))}
       </g>
-      <g className="mv-lg-pop-45">
-        <T x={94} y={176} size={9.5}>plasterboard on studs</T>
+      <circle cx="94" cy="110" r="38" strokeWidth="1.5" />
+    </g>
+    <g className="text-accent">
+      <circle className="mv-lg-ping-7" cx="94" cy="110" r="20" strokeWidth="1.8" />
+      <circle className="mv-lg-ping-11" cx="94" cy="110" r="32" strokeWidth="1.8" />
+      <g className="mv-lg-pop-14">
+        <T x={94} y={61} size={11} weight={700}>
+          HOLLOW
+        </T>
       </g>
-
-      {/* brick or block */}
-      <g className="mv-lg-open-50">
-        <g clipPath={`url(#${id}b)`}>
-          <rect x="200" y="80" width="140" height="90" fill={u('brick')} stroke="none" />
-        </g>
-        <path d={WINDOW} transform="translate(172 0)" strokeWidth="1.3" />
-      </g>
-      <g className="mv-lg-pop-60">
-        <T x={266} y={176} size={9.5}>brick or block</T>
-      </g>
-
-      <Fist x={44} y={46} cls="mv-lg-knock-a" />
-      <g className={accent}>
-        <path className="mv-lg-show-5" d="M74 50q6 5 0 10" />
-        <path className="mv-lg-show-5" d="M80 46q10 9 0 18" />
-        <path className="mv-lg-show-10" d="M86 42q14 13 0 26" />
-        <path className="mv-lg-show-10" d="M92 38q18 17 0 34" />
-        <g className="mv-lg-pop-10">
-          <T x={130} y={58} size={11} weight={600}>tok tok</T>
+    </g>
+    <g className="mv-lg-show-34">
+      <T x={94} y={172} size={9}>
+        plasterboard on studs
+      </T>
+    </g>
+    <g className="mv-lg-off-26">
+      <g className="mv-lg-go-22-30" style={move(-46, -40)}>
+        <g className="mv-lg-tap-6">
+          <Fist x={140} y={150} />
         </g>
       </g>
+    </g>
 
-      <Fist x={216} y={46} cls="mv-lg-knock-b" />
-      <g className={accent}>
-        <path className="mv-lg-show-20" d="M246 51q4 4 0 8" />
-        <path className="mv-lg-show-25" d="M251 49q6 6 0 12" />
-        <g className="mv-lg-pop-25">
-          <T x={292} y={58} size={11} weight={600}>thud</T>
+    {/* solid: brick or block all the way through */}
+    <g className="mv-lg-pop-70">
+      <g clipPath={u('wb')}>
+        <rect x="222" y="66" width="90" height="90" fill={u('brick')} stroke="none" />
+      </g>
+      <circle cx="266" cy="110" r="38" strokeWidth="1.5" />
+    </g>
+    <g className="text-accent">
+      <circle className="mv-lg-ping-49" cx="266" cy="110" r="9" strokeWidth="1.8" />
+      <circle className="mv-lg-ping-53" cx="266" cy="110" r="13" strokeWidth="1.8" />
+      <g className="mv-lg-pop-56">
+        <T x={266} y={61} size={11} weight={700}>
+          DULL, SOLID
+        </T>
+      </g>
+    </g>
+    <g className="mv-lg-show-74">
+      <T x={266} y={172} size={9}>
+        brick or block
+      </T>
+    </g>
+    <g className="mv-lg-win-42-66">
+      <g className="mv-lg-go-62-70" style={move(-46, -40)}>
+        <g className="mv-lg-tap-48">
+          <Fist x={312} y={150} />
         </g>
       </g>
-    </>
-  );
-};
+    </g>
+  </>
+);
 
 const FindStuds: Scene = ({ u }) => (
   <>
+    <Cap cls="mv-lg-win-0-54">Slide a detector along. Mark each stud</Cap>
+    <Cap cls="mv-lg-show-58">Cables run in the blue zones: never drill there</Cap>
     <Wall />
-    <Studs cls={['mv-lg-show-20', 'mv-lg-show-40', 'mv-lg-show-60']} />
-    {/* where cables are allowed to run: keep clear */}
-    <g className="mv-lg-show-70">
-      <rect x="16" y="14" width="328" height="30" fill={u('zone')} stroke="none" />
-      <rect x="16" y="44" width="30" height="138" fill={u('zone')} stroke="none" />
-      <rect x="314" y="44" width="30" height="138" fill={u('zone')} stroke="none" />
-      <rect x="286" y="44" width="28" height="138" fill={u('zone')} stroke="none" />
-      <rect x="46" y="136" width="240" height="26" fill={u('zone')} stroke="none" />
-    </g>
-    <g className="mv-lg-pop-75">
-      <rect x="66" y="20" width="228" height="17" rx="2" fill="var(--color-paper)" stroke="none" />
-      <T x={180} y={32} size={10} weight={600}>CABLES RUN IN THESE LINES</T>
-    </g>
-    {/* a socket */}
-    <rect x="290" y="140" width="22" height="18" rx="2" fill="var(--color-paper)" />
-    <path d="M297 146v6M305 146v6" strokeWidth="1.2" />
+    <Stud x={110} cls="mv-lg-show-17" />
+    <Stud x={200} cls="mv-lg-show-32" />
+    <Stud x={290} cls="mv-lg-show-46" />
 
-    {/* pencil marks where the detector found each stud */}
-    <g className={accent}>
-      {[78, 158, 238].map((x, i) => (
-        <path key={x} className={`mv-lg-pop-${20 + i * 20}`} d={`M${x} 70v10M${x} 116v10`} strokeWidth="2" />
+    {/* where cables are allowed to run: up, down and sideways from the socket, by the ceiling, in the corners */}
+    <g className="mv-lg-show-60 text-accent">
+      {[
+        [41, 30, 22, 152],
+        [14, 143, 332, 14],
+        [14, 30, 332, 13],
+        [14, 30, 13, 152],
+        [333, 30, 13, 152],
+      ].map(([x, y, w, h]) => (
+        <g key={`${x}-${y}`}>
+          <rect x={x} y={y} width={w} height={h} fill={BLUE} fillOpacity="0.09" stroke="none" />
+          <rect x={x} y={y} width={w} height={h} fill={u('zone')} stroke="none" />
+        </g>
       ))}
-      <g className="mv-lg-pop-20">
-        <T x={78} y={64} size={10} weight={600}>stud</T>
+    </g>
+    <g className="text-accent">
+      <path className="mv-lg-line mv-lg-draw-64-74" pathLength={1} d="M52 143V36H333" strokeWidth="1.3" />
+      <path className="mv-lg-line mv-lg-draw-68-78" pathLength={1} d="M63 150H340" strokeWidth="1.3" />
+      <g className="mv-lg-pop-76">
+        <rect x="120" y="120" width="70" height="14" fill="var(--lg-plaster)" stroke="none" />
+        <T x={155} y={130.5} size={9} weight={650}>
+          cables here
+        </T>
+      </g>
+      <g className="mv-lg-show-76">
+        <T x={278} y={54} anchor="end" size={8.5}>
+          150 mm
+        </T>
       </g>
     </g>
+    <rect x="41" y="143" width="22" height="14" rx="2" fill={MOUNT} strokeWidth="1.3" />
+    <path d="M47 148v4M57 148v4" strokeWidth="1.3" />
 
-    {/* the detector slides along the wall */}
-    <g className="mv-lg-sweep">
-      <rect x="240" y="86" width="44" height="24" rx="6" fill="var(--color-paper)" />
-      <rect x="246" y="91" width="20" height="8" rx="1.5" strokeWidth="1" />
-      <path d="M262 86v-4M262 110v4" strokeWidth="1.2" />
-      <circle cx="275" cy="95" r="3.2" strokeWidth="1" />
-      <g className={accent}>
-        <circle className="mv-lg-blink mv-hidden" cx="275" cy="95" r="3.2" fill="currentColor" />
+    {/* a pencil mark over each stud, and how far apart they are */}
+    <g className="text-accent">
+      <path className="mv-lg-pop-17" d="M105 62h10l-5 8z" fill="currentColor" strokeWidth="1" />
+      <path className="mv-lg-pop-32" d="M195 62h10l-5 8z" fill="currentColor" strokeWidth="1" />
+      <path className="mv-lg-pop-46" d="M285 62h10l-5 8z" fill="currentColor" strokeWidth="1" />
+    </g>
+    <g className="mv-lg-show-50">
+      <HDim x1={110} x2={200} y={86} label="400 or 600 mm" />
+    </g>
+
+    {/* the detector, its light on over each stud */}
+    <g className="mv-lg-slide-5-50" style={move(-278)}>
+      <rect x="304" y="86" width="28" height="46" rx="6" fill="var(--lg-tool)" />
+      <rect x="309" y="92" width="18" height="12" rx="1.5" fill="var(--lg-glass)" strokeWidth="1" />
+      <path d="M312 98h12" stroke={BLUE} strokeWidth="1.2" />
+      <circle cx="318" cy="116" r="3.6" fill={PAPER} strokeWidth="1" />
+      <path d="M318 132v5" strokeWidth="1.2" />
+      <g className="text-accent">
+        <circle className="mv-lg-win-16-20" cx="318" cy="116" r="3.6" fill="currentColor" stroke="none" />
+        <circle className="mv-lg-win-31-35" cx="318" cy="116" r="3.6" fill="currentColor" stroke="none" />
+        <circle className="mv-lg-win-45-49" cx="318" cy="116" r="3.6" fill="currentColor" stroke="none" />
+        <circle className="mv-lg-ping-16" cx="318" cy="116" r="13" strokeWidth="1.6" />
+        <circle className="mv-lg-ping-31" cx="318" cy="116" r="13" strokeWidth="1.6" />
+        <circle className="mv-lg-ping-45" cx="318" cy="116" r="13" strokeWidth="1.6" />
       </g>
     </g>
   </>
@@ -207,400 +318,531 @@ const FindStuds: Scene = ({ u }) => (
 
 const MarkLevel: Scene = () => (
   <>
+    <Cap cls="mv-lg-win-0-21">Mark where the fixings go</Cap>
+    <Cap cls="mv-lg-win-24-42">Lay a spirit level across the marks</Cap>
+    <Cap cls="mv-lg-show-45">Move a mark until the bubble sits in the middle</Cap>
     <Wall />
-    {/* where the mirror will go */}
-    <rect x="96" y="56" width="168" height="116" strokeWidth="1" strokeDasharray="5 4" strokeOpacity="0.35" />
-    <g className="mv-lg-show-0">
-      <T x={180} y={160} size={9.5} className="opacity-60">where it goes</T>
-    </g>
-    <g className={accent}>
-      <path className="mv-lg-pop-5" d="M126 104l8 8M134 104l-8 8" strokeWidth="1.8" />
-      <path className="mv-lg-pop-10" d="M226 104l8 8M234 104l-8 8" strokeWidth="1.8" />
-    </g>
-    <g className="mv-lg-in-15" style={move(0, -30)}>
-      <g className="mv-lg-tilt mv-vb" style={turnAt(180, 90)}>
-        <Level x={100} y={84} w={160} bubbleCls="mv-lg-bub-a" />
+    <rect x="100" y="66" width="160" height="86" strokeWidth="1.1" strokeDasharray="5 4" strokeOpacity="0.45" />
+    <T x={180} y={136} size={9} faint>
+      where it’s going
+    </T>
+
+    {/* the two marks: the right one starts low */}
+    <g className="text-accent">
+      <path className="mv-lg-pop-6" d="M124 88h12M130 82v12" strokeWidth="2" />
+      <g className="mv-lg-go-45-60" style={move(0, 8)}>
+        <path className="mv-lg-pop-14" d="M224 88h12M230 82v12" strokeWidth="2" />
+      </g>
+      <g className="mv-lg-win-41-58">
+        <Arrow x1={248} y1={108} x2={248} y2={92} />
       </g>
     </g>
-    <Tick x={274} y={86} cls="mv-lg-pop-55" />
-    <g className="mv-lg-pop-55">
-      <T x={290} y={104} anchor="start" size={10} weight={600} className={accent}>level</T>
-    </g>
-  </>
-);
-
-const Drill: Scene = ({ u }) => (
-  <>
-    {/* the wall from the side: plaster on brick */}
-    <rect x="244" y="14" width="6" height="180" fill="var(--color-mount)" strokeWidth="1.1" />
-    <rect x="250" y="14" width="56" height="180" fill={u('hatch')} strokeWidth="1.4" />
-    <path d="M6 194H354" />
-    <g className="mv-ol mv-lg-hole">
-      <rect x="244" y="93" width="36" height="6" fill="currentColor" stroke="none" />
-    </g>
-    <g className="text-faint">
-      {[[238, 90], [236, 101], [240, 106], [234, 95], [239, 86]].map(([x, y], i) => (
-        <circle key={i} className="mv-lg-dust mv-hidden" cx={x} cy={y} r={1.6} fill="currentColor" stroke="none" style={cv({ '--mv-o': `${i * 0.07}s` })} />
-      ))}
-    </g>
-
-    {/* the drill, pointing at the wall */}
-    <g className="mv-lg-drill">
-      <g className="mv-lg-buzz">
-        <rect x="70" y="82" width="80" height="26" rx="8" fill="var(--color-paper)" />
-        <path d="M84 90h18M84 95h18M84 100h18" strokeWidth="1" />
-        <path d="M96 108l-8 40h32l6-40" fill="var(--color-paper)" />
-        <path d="M118 112q-6 4-4 12" strokeWidth="1.2" />
-        <rect x="80" y="148" width="52" height="12" rx="2" fill="var(--color-paper)" />
-        <rect x="150" y="88" width="14" height="16" rx="2" fill="var(--color-paper)" />
-        <path d="M164 96H230" strokeWidth="3" />
-        <path d="M172 94l3 4M180 94l3 4M188 94l3 4M200 94l3 4M208 94l3 4M216 94l3 4M224 94l3 4" strokeWidth="0.8" />
-        <g className={accent}>
-          <rect x="188" y="91" width="6" height="10" rx="1" fill="currentColor" fillOpacity="0.3" strokeWidth="1.2" />
+    <g className="mv-lg-off-20">
+      <g className="mv-lg-go-9-13" style={move(-100, -8)}>
+        <g transform="translate(231 95)">
+          <path d="M0 0L8 -3 3 -8Z" fill="var(--color-ink)" strokeWidth="1" />
+          <path d="M8 -3L3 -8 27 -32 32 -27Z" fill="var(--lg-plug)" strokeWidth="1.2" />
+          <path d="M27 -32L32 -27 36 -31 31 -36Z" fill="var(--lg-steel)" strokeWidth="1.2" />
         </g>
       </g>
     </g>
 
-    <g className={accent}>
-      <path d="M191 89L168 48" strokeWidth="1" />
-      <T x={18} y={42} anchor="start" size={10} weight={600}>tape: the plug’s length + a few mm</T>
+    {/* the level arrives tilted with the marks, then comes level as the mark moves up */}
+    <g className="mv-lg-show-24">
+      <g className="mv-lg-go-24-34" style={move(0, -44)}>
+        <g className="mv-lg-turn-45-60 mv-vb" style={turnAt(130, 91, 4.57)}>
+          <Level x={100} y={91} w={160} bubbleCls="mv-lg-go-45-60" bubbleStyle={move(-9)} />
+        </g>
+      </g>
     </g>
-    <T x={18} y={176} anchor="start" size={10}>Brick: masonry bit, hammer on</T>
-    <T x={18} y={188} anchor="start" size={10}>Stud: wood bit, hammer off</T>
+    <Tick x={280} y={97} cls="mv-lg-pop-64" />
   </>
 );
 
-/* one side section of the three fixings */
-function Batten({ x }: { x: number }) {
+function PlugGuide({ cls }: { cls: string }) {
   return (
-    <>
-      <rect x={x} y={64} width={14} height={72} fill="var(--color-paper)" strokeWidth="1.3" />
-      <path d={`M${x + 5} 68c2 18-2 40 0 64M${x + 10} 70c-1 20 1 40 0 62`} strokeWidth="0.6" strokeOpacity="0.5" />
-    </>
+    <g className={cls}>
+      <rect x="168" y="66" width="34" height="9" rx="2.5" fill="var(--lg-plug)" strokeWidth="1.2" />
+      <path d="M176 66v9M184 66v9M192 66v9" strokeWidth="0.8" strokeOpacity="0.6" />
+      <g className="text-accent">
+        <path d="M162 60V98M202 60V98" strokeWidth="1" strokeDasharray="3 3" />
+        <path d="M162 56H202M162 53v6M202 53v6" strokeWidth="1.2" />
+        <T x={182} y={47} size={9} weight={650}>
+          plug + a few mm
+        </T>
+      </g>
+    </g>
   );
 }
 
+const Drill: Scene = ({ u }) => (
+  <>
+    <Cap cls="mv-lg-win-0-19">Tape on the bit: the plug’s length + a few mm</Cap>
+    <Cap cls="mv-lg-win-22-60">Drill straight in. Stop when the tape touches</Cap>
+    <Cap cls="mv-lg-show-64">Then hoover the dust out of the hole</Cap>
+
+    {/* the wall, cut through */}
+    <rect x="250" y="26" width="76" height="188" fill={u('brickcut')} strokeWidth="1.4" />
+    <rect x="246" y="26" width="4" height="188" fill="var(--lg-plaster)" strokeWidth="1.1" />
+    <g data-hole className="mv-lg-growx-28-55 mv-ol">
+      <rect x="246" y="100.3" width="40" height="7.4" fill={PAPER} strokeWidth="1.2" />
+    </g>
+
+    <PlugGuide cls="mv-lg-win-2-17" />
+    <PlugGuide cls="mv-lg-show-80" />
+
+    {[
+      ['mv-lg-puff-30', -13, 9],
+      ['mv-lg-puff-35', -9, -10],
+      ['mv-lg-puff-40', -15, 3],
+      ['mv-lg-puff-45', -8, 11],
+      ['mv-lg-puff-50', -12, -7],
+    ].map(([c, dx, dy]) => (
+      <circle key={c} className={c as string} style={move(dx as number, dy as number)} cx="243" cy="104" r="1.5" fill="currentColor" stroke="none" />
+    ))}
+
+    <g className="mv-lg-drill">
+      <g className="mv-lg-buzz-28-55">
+        <path d="M142 102.2H197L202 104 197 105.8H142Z" fill="var(--lg-steel)" strokeWidth="1.1" />
+        <path d="M170 102.2l3 3.6M176 102.2l3 3.6M182 102.2l3 3.6M188 102.2l3 3.6M194 102.2l2.5 3.6" strokeWidth="0.9" />
+        <rect x="159" y="99.2" width="6.5" height="9.6" rx="1" fill={BLUE} strokeWidth="1.1" />
+        <path d="M128 94L142 99.5V108.5L128 114Z" fill="var(--lg-steel)" />
+        <path d="M78 119H101L96 163H71Z" fill="var(--lg-tool)" />
+        <rect x="62" y="161" width="44" height="15" rx="3" fill="var(--lg-tool)" />
+        <rect x="60" y="88" width="68" height="32" rx="7" fill="var(--lg-tool)" />
+        <path d="M70 97h13M70 102h13M70 107h13" stroke={PAPER} strokeWidth="1.2" />
+        <rect x="94" y="109" width="26" height="4" rx="1" fill={BLUE} stroke="none" />
+        <path d="M101 125q7 3 4.5 11" strokeWidth="1.4" />
+      </g>
+    </g>
+
+    <g className="text-accent">
+      <circle className="mv-lg-ping-55" cx="246" cy="104" r="11" strokeWidth="1.8" />
+      <g className="mv-lg-win-56-64">
+        <T x={240} y={80} anchor="end" weight={700}>
+          tape touches: stop
+        </T>
+      </g>
+    </g>
+
+    <T x={14} y={196} anchor="start" size={9}>
+      Brick or block: masonry bit, hammer on
+    </T>
+    <T x={14} y={208} anchor="start" size={9}>
+      A stud: wood bit, hammer off
+    </T>
+  </>
+);
+
 const Fixings: Scene = ({ u }) => (
   <>
-    <path d="M121 28V188M239 28V188" strokeWidth="0.8" strokeDasharray="3 4" strokeOpacity="0.4" />
-    <T x={62} y={20} weight={600}>BRICK</T>
-    <T x={180} y={20} weight={600}>STUD</T>
-    <T x={298} y={20} weight={600}>PLASTERBOARD</T>
+    <Cap cls="mv-lg-win-0-37">Brick or block: a plug, then the screw</Cap>
+    <Cap cls="mv-lg-win-40-62">A stud: screw straight into the wood</Cap>
+    <Cap cls="mv-lg-show-65">No stud: a metal toggle opens behind the board</Cap>
 
-    {/* brick: plug flush, then the screw */}
-    <rect x="78" y="30" width="38" height="146" fill={u('hatch')} strokeWidth="1.3" />
-    <rect x="78" y="96" width="26" height="8" fill="var(--color-paper)" stroke="none" />
-    <g className="mv-lg-in-5" style={move(-46)}>
-      <g className={accent}>
-        <rect x="78" y="96.5" width="24" height="7" rx="1" fill="currentColor" fillOpacity="0.25" strokeWidth="1.2" />
-        <path d="M84 96.5v7M90 96.5v7M96 96.5v7" strokeWidth="0.8" />
+    {/* brick or block */}
+    <rect x="60" y="38" width="58" height="122" fill={u('brickcut')} strokeWidth="1.4" />
+    <rect x="60" y="96" width="38" height="8" fill={PAPER} strokeWidth="1.1" />
+    <g className="mv-lg-go-4-14" style={move(-50)}>
+      <rect x="61" y="96" width="35" height="8" rx="2.5" fill="var(--lg-plug)" strokeWidth="1.2" />
+      <path d="M70 96v8M78 96v8M86 96v8" strokeWidth="0.8" strokeOpacity="0.6" />
+    </g>
+    <rect className="mv-lg-show-16" x="53" y="70" width="7" height="60" fill={BLUE} fillOpacity="0.22" stroke={BLUE} strokeWidth="1.3" />
+    <g className="mv-lg-show-19">
+      <g className="mv-lg-slide-20-34" style={move(-36)}>
+        <Screw x={48.5} y={100} len={45} />
       </g>
     </g>
-    <g className="mv-lg-in-25" style={move(-16)}>
-      <Batten x={64} />
-    </g>
-    <g className="mv-lg-in-40" style={move(-28)}>
-      <path d="M56 94l6 3v6l-6 3z" fill="var(--color-paper)" strokeWidth="1.2" />
-      <path d="M62 100H98" strokeWidth="2.2" />
-      <path d="M68 98l2 4M74 98l2 4M80 98l2 4M86 98l2 4M92 98l2 4" strokeWidth="0.8" />
-    </g>
-    <T x={62} y={192} size={9.5}>plug, then screw</T>
+    <path className="mv-lg-pop-35 text-accent" d="M68 92l3.5-4 3.5 4M82 92l3.5-4 3.5 4M68 108l3.5 4 3.5-4M82 108l3.5 4 3.5-4" strokeWidth="1.6" />
+    <T x={66} y={174} weight={650}>
+      Brick or block
+    </T>
+    <T x={66} y={185} size={8.5} faint>
+      plug, then screw
+    </T>
 
-    {/* a stud: straight into the timber */}
-    <rect x="178" y="30" width="6" height="146" fill={u('hatch')} strokeWidth="1.1" />
-    <rect x="184" y="30" width="40" height="146" fill="var(--color-paper)" strokeWidth="1.3" />
-    <path d="M192 34c3 30-3 60 0 90s3 30 0 48M204 34c-3 34 3 64 0 94M216 34c2 40-2 80 0 138" strokeWidth="0.6" strokeOpacity="0.5" />
-    <g className="mv-lg-in-10" style={move(-16)}>
-      <Batten x={164} />
-    </g>
-    <g className="mv-lg-in-30" style={move(-30)}>
-      <path d="M156 94l6 3v6l-6 3z" fill="var(--color-paper)" strokeWidth="1.2" />
-      <path d="M162 100H214" strokeWidth="2.2" />
-      <path d="M168 98l2 4M174 98l2 4M180 98l2 4M186 98l2 4M192 98l2 4M198 98l2 4M204 98l2 4M210 98l2 4" strokeWidth="0.8" />
-    </g>
-    <g className="mv-lg-pop-50">
-      <g className={accent}>
-        <path d="M184 112h30" strokeWidth="1" />
-        <path d="M184 109v6M214 109v6" strokeWidth="1" />
-        <T x={199} y={124} size={9.5} weight={600}>30 mm+</T>
+    {/* a timber stud behind the plasterboard */}
+    <rect x="181" y="38" width="49" height="122" fill="var(--lg-timber)" strokeWidth="1.4" />
+    <path d="M194 40c3 24-3 44 0 66s3 34 0 52M208 40c-3 30 3 50 0 74s-2 30 0 44M220 40c2 20-2 46 0 70s2 30 0 48" stroke="var(--lg-grain)" strokeWidth="0.8" />
+    <rect x="172" y="38" width="9" height="122" fill="var(--lg-board)" strokeWidth="1.2" />
+    <rect className="mv-lg-show-40" x="165" y="70" width="7" height="60" fill={BLUE} fillOpacity="0.22" stroke={BLUE} strokeWidth="1.3" />
+    <g className="mv-lg-show-41">
+      <g className="mv-lg-slide-42-58" style={move(-48)}>
+        <Screw x={160.5} y={100} len={55} />
       </g>
     </g>
-    <T x={180} y={192} size={9.5}>into the stud</T>
+    <g className="mv-lg-show-60 text-accent">
+      <path d="M181 114H215M181 110v8M215 110v8" strokeWidth="1.3" />
+      <T x={198} y={128} size={9} weight={650}>
+        30 mm +
+      </T>
+    </g>
+    <T x={178} y={174} weight={650}>
+      Timber stud
+    </T>
+    <T x={178} y={185} size={8.5} faint>
+      into the wood
+    </T>
 
-    {/* plasterboard only: a spring toggle opens out behind */}
-    <rect x="300" y="30" width="6" height="146" fill={u('hatch')} strokeWidth="1.1" />
-    <path d="M348 30V176" strokeWidth="0.8" strokeOpacity="0.35" strokeDasharray="3 3" />
-    <Batten x={286} />
+    {/* plasterboard with nothing behind it */}
+    <rect x="293" y="38" width="49" height="122" fill="var(--lg-cavity)" fillOpacity="0.45" stroke="none" />
+    <rect x="284" y="38" width="9" height="58" fill="var(--lg-board)" strokeWidth="1.2" />
+    <rect x="284" y="104" width="9" height="56" fill="var(--lg-board)" strokeWidth="1.2" />
+    <T x={320} y={56} size={8.5} faint>
+      hollow
+    </T>
+    <g className="mv-lg-show-64">
+      <rect x="277" y="70" width="7" height="26" fill={BLUE} fillOpacity="0.22" stroke={BLUE} strokeWidth="1.3" />
+      <rect x="277" y="104" width="7" height="26" fill={BLUE} fillOpacity="0.22" stroke={BLUE} strokeWidth="1.3" />
+    </g>
     <g className="mv-lg-toggle">
-      <path d="M274 94l6 3v6l-6 3z" fill="var(--color-paper)" strokeWidth="1.2" />
-      <path d="M280 100H326" strokeWidth="2" />
-      <g className="mv-lg-fold mv-hidden">
-        <path d="M326 100l-12-6M326 100l-12 6" strokeWidth="2" />
+      <Screw x={272.5} y={100} len={36} flat />
+      <g className="mv-lg-rot-78-82 mv-vb" style={turnAt(295, 100, -84)}>
+        <rect x="293.4" y="80" width="3.4" height="20" rx="1.7" fill="var(--lg-steel)" strokeWidth="1.1" />
       </g>
-      <g className={`${accent} mv-lg-show-30`}>
-        <path d="M309 83V117" strokeWidth="3" />
-        <rect x="310" y="96" width="5" height="8" rx="1" fill="currentColor" fillOpacity="0.3" strokeWidth="1" />
+      <g className="mv-lg-rot-78-82 mv-vb" style={turnAt(295, 100, 84)}>
+        <rect x="293.4" y="100" width="3.4" height="20" rx="1.7" fill="var(--lg-steel)" strokeWidth="1.1" />
+      </g>
+      <circle cx="295" cy="100" r="2" fill="var(--color-ink)" stroke="none" />
+    </g>
+    <g className="text-accent">
+      <circle className="mv-lg-ping-81" cx="296" cy="100" r="14" strokeWidth="1.7" />
+      <g className="mv-lg-win-84-96">
+        <Arrow x1={268} y1={144} x2={250} y2={144} />
       </g>
     </g>
-    <g className="mv-lg-pop-60">
-      <T x={330} y={74} size={9.5} weight={600} className={accent}>opens</T>
-    </g>
-    <T x={298} y={192} size={9.5}>no stud: a toggle</T>
+    <T x={290} y={174} weight={650}>
+      No stud behind
+    </T>
+    <T x={290} y={185} size={8.5} faint>
+      metal spring toggle
+    </T>
   </>
 );
 
 const HangCheck: Scene = () => (
   <>
+    <Cap cls="mv-lg-win-0-25">Hang it on its fixings</Cap>
+    <Cap cls="mv-lg-win-28-55">Level on top: check before you let go</Cap>
+    <Cap cls="mv-lg-show-58">Then a firm pull down. Nothing should move</Cap>
     <Wall />
-    <Screw x={130} y={64} />
-    <Screw x={230} y={64} />
-    <g className="mv-lg-in-15" style={move(0, -36)}>
-      <rect x="96" y="56" width="168" height="116" rx="2" fill="var(--color-paper)" />
-      <rect x="104" y="64" width="152" height="100" rx="1" strokeWidth="1.1" />
-      <path d="M124 150L156 80M140 152L168 92" strokeWidth="1" strokeOpacity="0.45" />
+    <Head x={130} y={76} />
+    <Head x={230} y={76} />
+    <g className="text-accent">
+      <circle className="mv-lg-ping-1" cx="130" cy="76" r="11" strokeWidth="1.6" />
+      <circle className="mv-lg-ping-3" cx="230" cy="76" r="11" strokeWidth="1.6" />
     </g>
-    <g className="mv-lg-in-40" style={move(0, -18)}>
-      <Level x={150} y={45} w={60} bubbleCls="mv-lg-bub-b" />
-    </g>
-    <Tick x={220} y={46} cls="mv-lg-pop-60" />
-    <g className={accent}>
-      <g className="mv-lg-pop-70">
-        <path d="M280 104v30M274 128l6 7 6-7" strokeWidth="2" />
+    <g className="mv-lg-tug-62">
+      <g className="mv-lg-show-9">
+        <g className="mv-lg-go-9-23" style={move(0, -27)}>
+          <Cupboard x={100} y={62} w={160} h={90} />
+        </g>
       </g>
-      <g className="mv-lg-pop-75">
-        <T x={290} y={116} anchor="start" size={10} weight={600}>pull</T>
-        <T x={290} y={128} anchor="start" size={10} weight={600}>down</T>
+      <g className="mv-lg-show-28">
+        <g className="mv-lg-go-28-38" style={move(0, -17)}>
+          <Level x={125} y={49} w={110} bubbleCls="mv-lg-go-38-47" bubbleStyle={move(7)} />
+        </g>
       </g>
     </g>
+    <Tick x={252} y={50} cls="mv-lg-pop-49" />
+    <g className="text-accent">
+      <g className="mv-lg-win-58-88">
+        <Arrow x1={180} y1={156} x2={180} y2={177} w={2.6} />
+        <path d="M166 158v9M194 158v9" strokeWidth="1.4" strokeOpacity="0.6" />
+      </g>
+      <g className="mv-lg-pop-80">
+        <T x={304} y={126} weight={700}>
+          solid
+        </T>
+      </g>
+    </g>
+    <Tick x={304} y={104} cls="mv-lg-pop-78" />
   </>
 );
 
-/* ---------------- French cleat ---------------- */
-
-const WALL_CLEAT = '246,130 268,130 268,108 246,86';
-const CAB_CLEAT = '246,48 268,48 268,108 246,86';
-
-function CleatWall({ u }: { u: U }) {
-  return (
-    <>
-      <rect x="268" y="14" width="40" height="180" fill={u('hatch')} strokeWidth="1.4" />
-      <path d="M6 194H354" />
-      <polygon points={WALL_CLEAT} fill="var(--color-mount)" strokeWidth="1.5" />
-      <g className={accent}>
-        <path d="M246 86L268 108" strokeWidth="2.4" />
-      </g>
-    </>
-  );
-}
-
-function Cabinet({ dashed = false }: { dashed?: boolean }) {
-  const d = dashed ? { strokeDasharray: '5 4', strokeOpacity: 0.55 } : {};
-  return (
-    <>
-      <rect x="120" y="40" width="126" height="136" fill={dashed ? 'none' : 'var(--color-paper)'} {...d} />
-      <path d="M127 40v136M120 48h126M120 168h126M127 108h119M238 40v136" strokeWidth="1" {...d} />
-      <polygon points={CAB_CLEAT} fill={dashed ? 'none' : 'var(--color-mount)'} strokeWidth="1.5" />
-      <rect x="246" y="150" width="22" height="26" fill={dashed ? 'none' : 'var(--color-mount)'} strokeWidth="1.3" {...d} />
-    </>
-  );
-}
+/* ---------------- How to hang a cabinet or mirror with a French cleat ---------------- */
 
 const CleatWorks: Scene = ({ u }) => (
   <>
-    <CleatWall u={u} />
-    <g className="mv-lg-show-65">
-      <rect x="120" y="40" width="126" height="136" strokeDasharray="5 4" strokeOpacity="0.5" />
-      <rect x="246" y="150" width="22" height="26" strokeDasharray="5 4" strokeOpacity="0.5" />
-      <T x={183} y={160} size={9.5} className="opacity-70">the cabinet</T>
+    <Cap cls="mv-lg-win-0-40">Two halves, cut at 45°, hook together</Cap>
+    <Cap cls="mv-lg-show-43">The weight pulls the cabinet tight to the wall</Cap>
+    <rect x="250" y="26" width="70" height="188" fill={u('brickcut')} strokeWidth="1.4" />
+
+    {/* the wall half, screwed to the wall */}
+    <path d="M220 150H250V120L220 90Z" fill={u('plyv')} />
+    <path d="M226 130H282" stroke="var(--color-ink)" strokeWidth="3.2" />
+    <path d="M226 130H282" stroke="var(--lg-steel)" strokeWidth="1.6" />
+
+    {/* the cabinet, seen from the side, with its half and a spacer on the back */}
+    <g className="mv-lg-go-12-38" style={move(0, -34)}>
+      <rect x="96" y="62" width="124" height="128" fill="var(--lg-ply)" />
+      <rect x="96" y="70" width="116" height="112" fill={PAPER} strokeWidth="1.1" />
+      <rect x="90" y="62" width="6" height="128" fill="var(--lg-ply-dark)" strokeWidth="1.3" />
+      <path d="M220 66H250V120L220 90Z" fill={u('plyv')} />
+      <rect x="220" y="168" width="30" height="22" fill={u('plyv')} />
+      <path d="M208 78H242" stroke="var(--color-ink)" strokeWidth="3.2" />
+      <path d="M208 78H242" stroke="var(--lg-steel)" strokeWidth="1.6" />
     </g>
-    <g className="mv-lg-hook">
-      <polygon points={CAB_CLEAT} fill="var(--color-mount)" strokeWidth="1.5" />
-      <g className={accent}>
-        <path d="M246 86L268 108" strokeWidth="2.4" />
+
+    <g className="text-accent">
+      <path className="mv-lg-show-38" d="M220 90L250 120" strokeWidth="3" />
+      <circle className="mv-lg-ping-38" cx="235" cy="105" r="13" strokeWidth="1.8" />
+      <g className="mv-lg-pop-52">
+        <Arrow x1={150} y1={96} x2={150} y2={126} w={2.6} />
+        <T x={160} y={115} anchor="start" weight={700}>
+          weight
+        </T>
+      </g>
+      <g className="mv-lg-pop-64">
+        <Arrow x1={146} y1={166} x2={206} y2={166} w={2.6} />
+        <T x={176} y={158} weight={700}>
+          pulls it in
+        </T>
       </g>
     </g>
-    <g className={accent}>
-      <g className="mv-lg-pop-50">
-        <path d="M257 18v20M251 32l6 7 6-7" strokeWidth="2" />
-        <T x={228} y={24} anchor="end" size={10} weight={600}>weight</T>
-      </g>
-      <g className="mv-lg-pop-55">
-        <T x={222} y={101} anchor="end" size={11} weight={700}>45°</T>
-      </g>
-    </g>
-    <g className="mv-lg-pop-60">
-      <path d="M200 66H244" strokeWidth="1" />
-      <T x={196} y={69} anchor="end" size={10}>cabinet half</T>
-      <path d="M200 118H244" strokeWidth="1" />
-      <T x={196} y={121} anchor="end" size={10}>wall half</T>
-    </g>
-    <g className="mv-lg-pop-75">
-      <T x={20} y={188} anchor="start" size={10} weight={600} className={accent}>the weight pulls it tight to the wall</T>
+    <g className="mv-lg-show-44">
+      <path d="M190 84H232" strokeWidth="1" />
+      <circle cx="233" cy="84" r="1.8" fill="currentColor" stroke="none" />
+      <T x={186} y={87} anchor="end" size={9}>
+        cabinet half
+      </T>
+      <path d="M176 143H232" strokeWidth="1" />
+      <circle cx="233" cy="143" r="1.8" fill="currentColor" stroke="none" />
+      <T x={172} y={146} anchor="end" size={9}>
+        wall half
+      </T>
     </g>
   </>
 );
 
-const CutStrip: Scene = () => (
+const CutStrip: Scene = ({ u }) => (
   <>
-    {/* the strip from its end: 100 mm wide, 18 mm thick, cut through at 45° */}
-    <g transform="translate(-16 0)">
-      <g className="mv-lg-apart-l">
-        <polygon points="100,118 167,118 193,144 100,144" fill="var(--color-mount)" strokeWidth="1.6" />
-        <path d="M110 124c20 2 40-2 50 0M110 136c24-2 50 2 70 0" strokeWidth="0.6" strokeOpacity="0.5" />
+    <Cap cls="mv-lg-win-0-43">One strip of 18 mm plywood, cut down its length</Cap>
+    <Cap cls="mv-lg-win-46-64">…with the saw tilted to 45°</Cap>
+    <Cap cls="mv-lg-show-67">Two halves, each with a sloping edge</Cap>
+
+    {/* the strip, and the cut along it */}
+    <path d="M40 50L50 40H310L300 50Z" fill="var(--lg-ply)" />
+    <rect x="40" y="50" width="260" height="8" fill={u('plyh')} />
+    <path d="M300 50L310 40V48L300 58Z" fill="var(--lg-ply-dark)" />
+    <path className="mv-lg-line mv-lg-trace-8-40 text-accent" pathLength={1} d="M46 45H304" strokeWidth="1.8" />
+    <g className="mv-lg-off-42">
+      <g className="mv-lg-slide-8-40" style={move(-258)}>
+        <path d="M296 45a8 8 0 0 1 16 0Z" fill="var(--lg-steel)" strokeWidth="1.2" />
+        <rect x="290" y="27" width="28" height="11" rx="3" fill="var(--lg-tool)" strokeWidth="1.2" />
       </g>
     </g>
-    <g transform="translate(16 0)">
-      <g className="mv-lg-apart-r">
-        <polygon points="167,118 260,118 260,144 193,144" fill="var(--color-mount)" strokeWidth="1.6" />
-        <path d="M184 124c20 2 50-2 70 0M200 136c20-2 40 2 54 0" strokeWidth="0.6" strokeOpacity="0.5" />
+
+    {/* the same strip seen from its end */}
+    <g className="mv-lg-show-43">
+      <T x={72} y={106} anchor="start" size={9} faint>
+        seen from the end
+      </T>
+    </g>
+    <g className="mv-lg-win-43-56">
+      <rect x="80" y="120" width="200" height="36" fill={u('plyh')} />
+    </g>
+    <g className="mv-lg-show-56">
+      <g className="mv-lg-go-66-78" style={move(8)}>
+        <path d="M72 120H190L154 156H72Z" fill={u('plyh')} />
+      </g>
+      <g className="mv-lg-go-66-78" style={move(-8)}>
+        <path d="M206 120H288V156H170Z" fill={u('plyh')} />
       </g>
     </g>
-    <g className={accent}>
-      <path className="mv-lg-cut mv-hidden" pathLength={1} d="M167 118L193 144" strokeWidth="2.4" strokeDasharray="1 1" />
-      <g className="mv-lg-blade mv-hidden">
-        <path d="M140 91L210 161" strokeWidth="5" strokeOpacity="0.5" />
-        <T x={120} y={76} anchor="end" size={10} weight={600}>saw tilted to 45°</T>
+    <g className="mv-lg-win-44-64">
+      <VDim x={66} y1={120} y2={156} />
+      <T x={58} y={141} anchor="end" size={9}>
+        18 mm
+      </T>
+      <HDim x1={80} x2={280} y={170} label="about 100 mm" below />
+    </g>
+    <g className="mv-lg-win-45-64">
+      <g className="mv-lg-go-46-56" style={move(72, -72)}>
+        <path d="M146 172L216 102" stroke="var(--color-ink)" strokeWidth="5" />
+        <path d="M146 172L216 102" stroke="var(--lg-steel)" strokeWidth="3" />
+        <circle cx="181" cy="137" r="4" fill="var(--lg-tool)" strokeWidth="1" />
       </g>
     </g>
-    {/* sizes */}
-    <path d="M72 118v26M68 118h8M68 144h8" strokeWidth="1" />
-    <T x={64} y={134} anchor="end" size={10}>18 mm</T>
-    <path d="M84 104H276M84 100v8M276 100v8" strokeWidth="1" />
-    <T x={180} y={98} size={10}>about 100 mm</T>
-    <g className="mv-lg-pop-60">
-      <g className={accent}>
-        <path d="M203 144a14 14 0 0 1 4-10" strokeWidth="1.2" />
-        <T x={218} y={158} size={10.5} weight={700}>45°</T>
+    <g className="text-accent">
+      <g className="mv-lg-win-56-66">
+        <path d="M224 120A26 26 0 0 0 216.4 101.6" strokeWidth="1.4" />
+        <T x={240} y={110} size={11} weight={700}>
+          45°
+        </T>
+      </g>
+      <g className="mv-lg-show-80">
+        <path d="M190 120L154 156M206 120L170 156" strokeWidth="3" />
       </g>
     </g>
-    <g className="mv-lg-pop-65">
-      <T x={180} y={182} size={10}>two halves, each with a 45° edge</T>
+    <g className="mv-lg-pop-84">
+      <T x={126} y={174} size={9}>
+        one for the wall
+      </T>
+      <T x={236} y={174} size={9}>
+        one for the cabinet
+      </T>
     </g>
   </>
 );
 
-function Glue() {
-  let d = 'M86 56';
-  for (let x = 86; x < 234; x += 6) d += `l3 -3 3 3`;
-  return <path className="mv-lg-draw-0 mv-lg-line" pathLength={1} d={d} strokeWidth="1.2" />;
-}
-
-const OnCabinet: Scene = () => (
+const OnCabinet: Scene = ({ u }) => (
   <>
-    <T x={160} y={18} size={10} weight={600}>BACK OF THE CABINET</T>
-    <rect x="70" y="26" width="180" height="164" rx="2" fill="var(--color-mount)" />
-    <rect x="78" y="34" width="164" height="148" strokeWidth="1" strokeOpacity="0.5" />
-    <g className={accent}>
-      <Glue />
-    </g>
-    <g className="mv-lg-in-15" style={move(0, -24)}>
-      <rect x="80" y="42" width="160" height="24" fill="var(--color-paper)" strokeWidth="1.5" />
-    </g>
-    {[100, 130, 160, 190, 220].map((x, i) => (
-      <Screw key={x} x={x} y={52} cls={`mv-lg-pop-${30 + i * 5}`} />
-    ))}
-    <g className="mv-lg-in-55" style={move(0, 22)}>
-      <rect x="80" y="164" width="160" height="18" fill="var(--color-paper)" strokeWidth="1.4" />
-    </g>
-    {[110, 160, 210].map((x, i) => (
-      <Screw key={x} x={x} y={173} cls={`mv-lg-pop-${65 + i * 5}`} />
-    ))}
-    <g className="mv-lg-pop-70">
-      <T x={160} y={158} size={9.5}>spacer, the same 18 mm</T>
-    </g>
+    <Cap cls="mv-lg-win-0-50">Glue and screw one half near the top, slope down</Cap>
+    <Cap cls="mv-lg-win-53-75">A spacer at the bottom keeps it hanging straight</Cap>
+    <Cap cls="mv-lg-show-78">Measure from the top down to the slope</Cap>
 
-    {/* where the slope meets the cabinet, and the measurement A */}
-    <g className="mv-lg-show-80">
-      <path d="M80 60H240" strokeWidth="1.1" strokeDasharray="4 3" />
+    {/* the back of the cabinet */}
+    <rect x="60" y="40" width="180" height="150" fill="var(--lg-ply)" />
+    <T x={150} y={122} size={9} faint>
+      the back of the cabinet
+    </T>
+    <path className="mv-lg-line mv-lg-draw-4-16 text-accent" pathLength={1} d="M74 62q6-6 12 0t12 0 12 0 12 0 12 0 12 0 12 0 12 0 12 0 12 0 12 0 12 0 12 0" strokeWidth="1.8" />
+    <g className="mv-lg-in-18" style={move(0, -22)}>
+      <rect x="68" y="50" width="164" height="24" fill="var(--lg-ply-dark)" />
+      <path d="M68 67H232" strokeWidth="1" strokeDasharray="4 3" strokeOpacity="0.6" />
     </g>
-    <g className={accent}>
-      <path className="mv-lg-draw-80 mv-lg-line" pathLength={1} d="M58 26V60M54 26h8M54 60h8" strokeWidth="1.4" />
-      <g className="mv-lg-pop-85">
-        <T x={50} y={47} anchor="end" size={12} weight={700}>A</T>
-      </g>
+    <Head x={86} y={59} cls="mv-lg-pop-34" />
+    <Head x={128} y={59} cls="mv-lg-pop-38" />
+    <Head x={172} y={59} cls="mv-lg-pop-42" />
+    <Head x={214} y={59} cls="mv-lg-pop-46" />
+    <g className="mv-lg-in-54" style={move(0, 22)}>
+      <rect x="68" y="164" width="164" height="18" fill="var(--lg-ply-dark)" />
+    </g>
+    <Head x={100} y={173} cls="mv-lg-pop-68" />
+    <Head x={200} y={173} cls="mv-lg-pop-71" />
+    <g className="mv-lg-show-78 text-accent">
+      <VDim x={48} y1={40} y2={67} />
     </g>
 
     {/* the same from the side */}
-    <rect x="266" y="36" width="80" height="112" rx="2" strokeWidth="0.9" strokeOpacity="0.5" />
-    <T x={306} y={50} size={9}>FROM THE SIDE</T>
-    <rect x="280" y="56" width="8" height="84" fill="var(--color-mount)" strokeWidth="1" />
-    <polygon points="288,60 306,60 306,98 288,80" fill="var(--color-paper)" strokeWidth="1.3" />
-    <rect x="288" y="122" width="18" height="18" fill="var(--color-paper)" strokeWidth="1.1" />
-    <g className={accent}>
-      <path d="M288 80L306 98" strokeWidth="2.2" />
-      <T x={318} y={96} anchor="start" size={9} weight={600}>slope</T>
-      <T x={318} y={106} anchor="start" size={9} weight={600}>down</T>
+    <T x={306} y={34} size={8.5} faint>
+      from the side
+    </T>
+    <rect x="270" y="40" width="26" height="150" fill="var(--lg-ply)" strokeWidth="1.3" />
+    <g className="mv-lg-show-22">
+      <path d="M296 50H314V109L296 91Z" fill={u('plyv')} strokeWidth="1.3" />
+      <path className="text-accent" d="M296 91L314 109" strokeWidth="2.6" />
+    </g>
+    <rect className="mv-lg-show-58" x="296" y="164" width="18" height="18" fill={u('plyv')} strokeWidth="1.3" />
+    <g className="text-accent">
+      <g className="mv-lg-show-78">
+        <VDim x={328} y1={40} y2={91} />
+        <path d="M314 91H324" strokeWidth="1" strokeDasharray="2.5 2.5" />
+      </g>
+      <g className="mv-lg-pop-82">
+        <T x={322} y={128} size={9} weight={700}>
+          measure
+        </T>
+        <T x={322} y={139} size={9} weight={700}>
+          this
+        </T>
+      </g>
     </g>
   </>
 );
 
-const WallHalf: Scene = () => (
+const WallHalf: Scene = ({ u }) => (
   <>
+    <Cap cls="mv-lg-win-0-28">Mark the cabinet’s top, then your number down</Cap>
+    <Cap cls="mv-lg-win-31-59">The wall half on that line, slope up, level</Cap>
+    <Cap cls="mv-lg-show-62">A screw into every stud it crosses</Cap>
     <Wall />
-    <Studs faint />
-    <g className={`${accent} mv-lg-show-0`}>
-      <path d="M56 40H304" strokeWidth="1.3" strokeDasharray="6 4" />
+    <Stud x={110} />
+    <Stud x={200} />
+    <Stud x={290} />
+
+    <path className="mv-lg-line mv-lg-draw-4-14" pathLength={1} d="M24 62H336" strokeWidth="1.2" strokeOpacity="0.75" />
+    <g className="mv-lg-show-12">
+      <T x={155} y={56} size={9}>
+        cabinet top
+      </T>
     </g>
-    <g className="mv-lg-pop-10">
-      <T x={180} y={34} size={10} weight={600}>top of the cabinet goes here</T>
+    <g className="mv-lg-show-18 text-accent">
+      <VDim x={30} y1={62} y2={96} />
+      <T x={38} y={83} anchor="start" size={9} weight={700}>
+        your number
+      </T>
     </g>
-    <g className={accent}>
-      <path className="mv-lg-draw-20 mv-lg-line" pathLength={1} d="M42 40V72M38 40h8M38 72h8" strokeWidth="1.4" />
-      <g className="mv-lg-pop-25">
-        <T x={34} y={60} anchor="end" size={12} weight={700}>A</T>
+
+    <g className="mv-lg-in-31" style={move(46)}>
+      <rect x="84" y="96" width="232" height="24" fill="var(--lg-ply-dark)" />
+      <path d="M84 103H316" strokeWidth="1" strokeDasharray="4 3" strokeOpacity="0.6" />
+    </g>
+    <g className="mv-lg-show-44">
+      <g className="mv-lg-go-44-52" style={move(0, -18)}>
+        <Level x={150} y={83} w={120} bubbleCls="mv-lg-go-52-59" bubbleStyle={move(-7)} />
       </g>
     </g>
-    <g className="mv-lg-in-30" style={move(0, -24)}>
-      <rect x="60" y="72" width="240" height="24" fill="var(--color-paper)" strokeWidth="1.5" />
-      <path d="M60 82H300" strokeWidth="1" strokeDasharray="4 3" strokeOpacity="0.6" />
+    <Tick x={288} y={86} cls="mv-lg-pop-59" />
+    <Head x={110} y={109} cls="mv-lg-pop-63" />
+    <Head x={200} y={109} cls="mv-lg-pop-69" />
+    <Head x={290} y={109} cls="mv-lg-pop-75" />
+    <g className="text-accent">
+      <circle className="mv-lg-ping-63" cx="110" cy="109" r="11" strokeWidth="1.6" />
+      <circle className="mv-lg-ping-69" cx="200" cy="109" r="11" strokeWidth="1.6" />
+      <circle className="mv-lg-ping-75" cx="290" cy="109" r="11" strokeWidth="1.6" />
     </g>
-    <g className="mv-lg-in-45" style={move(0, 20)}>
-      <Level x={120} y={102} w={120} bubbleCls="mv-lg-bub-c" />
-    </g>
-    {[78, 158, 238].map((x, i) => (
-      <Screw key={x} x={x} y={89} cls={`mv-lg-pop-${60 + i * 5}`} />
-    ))}
-    <g className="mv-lg-pop-75">
-      <T x={180} y={140} size={10} weight={600}>a screw into every stud</T>
-    </g>
-    {/* the same from the side */}
-    <rect x="262" y="118" width="76" height="58" rx="2" fill="var(--color-paper)" strokeWidth="0.9" strokeOpacity="0.5" />
-    <rect x="318" y="122" width="14" height="50" fill="var(--color-mount)" strokeWidth="1" />
-    <polygon points="300,168 318,168 318,150 300,132" fill="var(--color-paper)" strokeWidth="1.3" />
-    <g className={accent}>
-      <path d="M300 132L318 150" strokeWidth="2.2" />
-      <T x={270} y={140} anchor="start" size={9} weight={600}>slope</T>
-      <T x={270} y={150} anchor="start" size={9} weight={600}>up</T>
-    </g>
+
+    {/* the wall half from the side: slope at the top, facing the wall */}
+    <rect x="210" y="130" width="70" height="46" fill={PAPER} strokeWidth="1" strokeOpacity="0.5" />
+    <T x={232} y={150} size={8.5} faint>
+      from
+    </T>
+    <T x={232} y={160} size={8.5} faint>
+      the side
+    </T>
+    <rect x="270" y="134" width="6" height="38" fill={u('brickcut')} strokeWidth="1" />
+    <path d="M256 168H270V152L256 138Z" fill={u('plyv')} strokeWidth="1.2" />
+    <path className="text-accent" d="M256 138L270 152" strokeWidth="2.4" />
   </>
 );
 
 const LiftOn: Scene = ({ u }) => (
   <>
-    <CleatWall u={u} />
-    <g className="mv-lg-lift">
-      <Cabinet />
-      <g className={accent}>
-        <path d="M246 86L268 108" strokeWidth="2.4" />
+    <Cap cls="mv-lg-win-0-38">Lift it above the wall half, then lower it</Cap>
+    <Cap cls="mv-lg-win-41-64">Slide it sideways to line it up</Cap>
+    <Cap cls="mv-lg-show-67">Check it’s level. It lifts off the same way</Cap>
+
+    {/* from the side: straight down the wall onto the wall half */}
+    <rect x="138" y="28" width="26" height="176" fill={u('brickcut')} strokeWidth="1.4" />
+    <path d="M116 142H138V120L116 98Z" fill={u('plyv')} />
+    <g className="mv-lg-go-8-30" style={move(0, -38)}>
+      <rect x="44" y="72" width="72" height="106" fill="var(--lg-ply)" />
+      <rect x="44" y="79" width="65" height="92" fill={PAPER} strokeWidth="1.1" />
+      <rect x="39" y="72" width="5" height="106" fill="var(--lg-ply-dark)" strokeWidth="1.3" />
+      <path d="M116 76H138V120L116 98Z" fill={u('plyv')} />
+      <rect x="116" y="160" width="22" height="18" fill={u('plyv')} />
+    </g>
+    <g className="text-accent">
+      <g className="mv-lg-win-5-30">
+        <Arrow x1={24} y1={66} x2={24} y2={112} w={2.6} />
+      </g>
+      <path className="mv-lg-show-30" d="M116 98L138 120" strokeWidth="2.8" />
+      <circle className="mv-lg-ping-30" cx="127" cy="109" r="12" strokeWidth="1.8" />
+    </g>
+    <path d="M176 30V204" strokeWidth="1" strokeOpacity="0.3" />
+
+    {/* from the front: along the cleat until it lines up */}
+    <rect x="188" y="30" width="158" height="152" fill="var(--lg-plaster)" strokeWidth="1.4" />
+    <rect x="188" y="182" width="158" height="12" fill={MOUNT} strokeWidth="1.2" />
+    <path d="M182 194H352" />
+    <g className="mv-lg-show-40 text-accent">
+      <path d="M266 36V70" strokeWidth="1.3" strokeDasharray="3 3" />
+      <path d="M261 36h10l-5 7z" fill="currentColor" strokeWidth="1" />
+    </g>
+    <g className="mv-lg-show-34">
+      <g className="mv-lg-wig-43-62" style={move(15)}>
+        <Cupboard x={222} y={76} w={88} h={76} />
+        <g className="mv-lg-show-67">
+          <Level x={231} y={63} w={70} bubbleCls="mv-lg-go-67-75" bubbleStyle={move(6)} />
+        </g>
       </g>
     </g>
-    <g className={accent}>
-      <g className="mv-lg-win-a mv-hidden">
-        <path d="M90 120V84M84 92l6-8 6 8" strokeWidth="2" />
-        <T x={90} y={136} size={10} weight={600}>lift</T>
-      </g>
-      <g className="mv-lg-win-b mv-hidden">
-        <path d="M90 80v36M84 108l6 8 6-8" strokeWidth="2" />
-        <T x={90} y={132} size={10} weight={600}>lower</T>
-      </g>
-      <g className="mv-lg-pop-50">
-        <path d="M200 140h40M233 134l7 6-7 6" strokeWidth="2" />
-        <T x={196} y={143} anchor="end" size={10} weight={600}>tight</T>
-      </g>
+    <g className="mv-lg-win-41-64 text-accent">
+      <Arrow x1={238} y1={166} x2={294} y2={166} both w={2.4} />
     </g>
-    <g className="mv-lg-pop-65">
-      <T x={20} y={188} anchor="start" size={10}>then slide it sideways to line it up</T>
-    </g>
+    <Tick x={326} y={70} cls="mv-lg-pop-78" />
   </>
 );
 
@@ -609,27 +851,40 @@ export const SCENES: Record<string, Scene[]> = {
   'french-cleat': [CleatWorks, CutStrip, OnCabinet, WallHalf, LiftOn],
 };
 
-/* The drawing for one step: its own patterns (so two drawings on a page never share ids) and the scene. */
+/* The drawing for one step: its own patterns (so two drawings on a page never share ids), the scene, and the
+   loop's clock along the bottom edge. */
 export default function GuideDrawing({ slug, step }: { slug: string; step: number }) {
   const uid = `lg${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
-  const u: U = (name) => `url(#${uid}-${name})`;
+  const k = (name: string) => `${uid}-${name}`;
+  const u = (name: string) => `url(#${uid}-${name})`;
   const Scene = SCENES[slug]?.[step];
   return (
-    <svg viewBox="0 0 360 220" className="block h-full w-full font-mono" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg viewBox="0 0 360 220" className="lg-art block h-full w-full font-mono" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <defs>
-        <pattern id={`${uid}-hatch`} width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <rect width="6" height="6" fill="var(--color-mount)" stroke="none" />
-          <path d="M0 0V6" strokeWidth="0.9" strokeOpacity="0.5" />
+        {/* brick from the front, and cut through */}
+        <pattern id={k('brick')} width="26" height="18" patternUnits="userSpaceOnUse">
+          <rect width="26" height="18" fill="var(--lg-brick)" stroke="none" />
+          <path d="M0 0H26M0 9H26M13 0V9M0 9V18M26 9V18" stroke="var(--lg-mortar)" strokeWidth="1.6" strokeLinecap="butt" />
         </pattern>
-        <pattern id={`${uid}-brick`} width="24" height="24" patternUnits="userSpaceOnUse">
-          <rect width="24" height="24" fill="var(--color-mount)" stroke="none" />
-          <path d="M0 12H24M0 24H24M12 0V12M0 12V24M24 12V24" strokeWidth="1" strokeOpacity="0.55" />
+        <pattern id={k('brickcut')} width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="7" height="7" fill="var(--lg-brick)" stroke="none" />
+          <path d="M0 0V7" strokeWidth="1" strokeOpacity="0.4" />
         </pattern>
-        <pattern id={`${uid}-zone`} width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
-          <path d="M0 0V7" strokeWidth="1.4" strokeOpacity="0.28" />
+        {/* plywood on edge: the plies, upright or lying flat */}
+        <pattern id={k('plyv')} width="4.4" height="8" patternUnits="userSpaceOnUse">
+          <rect width="4.4" height="8" fill="var(--lg-ply)" stroke="none" />
+          <path d="M0 0V8" stroke="var(--lg-grain)" strokeWidth="0.9" strokeOpacity="0.75" />
+        </pattern>
+        <pattern id={k('plyh')} width="8" height="6" patternUnits="userSpaceOnUse">
+          <rect width="8" height="6" fill="var(--lg-ply)" stroke="none" />
+          <path d="M0 0H8" stroke="var(--lg-grain)" strokeWidth="0.9" strokeOpacity="0.75" />
+        </pattern>
+        <pattern id={k('zone')} width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+          <path d="M0 0V7" stroke={BLUE} strokeWidth="1.4" strokeOpacity="0.3" />
         </pattern>
       </defs>
-      {Scene ? <Scene u={u} /> : null}
+      {Scene ? <Scene u={u} k={k} /> : null}
+      <rect className="mv-lg-bar mv-ol" x="0" y="217" width="360" height="3" fill={BLUE} stroke="none" />
     </svg>
   );
 }

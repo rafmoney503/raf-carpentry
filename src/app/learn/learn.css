@@ -1,16 +1,23 @@
-/* The moving drawings in the Learn guides (src/components/learn/scenes.tsx). Each step's drawing loops every 7 s:
-   parts come in, the tool does its job, the result holds, then it starts again. A drawing only moves while it is on
-   screen (MotionObserver sets data-play; motion.css pauses every mv-* part otherwise) and only for people who haven't
-   asked for less motion; without the moves, every part sits where it ends up, so the drawing is the finished step.
+/* The moving drawings in the Learn guides (src/components/learn/scenes.tsx). MADE BY scripts/learn/css.mjs from the
+   mv-lg-* classes the scenes use: change the scenes, run the script, never edit this file.
 
-   Unlike the site's other drawings (motion.css), 0% here is the start of the step, not the finished drawing: a step's
-   drawing is new when it shows, so it plays from the beginning.
+   Each step's drawing loops every 7 s: parts come in, the tool does its job, the result holds, then it starts again.
+   A drawing only moves while it is on screen (MotionObserver sets data-play; motion.css pauses every mv-* part
+   otherwise) and only for people who haven't asked for less motion; without the moves every part sits where it
+   ends up, so the drawing is the finished step. The numbers in a class are % of the loop (see the script). */
 
-   mv-lg-show-T, -pop-T, -draw-T and -in-T start at T% of the loop (T = 0, 5 ... 85). -in moves a part in from
-   --dx / --dy. -draw needs pathLength={1} and .mv-lg-line. The rest are one drawing's own moves. */
+:root { --lg-loop: 7s; }
+
+/* the drawings' own materials, like the decking drawing's timber: only inside these drawings */
+.lg-art {
+  --lg-plaster: #fbfbf9; --lg-board: #e9e8e1; --lg-cavity: #dcddd6; --lg-timber: #e8cf9f; --lg-grain: #b48f55;
+  --lg-ply: #f1e0bd; --lg-ply-dark: #dfc594; --lg-brick: #dba88c; --lg-mortar: #f4e7dc; --lg-steel: #c5cbd1;
+  --lg-tool: #2a3037; --lg-plug: #e6b655; --lg-glass: #dfe8ee;
+}
+.lg-art text { font-family: var(--font-mono); }
 
 .mv-lg-line { stroke-dasharray: 1 1; stroke-dashoffset: 0; }
-:root { --lg-loop: 7s; }
+[class*='mv-lg-off-'], [class*='mv-lg-win-'], [class*='mv-lg-ping-'], [class*='mv-lg-puff-'], .mv-lg-bar { opacity: 0; }
 
 /* the drawing's frame: edge to edge on a phone, on a white mount like the photos from 640 px */
 .lg-mount { margin-inline: -20px; border-block: 1px solid var(--color-line-strong); background: var(--color-mount); }
@@ -19,208 +26,309 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .mv-lg-show-0 { animation: mv-lg-show-0 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-0 { animation: mv-lg-pop-0 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-0 { animation: mv-lg-draw-0 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-0 { animation: mv-lg-in-0 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-5 { animation: mv-lg-show-5 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-5 { animation: mv-lg-pop-5 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-5 { animation: mv-lg-draw-5 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-5 { animation: mv-lg-in-5 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-10 { animation: mv-lg-show-10 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-10 { animation: mv-lg-pop-10 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-10 { animation: mv-lg-draw-10 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-10 { animation: mv-lg-in-10 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-15 { animation: mv-lg-show-15 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-15 { animation: mv-lg-pop-15 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-15 { animation: mv-lg-draw-15 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-15 { animation: mv-lg-in-15 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-20 { animation: mv-lg-show-20 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-20 { animation: mv-lg-pop-20 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-20 { animation: mv-lg-draw-20 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-20 { animation: mv-lg-in-20 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-25 { animation: mv-lg-show-25 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-25 { animation: mv-lg-pop-25 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-25 { animation: mv-lg-draw-25 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-25 { animation: mv-lg-in-25 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-30 { animation: mv-lg-show-30 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-30 { animation: mv-lg-pop-30 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-30 { animation: mv-lg-draw-30 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-30 { animation: mv-lg-in-30 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-35 { animation: mv-lg-show-35 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-35 { animation: mv-lg-pop-35 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-35 { animation: mv-lg-draw-35 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-35 { animation: mv-lg-in-35 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-40 { animation: mv-lg-show-40 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-40 { animation: mv-lg-pop-40 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-40 { animation: mv-lg-draw-40 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-40 { animation: mv-lg-in-40 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-45 { animation: mv-lg-show-45 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-45 { animation: mv-lg-pop-45 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-45 { animation: mv-lg-draw-45 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-45 { animation: mv-lg-in-45 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-50 { animation: mv-lg-show-50 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-50 { animation: mv-lg-pop-50 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-50 { animation: mv-lg-draw-50 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-50 { animation: mv-lg-in-50 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-55 { animation: mv-lg-show-55 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-55 { animation: mv-lg-pop-55 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-55 { animation: mv-lg-draw-55 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-55 { animation: mv-lg-in-55 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-60 { animation: mv-lg-show-60 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-60 { animation: mv-lg-pop-60 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-60 { animation: mv-lg-draw-60 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-60 { animation: mv-lg-in-60 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-65 { animation: mv-lg-show-65 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-65 { animation: mv-lg-pop-65 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-65 { animation: mv-lg-draw-65 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-65 { animation: mv-lg-in-65 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-70 { animation: mv-lg-show-70 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-70 { animation: mv-lg-pop-70 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-70 { animation: mv-lg-draw-70 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-70 { animation: mv-lg-in-70 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-75 { animation: mv-lg-show-75 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-75 { animation: mv-lg-pop-75 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-75 { animation: mv-lg-draw-75 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-75 { animation: mv-lg-in-75 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-80 { animation: mv-lg-show-80 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-80 { animation: mv-lg-pop-80 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-80 { animation: mv-lg-draw-80 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-80 { animation: mv-lg-in-80 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-  .mv-lg-show-85 { animation: mv-lg-show-85 var(--lg-loop) linear infinite both; }
-  .mv-lg-pop-85 { animation: mv-lg-pop-85 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-draw-85 { animation: mv-lg-draw-85 var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-in-85 { animation: mv-lg-in-85 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
-
-  .mv-lg-knock-a { animation: mv-lg-knock-a var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-knock-b { animation: mv-lg-knock-b var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-open-35 { animation: mv-lg-open-35 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-open-50 { animation: mv-lg-open-50 var(--lg-loop) ease-out infinite both; }
-  .mv-lg-sweep { animation: mv-lg-sweep var(--lg-loop) linear infinite both; }
-  .mv-lg-blink { animation: mv-lg-blink var(--lg-loop) linear infinite both; }
-  .mv-lg-tilt { animation: mv-lg-tilt var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-bub-a { animation: mv-lg-bub-a var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-bub-b { animation: mv-lg-bub-b var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-bub-c { animation: mv-lg-bub-c var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-bar { animation: mv-lg-bar var(--lg-loop) linear infinite both; }
+  .mv-lg-buzz-28-55 { animation: mv-lg-buzz-28-55 var(--lg-loop) linear infinite both; }
+  .mv-lg-draw-4-14 { animation: mv-lg-draw-4-14 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-draw-4-16 { animation: mv-lg-draw-4-16 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-draw-64-74 { animation: mv-lg-draw-64-74 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-draw-68-78 { animation: mv-lg-draw-68-78 var(--lg-loop) ease-in-out infinite both; }
   .mv-lg-drill { animation: mv-lg-drill var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-buzz { animation: mv-lg-buzz var(--lg-loop) linear infinite both; }
-  .mv-lg-hole { animation: mv-lg-hole var(--lg-loop) linear infinite both; }
-  .mv-lg-dust { animation: mv-lg-dust var(--lg-loop) ease-out infinite both; }
+  .mv-lg-go-12-38 { animation: mv-lg-go-12-38 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-go-22-30 { animation: mv-lg-go-22-30 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-go-24-34 { animation: mv-lg-go-24-34 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-go-28-38 { animation: mv-lg-go-28-38 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-go-38-47 { animation: mv-lg-go-38-47 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-go-4-14 { animation: mv-lg-go-4-14 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-go-44-52 { animation: mv-lg-go-44-52 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-go-45-60 { animation: mv-lg-go-45-60 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-go-46-56 { animation: mv-lg-go-46-56 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-go-52-59 { animation: mv-lg-go-52-59 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-go-62-70 { animation: mv-lg-go-62-70 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-go-66-78 { animation: mv-lg-go-66-78 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-go-67-75 { animation: mv-lg-go-67-75 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-go-8-30 { animation: mv-lg-go-8-30 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-go-9-13 { animation: mv-lg-go-9-13 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-go-9-23 { animation: mv-lg-go-9-23 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-growx-28-55 { animation: mv-lg-growx-28-55 var(--lg-loop) linear infinite both; }
+  .mv-lg-in-18 { animation: mv-lg-in-18 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
+  .mv-lg-in-31 { animation: mv-lg-in-31 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
+  .mv-lg-in-54 { animation: mv-lg-in-54 var(--lg-loop) cubic-bezier(0.3, 0.7, 0.2, 1) infinite both; }
+  .mv-lg-off-20 { animation: mv-lg-off-20 var(--lg-loop) linear infinite both; }
+  .mv-lg-off-26 { animation: mv-lg-off-26 var(--lg-loop) linear infinite both; }
+  .mv-lg-off-42 { animation: mv-lg-off-42 var(--lg-loop) linear infinite both; }
+  .mv-lg-ping-1 { animation: mv-lg-ping-1 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-ping-11 { animation: mv-lg-ping-11 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-ping-16 { animation: mv-lg-ping-16 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-ping-3 { animation: mv-lg-ping-3 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-ping-30 { animation: mv-lg-ping-30 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-ping-31 { animation: mv-lg-ping-31 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-ping-38 { animation: mv-lg-ping-38 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-ping-45 { animation: mv-lg-ping-45 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-ping-49 { animation: mv-lg-ping-49 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-ping-53 { animation: mv-lg-ping-53 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-ping-55 { animation: mv-lg-ping-55 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-ping-63 { animation: mv-lg-ping-63 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-ping-69 { animation: mv-lg-ping-69 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-ping-7 { animation: mv-lg-ping-7 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-ping-75 { animation: mv-lg-ping-75 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-ping-81 { animation: mv-lg-ping-81 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-14 { animation: mv-lg-pop-14 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-17 { animation: mv-lg-pop-17 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-30 { animation: mv-lg-pop-30 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-32 { animation: mv-lg-pop-32 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-34 { animation: mv-lg-pop-34 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-35 { animation: mv-lg-pop-35 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-38 { animation: mv-lg-pop-38 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-42 { animation: mv-lg-pop-42 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-46 { animation: mv-lg-pop-46 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-49 { animation: mv-lg-pop-49 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-52 { animation: mv-lg-pop-52 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-56 { animation: mv-lg-pop-56 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-59 { animation: mv-lg-pop-59 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-6 { animation: mv-lg-pop-6 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-63 { animation: mv-lg-pop-63 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-64 { animation: mv-lg-pop-64 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-68 { animation: mv-lg-pop-68 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-69 { animation: mv-lg-pop-69 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-70 { animation: mv-lg-pop-70 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-71 { animation: mv-lg-pop-71 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-75 { animation: mv-lg-pop-75 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-76 { animation: mv-lg-pop-76 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-78 { animation: mv-lg-pop-78 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-80 { animation: mv-lg-pop-80 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-82 { animation: mv-lg-pop-82 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-pop-84 { animation: mv-lg-pop-84 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-puff-30 { animation: mv-lg-puff-30 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-puff-35 { animation: mv-lg-puff-35 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-puff-40 { animation: mv-lg-puff-40 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-puff-45 { animation: mv-lg-puff-45 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-puff-50 { animation: mv-lg-puff-50 var(--lg-loop) ease-out infinite both; }
+  .mv-lg-rot-78-82 { animation: mv-lg-rot-78-82 var(--lg-loop) cubic-bezier(0.3, 1.4, 0.5, 1) infinite both; }
+  .mv-lg-show-12 { animation: mv-lg-show-12 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-16 { animation: mv-lg-show-16 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-17 { animation: mv-lg-show-17 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-18 { animation: mv-lg-show-18 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-19 { animation: mv-lg-show-19 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-22 { animation: mv-lg-show-22 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-24 { animation: mv-lg-show-24 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-28 { animation: mv-lg-show-28 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-30 { animation: mv-lg-show-30 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-32 { animation: mv-lg-show-32 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-34 { animation: mv-lg-show-34 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-38 { animation: mv-lg-show-38 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-40 { animation: mv-lg-show-40 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-41 { animation: mv-lg-show-41 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-43 { animation: mv-lg-show-43 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-44 { animation: mv-lg-show-44 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-45 { animation: mv-lg-show-45 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-46 { animation: mv-lg-show-46 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-50 { animation: mv-lg-show-50 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-56 { animation: mv-lg-show-56 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-58 { animation: mv-lg-show-58 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-60 { animation: mv-lg-show-60 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-62 { animation: mv-lg-show-62 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-64 { animation: mv-lg-show-64 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-65 { animation: mv-lg-show-65 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-67 { animation: mv-lg-show-67 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-74 { animation: mv-lg-show-74 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-76 { animation: mv-lg-show-76 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-78 { animation: mv-lg-show-78 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-80 { animation: mv-lg-show-80 var(--lg-loop) linear infinite both; }
+  .mv-lg-show-9 { animation: mv-lg-show-9 var(--lg-loop) linear infinite both; }
+  .mv-lg-slide-20-34 { animation: mv-lg-slide-20-34 var(--lg-loop) linear infinite both; }
+  .mv-lg-slide-42-58 { animation: mv-lg-slide-42-58 var(--lg-loop) linear infinite both; }
+  .mv-lg-slide-5-50 { animation: mv-lg-slide-5-50 var(--lg-loop) linear infinite both; }
+  .mv-lg-slide-8-40 { animation: mv-lg-slide-8-40 var(--lg-loop) linear infinite both; }
+  .mv-lg-tap-48 { animation: mv-lg-tap-48 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-tap-6 { animation: mv-lg-tap-6 var(--lg-loop) ease-in-out infinite both; }
   .mv-lg-toggle { animation: mv-lg-toggle var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-fold { animation: mv-lg-fold var(--lg-loop) linear infinite both; }
-  .mv-lg-hook { animation: mv-lg-hook var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-apart-l { animation: mv-lg-apart-l var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-apart-r { animation: mv-lg-apart-r var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-cut { animation: mv-lg-cut var(--lg-loop) linear infinite both; }
-  .mv-lg-blade { animation: mv-lg-blade var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-lift { animation: mv-lg-lift var(--lg-loop) ease-in-out infinite both; }
-  .mv-lg-win-a { animation: mv-lg-win-a var(--lg-loop) linear infinite both; }
-  .mv-lg-win-b { animation: mv-lg-win-b var(--lg-loop) linear infinite both; }
+  .mv-lg-trace-8-40 { animation: mv-lg-trace-8-40 var(--lg-loop) linear infinite both; }
+  .mv-lg-tug-62 { animation: mv-lg-tug-62 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-turn-45-60 { animation: mv-lg-turn-45-60 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-wig-43-62 { animation: mv-lg-wig-43-62 var(--lg-loop) ease-in-out infinite both; }
+  .mv-lg-win-0-19 { animation: mv-lg-win-0-19 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-0-21 { animation: mv-lg-win-0-21 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-0-25 { animation: mv-lg-win-0-25 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-0-28 { animation: mv-lg-win-0-28 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-0-37 { animation: mv-lg-win-0-37 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-0-38 { animation: mv-lg-win-0-38 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-0-40 { animation: mv-lg-win-0-40 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-0-43 { animation: mv-lg-win-0-43 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-0-50 { animation: mv-lg-win-0-50 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-0-54 { animation: mv-lg-win-0-54 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-16-20 { animation: mv-lg-win-16-20 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-2-17 { animation: mv-lg-win-2-17 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-22-60 { animation: mv-lg-win-22-60 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-24-42 { animation: mv-lg-win-24-42 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-28-55 { animation: mv-lg-win-28-55 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-31-35 { animation: mv-lg-win-31-35 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-31-59 { animation: mv-lg-win-31-59 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-40-62 { animation: mv-lg-win-40-62 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-41-58 { animation: mv-lg-win-41-58 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-41-64 { animation: mv-lg-win-41-64 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-42-66 { animation: mv-lg-win-42-66 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-43-56 { animation: mv-lg-win-43-56 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-44-64 { animation: mv-lg-win-44-64 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-45-49 { animation: mv-lg-win-45-49 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-45-64 { animation: mv-lg-win-45-64 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-46-64 { animation: mv-lg-win-46-64 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-5-30 { animation: mv-lg-win-5-30 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-53-75 { animation: mv-lg-win-53-75 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-56-64 { animation: mv-lg-win-56-64 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-56-66 { animation: mv-lg-win-56-66 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-58-88 { animation: mv-lg-win-58-88 var(--lg-loop) linear infinite both; }
+  .mv-lg-win-84-96 { animation: mv-lg-win-84-96 var(--lg-loop) linear infinite both; }
 }
 
-@keyframes mv-lg-show-0 { 0%, 0% { opacity: 0; } 3%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-0 { 0%, 0% { opacity: 0; transform: scale(0.4); } 3% { opacity: 1; transform: scale(1.15); } 6%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-0 { 0%, 0% { stroke-dashoffset: 1; opacity: 0; } 0.5% { stroke-dashoffset: 1; opacity: 1; } 12%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-0 { 0%, 0% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 2% { opacity: 1; } 15%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-5 { 0%, 5% { opacity: 0; } 8%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-5 { 0%, 5% { opacity: 0; transform: scale(0.4); } 8% { opacity: 1; transform: scale(1.15); } 11%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-5 { 0%, 5% { stroke-dashoffset: 1; opacity: 0; } 5.5% { stroke-dashoffset: 1; opacity: 1; } 17%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-5 { 0%, 5% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 7% { opacity: 1; } 20%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-10 { 0%, 10% { opacity: 0; } 13%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-10 { 0%, 10% { opacity: 0; transform: scale(0.4); } 13% { opacity: 1; transform: scale(1.15); } 16%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-10 { 0%, 10% { stroke-dashoffset: 1; opacity: 0; } 10.5% { stroke-dashoffset: 1; opacity: 1; } 22%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-10 { 0%, 10% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 12% { opacity: 1; } 25%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-15 { 0%, 15% { opacity: 0; } 18%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-15 { 0%, 15% { opacity: 0; transform: scale(0.4); } 18% { opacity: 1; transform: scale(1.15); } 21%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-15 { 0%, 15% { stroke-dashoffset: 1; opacity: 0; } 15.5% { stroke-dashoffset: 1; opacity: 1; } 27%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-15 { 0%, 15% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 17% { opacity: 1; } 30%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-20 { 0%, 20% { opacity: 0; } 23%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-20 { 0%, 20% { opacity: 0; transform: scale(0.4); } 23% { opacity: 1; transform: scale(1.15); } 26%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-20 { 0%, 20% { stroke-dashoffset: 1; opacity: 0; } 20.5% { stroke-dashoffset: 1; opacity: 1; } 32%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-20 { 0%, 20% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 22% { opacity: 1; } 35%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-25 { 0%, 25% { opacity: 0; } 28%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-25 { 0%, 25% { opacity: 0; transform: scale(0.4); } 28% { opacity: 1; transform: scale(1.15); } 31%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-25 { 0%, 25% { stroke-dashoffset: 1; opacity: 0; } 25.5% { stroke-dashoffset: 1; opacity: 1; } 37%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-25 { 0%, 25% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 27% { opacity: 1; } 40%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-30 { 0%, 30% { opacity: 0; } 33%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-30 { 0%, 30% { opacity: 0; transform: scale(0.4); } 33% { opacity: 1; transform: scale(1.15); } 36%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-30 { 0%, 30% { stroke-dashoffset: 1; opacity: 0; } 30.5% { stroke-dashoffset: 1; opacity: 1; } 42%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-30 { 0%, 30% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 32% { opacity: 1; } 45%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-35 { 0%, 35% { opacity: 0; } 38%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-35 { 0%, 35% { opacity: 0; transform: scale(0.4); } 38% { opacity: 1; transform: scale(1.15); } 41%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-35 { 0%, 35% { stroke-dashoffset: 1; opacity: 0; } 35.5% { stroke-dashoffset: 1; opacity: 1; } 47%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-35 { 0%, 35% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 37% { opacity: 1; } 50%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-40 { 0%, 40% { opacity: 0; } 43%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-40 { 0%, 40% { opacity: 0; transform: scale(0.4); } 43% { opacity: 1; transform: scale(1.15); } 46%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-40 { 0%, 40% { stroke-dashoffset: 1; opacity: 0; } 40.5% { stroke-dashoffset: 1; opacity: 1; } 52%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-40 { 0%, 40% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 42% { opacity: 1; } 55%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-45 { 0%, 45% { opacity: 0; } 48%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-45 { 0%, 45% { opacity: 0; transform: scale(0.4); } 48% { opacity: 1; transform: scale(1.15); } 51%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-45 { 0%, 45% { stroke-dashoffset: 1; opacity: 0; } 45.5% { stroke-dashoffset: 1; opacity: 1; } 57%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-45 { 0%, 45% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 47% { opacity: 1; } 60%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-50 { 0%, 50% { opacity: 0; } 53%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-50 { 0%, 50% { opacity: 0; transform: scale(0.4); } 53% { opacity: 1; transform: scale(1.15); } 56%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-50 { 0%, 50% { stroke-dashoffset: 1; opacity: 0; } 50.5% { stroke-dashoffset: 1; opacity: 1; } 62%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-50 { 0%, 50% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 52% { opacity: 1; } 65%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-55 { 0%, 55% { opacity: 0; } 58%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-55 { 0%, 55% { opacity: 0; transform: scale(0.4); } 58% { opacity: 1; transform: scale(1.15); } 61%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-55 { 0%, 55% { stroke-dashoffset: 1; opacity: 0; } 55.5% { stroke-dashoffset: 1; opacity: 1; } 67%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-55 { 0%, 55% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 57% { opacity: 1; } 70%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-60 { 0%, 60% { opacity: 0; } 63%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-60 { 0%, 60% { opacity: 0; transform: scale(0.4); } 63% { opacity: 1; transform: scale(1.15); } 66%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-60 { 0%, 60% { stroke-dashoffset: 1; opacity: 0; } 60.5% { stroke-dashoffset: 1; opacity: 1; } 72%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-60 { 0%, 60% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 62% { opacity: 1; } 75%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-65 { 0%, 65% { opacity: 0; } 68%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-65 { 0%, 65% { opacity: 0; transform: scale(0.4); } 68% { opacity: 1; transform: scale(1.15); } 71%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-65 { 0%, 65% { stroke-dashoffset: 1; opacity: 0; } 65.5% { stroke-dashoffset: 1; opacity: 1; } 77%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-65 { 0%, 65% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 67% { opacity: 1; } 80%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-70 { 0%, 70% { opacity: 0; } 73%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-70 { 0%, 70% { opacity: 0; transform: scale(0.4); } 73% { opacity: 1; transform: scale(1.15); } 76%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-70 { 0%, 70% { stroke-dashoffset: 1; opacity: 0; } 70.5% { stroke-dashoffset: 1; opacity: 1; } 82%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-70 { 0%, 70% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 72% { opacity: 1; } 85%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-75 { 0%, 75% { opacity: 0; } 78%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-75 { 0%, 75% { opacity: 0; transform: scale(0.4); } 78% { opacity: 1; transform: scale(1.15); } 81%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-75 { 0%, 75% { stroke-dashoffset: 1; opacity: 0; } 75.5% { stroke-dashoffset: 1; opacity: 1; } 87%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-75 { 0%, 75% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 77% { opacity: 1; } 90%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-80 { 0%, 80% { opacity: 0; } 83%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-80 { 0%, 80% { opacity: 0; transform: scale(0.4); } 83% { opacity: 1; transform: scale(1.15); } 86%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-80 { 0%, 80% { stroke-dashoffset: 1; opacity: 0; } 80.5% { stroke-dashoffset: 1; opacity: 1; } 92%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-80 { 0%, 80% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 82% { opacity: 1; } 95%, 100% { opacity: 1; transform: translate(0, 0); } }
-@keyframes mv-lg-show-85 { 0%, 85% { opacity: 0; } 88%, 100% { opacity: 1; } }
-@keyframes mv-lg-pop-85 { 0%, 85% { opacity: 0; transform: scale(0.4); } 88% { opacity: 1; transform: scale(1.15); } 91%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-draw-85 { 0%, 85% { stroke-dashoffset: 1; opacity: 0; } 85.5% { stroke-dashoffset: 1; opacity: 1; } 97%, 100% { stroke-dashoffset: 0; opacity: 1; } }
-@keyframes mv-lg-in-85 { 0%, 85% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 87% { opacity: 1; } 100%, 100% { opacity: 1; transform: translate(0, 0); } }
-
-/* knuckles knock twice */
-@keyframes mv-lg-knock-a { 0%, 2% { transform: scale(1); } 3.5% { transform: scale(0.8); } 5% { transform: scale(1); } 7.5% { transform: scale(0.8); } 9%, 100% { transform: scale(1); } }
-@keyframes mv-lg-knock-b { 0%, 17% { transform: scale(1); } 18.5% { transform: scale(0.8); } 20% { transform: scale(1); } 22.5% { transform: scale(0.8); } 24%, 100% { transform: scale(1); } }
-/* a window opens in the wall to show what's inside */
-@keyframes mv-lg-open-35 { 0%, 35% { opacity: 0; transform: scale(0.2); } 42% { opacity: 1; transform: scale(1.04); } 46%, 100% { opacity: 1; transform: scale(1); } }
-@keyframes mv-lg-open-50 { 0%, 50% { opacity: 0; transform: scale(0.2); } 57% { opacity: 1; transform: scale(1.04); } 61%, 100% { opacity: 1; transform: scale(1); } }
-/* the detector slides along the wall and lights up over each stud (at 20, 40 and 60%) */
-@keyframes mv-lg-sweep { 0%, 6% { transform: translateX(-240px); } 66%, 100% { transform: translateX(0); } }
-@keyframes mv-lg-blink { 0%, 19% { opacity: 0; } 20%, 23% { opacity: 1; } 24%, 39% { opacity: 0; } 40%, 43% { opacity: 1; } 44%, 59% { opacity: 0; } 60%, 63% { opacity: 1; } 64%, 100% { opacity: 0; } }
-/* the level comes down tilted and is set level; the bubble runs to the middle */
-@keyframes mv-lg-tilt { 0%, 28% { transform: rotate(-4deg); } 48%, 100% { transform: rotate(0deg); } }
-@keyframes mv-lg-bub-a { 0%, 28% { transform: translateX(8px); } 48%, 100% { transform: translateX(0); } }
-@keyframes mv-lg-bub-b { 0%, 45% { transform: translateX(6px); } 58%, 100% { transform: translateX(0); } }
-@keyframes mv-lg-bub-c { 0%, 50% { transform: translateX(6px); } 62%, 100% { transform: translateX(0); } }
-/* the drill comes to the wall, bores in to the tape, and comes out; the hole grows behind it */
-@keyframes mv-lg-drill { 0% { transform: translateX(-10px); } 12% { transform: translateX(0); } 20% { transform: translateX(14px); } 50%, 58% { transform: translateX(50px); } 70%, 100% { transform: translateX(-10px); } }
-@keyframes mv-lg-buzz { 0%, 20% { transform: translate(0, 0); } 21% { transform: translate(0, 0.7px); } 22% { transform: translate(0, -0.7px); } 23% { transform: translate(0, 0.7px); } 24% { transform: translate(0, -0.7px); } 25% { transform: translate(0, 0.7px); } 26% { transform: translate(0, -0.7px); } 27% { transform: translate(0, 0.7px); } 28% { transform: translate(0, -0.7px); } 29% { transform: translate(0, 0.7px); } 30% { transform: translate(0, -0.7px); } 31% { transform: translate(0, 0.7px); } 32% { transform: translate(0, -0.7px); } 33% { transform: translate(0, 0.7px); } 34% { transform: translate(0, -0.7px); } 35% { transform: translate(0, 0.7px); } 36% { transform: translate(0, -0.7px); } 37% { transform: translate(0, 0.7px); } 38% { transform: translate(0, -0.7px); } 39% { transform: translate(0, 0.7px); } 40% { transform: translate(0, -0.7px); } 41% { transform: translate(0, 0.7px); } 42% { transform: translate(0, -0.7px); } 43% { transform: translate(0, 0.7px); } 44% { transform: translate(0, -0.7px); } 45% { transform: translate(0, 0.7px); } 46% { transform: translate(0, -0.7px); } 47% { transform: translate(0, 0.7px); } 48% { transform: translate(0, -0.7px); } 49% { transform: translate(0, 0.7px); } 50%, 100% { transform: translate(0, 0); } }
-@keyframes mv-lg-hole { 0%, 20% { transform: scaleX(0); } 50%, 100% { transform: scaleX(1); } }
-@keyframes mv-lg-dust { 0%, 22% { opacity: 0; transform: translate(0, 0); } 25% { opacity: 0.9; } 33% { opacity: 0.35; transform: translate(-3px, 2px); } 38% { opacity: 0.9; transform: translate(0, 0); } 46% { opacity: 0.4; transform: translate(-3px, 3px); } 52%, 100% { opacity: 0; transform: translate(-4px, 4px); } }
-/* a spring toggle: in through the hole folded, its wings spring open, then it's pulled back tight */
-@keyframes mv-lg-toggle { 0%, 4% { transform: translateX(-36px); } 22%, 40% { transform: translateX(8px); } 55%, 100% { transform: translateX(0); } }
-@keyframes mv-lg-fold { 0%, 30% { opacity: 1; } 31%, 100% { opacity: 0; } }
-/* the cabinet half comes down onto the wall half and slides in on the 45° */
-@keyframes mv-lg-hook { 0%, 4% { opacity: 0; transform: translate(-14px, -40px); } 7% { opacity: 1; transform: translate(-14px, -40px); } 30% { transform: translate(-14px, -16px); } 45%, 100% { opacity: 1; transform: translate(0, 0); } }
-/* one strip, cut at 45°, comes apart in two */
-@keyframes mv-lg-apart-l { 0%, 44% { transform: translateX(16px); } 58%, 100% { transform: translateX(0); } }
-@keyframes mv-lg-apart-r { 0%, 44% { transform: translateX(-16px); } 58%, 100% { transform: translateX(0); } }
-@keyframes mv-lg-cut { 0%, 18% { stroke-dashoffset: 1; opacity: 0; } 19% { stroke-dashoffset: 1; opacity: 1; } 34%, 42% { stroke-dashoffset: 0; opacity: 1; } 46%, 100% { stroke-dashoffset: 0; opacity: 0; } }
-@keyframes mv-lg-blade { 0%, 4% { opacity: 0; transform: translate(-40px, -40px); } 8% { opacity: 1; transform: translate(-40px, -40px); } 30%, 38% { opacity: 1; transform: translate(0, 0); } 44%, 100% { opacity: 0; transform: translate(0, 0); } }
-/* the cabinet is lifted above, lowered onto the wall half and slides in tight */
-@keyframes mv-lg-lift { 0%, 8% { transform: translate(-14px, -38px); } 35% { transform: translate(-14px, -16px); } 50%, 100% { transform: translate(0, 0); } }
-@keyframes mv-lg-win-a { 0%, 13% { opacity: 1; } 15%, 100% { opacity: 0; } }
-@keyframes mv-lg-win-b { 0%, 13% { opacity: 0; } 15%, 34% { opacity: 1; } 37%, 100% { opacity: 0; } }
+@keyframes mv-lg-bar { 0% { opacity: 0.55; transform: scaleX(0); } 100% { opacity: 0.55; transform: scaleX(1); } }
+@keyframes mv-lg-buzz-28-55 { 0%, 28% { transform: translate(0, 0); } 29% { transform: translate(0, 0.7px); } 30% { transform: translate(0, -0.7px); } 31% { transform: translate(0, 0.7px); } 32% { transform: translate(0, -0.7px); } 33% { transform: translate(0, 0.7px); } 34% { transform: translate(0, -0.7px); } 35% { transform: translate(0, 0.7px); } 36% { transform: translate(0, -0.7px); } 37% { transform: translate(0, 0.7px); } 38% { transform: translate(0, -0.7px); } 39% { transform: translate(0, 0.7px); } 40% { transform: translate(0, -0.7px); } 41% { transform: translate(0, 0.7px); } 42% { transform: translate(0, -0.7px); } 43% { transform: translate(0, 0.7px); } 44% { transform: translate(0, -0.7px); } 45% { transform: translate(0, 0.7px); } 46% { transform: translate(0, -0.7px); } 47% { transform: translate(0, 0.7px); } 48% { transform: translate(0, -0.7px); } 49% { transform: translate(0, 0.7px); } 50% { transform: translate(0, -0.7px); } 51% { transform: translate(0, 0.7px); } 52% { transform: translate(0, -0.7px); } 53% { transform: translate(0, 0.7px); } 54% { transform: translate(0, -0.7px); } 55%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-draw-4-14 { 0%, 4% { stroke-dashoffset: 1; opacity: 0; } 4.5% { stroke-dashoffset: 1; opacity: 1; } 14%, 100% { stroke-dashoffset: 0; opacity: 1; } }
+@keyframes mv-lg-draw-4-16 { 0%, 4% { stroke-dashoffset: 1; opacity: 0; } 4.5% { stroke-dashoffset: 1; opacity: 1; } 16%, 100% { stroke-dashoffset: 0; opacity: 1; } }
+@keyframes mv-lg-draw-64-74 { 0%, 64% { stroke-dashoffset: 1; opacity: 0; } 64.5% { stroke-dashoffset: 1; opacity: 1; } 74%, 100% { stroke-dashoffset: 0; opacity: 1; } }
+@keyframes mv-lg-draw-68-78 { 0%, 68% { stroke-dashoffset: 1; opacity: 0; } 68.5% { stroke-dashoffset: 1; opacity: 1; } 78%, 100% { stroke-dashoffset: 0; opacity: 1; } }
+@keyframes mv-lg-drill { 0%, 18% { transform: translateX(0); } 26%, 28% { transform: translateX(44px); animation-timing-function: linear; } 55%, 62% { transform: translateX(84px); animation-timing-function: ease-in-out; } 76%, 100% { transform: translateX(0); } }
+@keyframes mv-lg-go-12-38 { 0%, 12% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 38%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-go-22-30 { 0%, 22% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 30%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-go-24-34 { 0%, 24% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 34%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-go-28-38 { 0%, 28% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 38%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-go-38-47 { 0%, 38% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 47%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-go-4-14 { 0%, 4% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 14%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-go-44-52 { 0%, 44% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 52%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-go-45-60 { 0%, 45% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 60%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-go-46-56 { 0%, 46% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 56%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-go-52-59 { 0%, 52% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 59%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-go-62-70 { 0%, 62% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 70%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-go-66-78 { 0%, 66% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 78%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-go-67-75 { 0%, 67% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 75%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-go-8-30 { 0%, 8% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 30%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-go-9-13 { 0%, 9% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 13%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-go-9-23 { 0%, 9% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 23%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-growx-28-55 { 0%, 28% { transform: scaleX(0); } 55%, 100% { transform: scaleX(1); } }
+@keyframes mv-lg-in-18 { 0%, 18% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 20% { opacity: 1; } 30%, 100% { opacity: 1; transform: translate(0, 0); } }
+@keyframes mv-lg-in-31 { 0%, 31% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 33% { opacity: 1; } 43%, 100% { opacity: 1; transform: translate(0, 0); } }
+@keyframes mv-lg-in-54 { 0%, 54% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } 56% { opacity: 1; } 66%, 100% { opacity: 1; transform: translate(0, 0); } }
+@keyframes mv-lg-off-20 { 0%, 20% { opacity: 1; } 22.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-off-26 { 0%, 26% { opacity: 1; } 28.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-off-42 { 0%, 42% { opacity: 1; } 44.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-ping-1 { 0%, 1% { opacity: 0; transform: scale(0.3); } 2% { opacity: 0.95; } 10%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes mv-lg-ping-11 { 0%, 11% { opacity: 0; transform: scale(0.3); } 12% { opacity: 0.95; } 20%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes mv-lg-ping-16 { 0%, 16% { opacity: 0; transform: scale(0.3); } 17% { opacity: 0.95; } 25%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes mv-lg-ping-3 { 0%, 3% { opacity: 0; transform: scale(0.3); } 4% { opacity: 0.95; } 12%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes mv-lg-ping-30 { 0%, 30% { opacity: 0; transform: scale(0.3); } 31% { opacity: 0.95; } 39%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes mv-lg-ping-31 { 0%, 31% { opacity: 0; transform: scale(0.3); } 32% { opacity: 0.95; } 40%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes mv-lg-ping-38 { 0%, 38% { opacity: 0; transform: scale(0.3); } 39% { opacity: 0.95; } 47%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes mv-lg-ping-45 { 0%, 45% { opacity: 0; transform: scale(0.3); } 46% { opacity: 0.95; } 54%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes mv-lg-ping-49 { 0%, 49% { opacity: 0; transform: scale(0.3); } 50% { opacity: 0.95; } 58%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes mv-lg-ping-53 { 0%, 53% { opacity: 0; transform: scale(0.3); } 54% { opacity: 0.95; } 62%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes mv-lg-ping-55 { 0%, 55% { opacity: 0; transform: scale(0.3); } 56% { opacity: 0.95; } 64%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes mv-lg-ping-63 { 0%, 63% { opacity: 0; transform: scale(0.3); } 64% { opacity: 0.95; } 72%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes mv-lg-ping-69 { 0%, 69% { opacity: 0; transform: scale(0.3); } 70% { opacity: 0.95; } 78%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes mv-lg-ping-7 { 0%, 7% { opacity: 0; transform: scale(0.3); } 8% { opacity: 0.95; } 16%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes mv-lg-ping-75 { 0%, 75% { opacity: 0; transform: scale(0.3); } 76% { opacity: 0.95; } 84%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes mv-lg-ping-81 { 0%, 81% { opacity: 0; transform: scale(0.3); } 82% { opacity: 0.95; } 90%, 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes mv-lg-pop-14 { 0%, 14% { opacity: 0; transform: scale(0.4); } 17% { opacity: 1; transform: scale(1.14); } 20%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-17 { 0%, 17% { opacity: 0; transform: scale(0.4); } 20% { opacity: 1; transform: scale(1.14); } 23%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-30 { 0%, 30% { opacity: 0; transform: scale(0.4); } 33% { opacity: 1; transform: scale(1.14); } 36%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-32 { 0%, 32% { opacity: 0; transform: scale(0.4); } 35% { opacity: 1; transform: scale(1.14); } 38%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-34 { 0%, 34% { opacity: 0; transform: scale(0.4); } 37% { opacity: 1; transform: scale(1.14); } 40%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-35 { 0%, 35% { opacity: 0; transform: scale(0.4); } 38% { opacity: 1; transform: scale(1.14); } 41%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-38 { 0%, 38% { opacity: 0; transform: scale(0.4); } 41% { opacity: 1; transform: scale(1.14); } 44%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-42 { 0%, 42% { opacity: 0; transform: scale(0.4); } 45% { opacity: 1; transform: scale(1.14); } 48%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-46 { 0%, 46% { opacity: 0; transform: scale(0.4); } 49% { opacity: 1; transform: scale(1.14); } 52%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-49 { 0%, 49% { opacity: 0; transform: scale(0.4); } 52% { opacity: 1; transform: scale(1.14); } 55%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-52 { 0%, 52% { opacity: 0; transform: scale(0.4); } 55% { opacity: 1; transform: scale(1.14); } 58%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-56 { 0%, 56% { opacity: 0; transform: scale(0.4); } 59% { opacity: 1; transform: scale(1.14); } 62%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-59 { 0%, 59% { opacity: 0; transform: scale(0.4); } 62% { opacity: 1; transform: scale(1.14); } 65%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-6 { 0%, 6% { opacity: 0; transform: scale(0.4); } 9% { opacity: 1; transform: scale(1.14); } 12%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-63 { 0%, 63% { opacity: 0; transform: scale(0.4); } 66% { opacity: 1; transform: scale(1.14); } 69%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-64 { 0%, 64% { opacity: 0; transform: scale(0.4); } 67% { opacity: 1; transform: scale(1.14); } 70%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-68 { 0%, 68% { opacity: 0; transform: scale(0.4); } 71% { opacity: 1; transform: scale(1.14); } 74%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-69 { 0%, 69% { opacity: 0; transform: scale(0.4); } 72% { opacity: 1; transform: scale(1.14); } 75%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-70 { 0%, 70% { opacity: 0; transform: scale(0.4); } 73% { opacity: 1; transform: scale(1.14); } 76%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-71 { 0%, 71% { opacity: 0; transform: scale(0.4); } 74% { opacity: 1; transform: scale(1.14); } 77%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-75 { 0%, 75% { opacity: 0; transform: scale(0.4); } 78% { opacity: 1; transform: scale(1.14); } 81%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-76 { 0%, 76% { opacity: 0; transform: scale(0.4); } 79% { opacity: 1; transform: scale(1.14); } 82%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-78 { 0%, 78% { opacity: 0; transform: scale(0.4); } 81% { opacity: 1; transform: scale(1.14); } 84%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-80 { 0%, 80% { opacity: 0; transform: scale(0.4); } 83% { opacity: 1; transform: scale(1.14); } 86%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-82 { 0%, 82% { opacity: 0; transform: scale(0.4); } 85% { opacity: 1; transform: scale(1.14); } 88%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-pop-84 { 0%, 84% { opacity: 0; transform: scale(0.4); } 87% { opacity: 1; transform: scale(1.14); } 90%, 100% { opacity: 1; transform: scale(1); } }
+@keyframes mv-lg-puff-30 { 0%, 30% { opacity: 0; transform: translate(0, 0); } 31% { opacity: 0.9; } 39%, 100% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } }
+@keyframes mv-lg-puff-35 { 0%, 35% { opacity: 0; transform: translate(0, 0); } 36% { opacity: 0.9; } 44%, 100% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } }
+@keyframes mv-lg-puff-40 { 0%, 40% { opacity: 0; transform: translate(0, 0); } 41% { opacity: 0.9; } 49%, 100% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } }
+@keyframes mv-lg-puff-45 { 0%, 45% { opacity: 0; transform: translate(0, 0); } 46% { opacity: 0.9; } 54%, 100% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } }
+@keyframes mv-lg-puff-50 { 0%, 50% { opacity: 0; transform: translate(0, 0); } 51% { opacity: 0.9; } 59%, 100% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)); } }
+@keyframes mv-lg-rot-78-82 { 0%, 78% { transform: rotate(var(--r, 0deg)); } 82%, 100% { transform: rotate(0deg); } }
+@keyframes mv-lg-show-12 { 0%, 12% { opacity: 0; } 14.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-16 { 0%, 16% { opacity: 0; } 18.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-17 { 0%, 17% { opacity: 0; } 19.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-18 { 0%, 18% { opacity: 0; } 20.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-19 { 0%, 19% { opacity: 0; } 21.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-22 { 0%, 22% { opacity: 0; } 24.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-24 { 0%, 24% { opacity: 0; } 26.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-28 { 0%, 28% { opacity: 0; } 30.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-30 { 0%, 30% { opacity: 0; } 32.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-32 { 0%, 32% { opacity: 0; } 34.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-34 { 0%, 34% { opacity: 0; } 36.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-38 { 0%, 38% { opacity: 0; } 40.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-40 { 0%, 40% { opacity: 0; } 42.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-41 { 0%, 41% { opacity: 0; } 43.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-43 { 0%, 43% { opacity: 0; } 45.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-44 { 0%, 44% { opacity: 0; } 46.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-45 { 0%, 45% { opacity: 0; } 47.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-46 { 0%, 46% { opacity: 0; } 48.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-50 { 0%, 50% { opacity: 0; } 52.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-56 { 0%, 56% { opacity: 0; } 58.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-58 { 0%, 58% { opacity: 0; } 60.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-60 { 0%, 60% { opacity: 0; } 62.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-62 { 0%, 62% { opacity: 0; } 64.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-64 { 0%, 64% { opacity: 0; } 66.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-65 { 0%, 65% { opacity: 0; } 67.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-67 { 0%, 67% { opacity: 0; } 69.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-74 { 0%, 74% { opacity: 0; } 76.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-76 { 0%, 76% { opacity: 0; } 78.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-78 { 0%, 78% { opacity: 0; } 80.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-80 { 0%, 80% { opacity: 0; } 82.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-show-9 { 0%, 9% { opacity: 0; } 11.5%, 100% { opacity: 1; } }
+@keyframes mv-lg-slide-20-34 { 0%, 20% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 34%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-slide-42-58 { 0%, 42% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 58%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-slide-5-50 { 0%, 5% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 50%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-slide-8-40 { 0%, 8% { transform: translate(var(--dx, 0px), var(--dy, 0px)); } 40%, 100% { transform: translate(0, 0); } }
+@keyframes mv-lg-tap-48 { 0%, 48% { transform: scale(1); } 49.5% { transform: scale(0.82); } 51% { transform: scale(1); } 53% { transform: scale(0.82); } 54.5%, 100% { transform: scale(1); } }
+@keyframes mv-lg-tap-6 { 0%, 6% { transform: scale(1); } 7.5% { transform: scale(0.82); } 9% { transform: scale(1); } 11% { transform: scale(0.82); } 12.5%, 100% { transform: scale(1); } }
+@keyframes mv-lg-toggle { 0%, 66% { opacity: 0; transform: translateX(-44px); } 67% { opacity: 1; transform: translateX(-44px); } 76%, 84% { opacity: 1; transform: translateX(18px); } 92%, 100% { opacity: 1; transform: translateX(0); } }
+@keyframes mv-lg-trace-8-40 { 0%, 8% { stroke-dashoffset: 1; opacity: 0; } 8.5% { stroke-dashoffset: 1; opacity: 1; } 40%, 100% { stroke-dashoffset: 0; opacity: 1; } }
+@keyframes mv-lg-tug-62 { 0%, 62% { transform: translateY(0); } 65% { transform: translateY(3px); } 68% { transform: translateY(0); } 72% { transform: translateY(3px); } 75%, 100% { transform: translateY(0); } }
+@keyframes mv-lg-turn-45-60 { 0%, 45% { transform: rotate(var(--r, 0deg)); } 60%, 100% { transform: rotate(0deg); } }
+@keyframes mv-lg-wig-43-62 { 0%, 43% { transform: translateX(0); } 49.33% { transform: translateX(var(--dx, 0px)); } 55.67% { transform: translateX(calc(var(--dx, 0px) * -0.5)); } 62%, 100% { transform: translateX(0); } }
+@keyframes mv-lg-win-0-19 { 0%, 0% { opacity: 0; } 2.5%, 19% { opacity: 1; } 21.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-0-21 { 0%, 0% { opacity: 0; } 2.5%, 21% { opacity: 1; } 23.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-0-25 { 0%, 0% { opacity: 0; } 2.5%, 25% { opacity: 1; } 27.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-0-28 { 0%, 0% { opacity: 0; } 2.5%, 28% { opacity: 1; } 30.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-0-37 { 0%, 0% { opacity: 0; } 2.5%, 37% { opacity: 1; } 39.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-0-38 { 0%, 0% { opacity: 0; } 2.5%, 38% { opacity: 1; } 40.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-0-40 { 0%, 0% { opacity: 0; } 2.5%, 40% { opacity: 1; } 42.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-0-43 { 0%, 0% { opacity: 0; } 2.5%, 43% { opacity: 1; } 45.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-0-50 { 0%, 0% { opacity: 0; } 2.5%, 50% { opacity: 1; } 52.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-0-54 { 0%, 0% { opacity: 0; } 2.5%, 54% { opacity: 1; } 56.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-16-20 { 0%, 16% { opacity: 0; } 18.5%, 20% { opacity: 1; } 22.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-2-17 { 0%, 2% { opacity: 0; } 4.5%, 17% { opacity: 1; } 19.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-22-60 { 0%, 22% { opacity: 0; } 24.5%, 60% { opacity: 1; } 62.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-24-42 { 0%, 24% { opacity: 0; } 26.5%, 42% { opacity: 1; } 44.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-28-55 { 0%, 28% { opacity: 0; } 30.5%, 55% { opacity: 1; } 57.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-31-35 { 0%, 31% { opacity: 0; } 33.5%, 35% { opacity: 1; } 37.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-31-59 { 0%, 31% { opacity: 0; } 33.5%, 59% { opacity: 1; } 61.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-40-62 { 0%, 40% { opacity: 0; } 42.5%, 62% { opacity: 1; } 64.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-41-58 { 0%, 41% { opacity: 0; } 43.5%, 58% { opacity: 1; } 60.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-41-64 { 0%, 41% { opacity: 0; } 43.5%, 64% { opacity: 1; } 66.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-42-66 { 0%, 42% { opacity: 0; } 44.5%, 66% { opacity: 1; } 68.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-43-56 { 0%, 43% { opacity: 0; } 45.5%, 56% { opacity: 1; } 58.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-44-64 { 0%, 44% { opacity: 0; } 46.5%, 64% { opacity: 1; } 66.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-45-49 { 0%, 45% { opacity: 0; } 47.5%, 49% { opacity: 1; } 51.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-45-64 { 0%, 45% { opacity: 0; } 47.5%, 64% { opacity: 1; } 66.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-46-64 { 0%, 46% { opacity: 0; } 48.5%, 64% { opacity: 1; } 66.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-5-30 { 0%, 5% { opacity: 0; } 7.5%, 30% { opacity: 1; } 32.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-53-75 { 0%, 53% { opacity: 0; } 55.5%, 75% { opacity: 1; } 77.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-56-64 { 0%, 56% { opacity: 0; } 58.5%, 64% { opacity: 1; } 66.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-56-66 { 0%, 56% { opacity: 0; } 58.5%, 66% { opacity: 1; } 68.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-58-88 { 0%, 58% { opacity: 0; } 60.5%, 88% { opacity: 1; } 90.5%, 100% { opacity: 0; } }
+@keyframes mv-lg-win-84-96 { 0%, 84% { opacity: 0; } 86.5%, 96% { opacity: 1; } 98.5%, 100% { opacity: 0; } }
