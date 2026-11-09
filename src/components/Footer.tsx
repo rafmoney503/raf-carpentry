@@ -21,6 +21,7 @@ const explore = [
   { href: '/calculator', label: 'Workshop calculator' },
   { href: '/tools/decking-calculator', label: 'Decking calculator' },
   { href: '/tips', label: 'Workshop tips' },
+  { href: '/learn', label: 'Learn to fix it yourself' },
 ];
 const read = [
   { href: '/how-it-works', label: 'Plan your project' },

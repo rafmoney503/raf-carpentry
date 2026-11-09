@@ -6,10 +6,11 @@ import { getServices } from '@/lib/services';
 import { libraryKinds } from '@/lib/design-library';
 import { areaPages } from '@/lib/areas';
 import { COST_JOBS } from '@/lib/cost-calculator';
+import { GUIDES, learnHref } from '@/lib/learn';
 
 /* Every public page, job and blog post, for Google. New jobs and posts are added automatically. */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = ['', '/services', '/portfolio', '/designs', '/areas', '/how-it-works', '/blog', '/about', '/contact', '/sketchup', '/cabinetos', '/tools', '/calculator', '/tools/calculator', '/tools/decking-calculator', '/tips', '/tools/games', '/tools/spirit-level', '/tools/workshop', '/wardrobe-planner', '/drawings', ...(COST_JOBS.length > 1 ? ['/cost'] : []), '/privacy'];
+  const pages = ['', '/services', '/portfolio', '/designs', '/areas', '/how-it-works', '/blog', '/about', '/contact', '/sketchup', '/cabinetos', '/tools', '/calculator', '/tools/calculator', '/tools/decking-calculator', '/tips', '/learn', '/tools/games', '/tools/spirit-level', '/tools/workshop', '/wardrobe-planner', '/drawings', ...(COST_JOBS.length > 1 ? ['/cost'] : []), '/privacy'];
   const date = (v: unknown) => {
     const d = new Date(v instanceof Date ? v : String(v));
     return Number.isNaN(d.getTime()) ? undefined : d;
@@ -17,6 +18,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     ...pages.map((p) => ({ url: `${SITE_URL}${p}`, changeFrequency: 'monthly' as const, priority: p === '' ? 1 : p === '/how-it-works' || p === '/portfolio' ? 0.9 : 0.6 })),
     ...getServices().map((s) => ({ url: `${SITE_URL}/services/${s.slug}`, changeFrequency: 'monthly' as const, priority: 0.9 })),
+    ...GUIDES.map((g) => ({ url: `${SITE_URL}${learnHref(g)}`, changeFrequency: 'monthly' as const, priority: 0.8 })),
     ...COST_JOBS.map((j) => ({ url: `${SITE_URL}/cost/${j.slug}`, changeFrequency: 'monthly' as const, priority: 0.8 })),
     ...areaPages().map((a) => ({ url: `${SITE_URL}/areas/${a.slug}`, changeFrequency: 'monthly' as const, priority: 0.8 })),
     ...libraryKinds().map((k) => ({ url: `${SITE_URL}/designs/${k.slug}`, changeFrequency: 'monthly' as const, priority: 0.7 })),

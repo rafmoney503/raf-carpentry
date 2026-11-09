@@ -162,6 +162,7 @@ export function getMenuPanels(): Record<string, MenuPanel> {
         { label: 'Spirit level on your phone', href: '/tools/spirit-level' },
         { label: 'Decking calculator', href: '/tools/decking-calculator' },
         { label: 'Workshop tips', href: '/tips' },
+        { label: 'Learn to fix it yourself', href: '/learn' },
         { label: 'Workshop Games, six free games', href: '/tools/games' },
       ],
       image: toolImage?.image ? { src: toolImage.image, alt: '', caption: toolImage.name ?? 'From my kit' } : undefined,

@@ -30,6 +30,7 @@ const NAMES: Record<string, string> = {
   '/how-it-works': 'Plan your project',
   '/privacy': 'Privacy',
   '/tips': 'Workshop tips',
+  '/learn': 'Learn',
   '/calculator': 'Workshop calculator',
   '/drawings': 'Drawings and cut lists',
   '/wardrobe-planner': 'Wardrobe planner',
@@ -81,7 +82,8 @@ export function upOf(path: string): Up {
   if (p.startsWith('/tools/')) return to('/tools');
   if (p.startsWith('/cost/')) return { href: '/services/fitted-wardrobes', name: 'Fitted wardrobes' };
   if (p.startsWith('/drawings/')) return to('/drawings');
-  if (['/tips', '/calculator', '/drawings', '/wardrobe-planner'].includes(p)) return to('/tools');
+  if (p.startsWith('/learn/')) return to('/learn');
+  if (['/tips', '/learn', '/calculator', '/drawings', '/wardrobe-planner'].includes(p)) return to('/tools');
   return to('/');
 }
 

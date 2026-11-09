@@ -42,6 +42,13 @@ export default function TipsPage() {
             ))}
           </nav>
         ) : null}
+        <p className="mt-6 max-w-[60ch] text-[15.5px] leading-relaxed text-muted">
+          New to this?{' '}
+          <Link href="/learn" className="font-semibold text-accent hover:underline">
+            Learn to fix it yourself
+          </Link>
+          : step-by-step guides with moving drawings, like hanging something heavy on any wall.
+        </p>
       </PageHeader>
 
       {sections.map((s) => (
