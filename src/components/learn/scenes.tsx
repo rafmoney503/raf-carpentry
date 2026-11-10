@@ -868,7 +868,7 @@ const FloorLevel: Scene = ({ u }) => (
   <>
     <Cap cls="mv-lg-win-0-30">Lay a long level on the floor</Cap>
     <Cap cls="mv-lg-win-33-60">Lift the low end until the bubble is in the middle</Cap>
-    <Cap cls="mv-lg-show-63">That gap is what the plinth has to make up</Cap>
+    <Cap cls="mv-lg-show-63">That gap is what the base frame has to make up</Cap>
 
     {/* the side walls, and a floor that falls away to the right */}
     <rect x="14" y="34" width="16" height="148" fill={u('brickcut')} strokeWidth="1.3" />
@@ -894,13 +894,9 @@ const FloorLevel: Scene = ({ u }) => (
           8 mm
         </T>
       </g>
-      <g className="mv-lg-pop-70">
-        <rect x="258" y="183.6" width="22" height="3.6" fill={BLUE} fillOpacity="0.3" strokeWidth="1.1" />
-        <rect x="258" y="187.4" width="22" height="3.6" fill={BLUE} fillOpacity="0.3" strokeWidth="1.1" />
-      </g>
-      <g className="mv-lg-pop-76">
+      <g className="mv-lg-pop-74">
         <T x={236} y={150} weight={700}>
-          packers under the low end
+          low end: 8 mm to make up
         </T>
       </g>
       <g className="mv-lg-show-64">
@@ -911,6 +907,62 @@ const FloorLevel: Scene = ({ u }) => (
       </g>
     </g>
     <Tick x={150} y={147} cls="mv-lg-pop-56" />
+  </>
+);
+
+const fl = (x: number) => r1(182 + (x - 30) * 0.04);
+const BaseFrame: Scene = ({ u }) => (
+  <>
+    <Cap cls="mv-lg-win-0-27">Build a base frame, 50 to 100 mm high</Cap>
+    <Cap cls="mv-lg-win-30-60">Level it with spacers under the low side</Cap>
+    <Cap cls="mv-lg-show-63">Fix it down. The units stand on it, level</Cap>
+
+    <rect x="14" y="34" width="16" height="148" fill={u('brickcut')} strokeWidth="1.3" />
+    <rect x="330" y="34" width="16" height="160" fill={u('brickcut')} strokeWidth="1.3" />
+    <path d="M14 182H30L330 194H346V212H14Z" fill="var(--lg-timber)" strokeWidth="1.4" />
+    <path d="M30 182H330" strokeWidth="1" strokeDasharray="4 4" strokeOpacity="0.4" />
+    <T x={180} y={207} size={9} weight={650}>
+      base frame: 50 to 100 mm high
+    </T>
+
+    {/* the spacers that hold it level: thicker towards the low side */}
+    {[
+      ['mv-lg-pop-40', 118],
+      ['mv-lg-pop-44', 180],
+      ['mv-lg-pop-48', 242],
+      ['mv-lg-pop-52', 296],
+    ].map(([c, x]) => (
+      <g key={x} className={c as string}>
+        <path d={`M${x} 182.8H${(x as number) + 14}V${fl((x as number) + 14)}L${x} ${fl(x as number)}Z`} fill={MOUNT} stroke="none" />
+        <path d={`M${x} 182.8H${(x as number) + 14}V${fl((x as number) + 14)}L${x} ${fl(x as number)}Z`} fill={BLUE} fillOpacity="0.45" stroke={BLUE} strokeWidth="1.2" />
+      </g>
+    ))}
+
+    <g className="mv-lg-turn-30-46 mv-vb" style={turnAt(50, 182.8, 2.29)}>
+      <g className="mv-lg-in-4" style={move(0, -26)}>
+        <rect x="50" y="166.8" width="260" height="16" fill="var(--lg-ply-dark)" />
+        <path d="M58 166.8v16M115 166.8v16M123 166.8v16M176 166.8v16M184 166.8v16M237 166.8v16M245 166.8v16M302 166.8v16" strokeWidth="1" strokeOpacity="0.55" />
+      </g>
+      <g className="mv-lg-win-14-60">
+        <g className="mv-lg-go-14-24" style={move(0, -22)}>
+          <Level x={120} y={153.8} w={120} bubbleCls="mv-lg-go-30-46" bubbleStyle={move(-9)} />
+        </g>
+      </g>
+    </g>
+    <Tick x={262} y={158} cls="mv-lg-win-48-60" />
+    <g className="mv-lg-win-52-61 text-accent">
+      <T x={180} y={140} weight={700}>
+        spacers under the low side
+      </T>
+    </g>
+
+    <g className="mv-lg-in-64" style={move(0, -18)}>
+      <rect x="50" y="44" width="260" height="122.8" fill="var(--lg-ply)" />
+      {[57, 143.7, 230.3].map((x) => (
+        <rect key={x} x={x} y="51" width="72.7" height="108.8" fill={PAPER} strokeWidth="1.1" />
+      ))}
+    </g>
+    <Tick x={180} y={105} cls="mv-lg-pop-82" />
   </>
 );
 
@@ -1354,7 +1406,7 @@ const Doors: Scene = () => (
 export const SCENES: Record<string, Scene[]> = {
   'hang-heavy-things-on-a-wall': [Knock, FindStuds, MarkLevel, Drill, Fixings, HangCheck],
   'french-cleat': [CleatWorks, CutStrip, OnCabinet, WallHalf, LiftOn],
-  'build-a-fitted-wardrobe': [FloorLevel, WallPlumb, SquareUnit, SidePanels, TopPlinth, Shelves, Rail, Drawers, Doors],
+  'build-a-fitted-wardrobe': [FloorLevel, BaseFrame, WallPlumb, SquareUnit, SidePanels, TopPlinth, Shelves, Rail, Drawers, Doors],
 };
 
 /* The drawing for one step: its own patterns (so two drawings on a page never share ids), the scene, and the
