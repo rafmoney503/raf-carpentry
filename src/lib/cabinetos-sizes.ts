@@ -14,7 +14,7 @@ export const COS_RULES = {
   doorBottomGapMm: 0, // DOOR_BOTTOM_GAP_MM
   doorGapMm: 4, // DOOR_SIDE_GAP_MM: taken off each door's width, so 2 mm at each outside edge and 4 between a pair
   maxDoorMm: 600, // MAX_DOOR_WIDTH_MM: a wider door gets a warning ("Too wide for one door, try 2")
-  shelfSideGapMm: 2, // SHELF_SIDE_GAP_MM, each side
+  shelfSideGapMm: 2, // SHELF_SIDE_GAP_MM, in all (half at each end; CabinetOS since 10 Nov 2026)
   shelfFrontGapMm: 2, // SHELF_FRONT_GAP_MM
 } as const;
 
@@ -48,7 +48,7 @@ export function wardrobeParts(widthMm: number, heightMm: number, depthMm: number
   const doors = doorCount(widthMm);
   const doorW = widthMm / doors - R.doorGapMm;
   const doorH = box - R.doorTopGapMm - R.doorBottomGapMm;
-  const shelfW = inner - 2 * R.shelfSideGapMm;
+  const shelfW = inner - R.shelfSideGapMm;
   const shelfD = depthMm - R.backMm - R.shelfFrontGapMm;
   const front = { L1: true, L2: false, W1: false, W2: false };
   const none = { L1: false, L2: false, W1: false, W2: false };
@@ -82,7 +82,7 @@ export function wardrobeParts(widthMm: number, heightMm: number, depthMm: number
       length: r(shelfW),
       width: r(shelfD),
       edges: front,
-      how: `${mm(inner)} − ${R.shelfSideGapMm} − ${R.shelfSideGapMm} = ${mm(shelfW)} wide; ${depthMm} − ${R.backMm} back − ${R.shelfFrontGapMm} = ${mm(shelfD)} deep`,
+      how: `${mm(inner)} − ${R.shelfSideGapMm} = ${mm(shelfW)} wide; ${depthMm} − ${R.backMm} back − ${R.shelfFrontGapMm} = ${mm(shelfD)} deep`,
     },
     {
       key: 'door',
