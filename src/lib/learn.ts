@@ -35,7 +35,7 @@ export type LearnGuide = {
   /* which step's drawing stands for the guide on cards */
   hero: number;
   /* ISO 8601 for the HowTo, e.g. PT30M */
-  totalTime: string;
+  totalTime?: string;
   steps: LearnStep[];
   table?: { title: string; intro: string; head: [string, string, string]; rows: [string, string, string][] };
   need: LearnItem[];
@@ -234,6 +234,123 @@ export const GUIDES: LearnGuide[] = [
     still: '/images/learn/french-cleat-350b0ccd.jpg',
     words:
       'french cleat cleats hang hanging cabinet cupboard mirror heavy wall shelf shelves tool wall 45 degree bevel bevelled rip plywood batten hook spacer z clip split batten floating',
+  },
+  {
+    slug: 'build-a-fitted-wardrobe',
+    title: 'How a fitted wardrobe is built, step by step',
+    answer:
+      'A fitted wardrobe is built as square boxes on a level base frame, then joined to the room: side panels scribed to the walls, a plinth along the floor and a top panel up to the ceiling. Check the floor and the walls first. No room is level or square, and the wardrobe has to be.',
+    kicker: 'Learn · fitted furniture',
+    card: 'Floor, a level base, walls, square boxes, then the panels that join it to the room, and the shelves, rail, drawers and doors.',
+    metaTitle: 'How to build a fitted wardrobe, step by step | Raf Carpentry',
+    metaDescription:
+      'How a fitted wardrobe goes in: check the floor, level a base frame, build the units square, scribe the side panels, then the plinth, top panel, shelves, rail, drawers and doors. Ten steps with moving drawings, from a London carpenter.',
+    time: 'For confident DIYers',
+    hero: 5,
+    steps: [
+      {
+        title: 'Check the floor is level',
+        body:
+          'Lay a long spirit level on the floor where the wardrobe will stand. Lift the low end until the bubble sits in the middle and measure the gap under it. That gap, and where the highest point of the floor is, tell you how the base has to be set.',
+        tip: 'Check front to back as well as side to side.',
+      },
+      {
+        title: 'Build a base frame and level it',
+        body:
+          'Floors are rarely level, so I never stand the units straight on them. I make a base frame, between 50 and 100 mm high, the length of the wardrobe. Start at the highest point of the floor and slide spacers under the low side until the level reads true both ways, then fix the frame down. Every unit then stands on a level base.',
+        tip: 'Spacers under every cross piece, so the frame cannot sag under the weight.',
+      },
+      {
+        title: 'Check the walls are plumb',
+        body:
+          'Stand the level upright against each side wall and plumb it. The gap at the top or the bottom is how far that wall leans. Then measure the width of the space at the bottom, the middle and the top, and build the units to the smallest of the three.',
+        tip: 'I measure skirting to skirting, and take the skirting off the back wall to gain depth.',
+        link: { label: 'More of my measuring tips', href: '/tips' },
+      },
+      {
+        title: 'Build each unit square',
+        body:
+          'Screw the sides onto the bottom, then the top between or over them. Before the back goes on, measure the unit corner to corner, both ways. When the two numbers are the same, it is square. Then screw the back on to hold it there.',
+        tip: 'I use 18 mm board for everything, the backs too. A solid back keeps the unit square for good.',
+      },
+      {
+        title: 'Scribe the side panels to the walls',
+        body:
+          'Stand the units on the base frame and screw them together. The gap left at each wall is filled by a side panel. Hold the panel plumb against the wall, set a compass to the widest gap and run it down the wall: the pencil draws the wall’s shape on the panel. Cut on the line and it fits tight.',
+        tip: 'A school compass does this as well as any scribing tool.',
+      },
+      {
+        title: 'Plinth and top panel',
+        body:
+          'A plinth runs along the front of the base frame, scribed to the floor the same way, and hides the frame and its spacers. A top panel fills the gap between the units and the ceiling. With the side panels, they join the wardrobe to the room, wall to wall and floor to ceiling.',
+      },
+      {
+        title: 'Shelves',
+        body:
+          'Mark each shelf at the same height on both sides, measured up from the bottom of the unit. Push four shelf pins into their holes and sit the shelf on them. In a hanging unit I put a fixed shelf at about 2 metres from the floor: the rail goes under it and bags and cases go on top.',
+        tip: 'Cut shelves a couple of millimetres short of the inside width so they drop in.',
+      },
+      {
+        title: 'Hanging rail',
+        body:
+          'Screw a rail bracket to each side, just under the shelf and the same distance back from the front. Cut the rail a few millimetres shorter than the inside width and drop it into the brackets. Long coats and dresses need about 1.4 metres clear under the rail, shirts and jackets about 1 metre.',
+      },
+      {
+        title: 'Drawers',
+        body:
+          'Fix a runner to each side of the unit, level and at exactly the same height: if one is higher the drawer rocks. Slide each drawer box onto its runners, then fit the fronts with an even gap between them. I finish with a dust shelf straight on top of the drawers.',
+        tip: 'Start with the bottom drawer and work up.',
+      },
+      {
+        title: 'Doors',
+        body:
+          'Each hinge sits in a 35 mm hole in the back of the door, with its centre 21 mm from the door’s edge. A hinge jig with a preset depth drills it without going through the face. Clip the doors onto their plates in the unit, then turn the hinge screws to move each door up, down, in and out until the gaps are even.',
+        tip: 'Adjust the top hinge first, then the bottom one to match.',
+      },
+    ],
+    need: [
+      { name: 'Long spirit level', note: 'For the floor, the walls and every unit', key: 'stabila-level' },
+      { name: 'Laser level', note: 'A level line across the whole room', key: 'dewalt-laser-level' },
+      { name: 'Tape measure', key: 'stanley-tape' },
+      { name: 'Track saw', note: 'Straight, clean cuts in board', key: 'festool-track-saw' },
+      { name: 'Jigsaw', note: 'Cuts the scribed line on a side panel', key: 'dewalt-jigsaw' },
+      { name: 'Impact driver', key: 'dewalt-impact-driver' },
+      { name: 'School compass', note: 'For scribing panels to the walls' },
+      { name: 'Hinge jig and a 35 mm bit', note: 'Drills the hinge holes to a set depth' },
+      { name: '18 mm board, hinges, runners, rail and shelf pins' },
+      { name: 'A cut list for your sizes', note: 'I can draw it and send every part’s size', href: '/drawings' },
+      { name: 'Plan the wardrobe in 3D first', note: 'My free wardrobe planner', href: '/wardrobe-planner' },
+    ],
+    careful: [
+      'Boards are heavy. Two people to stand a tall unit up, and check it clears the ceiling as it tips up before you build it.',
+      'Check for cables and pipes before you screw a unit to the wall.',
+      'Fix every unit to the wall so it cannot tip forward when the doors and drawers are open.',
+    ],
+    faq: [
+      {
+        q: 'Why not build it straight onto the floor and walls?',
+        a: 'Because the room isn’t straight. Doors and drawers only hang and run properly in a box that is square and level. So the boxes are built square, stood on a base frame levelled with spacers, and the side panels, plinth and top panel take up whatever the room is doing.',
+      },
+      {
+        q: 'How do I know a unit is square?',
+        a: 'Measure it corner to corner, both ways. If the two diagonals are the same, it is square. If not, push the long corner in until they match, then fix the back on.',
+      },
+      {
+        q: 'How big a gap should I leave at the walls?',
+        a: 'Enough for a side panel you can scribe: I allow at least 20 mm at each wall. Too tight and there is nothing to cut back when the wall leans.',
+      },
+      {
+        q: 'What board is a fitted wardrobe made from?',
+        a: 'I build in 18 mm board, backs included: MDF where it will be painted by your decorator, or birch plywood, oak or walnut where the wood shows.',
+      },
+      {
+        q: 'Can you build it for me?',
+        a: 'Yes. Fitted wardrobes are most of what I build, across London. You see it in 3D before anything is cut. Press Get a quote, or send me a photo of the space on WhatsApp.',
+      },
+    ],
+    still: '/images/learn/build-a-fitted-wardrobe-f651fed2.jpg',
+    words:
+      'build fitted wardrobe built in wardrobes how to make carcass carcase unit square diagonal level floor base frame spacers packers plumb wall scribe scribing filler side panel end panel plinth top panel infill shelf shelves pins hanging rail pole drawers runners dust shelf doors hinges hinge jig 35 mm 21 mm adjust gaps',
   },
 ];
 
