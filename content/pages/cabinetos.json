@@ -131,7 +131,7 @@
     {
       "drawing": "shelf",
       "title": "Shelves and the rail",
-      "text": "Shelves are 2 mm short at each side so they drop in, and stop 2 mm back from the front. Behind them is the back. The hanging rail is as long as a shelf."
+      "text": "Shelves are 2 mm shorter than the inside of the box (1 mm at each end) so they drop in, and stop 2 mm back from the front. Behind them is the back. The hanging rail is as long as a shelf."
     },
     {
       "drawing": "doors",

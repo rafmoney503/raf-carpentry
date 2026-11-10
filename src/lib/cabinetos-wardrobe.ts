@@ -23,7 +23,7 @@ export const COS = {
   doorSideGap: 4, // DOOR_SIDE_GAP_MM, off each door's width: 2 at each outside edge, 4 between a pair
   doorBottomGap: 0, // DOOR_BOTTOM_GAP_MM
   maxDoor: 600, // MAX_DOOR_WIDTH_MM
-  shelfSideGap: 2, // SHELF_SIDE_GAP_MM, each side
+  shelfSideGap: 2, // SHELF_SIDE_GAP_MM, in all (half at each end)
   shelfFrontGap: 2, // SHELF_FRONT_GAP_MM
   drawerTopGap: 3, // DRAWER_TOP_GAP_MM
   drawerBetweenGap: 3, // DRAWER_BETWEEN_GAP_MM
@@ -279,7 +279,7 @@ export function unitLayout(box: UnitBox, ins: Inside): Layout {
     sizes: {
       door: { n: box.sliding ? 0 : n, w: doorW, h: doorH },
       topDoor: topH ? { n, w: doorW, h: r2(topH - COS.doorTopGap) } : null,
-      shelf: { n: shelves.length, w: r2(w - 2 * t - 2 * COS.shelfSideGap), d: r2(d - COS.back - COS.shelfFrontGap) },
+      shelf: { n: shelves.length, w: r2(w - 2 * t - COS.shelfSideGap), d: r2(d - COS.back - COS.shelfFrontGap) },
       drawer: drawers ? { n: drawers, h: r2(drawerFront) } : null,
       dust: dust != null,
       box: { w, h: boxH, d },

@@ -55,7 +55,7 @@ export default function Sizes({ data }: { data: SizesData }) {
     box: `Side: ${h} − ${R.plinthMm} − ${t} − ${t} = ${sums.side}`,
     plinth: `Plinth ${w} × ${R.plinthMm}. Box: ${h} − ${R.plinthMm} = ${box}`,
     back: `Back: ${w} − ${t} − ${t} = ${sums.inner} wide, ${sums.side} high`,
-    shelf: `Shelf: ${sums.inner} − ${g} − ${g} = ${sums.shelfW} wide, ${dp} − ${R.backMm} − ${R.shelfFrontGapMm} = ${sums.shelfD} deep. Rail: ${sums.shelfW}`,
+    shelf: `Shelf: ${sums.inner} − ${g} = ${sums.shelfW} wide, ${dp} − ${R.backMm} − ${R.shelfFrontGapMm} = ${sums.shelfD} deep. Rail: ${sums.shelfW}`,
     doors:
       doors === 2
         ? `Each door: ${box} − ${R.doorTopGapMm} = ${sums.doorH} high, ${w} ÷ 2 − ${R.doorGapMm} = ${sums.doorW} wide`
