@@ -81,6 +81,7 @@ export function JobTimeline({
   onRefresh,
   onOpen,
   onBoard,
+  onMade,
   onSave,
   onProgress,
   onComplete,
@@ -92,6 +93,7 @@ export function JobTimeline({
   onRefresh: () => void;
   onOpen: (uuid: string) => void;
   onBoard: () => void;
+  onMade?: () => void;
   onSave: (job: CurrentJob, changes: Change[]) => Promise<string>;
   onProgress: (uuid: string, progress: number) => void;
   onComplete: (uuid: string) => void;
@@ -128,7 +130,7 @@ export function JobTimeline({
           {loading ? 'Checking…' : 'Refresh'}
         </button>
       </p>
-      <TimelineTabs on="gantt" onGantt={() => {}} onBoard={onBoard} />
+      <TimelineTabs on="gantt" onGantt={() => {}} onBoard={onBoard} onMade={onMade} />
       {problem ? (
         <p role="alert" className="mt-3 rounded-sm border border-ink bg-mount px-3 py-2.5 text-[14.5px] leading-relaxed">
           {problem}

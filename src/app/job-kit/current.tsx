@@ -1121,6 +1121,7 @@ export function CurrentView({
   otherJobs = 0,
   onRemove,
   jobLabel,
+  made,
 }: {
   job: CurrentJob;
   marks: Marks;
@@ -1150,6 +1151,7 @@ export function CurrentView({
   onPay?: (p: NewPayment) => Promise<string>;
   otherJobs?: number; // the customer's other jobs on this device (Current jobs and customers opened)
   onRemove?: (alsoClient: boolean) => Promise<string>; // a Quote job made by mistake: '' when it's gone, else why not
+  made?: React.ReactNode; // after Money: what the job made, its costs and days on site (job-money.tsx MadeBox)
 }) {
   const st = stage(job, marks);
   const [text] = stageText(job, marks);
@@ -1359,6 +1361,8 @@ export function CurrentView({
       />
 
       <MoneyBox job={job} methods={methods?.length ? methods : methodsFrom([])} onPay={onPay} onWorkOrder={() => move('Work Order', false)} />
+
+      {made}
 
       {/* Long labels wrap instead of pushing a 320 px screen sideways. */}
       <section id="more" data-jsec="more" className="mt-6 grid gap-3 [&_.btn]:h-auto [&_.btn]:min-h-[52px] [&_.btn]:whitespace-normal [&_.btn]:py-3 [&_.btn]:text-center [&_.btn]:leading-snug">
@@ -1744,7 +1748,7 @@ export function NewEnquiry({
 
 /* ---------- the morning summary ---------- */
 
-export type TodayLine = { text: string; go: 'quotes' | 'current' | 'designs' | 'posts' | 'jobs' | 'diary' | 'sm8' | 'inbox' | 'timeline' | 'whatsapp' | 'social' | 'claude'; urgent?: boolean; id?: string; time?: string; icon?: IconName };
+export type TodayLine = { text: string; go: 'quotes' | 'current' | 'designs' | 'posts' | 'jobs' | 'diary' | 'sm8' | 'inbox' | 'timeline' | 'whatsapp' | 'social' | 'claude' | 'receipt' | 'made'; urgent?: boolean; id?: string; time?: string; icon?: IconName };
 
 export function todayLines({
   sm8,

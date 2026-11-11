@@ -15,13 +15,14 @@ import { PaySheet, type NewPayment } from './payments';
    Current jobs' 'Done with it'); nothing here changes ServiceM8. */
 
 /* Gantt chart / Clients board, at the top of both screens of the section. */
-export function TimelineTabs({ on, onGantt, onBoard }: { on: 'gantt' | 'board'; onGantt: () => void; onBoard: () => void }) {
-  const tab = (id: 'gantt' | 'board', text: string, go: () => void) => (
+export function TimelineTabs({ on, onGantt, onBoard, onMade }: { on: 'gantt' | 'board' | 'made'; onGantt: () => void; onBoard: () => void; onMade?: () => void }) {
+  const three = Boolean(onMade);
+  const tab = (id: 'gantt' | 'board' | 'made', text: string, go: () => void) => (
     <button
       type="button"
       aria-current={on === id ? 'page' : undefined}
       onClick={on === id ? undefined : go}
-      className={`h-10 flex-1 rounded-sm border px-3 font-mono text-[13px] sm:flex-none ${on === id ? 'border-ink bg-ink text-paper' : 'border-line-strong bg-mount text-ink hover:border-ink'}`}
+      className={`min-h-10 flex-1 rounded-sm border font-mono leading-tight sm:flex-none ${three ? 'px-1.5 py-1 text-[12px] sm:px-3 sm:text-[13px]' : 'px-3 text-[13px]'} ${on === id ? 'border-ink bg-ink text-paper' : 'border-line-strong bg-mount text-ink hover:border-ink'}`}
     >
       {text}
     </button>
@@ -30,6 +31,7 @@ export function TimelineTabs({ on, onGantt, onBoard }: { on: 'gantt' | 'board'; 
     <nav aria-label="Job timeline" className="mt-4 flex gap-1.5">
       {tab('gantt', 'Gantt chart', onGantt)}
       {tab('board', 'Clients board', onBoard)}
+      {onMade ? tab('made', 'What jobs made', onMade) : null}
     </nav>
   );
 }
@@ -130,6 +132,7 @@ export function ClientBoard({
   onOpen,
   onClose,
   onGantt,
+  onMade,
   methods,
   onPay,
   onWorkOrder,
@@ -143,6 +146,7 @@ export function ClientBoard({
   onOpen: (uuid: string) => void;
   onClose: (uuid: string, closed: boolean) => void;
   onGantt: () => void;
+  onMade?: () => void;
   methods: string[]; // how payments come in (payments.tsx methodsFrom)
   onPay: (uuid: string, p: NewPayment) => Promise<string>;
   onWorkOrder: (uuid: string) => void;
@@ -184,7 +188,7 @@ export function ClientBoard({
           {loading ? 'Checking…' : 'Refresh'}
         </button>
       </p>
-      <TimelineTabs on="board" onGantt={onGantt} onBoard={() => {}} />
+      <TimelineTabs on="board" onGantt={onGantt} onBoard={() => {}} onMade={onMade} />
       {problem ? (
         <p role="alert" className="mt-3 rounded-sm border border-ink bg-mount px-3 py-2.5 text-[14.5px] leading-relaxed">
           {problem}

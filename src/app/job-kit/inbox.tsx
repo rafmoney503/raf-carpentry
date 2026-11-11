@@ -423,6 +423,7 @@ export function EmailView({
   onEnquiry,
   onDelete,
   onDesign,
+  receipt,
 }: {
   id: string;
   fallback?: InboxMail; // the list's copy, shown while the email comes
@@ -434,6 +435,7 @@ export function EmailView({
   onEnquiry: (m: FullMail) => void;
   onDelete: () => Promise<string>;
   onDesign?: (m: FullMail) => void;
+  receipt?: (m: InboxMail) => React.ReactNode; // a supplier's receipt: put it on a job (job-money.tsx MailReceiptBox)
 }) {
   const [binSure, setBinSure] = useState(false);
   const [binBusy, setBinBusy] = useState(false);
@@ -693,6 +695,8 @@ export function EmailView({
           </button>
         </p>
       ) : null}
+
+      {receipt ? receipt(head) : null}
 
       {/* Who it is in ServiceM8 */}
       <div className="mt-4 rounded-sm border border-line-strong bg-mount px-3.5 py-3">

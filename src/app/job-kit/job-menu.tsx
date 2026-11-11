@@ -11,7 +11,7 @@ import { Icon, type IconName } from './icons';
    data-jsec-note for its word and data-jsec-alert="1" when it wants Raf (a new message, money owed). A box that
    isn't there (no money yet, no WhatsApp chat) has no chip. A fold button inside a box carries data-jsec-fold. */
 
-export type SecKey = 'status' | 'quote' | 'whatsapp' | 'photos' | 'notes' | 'diary' | 'goodnotes' | 'property' | 'bookings' | 'emails' | 'money' | 'more';
+export type SecKey = 'status' | 'quote' | 'whatsapp' | 'photos' | 'notes' | 'diary' | 'goodnotes' | 'property' | 'bookings' | 'emails' | 'money' | 'made' | 'more';
 
 export const JOB_SECS: Record<SecKey, { label: string; icon: IconName }> = {
   status: { label: 'Status', icon: 'steps' },
@@ -25,6 +25,7 @@ export const JOB_SECS: Record<SecKey, { label: string; icon: IconName }> = {
   bookings: { label: 'Bookings', icon: 'diary' },
   emails: { label: 'Messages', icon: 'mail' },
   money: { label: 'Money', icon: 'money' },
+  made: { label: 'Made', icon: 'made' },
   more: { label: 'More', icon: 'more' },
 };
 

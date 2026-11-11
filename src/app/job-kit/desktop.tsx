@@ -25,7 +25,7 @@ export const useWide = () =>
   );
 
 /* The places in the sidebar, in their sections. */
-export type SideId = 'home' | 'personal' | 'diary' | 'current' | 'quotes' | 'cworkshop' | 'inbox' | 'whatsapp' | 'timeline' | 'board' | 'designs' | 'library' | 'stats' | 'kit' | 'posts' | 'social' | 'settings';
+export type SideId = 'home' | 'personal' | 'diary' | 'current' | 'quotes' | 'cworkshop' | 'inbox' | 'whatsapp' | 'timeline' | 'board' | 'made' | 'designs' | 'library' | 'stats' | 'kit' | 'posts' | 'social' | 'settings';
 const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string; icon?: IconName }[] }[] = [
   { sec: 'todo', items: [{ id: 'home', title: 'Today' }] },
   { sec: 'personal', label: 'Personal', items: [{ id: 'personal', title: 'Personal to do', icon: 'home' }] },
@@ -47,6 +47,7 @@ const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string;
     items: [
       { id: 'timeline', title: 'Gantt chart', icon: 'gantt' },
       { id: 'board', title: 'Clients board', icon: 'board' },
+      { id: 'made', title: 'What jobs made', icon: 'made' },
     ],
   },
   {
@@ -75,6 +76,7 @@ export function sideOf(name: string, from?: string): SideId | undefined {
   if (name === 'personal') return 'personal';
   if (name === 'diary' || (name === 'sm8' && from === 'diary')) return 'diary';
   if (name === 'board' || (name === 'sm8' && from === 'board')) return 'board';
+  if (name === 'made' || (name === 'sm8' && from === 'made')) return 'made';
   if (name === 'cworkshop') return 'cworkshop';
   if (name === 'quotes' || name === 'quote-prices' || (name === 'quote' && from !== 'job')) return 'quotes';
   if (name === 'quote') return 'current';

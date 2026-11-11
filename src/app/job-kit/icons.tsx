@@ -1,7 +1,7 @@
 /* Small line icons for the Job Kit's sections, drawn like the site's sketches (round ends, one weight), so each
    card on the Today screen and each line in the Today list shows where it goes. Decorative: the text says it. */
 
-export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note' | 'home' | 'quote' | 'steps' | 'history' | 'tablet' | 'house' | 'more' | 'swatch';
+export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note' | 'home' | 'quote' | 'steps' | 'history' | 'tablet' | 'house' | 'more' | 'swatch' | 'made' | 'receipt';
 
 const PATHS: Record<IconName, React.ReactNode> = {
   // three steps going up, the one reached ticked: where a job is up to (Quote, Work Order, Completed)
@@ -215,6 +215,24 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M4 6.5h16M9.5 6.5V4.5h5v2" />
       <path d="M6 6.5l1 13.5h10l1-13.5" />
       <path d="M10 10.5v6M14 10.5v6" />
+    </>
+  ),
+  // a till receipt with its torn bottom and a total under a line
+  receipt: (
+    <>
+      <path d="M6 3.5h12v17l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z" />
+      <path d="M8.8 7.5h6.4M8.8 10.5h4M8.8 15h6.4" />
+      <path d="M8.8 12.8h6.4" strokeWidth="1.1" />
+    </>
+  ),
+  // what jobs made: three bars against a dashed line, the day rate
+  made: (
+    <>
+      <path d="M3.5 4v16.5h17" />
+      <rect x="6.5" y="12" width="3" height="8.5" rx="0.5" />
+      <rect x="11" y="7" width="3" height="13.5" rx="0.5" />
+      <rect x="15.5" y="14.5" width="3" height="6" rx="0.5" />
+      <path d="M5 10h1.4M8.6 10h1.4M12.2 10h1.4M15.8 10h1.4M19.4 10h1.1" strokeWidth="1.3" />
     </>
   ),
   // a pound coin: money still to collect

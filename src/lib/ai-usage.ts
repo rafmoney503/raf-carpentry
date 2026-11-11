@@ -7,7 +7,7 @@ import { jobkitRpc, syncSetUp } from './job-kit-sync-server';
    tops up, and the Job Kit works out what's left (src/app/job-kit/claude-credit.tsx). Supabase jobkit.ai_uses
    through public.jobkit_ai. Noting never stops or slows a call by more than 3 s, and never throws. */
 
-export type Feature = 'quotes' | 'design' | 'draft' | 'pots';
+export type Feature = 'quotes' | 'design' | 'draft' | 'pots' | 'receipts';
 
 /* List prices in US dollars a million tokens (Anthropic's pricing page, checked 3 Nov 2026: Sonnet 5 and 5.5
    $2 in, $10 out, cache reads $0.20, 5-minute cache writes $2.50). Any other model is counted at Sonnet's prices. */
