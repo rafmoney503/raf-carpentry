@@ -91,7 +91,7 @@ import { addSend, enquiryFromChat, WaChatView, waHomeLine, WaJobBox, WaList, waT
 import { getWaFile as getWaFileBlob, pickedOf, pickedText, sendToJob, updateChat, useWaChats, waChat, type WaChat } from './wa-store';
 import type { Change } from '@/lib/job-timeline';
 import { ColourKey, KeyDots, secClass, secOfLine, secOfScreen, TintSwitch, useColourKey, useTint, type SecId } from './sections';
-import { LIST_SCREENS, PickNote, Sidebar, sideOf, useWide, type SideId } from './desktop';
+import { HQ_URL, LIST_SCREENS, PickNote, Sidebar, sideOf, useWide, type SideId } from './desktop';
 import { onApplied, onSync, startSync, syncNow, syncSoon, syncWords, type SyncState } from './sync';
 import { reloadFor, safeToReload, watchVersion } from './update';
 import { fetchSocial, newComments, savedSocial, SOCIAL_FRESH, socialKey, socialLine, socialProblem, socialTodayLine, SocialView, type Social } from './social';
@@ -2252,7 +2252,15 @@ function Home({
 
       <HomeBand sec="website" icon="stats" label="Website" right="rafcarpentry.com">
         <div className="px-4">
-          <HomeRow onClick={onStats} title="Website stats" line={webLine} last />
+          <HomeRow onClick={onStats} title="Website stats" line={webLine} />
+          <a href={HQ_URL} target="_blank" rel="noopener" data-hq-link className="flex min-h-[60px] w-full items-center gap-3 py-2.5 text-left">
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold">All apps in HQ</span>
+              <span className="mt-0.5 block text-[14.5px] text-muted">Visitors, leads and sites up for every app</span>
+            </span>
+            <span aria-hidden className="text-[20px] jk-sec-ink">↗</span>
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
         </div>
       </HomeBand>
 
