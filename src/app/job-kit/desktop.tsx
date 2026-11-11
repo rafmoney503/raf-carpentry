@@ -26,7 +26,11 @@ export const useWide = () =>
 
 /* The places in the sidebar, in their sections. */
 export type SideId = 'home' | 'personal' | 'diary' | 'current' | 'quotes' | 'cworkshop' | 'inbox' | 'whatsapp' | 'timeline' | 'board' | 'made' | 'designs' | 'library' | 'stats' | 'kit' | 'posts' | 'social' | 'settings';
-const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string; icon?: IconName }[] }[] = [
+/* Rafal Solutions HQ: every app's visitors, leads and whether the sites are up (its own Vercel project, rafal-hq,
+   from the rafal-hq branch; signed in with the Job Kit PIN). Opened from Today's Website box and the sidebar. */
+export const HQ_URL = 'https://rafal-hq.vercel.app';
+
+const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string; icon?: IconName }[]; links?: { title: string; href: string; icon: IconName }[] }[] = [
   { sec: 'todo', items: [{ id: 'home', title: 'Today' }] },
   { sec: 'personal', label: 'Personal', items: [{ id: 'personal', title: 'Personal to do', icon: 'home' }] },
   {
@@ -58,7 +62,7 @@ const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string;
       { id: 'library', title: 'Design library', icon: 'library' },
     ],
   },
-  { sec: 'website', label: 'Website', items: [{ id: 'stats', title: 'Website stats', icon: 'stats' }] },
+  { sec: 'website', label: 'Website', items: [{ id: 'stats', title: 'Website stats', icon: 'stats' }], links: [{ title: 'All apps in HQ', href: HQ_URL, icon: 'board' }] },
   {
     sec: 'photos',
     label: 'Photos and posts',
@@ -134,6 +138,22 @@ export function Sidebar({ active, counts, onGo }: { active?: SideId; counts: Par
                   </li>
                 );
               })}
+              {g.links?.map((l) => (
+                <li key={l.href}>
+                  <a
+                    href={l.href}
+                    target="_blank"
+                    rel="noopener"
+                    data-hq-link
+                    className="jk-side-item flex h-10 w-full items-center gap-2.5 rounded-sm px-2 text-left text-[15px]"
+                  >
+                    <Icon name={l.icon} className="h-[19px] w-[19px] shrink-0 jk-sec-ink" />
+                    <span className="min-w-0 flex-1 truncate">{l.title}</span>
+                    <span aria-hidden className="text-[14px] jk-sec-ink">↗</span>
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
         ))}
