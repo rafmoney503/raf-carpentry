@@ -33,6 +33,10 @@ it): `create_deployment` with gitSource github rafmoney503/raf-carpentry, ref `r
   `jobkit.assistant`). A card at the top of Today (the last 3 days, up to 4 enquiries, what each needs, the week in a
   line, a link to the Job Kit) and a line in the morning summary ('2 new enquiries, 2 rough quotes ready'). Sums in
   `src/lib/assistant.ts` (checked by `npm run check`).
+- **CabinetOS support** (12 Nov 2026, migration `hq_assistant_support`): the same function also brings the emails to
+  support@cabinetos.co.uk of the last 3 days that Claude read in the status app (`public.admin_insights`: who, when,
+  the kind, Claude's summary, urgent; no spam, automatic or addresses). A card under the assistant's ('2 emails to
+  support in the last 3 days, 1 urgent', a link to the status app) and a morning line ('1 email to CabinetOS support').
 - **Buzz for new enquiries** (12 Nov 2026): the assistant POSTs to `/api/notify` with `HQ_NOTIFY_SECRET` (the same
   value is set in raf-carpentry with `HQ_NOTIFY_URL` https://rafal-hq.vercel.app/api/notify). HQ sends it as Web Push
   to the phones that turned notifications on (Alerts), tapping it opens Today. The assistant keeps quiet from 21:30 to

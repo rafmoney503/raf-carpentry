@@ -20,7 +20,9 @@ export type AsEnquiry = {
 export type AsMail = { kind: 'mail'; from: string; what?: string; subject?: string; read: 'maybe' | 'platform' | 'enquiry' };
 export type AsRow = { id: string; kind: string; at: number; data: AsEnquiry | AsMail };
 export type AsRun = { at: number; enquiries?: number; made?: number; quotes?: number; drawings?: number; problems?: string[]; skipped?: string };
-export type AsRaw = { items: AsRow[]; run: { running?: boolean; last?: AsRun }; runs: AsRun[]; settings: { paused?: boolean }; now: number };
+/* An email to CabinetOS support@ that Claude read (the status app's admin_insights). */
+export type AsSupport = { key: string; who: string | null; at: string | null; kind: string | null; summary: string | null; urgent: boolean };
+export type AsRaw = { items: AsRow[]; run: { running?: boolean; last?: AsRun }; runs: AsRun[]; settings: { paused?: boolean }; support?: AsSupport[]; now: number };
 
 export type AssistantSummary = {
   checkedAt: number | null;
@@ -30,7 +32,19 @@ export type AssistantSummary = {
   recent: { id: string; at: number; name: string; area: string; what: string; source: string; lines: string[]; needs: string }[];
   mails: { leads: number; maybe: number; enquiries: number }; // emails of the last 3 days it left for Raf
   week: string; // 'Last 7 days: 3 enquiries, 1 job made from emails, 3 rough quotes, 2 drawings.'
-  yesterday: { enquiries: number; quotes: number }; // for the morning summary
+  yesterday: { enquiries: number; quotes: number; support: number }; // for the morning summary
+  /* CabinetOS: emails to support@ in the last 3 days, newest first, with Claude's word on each. */
+  support: { who: string; at: number; kind: string; summary: string; urgent: boolean }[];
+};
+
+const KIND: Record<string, string> = {
+  bug: 'Bug',
+  missing: 'Wants a feature',
+  how_to: 'Needs help',
+  account: 'Plan or billing',
+  praise: 'Thanks',
+  sales: 'Interested',
+  other: 'Other',
 };
 
 const pounds = (n: number) => `£${Math.round(n).toLocaleString('en-GB')}`;
@@ -82,6 +96,10 @@ export function summarise(raw: AsRaw | null, now: number, day0: number): Assista
   const bits = [e7 ? s(e7, 'enquiry', 'enquiries') : '', add('made') ? `${s(add('made'), 'job')} made from emails` : '', add('quotes') ? s(add('quotes'), 'rough quote') : '', add('drawings') ? s(add('drawings'), 'drawing') : ''].filter(Boolean);
   const y0 = day0 - 864e5;
   const yEnq = enq.filter((r) => r.at >= y0 && r.at < day0);
+  const support = (Array.isArray(raw.support) ? raw.support : [])
+    .map((m) => ({ who: m.who || 'Someone', at: Date.parse(m.at ?? '') || 0, kind: KIND[m.kind ?? ''] ?? 'Other', summary: m.summary ?? '', urgent: Boolean(m.urgent) }))
+    .filter((m) => m.at >= d3)
+    .sort((a, b) => b.at - a.at);
   return {
     checkedAt: raw.run?.last?.at ?? null,
     paused: Boolean(raw.settings?.paused),
@@ -89,15 +107,19 @@ export function summarise(raw: AsRaw | null, now: number, day0: number): Assista
     recent,
     mails: { leads: mails.filter((m) => m.data.read === 'platform').length, maybe: mails.filter((m) => m.data.read === 'maybe').length, enquiries: mails.filter((m) => m.data.read === 'enquiry').length },
     week: bits.length ? `Last 7 days: ${bits.join(', ')}.` : 'Nothing new in the last 7 days.',
-    yesterday: { enquiries: yEnq.length, quotes: yEnq.filter((r) => r.data.quote?.state === 'ready').length },
+    yesterday: { enquiries: yEnq.length, quotes: yEnq.filter((r) => r.data.quote?.state === 'ready').length, support: support.filter((m) => m.at >= y0 && m.at < day0).length },
+    support,
   };
 }
 
 /* The morning summary's line: '2 new enquiries, 2 rough quotes ready'. */
 export function morningLine(a: AssistantSummary | null): string {
-  if (!a?.yesterday.enquiries) return '';
-  const { enquiries, quotes } = a.yesterday;
-  return `${s(enquiries, 'new enquiry', 'new enquiries')}${quotes ? `, ${s(quotes, 'rough quote')} ready` : ''}`;
+  if (!a) return '';
+  const { enquiries, quotes, support } = a.yesterday;
+  return [
+    enquiries ? `${s(enquiries, 'new enquiry', 'new enquiries')}${quotes ? `, ${s(quotes, 'rough quote')} ready` : ''}` : '',
+    support ? `${s(support, 'email')} to CabinetOS support` : '',
+  ].filter(Boolean).join(' · ');
 }
 
 /* A buzz the assistant sent, checked: up to 3 notes, short words only. */

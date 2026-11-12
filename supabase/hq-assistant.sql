@@ -1,6 +1,9 @@
 -- HQ reads the Job Kit assistant (12 Nov 2026, migration 'hq_assistant'): what it found and did in the last 14 days,
 -- its last run and switches. Read only, behind HQ's own secret (hq.secret_ok). The assistant itself writes
 -- jobkit.assistant through public.jobkit_assistant (rafcarpentry, migration 'jobkit_assistant').
+-- Then 'hq_assistant_support' (same day): also the emails to CabinetOS support@ of the last 3 days that Claude read
+-- (public.admin_insights, cabinetos-site): who, when, the kind, Claude's summary and whether it's urgent; spam and
+-- automatic ones left out, no addresses.
 create or replace function public.hq_assistant(p_secret text)
 returns jsonb
 language plpgsql security definer set search_path to '' as $$
@@ -15,6 +18,13 @@ begin
     'run', coalesce((select data from jobkit.assistant where id = '_run'), '{}'::jsonb),
     'runs', coalesce((select data->'runs' from jobkit.assistant where id = '_runs'), '[]'::jsonb),
     'settings', coalesce((select data from jobkit.assistant where id = '_settings'), '{}'::jsonb),
+    'support', coalesce((
+      select jsonb_agg(jsonb_build_object('key', i.key, 'who', i.data->>'who', 'at', i.data->>'at',
+        'kind', i.data->'read'->>'kind', 'summary', i.data->'read'->>'summary', 'urgent', coalesce((i.data->'read'->>'urgent')::boolean, false)) order by i.updated_at desc)
+      from (select * from public.admin_insights
+            where source = 'mail' and state = 'ready' and updated_at > now() - interval '3 days'
+              and coalesce(data->'read'->>'kind', '') not in ('spam', 'automatic', '')
+            order by updated_at desc limit 20) i), '[]'::jsonb),
     'now', (extract(epoch from clock_timestamp()) * 1000)::bigint);
 end;
 $$;

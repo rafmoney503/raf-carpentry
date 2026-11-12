@@ -57,3 +57,48 @@ export function AssistantCard({ a, now }: { a: AssistantSummary; now: number }) 
     </article>
   );
 }
+
+const STATUS_APP = 'https://www.cabinetos.co.uk/admin/status';
+
+/* CabinetOS support@: the emails Claude read in the last 3 days (the status app has the rest). */
+export function SupportCard({ a, now }: { a: AssistantSummary; now: number }) {
+  const list = a.support;
+  if (!list.length) return null;
+  const urgent = list.filter((m) => m.urgent).length;
+  const fresh = list.filter((m) => now - m.at < 24 * 3600 * 1000).length;
+  return (
+    <article className={`card enq${urgent ? ' alertcard' : ''}`} data-hq-support>
+      <div className="ins-top">
+        <span className={`mark ${urgent ? 'alert' : 'info'}`} aria-hidden="true">
+          {list.length}
+        </span>
+        <span className="where">CabinetOS · support@</span>
+        {fresh ? <span className="new">New</span> : null}
+      </div>
+      <h3>
+        {plural(list.length, 'email')} to support in the last 3 days{urgent ? `, ${urgent} urgent` : ''}
+      </h3>
+      <ul className="enq-list">
+        {list.slice(0, 4).map((m, i) => (
+          <li key={i}>
+            <p className="enq-name">
+              <em>
+                <b>{m.who}</b>
+              </em>
+              <span>{when(m.at, new Date(now)).replace(/^today at /, '')}</span>
+            </p>
+            <p className="enq-lines">
+              {m.urgent ? 'Urgent · ' : ''}
+              {m.kind}: {m.summary}
+            </p>
+          </li>
+        ))}
+        {list.length > 4 ? <li className="note">and {list.length - 4} more in the status app</li> : null}
+      </ul>
+      <a className="act" href={STATUS_APP} target="_blank" rel="noreferrer">
+        Answer them in the status app
+        <span aria-hidden="true">→</span>
+      </a>
+    </article>
+  );
+}

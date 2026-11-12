@@ -6,7 +6,7 @@ import { diff, num, pctChange, plural, sum } from '@/lib/format';
 import { clock, dayNumber, greeting, longDay, shortDay, when } from '@/lib/time';
 import type { Report, SiteStats } from '@/lib/types';
 import { AppCard, OffCard } from './apps';
-import { AssistantCard } from './assistant';
+import { AssistantCard, SupportCard } from './assistant';
 import { Health } from './health';
 import { Icon, InsightCard, Mark } from './ui';
 
@@ -79,6 +79,7 @@ export function Today({ r, now }: { r: Report; now: number }) {
       ))}
 
       {r.assistant ? <AssistantCard a={r.assistant} now={now} /> : null}
+      {r.assistant ? <SupportCard a={r.assistant} now={now} /> : null}
 
       <div className="kpis">
         <div className="kpi hot">

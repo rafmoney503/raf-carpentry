@@ -108,9 +108,16 @@ ok(tm.body.includes('1 message on Build It in 3D'), 'morning line for messages: 
     run: { last: { at: h(0.2), problems: [] } },
     runs: [{ at: h(0.2), made: 1, quotes: 3, drawings: 1 }, { at: h(24 * 9), made: 5 }],
     settings: {},
+    support: [
+      { key: 'mail:1', who: 'Natalia', at: new Date(h(1)).toISOString(), kind: 'how_to', summary: 'wants drawers in the corner unit', urgent: false },
+      { key: 'mail:2', who: 'Jo', at: new Date(h(22)).toISOString(), kind: 'bug', summary: 'export does nothing', urgent: true },
+      { key: 'mail:3', who: 'Old', at: new Date(h(24 * 4)).toISOString(), kind: 'bug', summary: 'old', urgent: false },
+    ],
     now,
   };
   const a = summarise(raw, now, day0)!;
+  ok(a.support.length === 2 && a.support[0].who === 'Natalia' && a.support[0].kind === 'Needs help' && a.support[1].urgent, 'support emails of the last 3 days, newest first, with their kind');
+  ok(a.yesterday.support === 1, 'one support email yesterday');
   ok(a.recent.length === 3 && a.recent[0].name === 'Sarah Jones', 'three enquiries in the last 3 days, newest first');
   ok(a.recent[0].lines.join(' · ') === 'Job made from their email with 2 photos · Rough quote from £1,900 + VAT (4 options) · 3 quick drawings ready', 'Sarah’s lines: ' + a.recent[0].lines.join(' · '));
   ok(a.recent[1].lines.join(' · ') === 'Rough quote from £2,200 + VAT' && a.recent[1].source === 'in ServiceM8', 'Dan: a quote, no drawings');
@@ -118,10 +125,11 @@ ok(tm.body.includes('1 message on Build It in 3D'), 'morning line for messages: 
   ok(a.mails.leads === 1 && a.mails.maybe === 1, 'emails left for Raf');
   ok(a.week === 'Last 7 days: 4 enquiries, 1 job made from emails, 3 rough quotes, 1 drawing.', 'the week: ' + a.week);
   ok(a.yesterday.enquiries === 2 && a.yesterday.quotes === 1, 'yesterday: Dan and Amelia, Dan’s quote ready');
-  ok(morningLine(a) === '2 new enquiries, 1 rough quote ready', 'morning line: ' + morningLine(a));
-  ok(morningLine({ ...a, yesterday: { enquiries: 1, quotes: 0 } }) === '1 new enquiry', 'morning line, one');
-  ok(morningLine({ ...a, yesterday: { enquiries: 2, quotes: 2 } }) === '2 new enquiries, 2 rough quotes ready', 'morning line with quotes');
-  const ma = morningSummary([site('a', Array(28).fill(10))], null, today, null, { ...a, yesterday: { enquiries: 2, quotes: 1 } });
+  ok(morningLine(a) === '2 new enquiries, 1 rough quote ready · 1 email to CabinetOS support', 'morning line: ' + morningLine(a));
+  ok(morningLine({ ...a, yesterday: { enquiries: 1, quotes: 0, support: 0 } }) === '1 new enquiry', 'morning line, one');
+  ok(morningLine({ ...a, yesterday: { enquiries: 2, quotes: 2, support: 0 } }) === '2 new enquiries, 2 rough quotes ready', 'morning line with quotes');
+  ok(morningLine({ ...a, yesterday: { enquiries: 0, quotes: 0, support: 3 } }) === '3 emails to CabinetOS support', 'morning line, support only');
+  const ma = morningSummary([site('a', Array(28).fill(10))], null, today, null, { ...a, yesterday: { enquiries: 2, quotes: 1, support: 0 } });
   ok(ma.body.includes('2 new enquiries, 1 rough quote ready'), 'in the morning summary: ' + ma.body);
   ok(summarise(null, now, day0) === null, 'nothing before the function exists');
   ok(summarise({ items: [], run: {}, runs: [], settings: { paused: true }, now } as AsRaw, now, day0)!.paused, 'paused');
