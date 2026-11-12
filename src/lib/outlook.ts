@@ -263,28 +263,6 @@ export async function inbox(skip = 0): Promise<{ mails: InboxMail[]; more: boole
   return { mails: (list.value ?? []).filter((m) => !m.isDraft).map(listItem), more: Boolean(list['@odata.nextLink']), unread: folder?.unreadItemCount ?? null, mailbox: MAILBOX() };
 }
 
-/* When the Inbox list fails: try simpler requests to see which part Microsoft refuses (kept on the assistant's run). */
-export async function inboxProbe(): Promise<string> {
-  const plain = LIST_FIELDS.replace(',inferenceClassification', '');
-  const tries: [string, string][] = [
-    ['one', '/mailFolders/inbox/messages?$top=1&$select=id'],
-    ['noSort', `/mailFolders/inbox/messages?$top=${PAGE}&$select=${LIST_FIELDS}`],
-    ['noFocus', `/mailFolders/inbox/messages?$top=${PAGE}&$select=${plain}&$orderby=receivedDateTime%20desc`],
-    ['all', '/messages?$top=1&$select=id'],
-    ['folder', '/mailFolders/inbox?$select=unreadItemCount'],
-  ];
-  const out: string[] = [];
-  for (const [name, path] of tries) {
-    try {
-      await graph(path);
-      out.push(`${name} ok`);
-    } catch (e) {
-      out.push(`${name} ${e instanceof OutlookError ? `${e.status} ${e.detail}` : 'error'}`);
-    }
-  }
-  return out.join(' · ');
-}
-
 /* The newest emails from one address anywhere in the mailbox (Inbox, folders, archive), for Design with Claude's
    Find their job: their email to info@ may be older than the Inbox list on the phone. Graph only sorts a filtered
    list when the sort's field is filtered on first, hence the date in the filter; if Graph still turns it down, a
