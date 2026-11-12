@@ -64,6 +64,8 @@ export type RunInfo = {
   mails: number; // emails it looked at
   left: number; // emails it left alone (not enquiries)
   problems: string[];
+  // what Microsoft or ServiceM8 actually answered, for working out a problem (not shown in the Job Kit)
+  detail?: string[];
   skipped?: 'paused' | 'not-set-up';
 };
 

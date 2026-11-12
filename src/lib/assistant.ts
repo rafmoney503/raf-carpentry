@@ -176,6 +176,13 @@ const late = (c: Ctx) => Date.now() - c.started > STOP_NEW_AFTER;
 const problem = (c: Ctx, p: string) => {
   if (!c.run.problems.includes(p)) c.run.problems.push(p);
 };
+/* Microsoft's or ServiceM8's own answer, kept on the run (Vercel's logs only last an hour on this plan). */
+const note = (c: Ctx, where: string, e: unknown) => {
+  const d = e instanceof OutlookError ? `${e.code} ${e.status} ${e.detail}` : e instanceof Sm8Error ? `${e.code} ${String(e.detail ?? '')}` : e instanceof Error ? e.message : String(e);
+  const line = `${where}: ${d}`.replace(/\s+/g, ' ').slice(0, 300);
+  console.error('assistant', line);
+  (c.run.detail ??= []).length < 12 && c.run.detail.push(line);
+};
 const sm8Problem = (e: unknown) => {
   console.error('assistant sm8', e instanceof Sm8Error ? `${e.code} ${String(e.detail ?? '').slice(0, 200)}` : e);
   return 'ServiceM8 didn’t answer, so nothing new was checked: it tries again in 30 minutes';
@@ -188,6 +195,7 @@ async function emailsStep(c: Ctx, jobs: CurrentJob[]): Promise<{ job: CurrentJob
     list = (await inbox(0)).mails;
   } catch (e) {
     problem(c, e instanceof OutlookError ? `The Inbox didn’t open (${e.code})` : 'The Inbox didn’t open');
+    note(c, 'inbox', e);
     return [];
   }
   const fresh = list
@@ -217,7 +225,10 @@ async function emailsStep(c: Ctx, jobs: CurrentJob[]): Promise<{ job: CurrentJob
       full = await message(m.id, false); // never marked read
     } catch (e) {
       if (e instanceof OutlookError && e.code === 'outlook-gone') remember(c.state.mails, m.id);
-      else problem(c, `An email didn’t open (${e instanceof OutlookError ? e.code : 'error'})`);
+      else {
+        problem(c, `An email didn’t open (${e instanceof OutlookError ? e.code : 'error'})`);
+        note(c, 'email', e);
+      }
       continue;
     }
     let read: MailRead;
@@ -446,6 +457,7 @@ export async function runAssistant(why: RunInfo['why']): Promise<RunInfo | { bus
     } catch (e) {
       sm8Ok = false;
       problem(c, sm8Problem(e));
+      note(c, 'servicem8', e);
     }
 
     const made = sm8Ok && outlookSetUp() ? await emailsStep(c, jobs) : [];
@@ -489,6 +501,7 @@ export async function runAssistant(why: RunInfo['why']): Promise<RunInfo | { bus
   } catch (e) {
     console.error('assistant run', e);
     problem(c, 'The run stopped part way');
+    note(c, 'run', e);
     return run;
   } finally {
     run.ms = Date.now() - started;
