@@ -47,6 +47,7 @@ import { problemText } from './sm8-post';
 import { readPin } from './uploader';
 import { field, label } from './parts';
 import { SecIcon } from './job-menu';
+import { Icon } from './icons';
 import { TimelineTabs } from './client-board';
 import type { TodayLine } from './current';
 
@@ -143,6 +144,76 @@ function jobChoices(jobs: CurrentJob[], bookings: Booking[], now = todayKey()): 
   return out.map(({ job, sub, today }) => ({ job, sub, today }));
 }
 
+/* ---------- Snap a receipt: one tap to the camera ---------- */
+
+/* The photo taken from Today or a job, handed to the receipt screen it opens.
+   Kept here only (a File can't go in the screen's saved state): a reload lands on the screen's first step. */
+let pendingSnap: File | null = null;
+export const holdSnap = (f: File) => {
+  pendingSnap = f;
+};
+const takeSnap = () => {
+  const f = pendingSnap;
+  pendingSnap = null;
+  return f;
+};
+
+/* The job a receipt snapped now most likely goes on: the one booked today. */
+export function snapLine(jobs: CurrentJob[], bookings: Booking[] | null): string {
+  const today = jobChoices(jobs, bookings ?? []).filter((c) => c.today);
+  if (today.length === 1) return `For ${possessive(today[0].job.name)} job, booked today`;
+  if (today.length > 1) return `${today.length} jobs booked today: pick one after`;
+  return 'Claude reads it, then you pick the job';
+}
+
+/* The camera straight from the tap (on a phone); on a computer, a photo or a PDF from the files. */
+export function SnapButton({ wide, line, onFile, onOther, other, big }: { wide: boolean; line?: string; onFile: (f: File) => void; onOther: () => void; other: string; big?: boolean }) {
+  const input = useRef<HTMLInputElement>(null);
+  return (
+    <div data-snap-box>
+      <button
+        type="button"
+        onClick={() => input.current?.click()}
+        className={big ? 'jk-snapbig flex min-h-[64px] w-full items-center gap-3 rounded-sm border border-line-strong bg-mount px-3.5 py-2.5 text-left' : 'btn btn-primary w-full'}
+        data-snap
+      >
+        {big ? (
+          <>
+            <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-sm bg-ink text-paper">
+              <Icon name="receipt" className="h-[24px] w-[24px]" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[17px] font-semibold leading-tight">Snap a receipt</span>
+              {line ? <span className="mt-0.5 block text-[14px] leading-snug text-muted">{line}</span> : null}
+            </span>
+            <span aria-hidden className="text-[18px] jk-sec-ink">
+              →
+            </span>
+          </>
+        ) : (
+          'Snap a receipt'
+        )}
+      </button>
+      <input
+        ref={input}
+        type="file"
+        accept={wide ? 'image/*,application/pdf,.pdf' : 'image/*'}
+        {...(wide ? {} : { capture: 'environment' as const })}
+        className="hidden"
+        data-snap-input
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = '';
+          if (f) onFile(f);
+        }}
+      />
+      <button type="button" onClick={onOther} className={`${big ? 'mt-1.5' : 'mt-1'} flex min-h-11 w-full items-center justify-center text-[14.5px] text-accent underline`} data-snap-other>
+        {other}
+      </button>
+    </div>
+  );
+}
+
 /* ---------- a receipt, or a cost typed by hand ---------- */
 
 type FileHere = { blob: Blob; name: string; type: string; url: string; thumb: string };
@@ -154,11 +225,13 @@ export function ReceiptView({
   mail,
   mailHead,
   typed,
+  snap,
   jobs,
   bookings,
   onDone,
   onOpenJob,
 }: {
+  snap?: boolean; // opened by Snap a receipt: the photo just taken is waiting (holdSnap)
   id?: string; // a cost already put in: change it
   job?: string; // started from this job
   mail?: string; // a supplier's email in info@
@@ -175,7 +248,8 @@ export function ReceiptView({
   const jobOf = (uuid: string) => jobs.find((j) => j.uuid === uuid);
   const startJob = existing?.data.where === 'job' && existing.data.jobs.length === 1 ? existing.data.jobs[0].job : jobAt ?? (choices.find((c) => c.today)?.job.uuid || '');
 
-  const [stage, setStage] = useState<'pick' | 'reading' | 'form'>(existing || typed ? 'form' : mail ? 'reading' : 'pick');
+  const [first] = useState(() => (snap && !id && !mail && !typed ? takeSnap() : null));
+  const [stage, setStage] = useState<'pick' | 'reading' | 'form'>(existing || typed ? 'form' : mail || first ? 'reading' : 'pick');
   const [file, setFile] = useState<FileHere | null>(null);
   const [mailAtt, setMailAtt] = useState(existing?.data.mailAtt ?? '');
   const [read, setRead] = useState<ReceiptRead | null>(null);
@@ -266,6 +340,15 @@ export function ReceiptView({
     } else setProblem(receiptProblem(r.error, r.detail));
     setStage('form');
   };
+
+  // a photo taken from Today or the job: read it straight away
+  const started = useRef(false);
+  useEffect(() => {
+    if (!first || started.current) return;
+    started.current = true;
+    void picked(first);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, for the photo just taken
+  }, [first]);
 
   const g = readAmount(gross);
   const v = withVat ? (vat.trim() ? readAmount(vat) : 0) : 0;
@@ -741,7 +824,7 @@ function checkinHours(job: string): { n: number; mins: number } | null {
   }
 }
 
-export function MadeBox({ job, bookings, rate, onReceipt, onTyped, onCost }: { job: CurrentJob; bookings: Booking[] | null; rate: number; onReceipt: () => void; onTyped: () => void; onCost: (id: string) => void }) {
+export function MadeBox({ job, bookings, rate, wide, onSnap, onReceipt, onTyped, onCost }: { job: CurrentJob; bookings: Booking[] | null; rate: number; wide: boolean; onSnap: (f: File) => void; onReceipt: () => void; onTyped: () => void; onCost: (id: string) => void }) {
   const view = useCosts();
   const set = view.sets[job.uuid];
   const days = useMemo(() => siteDays(workBookingsOf(job, bookings ?? [])), [job, bookings]);
@@ -858,10 +941,8 @@ export function MadeBox({ job, bookings, rate, onReceipt, onTyped, onCost }: { j
             {m.vat > 0 ? <p className="mt-0.5 font-mono text-[12px] text-faint">VAT on the receipts {pounds(m.vat, true)}, to claim back</p> : null}
           </>
         ) : null}
-        <div className="mt-3 grid gap-2">
-          <button type="button" onClick={onReceipt} className="btn btn-primary w-full" data-snap>
-            Snap a receipt
-          </button>
+        <div className="mt-3 grid gap-1">
+          <SnapButton wide={wide} onFile={onSnap} onOther={onReceipt} other={wide ? 'More ways to add it' : 'A PDF or a photo from the phone'} />
           <button type="button" onClick={onTyped} className="btn btn-ghost w-full" data-typed>
             Add a cost by hand
           </button>

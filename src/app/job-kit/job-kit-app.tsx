@@ -98,7 +98,7 @@ import { fetchSocial, newComments, savedSocial, SOCIAL_FRESH, socialKey, socialL
 import { PersonalToday, PersonalView, usePersonalToday } from './personal';
 import { startChores } from './chores-store';
 import { startCosts, useCosts, useCostSync } from './costs-store';
-import { keepSnaps, MadeBox, madeHomeLine, madeRows, madeTodayLines, MadeView, MailReceiptBox, ReceiptView } from './job-money';
+import { holdSnap, keepSnaps, MadeBox, madeHomeLine, madeRows, madeTodayLines, MadeView, MailReceiptBox, ReceiptView, SnapButton, snapLine } from './job-money';
 import { CworkshopView } from './cworkshop';
 import { askQuote, checkedQuotes, fetchQuotes, flushQuoteEdits, isWorking, keepRedo, ownNote, pricesOf, putInEmailBox, QUOTES_FRESH, QuoteJobBox, QuotePrices, QuotesList, quotesLine, quoteTodayLines, QuoteView, readyCount, rowOf, rulesOf, rulesWaiting, savedQuotes, savedRedo, toRead, workingHere, changeHere, type Quotes } from './quotes';
 import type { QuoteEdits } from '@/lib/quote-sums';
@@ -125,7 +125,7 @@ type Screen =
   | { name: 'cworkshop' } // Cworkshop's decors and service prices the finished-board quotes use (cworkshop.tsx)
   | { name: 'concept'; id: string; mail?: string; job?: string } // Design with Claude (concepts.tsx); mail: started from that email; job: from that ServiceM8 job's screen
   | { name: 'claude' } // Claude credit: what's left and what used it (claude-credit.tsx)
-  | { name: 'receipt'; id?: string; job?: string; mail?: string; typed?: boolean } // a receipt or a cost for a job (job-money.tsx): id changes one put in; mail: a supplier's email
+  | { name: 'receipt'; id?: string; job?: string; mail?: string; typed?: boolean; snap?: boolean } // a receipt or a cost for a job (job-money.tsx): id changes one put in; mail: a supplier's email
   | { name: 'made' } // What jobs made: every finished job's price, costs and days (job-money.tsx), the timeline's third tab
   | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer' | 'timeline' | 'board' | 'wa' | 'design' | 'made'; client?: string; chat?: string; design?: string }
   | { name: 'enquiry'; client?: string; named?: string; mail?: string; wa?: string } // client: started from a customer's page; named: from a search that found nobody; mail: from an email in the Inbox
@@ -1230,6 +1230,11 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                   checkSm8();
                   go({ name: 'made' });
                 }}
+                onSnap={(f) => {
+                  checkSm8();
+                  if (f) holdSnap(f);
+                  go(f ? { name: 'receipt', snap: true } : { name: 'receipt' });
+                }}
               />
             ) : screen.name === 'personal' ? (
               <PersonalView />
@@ -1278,6 +1283,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 mail={screen.mail}
                 mailHead={screen.mail ? inbox.mails.find((m) => m.id === screen.mail) : undefined}
                 typed={screen.typed}
+                snap={screen.snap}
                 jobs={[...sm8.jobs, ...customerJobs.filter((j) => !sm8.jobs.some((x) => x.uuid === j.uuid))]}
                 bookings={sm8.bookings ?? []}
                 onDone={back}
@@ -1675,6 +1681,11 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                       job={cur}
                       bookings={sm8.bookings ?? null}
                       rate={pricesOf(quotes).dayRate}
+                      wide={wide}
+                      onSnap={(f) => {
+                        holdSnap(f);
+                        go({ name: 'receipt', job: cur.uuid, snap: true });
+                      }}
                       onReceipt={() => go({ name: 'receipt', job: cur.uuid })}
                       onTyped={() => go({ name: 'receipt', job: cur.uuid, typed: true })}
                       onCost={(id) => go({ name: 'receipt', id, job: cur.uuid })}
@@ -1815,7 +1826,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   const picked = 'id' in screen ? screen.id : 'slug' in screen ? screen.slug : '';
   const roomy = wide && ROOMY.includes(screen.name);
   const sideGo = (id: SideId) => {
-    if (id === 'current' || id === 'diary' || id === 'timeline' || id === 'board' || id === 'made') checkSm8();
+    if (id === 'current' || id === 'diary' || id === 'timeline' || id === 'board' || id === 'made' || id === 'receipt') checkSm8();
     if (id === 'inbox') checkInbox();
     if (id === 'designs' || id === 'library') checkDesigns();
     if (id === 'social') checkSocial();
@@ -2076,6 +2087,7 @@ function Home({
   onPersonal,
   onClaude,
   onMade,
+  onSnap,
 }: {
   jobs: Job[];
   items: Item[];
@@ -2117,6 +2129,7 @@ function Home({
   onPersonal: () => void;
   onClaude: () => void;
   onMade: () => void;
+  onSnap: (f: File | null) => void; // Snap a receipt: the photo just taken, or null for the receipt screen's other ways
 }) {
   const { standalone, ios } = useStandalone();
   const personal = usePersonalToday();
@@ -2180,6 +2193,11 @@ function Home({
           <span className="mt-0.5 block text-[14.5px] text-muted">Once, so the app can send. Photos you take before that wait on the phone.</span>
         </button>
       ) : null}
+
+      {/* at the till: one tap to the camera, the job booked today picked for it */}
+      <div className={`${secClass('customers')} mt-5 ${wide ? 'max-w-[560px]' : ''}`}>
+        <SnapButton big wide={wide} line={snapLine(sm8.jobs, sm8.bookings ?? null)} onFile={(f) => onSnap(f)} onOther={() => onSnap(null)} other={wide ? 'More ways: no receipt, or a cost by hand' : 'A PDF, a photo from the phone, or no receipt'} />
+      </div>
 
       <div className="jk-home-bands">
       <HomeBand tone="accent" label="To do" right={lines.length ? `${lines.length} thing${lines.length === 1 ? '' : 's'}` : 'All clear'}>

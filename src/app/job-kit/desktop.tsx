@@ -25,7 +25,7 @@ export const useWide = () =>
   );
 
 /* The places in the sidebar, in their sections. */
-export type SideId = 'home' | 'personal' | 'diary' | 'current' | 'quotes' | 'cworkshop' | 'inbox' | 'whatsapp' | 'timeline' | 'board' | 'made' | 'designs' | 'library' | 'stats' | 'kit' | 'posts' | 'social' | 'settings';
+export type SideId = 'home' | 'personal' | 'diary' | 'current' | 'receipt' | 'quotes' | 'cworkshop' | 'inbox' | 'whatsapp' | 'timeline' | 'board' | 'made' | 'designs' | 'library' | 'stats' | 'kit' | 'posts' | 'social' | 'settings';
 /* Rafal Solutions HQ: every app's visitors, leads and whether the sites are up (its own Vercel project, rafal-hq,
    from the rafal-hq branch; signed in with the Job Kit PIN). Opened from Today's Website box and the sidebar. */
 export const HQ_URL = 'https://rafal-hq.vercel.app';
@@ -39,6 +39,7 @@ const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string;
     items: [
       { id: 'diary', title: 'Diary', icon: 'diary' },
       { id: 'current', title: 'Current jobs', icon: 'jobs' },
+      { id: 'receipt', title: 'Snap a receipt', icon: 'receipt' },
       { id: 'quotes', title: 'Quotes', icon: 'quote' },
       { id: 'cworkshop', title: 'Cworkshop', icon: 'swatch' },
       { id: 'inbox', title: 'Inbox', icon: 'mail' },
@@ -82,6 +83,7 @@ export function sideOf(name: string, from?: string): SideId | undefined {
   if (name === 'board' || (name === 'sm8' && from === 'board')) return 'board';
   if (name === 'made' || (name === 'sm8' && from === 'made')) return 'made';
   if (name === 'cworkshop') return 'cworkshop';
+  if (name === 'receipt') return 'receipt';
   if (name === 'quotes' || name === 'quote-prices' || (name === 'quote' && from !== 'job')) return 'quotes';
   if (name === 'quote') return 'current';
   if (['current', 'sm8', 'customer', 'enquiry'].includes(name)) return 'current';

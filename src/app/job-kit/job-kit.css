@@ -104,6 +104,9 @@
 }
 .jk.jk-tint .jk-top { background-color: var(--jk-bg); }
 .jk-tint .jk-band { background-color: color-mix(in srgb, var(--sec) 7%, var(--color-mount)); }
+/* Snap a receipt on Today: its section's edge, like the boxes */
+.jk-snapbig { border-left: 4px solid var(--sec-mark, var(--sec)); }
+.jk-tint .jk-snapbig { background-color: color-mix(in srgb, var(--sec) 9%, var(--color-mount)); }
 .jk-tint .jk-todo { display: grid; gap: 5px; padding-block: 7px; }
 .jk-tint .jk-todo > li { border-width: 0; border-radius: 2px; padding-inline: 10px; background-color: color-mix(in srgb, var(--sec) 12%, var(--color-mount)); }
 
