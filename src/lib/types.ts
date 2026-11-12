@@ -1,3 +1,4 @@
+import type { AssistantSummary } from './assistant';
 /* What the HQ screens get. Shared by the server (report.ts) and the screens. */
 
 export type DayPoint = { day: string; visitors: number; views: number };
@@ -87,6 +88,8 @@ export type Report = {
   insights: Insight[];
   /* Messages sent with Tell us on Build It in 3D: not read yet, the newest one's number, yesterday's and the week's. */
   messages: { unread: number; newest: number | null; yesterday: number; week: number } | null;
+  /* The Job Kit assistant on rafcarpentry.com: new enquiries and what it did with them. */
+  assistant: AssistantSummary | null;
   vercel: boolean;
   db: boolean;
   problems: string[];

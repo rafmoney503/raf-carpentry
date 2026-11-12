@@ -27,6 +27,17 @@ it): `create_deployment` with gitSource github rafmoney503/raf-carpentry, ref `r
   The Messages page (with the count on the tab), a card on Today while some are new, and a line in the morning
   summary for yesterday's. Nothing is deleted from HQ.
 
+- **Job Kit assistant** (12 Nov 2026): what the assistant on rafcarpentry.com found and did (new enquiries, the jobs it
+  made from emails to info@, rough quotes, quick drawings, emails it left for Rafal), read through its own function
+  `public.hq_assistant` (`supabase/hq-assistant.sql`, migration `hq_assistant`, behind `HQ_DB_SECRET`, read only from
+  `jobkit.assistant`). A card at the top of Today (the last 3 days, up to 4 enquiries, what each needs, the week in a
+  line, a link to the Job Kit) and a line in the morning summary ('2 new enquiries, 2 rough quotes ready'). Sums in
+  `src/lib/assistant.ts` (checked by `npm run check`).
+- **Buzz for new enquiries** (12 Nov 2026): the assistant POSTs to `/api/notify` with `HQ_NOTIFY_SECRET` (the same
+  value is set in raf-carpentry with `HQ_NOTIFY_URL` https://rafal-hq.vercel.app/api/notify). HQ sends it as Web Push
+  to the phones that turned notifications on (Alerts), tapping it opens Today. The assistant keeps quiet from 21:30 to
+  7:00 itself and buzzes then. The route is outside the sign-in (its own secret), like the morning job.
+
 The sites and what counts as their home page and key pages are in `src/lib/sites.ts`. The "worth knowing" rules are
 `src/lib/insights.ts` (checked by `npm run check`).
 
@@ -40,6 +51,7 @@ The sites and what counts as their home page and key pages are in `src/lib/sites
 | `HQ_SESSION_SECRET` | Signs the sign-in cookie (90 days). |
 | `CRON_SECRET` | Vercel sends it to `/api/cron/morning`. |
 | `HQ_VAPID_PUBLIC`, `HQ_VAPID_PRIVATE` | Web Push keys for the morning summary. |
+| `HQ_NOTIFY_SECRET` | The Job Kit assistant's buzz (Sensitive; 24 characters or more). |
 | `HQ_PIN` | Optional. Without it the PIN is checked against the Job Kit's (rafcarpentry.com `/api/pots`, action check). |
 
 ## Morning summary
@@ -49,6 +61,10 @@ Alerts → Turn on the morning summary (on an iPhone, add HQ to the Home Screen 
 visitors per site and taps, then anything new worth knowing.
 
 ## Testing
+
+The assistant's card and buzz (12 Nov 2026): scratchpad hqas/ (mock.mjs: hq_api in short, the real hq_assistant on the
+Job Kit's test Postgres, a push service over HTTPS; ui.cjs, 34 checks at 390, 320 and 1440; the site's assistant run
+sending its buzz through /api/notify to the pretend phone, encrypted with VAPID).
 
 The tests run against stand-ins for Vercel, Supabase (the real `hq_api` on a local Postgres 16), the PIN check and a
 push service (scratchpad hqtest/: mocks.mjs, start.sh, test.cjs, 65 checks at 390, 320 and 1440 px).

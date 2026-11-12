@@ -1,4 +1,5 @@
 /* npm run check: the day sums and the "worth knowing" rules on made-up numbers. */
+import { cleanNotes, morningLine, summarise, type AsRaw } from '../src/lib/assistant';
 import { buildInsights, morningSummary } from '../src/lib/insights';
 import { addDays, londonDay, londonMidnight, rangeText } from '../src/lib/time';
 import type { DayPoint, Leads, SiteStats } from '../src/lib/types';
@@ -89,6 +90,45 @@ ok(!buildInsights([flat], null, today, { ...msgs, unread: 0 }).some((i) => i.id.
 ok(buildInsights([flat], null, today, { ...msgs, newest: 42 }).some((i) => i.id === 'tellus:42'), 'a new message makes a new card');
 const tm = morningSummary([site('a', Array(28).fill(10))], null, today, msgs);
 ok(tm.body.includes('1 message on Build It in 3D'), 'morning line for messages: ' + tm.body);
+
+// The Job Kit assistant
+{
+  const now = Date.parse('2026-11-12T18:00:00Z');
+  const day0 = londonMidnight('2026-11-12').getTime();
+  const h = (x: number) => now - x * 3600e3;
+  const raw: AsRaw = {
+    items: [
+      { id: 'job:a', kind: 'enquiry', at: h(2), data: { kind: 'enquiry', job: 'a', name: 'Sarah Jones', area: 'N8', what: 'Fitted wardrobe', source: 'email', made: { photos: 2 }, quote: { state: 'ready', from: 1900, options: 4 }, drawings: { code: 'x', state: 'ready', options: 3 } } },
+      { id: 'job:b', kind: 'enquiry', at: h(20), data: { kind: 'enquiry', job: 'b', name: 'Dan Price', area: 'N8', what: 'Kitchen fitting', source: 'servicem8', quote: { state: 'ready', from: 2200, options: 1 }, drawings: { skipped: 'not-furniture' } } },
+      { id: 'job:c', kind: 'enquiry', at: h(30), data: { kind: 'enquiry', job: 'c', name: 'Amelia Brown', source: 'website', quote: { state: 'failed', error: 'out of Claude credit' } } },
+      { id: 'job:d', kind: 'enquiry', at: h(24 * 5), data: { kind: 'enquiry', job: 'd', name: 'Old One', quote: { state: 'ready', from: 900 } } },
+      { id: 'mail:m', kind: 'mail', at: h(3), data: { kind: 'mail', from: 'Bark', read: 'platform' } },
+      { id: 'mail:n', kind: 'mail', at: h(3), data: { kind: 'mail', from: 'Tom', read: 'maybe' } },
+    ],
+    run: { last: { at: h(0.2), problems: [] } },
+    runs: [{ at: h(0.2), made: 1, quotes: 3, drawings: 1 }, { at: h(24 * 9), made: 5 }],
+    settings: {},
+    now,
+  };
+  const a = summarise(raw, now, day0)!;
+  ok(a.recent.length === 3 && a.recent[0].name === 'Sarah Jones', 'three enquiries in the last 3 days, newest first');
+  ok(a.recent[0].lines.join(' · ') === 'Job made from their email with 2 photos · Rough quote from £1,900 + VAT (4 options) · 3 quick drawings ready', 'Sarah’s lines: ' + a.recent[0].lines.join(' · '));
+  ok(a.recent[1].lines.join(' · ') === 'Rough quote from £2,200 + VAT' && a.recent[1].source === 'in ServiceM8', 'Dan: a quote, no drawings');
+  ok(a.recent[2].needs === 'Work out the quote yourself' && /out of Claude credit/.test(a.recent[2].lines[0]), 'Amelia: no quote');
+  ok(a.mails.leads === 1 && a.mails.maybe === 1, 'emails left for Raf');
+  ok(a.week === 'Last 7 days: 4 enquiries, 1 job made from emails, 3 rough quotes, 1 drawing.', 'the week: ' + a.week);
+  ok(a.yesterday.enquiries === 2 && a.yesterday.quotes === 1, 'yesterday: Dan and Amelia, Dan’s quote ready');
+  ok(morningLine(a) === '2 new enquiries, 1 rough quote ready', 'morning line: ' + morningLine(a));
+  ok(morningLine({ ...a, yesterday: { enquiries: 1, quotes: 0 } }) === '1 new enquiry', 'morning line, one');
+  ok(morningLine({ ...a, yesterday: { enquiries: 2, quotes: 2 } }) === '2 new enquiries, 2 rough quotes ready', 'morning line with quotes');
+  const ma = morningSummary([site('a', Array(28).fill(10))], null, today, null, { ...a, yesterday: { enquiries: 2, quotes: 1 } });
+  ok(ma.body.includes('2 new enquiries, 1 rough quote ready'), 'in the morning summary: ' + ma.body);
+  ok(summarise(null, now, day0) === null, 'nothing before the function exists');
+  ok(summarise({ items: [], run: {}, runs: [], settings: { paused: true }, now } as AsRaw, now, day0)!.paused, 'paused');
+  ok(JSON.stringify(cleanNotes({ notes: [{ title: 'New enquiry: Sarah', body: 'x', tag: 'assistant-1' }] })) === JSON.stringify([{ title: 'New enquiry: Sarah', body: 'x', tag: 'assistant-1' }]), 'a buzz');
+  ok(cleanNotes({ notes: [] }) === null && cleanNotes({}) === null && cleanNotes({ notes: [{ title: '' }] }) === null && cleanNotes({ notes: [{ title: 'x'.repeat(200) }] }) === null, 'bad buzzes refused');
+  ok(cleanNotes({ notes: [{ title: 'a', tag: '<script>' }] })![0].tag === 'assistant', 'odd tag replaced');
+}
 
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

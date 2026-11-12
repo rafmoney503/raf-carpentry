@@ -1,3 +1,4 @@
+import { morningLine } from './assistant';
 import { median, plural, sum } from './format';
 import { addDays, dayMonth } from './time';
 import type { Insight, Leads, Report, SiteStats } from './types';
@@ -211,7 +212,7 @@ function weekChange(s: SiteStats, out: Insight[], today: string) {
 }
 
 /* The morning summary: yesterday's visitors per site, and leads. */
-export function morningSummary(sites: SiteStats[], leads: Leads | null, today: string, messages: Report['messages'] = null): { title: string; body: string } {
+export function morningSummary(sites: SiteStats[], leads: Leads | null, today: string, messages: Report['messages'] = null, assistant: Report['assistant'] = null): { title: string; body: string } {
   const counted = sites.filter((s) => s.status === 'ok');
   const y = addDays(today, -1);
   const total = sum(counted.map((s) => s.yesterday));
@@ -223,6 +224,8 @@ export function morningSummary(sites: SiteStats[], leads: Leads | null, today: s
     if (leads.cabinetos.signupsYesterday) extra.push(plural(leads.cabinetos.signupsYesterday, 'new CabinetOS account'));
   }
   if (messages?.yesterday) extra.push(`${plural(messages.yesterday, 'message')} on Build It in 3D`);
+  const enq = morningLine(assistant);
+  if (enq) extra.push(enq);
   return {
     title: `Yesterday: ${plural(total, 'visitor')} across ${plural(counted.length, 'site')}`,
     body: [parts.join(' · '), extra.join(' · ')].filter(Boolean).join('\n'),

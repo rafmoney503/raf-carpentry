@@ -23,6 +23,20 @@ export async function hqApi<T>(action: string, p: Record<string, unknown> = {}):
   return (await res.json()) as T;
 }
 
+/* The Job Kit assistant's own read (public.hq_assistant, migration 'hq_assistant'); null before it exists. */
+export async function assistantRaw<T>(): Promise<T | null> {
+  const res = await fetch(`${process.env.HQ_SUPABASE_URL}/rest/v1/rpc/hq_assistant`, {
+    method: 'POST',
+    headers: { apikey: process.env.HQ_SUPABASE_KEY ?? '', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_secret: process.env.HQ_DB_SECRET }),
+    cache: 'no-store',
+    signal: AbortSignal.timeout(10000),
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`hq_assistant: ${res.status}`);
+  return (await res.json()) as T;
+}
+
 export type DbReport = {
   today: string;
   rafsite: { goals: { day: string; goal: string; taps: number; people: number }[] };

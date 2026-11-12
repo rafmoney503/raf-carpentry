@@ -1,5 +1,6 @@
 import 'server-only';
-import { dbReady, hqApi, type DbReport } from './db';
+import { summarise, type AsRaw } from './assistant';
+import { assistantRaw, dbReady, hqApi, type DbReport } from './db';
 import { sum } from './format';
 import { buildInsights } from './insights';
 import { SITES, sourceKey, sourceName, type Site } from './sites';
@@ -55,13 +56,15 @@ async function build(): Promise<Report> {
   const vercel = vercelReady();
   const db = dbReady();
 
-  const [sites, dbRep] = await Promise.all([
+  const [sites, dbRep, asRaw] = await Promise.all([
     Promise.all(SITES.map((s) => siteStats(s, today, now, vercel))),
     db ? hqApi<DbReport>('report').catch((e) => {
       problems.push(`Supabase didn’t answer (${(e as Error).message}), so quote taps and sign-ups are missing.`);
       return null;
     }) : Promise.resolve(null),
+    db ? assistantRaw<AsRaw>().catch(() => null) : Promise.resolve(null),
   ]);
+  const assistant = summarise(asRaw, now.getTime(), londonMidnight(today).getTime());
   if (!db) problems.push('HQ isn’t connected to Supabase yet, so quote taps and sign-ups are missing.');
 
   const leads = dbRep ? leadsOf(dbRep, today) : null;
@@ -83,7 +86,7 @@ async function build(): Promise<Report> {
     } catch {}
   }
 
-  return { at: now.getTime(), today, sites, leads, insights, messages, vercel, db, problems };
+  return { at: now.getTime(), today, sites, leads, insights, messages, assistant, vercel, db, problems };
 }
 
 /* Tell us on Build It in 3D: messages only (the faces on a passed lesson are on the Messages page). */

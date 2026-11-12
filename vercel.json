@@ -1,4 +1,14 @@
 {
-  "crons": [{ "path": "/api/cron/morning", "schedule": "43 6,7 * * *" }],
-  "git": { "deploymentEnabled": { "rafal-hq": false } }
+  "crons": [
+    {
+      "path": "/api/cron/morning",
+      "schedule": "43 6,7 * * *"
+    }
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "rafal-hq": false,
+      "hq-assistant": false
+    }
+  }
 }
