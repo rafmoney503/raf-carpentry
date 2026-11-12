@@ -27,7 +27,7 @@ it): `create_deployment` with gitSource github rafmoney503/raf-carpentry, ref `r
   The Messages page (with the count on the tab), a card on Today while some are new, and a line in the morning
   summary for yesterday's. Nothing is deleted from HQ.
 
-- **Job Kit assistant** (12 Nov 2026): what the assistant on rafcarpentry.com found and did (new enquiries, the jobs it
+- **Job Kit assistant** (12 Nov 2026, live since 19:12 that day): what the assistant on rafcarpentry.com found and did (new enquiries, the jobs it
   made from emails to info@, rough quotes, quick drawings, emails it left for Rafal), read through its own function
   `public.hq_assistant` (`supabase/hq-assistant.sql`, migration `hq_assistant`, behind `HQ_DB_SECRET`, read only from
   `jobkit.assistant`). A card at the top of Today (the last 3 days, up to 4 enquiries, what each needs, the week in a
