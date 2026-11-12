@@ -32,6 +32,7 @@ export const SECTIONS: { id: SecId; name: string; what: string }[] = [
 /* Which section a screen belongs to. */
 export function secOfScreen(name: string): SecId | undefined {
   if (name === 'personal') return 'personal';
+  if (name === 'assistant') return 'todo';
   if (['diary', 'current', 'sm8', 'enquiry', 'customer', 'inbox', 'email', 'quotes', 'quote', 'quote-prices', 'cworkshop', 'receipt'].includes(name)) return 'customers';
   if (['designs', 'design', 'new-design', 'library', 'concept'].includes(name)) return 'designs';
   if (name === 'timeline' || name === 'board' || name === 'made') return 'timeline';

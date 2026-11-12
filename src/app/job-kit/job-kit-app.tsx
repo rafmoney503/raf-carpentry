@@ -98,6 +98,7 @@ import { fetchSocial, newComments, savedSocial, SOCIAL_FRESH, socialKey, socialL
 import { PersonalToday, PersonalView, usePersonalToday } from './personal';
 import { startChores } from './chores-store';
 import { startCosts, useCosts, useCostSync } from './costs-store';
+import { AssistantToday, AssistantView, assistantHomeRight, useAssistantPoll, type Go as AssistantGo } from './assistant';
 import { holdSnap, keepSnaps, MadeBox, madeHomeLine, madeRows, madeTodayLines, MadeView, MailReceiptBox, ReceiptView, SnapButton, snapLine } from './job-money';
 import { Sm8Link } from './kit-link';
 import { CworkshopView } from './cworkshop';
@@ -126,6 +127,7 @@ type Screen =
   | { name: 'cworkshop' } // Cworkshop's decors and service prices the finished-board quotes use (cworkshop.tsx)
   | { name: 'concept'; id: string; mail?: string; job?: string } // Design with Claude (concepts.tsx); mail: started from that email; job: from that ServiceM8 job's screen
   | { name: 'claude' } // Claude credit: what's left and what used it (claude-credit.tsx)
+  | { name: 'assistant' } // what the assistant found and did, every 30 minutes (assistant.tsx)
   | { name: 'receipt'; id?: string; job?: string; mail?: string; typed?: boolean; snap?: boolean } // a receipt or a cost for a job (job-money.tsx): id changes one put in; mail: a supplier's email
   | { name: 'made' } // What jobs made: every finished job's price, costs and days (job-money.tsx), the timeline's third tab
   | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer' | 'timeline' | 'board' | 'wa' | 'design' | 'made' | 'kit'; client?: string; chat?: string; design?: string; kit?: string }
@@ -266,7 +268,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'personal', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-blog', 'stats-page', 'kit', 'social', 'quotes', 'quote', 'quote-prices', 'cworkshop', 'concept', 'claude', 'receipt', 'made'].includes(s.name)) return s;
+    if (s && ['home', 'personal', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-blog', 'stats-page', 'kit', 'social', 'quotes', 'quote', 'quote-prices', 'cworkshop', 'concept', 'claude', 'assistant', 'receipt', 'made'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -809,6 +811,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     // eslint-disable-next-line react-hooks/exhaustive-deps -- go is the app's own navigation, the same every render
     [sm8.jobs, sm8.at, sm8Loading, checkSm8, jobs, quotes],
   );
+  // what the assistant found and did (assistant.tsx), kept fresh while the app is open
+  const assistant = useAssistantPoll(pin);
   const cur = screen.name === 'sm8' ? findJob(screen.id) : undefined;
   // a snapshot of each finished job, so What jobs made still counts it after ServiceM8's 30 days (job-money.tsx)
   const costSync = useCostSync();
@@ -820,8 +824,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   const customers = useMemo(() => customerEmails(allClients, sm8.jobs), [allClients, sm8.jobs]);
   useEffect(() => {
     if (ready && (screen.name === 'job' || screen.name === 'design') && !job) go(parentOf(screen), false);
-    if (ready && screen.name === 'sm8' && !cur && sm8.at) go(parentOf(screen), false);
-  }, [ready, screen, job, cur, sm8.at, go]);
+    if (ready && screen.name === 'sm8' && !cur && sm8.at && !sm8Loading) go(parentOf(screen), false);
+  }, [ready, screen, job, cur, sm8.at, sm8Loading, go]);
 
   /* Moving a ServiceM8 job on: shown at once, put back if ServiceM8 says no. */
   const changeStatus = useCallback(
@@ -1137,8 +1141,22 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     const sendTo = screen.name === 'library' && screen.for ? findJob(screen.for) : undefined;
     const from = (screen.name === 'new' || screen.name === 'new-design') && screen.from ? findJob(screen.from) : undefined;
     const fromDesign = screen.name === 'new' && screen.design ? jobs.find((j) => j.id === screen.design && j.kind === 'design') : undefined;
+    const assistantGo: AssistantGo = {
+      quote: (id) => {
+        checkQuotes(true);
+        go({ name: 'quote', id, from: 'home' });
+      },
+      concept: (id) => go({ name: 'concept', id }),
+      job: (id) => {
+        if (!findJob(id)) checkSm8(true); // a job it made since the phone last asked
+        go({ name: 'sm8', id, from: 'home' });
+      },
+      mail: (id) => go({ name: 'email', id, from: 'home' }),
+    };
     return screen.name === 'home' ? (
               <Home
+                assistant={<AssistantToday a={assistant} go={assistantGo} onOpen={() => go({ name: 'assistant' })} />}
+                assistantRight={assistantHomeRight(assistant)}
                 jobs={jobs.filter((j) => j.kind !== 'design')}
                 items={items}
                 done={done}
@@ -1301,6 +1319,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               </DesignsList>
             ) : screen.name === 'claude' ? (
               <ClaudeCreditView />
+            ) : screen.name === 'assistant' ? (
+              <AssistantView go={assistantGo} pin={pin} />
             ) : screen.name === 'receipt' ? (
               <ReceiptView
                 key={`${screen.id ?? ''}${screen.job ?? ''}${screen.mail ?? ''}${screen.typed ? 't' : ''}`}
@@ -1898,6 +1918,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         whatsapp: waChats.filter((c) => !c.sends.length).length,
         social: newComments(social).length,
         personal: personalNow.due.length,
+        assistant: assistant ? assistant.items.filter((r) => r.at > assistant.seen).length : 0,
       }
     : {};
   return (
@@ -2095,6 +2116,8 @@ function useStandalone() {
 }
 
 function Home({
+  assistant,
+  assistantRight,
   jobs,
   items,
   done,
@@ -2137,6 +2160,8 @@ function Home({
   onMade,
   onSnap,
 }: {
+  assistant: React.ReactNode; // what the assistant found since Raf last looked (assistant.tsx)
+  assistantRight?: string;
   jobs: Job[];
   items: Item[];
   done: Done;
@@ -2246,6 +2271,15 @@ function Home({
       <div className={`${secClass('customers')} mt-5 ${wide ? 'max-w-[560px]' : ''}`}>
         <SnapButton big wide={wide} line={snapLine(sm8.jobs, sm8.bookings ?? null)} onFile={(f) => onSnap(f)} onOther={() => onSnap(null)} other={wide ? 'More ways: no receipt, or a cost by hand' : 'A PDF, a photo from the phone, or no receipt'} />
       </div>
+
+      <section data-assistant-box className={`jk-band ${secClass('todo')} mt-5 rounded-sm border border-line-strong bg-mount`}>
+        <div className="jk-band-head flex h-11 items-center gap-2.5 px-4">
+          <Icon name="assistant" className="h-5 w-5 shrink-0 jk-sec-ink" />
+          <h2 className="flex-1 font-mono text-[13px] font-semibold uppercase tracking-[0.08em] jk-sec-ink">Assistant</h2>
+          {assistantRight ? <span className="truncate font-mono text-[12.5px] text-muted">{assistantRight}</span> : null}
+        </div>
+        {assistant}
+      </section>
 
       <div className="jk-home-bands">
       <HomeBand tone="accent" label="To do" right={lines.length ? `${lines.length} thing${lines.length === 1 ? '' : 's'}` : 'All clear'}>

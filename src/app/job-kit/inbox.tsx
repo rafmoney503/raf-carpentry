@@ -11,6 +11,8 @@ import { readPin } from './uploader';
 import { parseBrief } from './brief-paste';
 import { whatOf, type Enquiry, type TodayLine } from './current';
 import { sizesFromText, type Brief } from '@/lib/concept-plan';
+import { firstOf, NO_REPLY, noReply, replyWho } from '@/lib/mail-who';
+export { firstOf, noReply };
 
 /* The Inbox: Raf's info@rafcarpentry.com (Microsoft 365) in the Job Kit (server: /api/job-kit/inbox and
    src/lib/outlook.ts). The newest emails, unread first to the eye; an email with its photos and the rest of its
@@ -89,8 +91,6 @@ export function putBackHere(inbox: Inbox, m: InboxMail): Inbox {
   return next;
 }
 
-/* Who wrote it, for replies and matching: the Reply-To when there is one (ServiceM8's 'New brief' emails). */
-const replyWho = (m: Pick<InboxMail, 'from' | 'replyTo'>) => m.replyTo ?? m.from;
 const shownName = (w: Who) => w.name || w.email;
 /* Raf himself: info@ (or another rafcarpentry.com address) or his own name, as on emails he sends from his iPhone
    with info@ copied in. The server marks those `mine` (src/lib/outlook.ts isMine). */
@@ -103,29 +103,6 @@ const rowName = (m: InboxMail) => {
   const o = withWho(m);
   return o ? `You to ${shownName(o)}` : 'You';
 };
-const NO_REPLY = /^(no-?reply|do-?not-?reply|donotreply|mailer-daemon|postmaster|notifications?|alerts?|bounce)[@+.]/i;
-export const noReply = (m: Pick<InboxMail, 'from' | 'replyTo'>) => NO_REPLY.test(replyWho(m).email);
-/* A first name for "Hi Kasia,": the first word of a name with a surname ("Kasia Nowak"), or a one-word name the
-   address starts with (Kasia, kasia.n@...), else from kasia.nowak@...; nothing for Screwfix, info@, sales@ and the like
-   (a business sends from an address that isn't its name). */
-export function firstOf(w: Who) {
-  if (NO_REPLY.test(w.email)) return '';
-  const words = w.name
-    .replace(/["']/g, '')
-    .replace(/\(.*?\)/g, '')
-    .trim()
-    .split(/[\s,]+/)
-    .filter((x) => x && !x.includes('@'));
-  while (words.length > 2 && /^(mr|mrs|ms|miss|dr)\.?$/i.test(words[0])) words.shift();
-  const local = w.email.split('@')[0] ?? '';
-  const person = words.length >= 2 || (words.length === 1 && local.toLowerCase().startsWith(words[0].toLowerCase()));
-  const fromName = person ? words[0] : '';
-  const fromLocal = /[._-]/.test(local) ? (local.split(/[._-]/)[0] ?? '') : '';
-  const pick = /^[A-Za-zÀ-ž][a-zà-ž'-]{1,}$/.test(fromName) ? fromName : !words.length && /^[a-z]{2,}$/i.test(fromLocal) ? fromLocal : '';
-  if (!pick || /^(info|sales|hello|hi|admin|office|accounts?|support|team|contact|enquiries|orders?|service|the|mr|mrs|ms|dr)$/i.test(pick)) return '';
-  return pick[0].toUpperCase() + pick.slice(1).toLowerCase();
-}
-
 /* Who this is in ServiceM8: a customer whose person has this email, and their open jobs. */
 export function matchCustomer(email: string, clients: Client[], jobs: CurrentJob[]) {
   const e = email.trim().toLowerCase();

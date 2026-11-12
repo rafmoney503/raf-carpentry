@@ -25,6 +25,8 @@ export function problemText(error?: string, detail?: string, at?: number) {
   switch (error) {
     case undefined:
       return '';
+    case 'assistant-not-set-up':
+      return 'The assistant isn’t switched on here: it runs on the live site.';
     case 'sm8-not-set-up':
       return 'ServiceM8 isn’t connected yet: SERVICEM8_API_KEY is missing in Vercel.';
     case 'sm8-key':

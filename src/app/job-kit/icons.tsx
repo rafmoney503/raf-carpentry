@@ -1,9 +1,17 @@
 /* Small line icons for the Job Kit's sections, drawn like the site's sketches (round ends, one weight), so each
    card on the Today screen and each line in the Today list shows where it goes. Decorative: the text says it. */
 
-export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note' | 'home' | 'quote' | 'steps' | 'history' | 'tablet' | 'house' | 'more' | 'swatch' | 'made' | 'receipt';
+export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note' | 'home' | 'quote' | 'steps' | 'history' | 'tablet' | 'house' | 'more' | 'swatch' | 'made' | 'receipt' | 'assistant';
 
 const PATHS: Record<IconName, React.ReactNode> = {
+  // a clock going round with a tick at its top: the assistant, checking every 30 minutes
+  assistant: (
+    <>
+      <path d="M19.4 9.4A8 8 0 1 0 20 12" />
+      <path d="M12 7.6V12l2.8 1.8" />
+      <path d="M16.6 4.4l1.8 1.8 3.2-3.4" strokeWidth="1.7" />
+    </>
+  ),
   // three steps going up, the one reached ticked: where a job is up to (Quote, Work Order, Completed)
   steps: (
     <>
