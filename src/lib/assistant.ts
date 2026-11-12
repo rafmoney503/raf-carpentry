@@ -1,7 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { jobkitRpc, syncSetUp } from './job-kit-sync-server';
 import { addJobNote, allClients, createEnquiry, currentJobs, sm8SetUp, Sm8Error, type CurrentJob } from './servicem8';
-import { inbox, message, outlookSetUp, OutlookError, type FullMail, type InboxMail } from './outlook';
+import { inbox, inboxProbe, message, outlookSetUp, OutlookError, type FullMail, type InboxMail } from './outlook';
 import { addEmailPhotos } from './email-photos';
 import { listQuotes, makeQuote, quotesSetUp, type QuoteRow } from './quote-maker';
 import { conceptsRpc, conceptsSetUp, runConcept } from './concept-maker';
@@ -196,6 +196,7 @@ async function emailsStep(c: Ctx, jobs: CurrentJob[]): Promise<{ job: CurrentJob
   } catch (e) {
     problem(c, e instanceof OutlookError ? `The Inbox didn’t open (${e.code})` : 'The Inbox didn’t open');
     note(c, 'inbox', e);
+    if (e instanceof OutlookError && e.code === 'outlook-busy') note(c, 'probe', await inboxProbe().catch((x) => String(x)));
     return [];
   }
   const fresh = list
