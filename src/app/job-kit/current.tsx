@@ -18,6 +18,7 @@ import { methodsFrom, PaidNote, PaymentForm, type NewPayment } from './payments'
 import { CustomerSearch, indexClients, personName, SameCustomer, type Client, type Clients } from './customers';
 import { daysBetween, rowOf, rowWords, spanWords, timelineRows, todayKey } from '@/lib/job-timeline';
 import { isDrawingsOrder } from '@/lib/drawings-service';
+import { KitLink } from './kit-link';
 
 export { problemText };
 
@@ -1122,6 +1123,9 @@ export function CurrentView({
   onRemove,
   jobLabel,
   made,
+  kitChoices = [],
+  kitCounts = {},
+  onLinkKit,
 }: {
   job: CurrentJob;
   marks: Marks;
@@ -1152,6 +1156,9 @@ export function CurrentView({
   otherJobs?: number; // the customer's other jobs on this device (Current jobs and customers opened)
   onRemove?: (alsoClient: boolean) => Promise<string>; // a Quote job made by mistake: '' when it's gone, else why not
   made?: React.ReactNode; // after Money: what the job made, its costs and days on site (job-money.tsx MadeBox)
+  kitChoices?: Job[]; // Job Kit jobs started on their own, not linked to any ServiceM8 job (kit-link.tsx)
+  kitCounts?: Record<string, number>; // photos and clips on each Job Kit job
+  onLinkKit?: (id: string | null) => Promise<void>; // link a Job Kit job to this job, or unlink the one linked
 }) {
   const st = stage(job, marks);
   const [text] = stageText(job, marks);
@@ -1392,15 +1399,7 @@ export function CurrentView({
         <button type="button" className="btn btn-ghost w-full" onClick={onLibrary}>
           Send them a design from the library
         </button>
-        {kitJob ? (
-          <button type="button" className="btn btn-ghost w-full" onClick={() => onOpenKit(kitJob)}>
-            Open the Job Kit job
-          </button>
-        ) : (
-          <button type="button" className="btn btn-ghost w-full" onClick={onKit}>
-            Start the Job Kit (photos for the website)
-          </button>
-        )}
+        <KitLink job={job} kitJob={kitJob} choices={kitChoices} counts={kitCounts} onOpen={onOpenKit} onStart={onKit} onLink={onLinkKit} />
       </section>
     </div>
   );

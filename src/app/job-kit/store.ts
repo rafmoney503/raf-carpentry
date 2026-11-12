@@ -41,7 +41,7 @@ export type Job = {
   readyAt?: number; // "Send to Claude" pressed (or "Send for design", "Send changes")
   kind?: 'job' | 'design'; // a design request for a customer, made into a private 3D page (/d/<code>)
   design?: DesignBrief;
-  sm8?: string; // the ServiceM8 job it belongs to (Current jobs); stays on the phone
+  sm8?: string; // the ServiceM8 job it belongs to (Current jobs): set by Start the Job Kit, or linked later (kit-link.tsx); in step with the computer
   sharedAt?: number; // a design's link last sent to the customer (Send on WhatsApp)
   fromDesign?: string; // a photo job built from a design request (its id): the job page reuses that design
   syncedIn?: number; // the updatedAt of the version last taken in from the other device (sync.ts); stays on this device

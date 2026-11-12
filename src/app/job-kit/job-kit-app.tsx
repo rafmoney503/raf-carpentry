@@ -99,6 +99,7 @@ import { PersonalToday, PersonalView, usePersonalToday } from './personal';
 import { startChores } from './chores-store';
 import { startCosts, useCosts, useCostSync } from './costs-store';
 import { holdSnap, keepSnaps, MadeBox, madeHomeLine, madeRows, madeTodayLines, MadeView, MailReceiptBox, ReceiptView, SnapButton, snapLine } from './job-money';
+import { Sm8Link } from './kit-link';
 import { CworkshopView } from './cworkshop';
 import { askQuote, checkedQuotes, fetchQuotes, flushQuoteEdits, isWorking, keepRedo, ownNote, pricesOf, putInEmailBox, QUOTES_FRESH, QuoteJobBox, QuotePrices, QuotesList, quotesLine, quoteTodayLines, QuoteView, readyCount, rowOf, rulesOf, rulesWaiting, savedQuotes, savedRedo, toRead, workingHere, changeHere, type Quotes } from './quotes';
 import type { QuoteEdits } from '@/lib/quote-sums';
@@ -127,7 +128,7 @@ type Screen =
   | { name: 'claude' } // Claude credit: what's left and what used it (claude-credit.tsx)
   | { name: 'receipt'; id?: string; job?: string; mail?: string; typed?: boolean; snap?: boolean } // a receipt or a cost for a job (job-money.tsx): id changes one put in; mail: a supplier's email
   | { name: 'made' } // What jobs made: every finished job's price, costs and days (job-money.tsx), the timeline's third tab
-  | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer' | 'timeline' | 'board' | 'wa' | 'design' | 'made'; client?: string; chat?: string; design?: string }
+  | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer' | 'timeline' | 'board' | 'wa' | 'design' | 'made' | 'kit'; client?: string; chat?: string; design?: string; kit?: string }
   | { name: 'enquiry'; client?: string; named?: string; mail?: string; wa?: string } // client: started from a customer's page; named: from a search that found nobody; mail: from an email in the Inbox
   | { name: 'customer'; id: string; from?: 'home' } // one customer from ServiceM8 (customer-view.tsx)
   | { name: 'diary' }
@@ -147,7 +148,7 @@ type Screen =
 function listFor(s: Screen): Screen | null {
   switch (s.name) {
     case 'sm8':
-      return s.from === 'diary' ? { name: 'diary' } : s.from === 'board' ? { name: 'board' } : s.from === 'made' ? { name: 'made' } : s.from === 'customer' && s.client ? { name: 'customer', id: s.client } : s.from === 'wa' ? { name: 'whatsapp' } : s.from === 'design' ? { name: 'designs' } : { name: 'current' };
+      return s.from === 'diary' ? { name: 'diary' } : s.from === 'board' ? { name: 'board' } : s.from === 'made' ? { name: 'made' } : s.from === 'customer' && s.client ? { name: 'customer', id: s.client } : s.from === 'wa' ? { name: 'whatsapp' } : s.from === 'design' ? { name: 'designs' } : s.from === 'kit' ? { name: 'kit' } : { name: 'current' };
     case 'customer':
       return { name: 'current' };
     case 'enquiry':
@@ -212,6 +213,8 @@ const parentOf = (s: Screen): Screen =>
     ? { name: 'wa-chat', id: s.chat }
     : s.name === 'sm8' && s.from === 'design' && s.design
     ? { name: 'design', id: s.design }
+    : s.name === 'sm8' && s.from === 'kit' && s.kit
+    ? { name: 'job', id: s.kit, tab: 'before' }
     : s.name === 'stats-page' && s.from === 'blog'
     ? { name: 'stats-blog' }
     : s.name === 'stats-page' || s.name === 'stats-blog'
@@ -249,7 +252,7 @@ const parentOf = (s: Screen): Screen =>
           : { name: 'home' };
 const backLabel = (s: Screen) => {
   const p = parentOf(s).name;
-  return p === 'stats-blog' ? 'Blog stats' : p === 'stats' ? 'Stats' : p === 'designs' ? 'Designs' : p === 'design' ? 'Design' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'timeline' ? 'Timeline' : p === 'board' ? 'Board' : p === 'made' ? 'Jobs made' : p === 'whatsapp' ? 'WhatsApp' : p === 'wa-chat' ? 'Chat' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : p === 'inbox' ? 'Inbox' : p === 'email' ? 'Email' : p === 'quotes' ? 'Quotes' : 'Today';
+  return p === 'stats-blog' ? 'Blog stats' : p === 'stats' ? 'Stats' : p === 'designs' ? 'Designs' : p === 'design' ? 'Design' : p === 'job' ? 'Job Kit job' : p === 'posts' ? 'Posts' : p === 'current' ? 'Current jobs' : p === 'diary' ? 'Diary' : p === 'timeline' ? 'Timeline' : p === 'board' ? 'Board' : p === 'made' ? 'Jobs made' : p === 'whatsapp' ? 'WhatsApp' : p === 'wa-chat' ? 'Chat' : p === 'sm8' ? 'Job' : p === 'customer' ? 'Customer' : p === 'inbox' ? 'Inbox' : p === 'email' ? 'Email' : p === 'quotes' ? 'Quotes' : 'Today';
 };
 
 const thisMonth = () => {
@@ -1023,6 +1026,29 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     [reload],
   );
 
+  /* A Job Kit job linked to a ServiceM8 job, or unlinked (kit-link.tsx). Linked to a job that has a 3D design
+     request, it's built from that design, as Start the Job Kit from the job does; unlinked, a design that only
+     came with that job goes too. */
+  const linkKit = useCallback(
+    (kitId: string, uuid: string | null) =>
+      touch(kitId, (j) => {
+        if (uuid) {
+          const dj = j.fromDesign ? undefined : designJobs.find((k) => k.sm8 === uuid);
+          return { ...j, sm8: uuid, ...(dj ? { fromDesign: dj.id } : {}) };
+        }
+        const fd = j.fromDesign ? designJobs.find((d) => d.id === j.fromDesign) : undefined;
+        return { ...j, sm8: undefined, fromDesign: fd?.sm8 && fd.sm8 === j.sm8 ? undefined : j.fromDesign };
+      }),
+    [touch, designJobs],
+  );
+  // Job Kit jobs started on their own, and how many photos and clips each has, for linking them
+  const kitChoices = useMemo(() => jobs.filter((k) => k.kind !== 'design' && !k.sm8), [jobs]);
+  const kitCounts = useMemo(() => {
+    const n: Record<string, number> = {};
+    for (const i of items) if (!i.lost) n[i.jobId] = (n[i.jobId] ?? 0) + 1;
+    return n;
+  }, [items]);
+
   const addFiles = useCallback(
     async (jobId: string, section: Section, slot: Slot, files: File[]) => {
       const key = `${jobId}:${slot.id}`;
@@ -1651,6 +1677,12 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                     go({ name: 'library', for: cur.uuid });
                   }}
                   onKit={() => go({ name: 'new', from: cur.uuid })}
+                  kitChoices={kitChoices}
+                  kitCounts={kitCounts}
+                  onLinkKit={(id) => {
+                    const on = jobs.find((k) => k.kind !== 'design' && k.sm8 === cur.uuid);
+                    return id ? linkKit(id, cur.uuid) : on ? linkKit(on.id, null) : Promise.resolve();
+                  }}
                   onTimeline={() => {
                     checkSm8();
                     go({ name: 'timeline', job: cur.uuid });
@@ -1789,6 +1821,22 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                   const dj = designFor(job, jobs);
                   return dj ? { what: dj.what, onOpen: () => go({ name: 'design', id: dj.id }) } : undefined;
                 })()}
+                customer={
+                  job.kind !== 'design' ? (
+                    <Sm8Link
+                      job={job}
+                      sm8Job={job.sm8 ? findJob(job.sm8) : undefined}
+                      sm8Jobs={[...sm8.jobs, ...customerJobs.filter((j) => !sm8.jobs.some((x) => x.uuid === j.uuid))]}
+                      kitOn={(uuid) => jobs.find((k) => k.kind !== 'design' && k.sm8 === uuid)}
+                      onLink={(uuid) => linkKit(job.id, uuid)}
+                      onOpen={(uuid) => {
+                        checkSm8();
+                        go({ name: 'sm8', id: uuid, from: 'kit', kit: job.id });
+                      }}
+                      onOpenKit={(id) => go({ name: 'job', id, tab: 'before' })}
+                    />
+                  ) : undefined
+                }
                 done={done[job.id]}
                 onPost={done[job.id] && posts.some((p) => p.slug === done[job.id].slug) ? () => go({ name: 'post', slug: done[job.id].slug }) : undefined}
                 items={items.filter((i) => i.jobId === job.id)}
@@ -2535,6 +2583,7 @@ const TABS: { id: Tab; title: string }[] = [...SECTIONS.map((s) => ({ id: s.id a
 function JobView({
   job,
   fromDesign,
+  customer,
   done,
   onPost,
   items,
@@ -2551,6 +2600,7 @@ function JobView({
 }: {
   job: Job;
   fromDesign?: { what: string; onOpen: () => void }; // the 3D design it was built from
+  customer?: React.ReactNode; // the ServiceM8 job it's for, or Link it to their job (kit-link.tsx Sm8Link)
   done?: { slug: string; title: string };
   onPost?: () => void;
   items: Item[];
@@ -2593,6 +2643,7 @@ function JobView({
             </span>
           </button>
         ) : null}
+        {customer}
         <p className="mt-1.5 font-mono text-[12.5px] text-faint">Saves by itself as you go. Come back to it any time from Jobs.</p>
       </div>
 
