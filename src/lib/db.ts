@@ -32,6 +32,27 @@ export type DbReport = {
     paying: { plan: string; status: string; n: number }[];
     sketchup: { day: string; action: string | null; n: number }[];
   };
+  /* Build It in 3D's Tell us (b3d.suggestions). Missing before migration 'hq_api_b3d'. */
+  b3d?: { unread: number; newest: number | null; days: { day: string; kind: string; n: number }[] };
+};
+
+export type TellKind = 'idea' | 'broke' | 'stuck' | 'liked';
+export type TellMessage = {
+  id: number;
+  created_at: string;
+  kind: TellKind;
+  body: string;
+  who: 'child' | 'adult' | 'teacher' | null;
+  page: string;
+  lang: string;
+  course: string | null;
+  lesson: number | null;
+  read_at: string | null;
+};
+export type TellReport = {
+  items: TellMessage[];
+  unread: number;
+  ratings: { course: string; lesson: number; rating: 'easy' | 'right' | 'hard'; n: number }[];
 };
 
 export type PushSub = { endpoint: string; sub: { endpoint: string; keys: { p256dh: string; auth: string } }; label: string | null; created_at: string; last_ok: string | null };

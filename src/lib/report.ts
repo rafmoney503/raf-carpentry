@@ -11,15 +11,24 @@ import { aggregate, count, lastDeploy, NotCounting, vercelReady, type Row } from
    app again straight away doesn't ask Vercel again; Refresh asks again. */
 
 const KEEP_MS = 5 * 60 * 1000;
-let kept: { at: number; report: Promise<Report> } | null = null;
+/* On globalThis: the pages and the API routes are bundled apart, each with its own copy of this file, and a message
+   marked read in /api/messages has to reach the count the pages show. */
+type Kept = { at: number; report: Promise<Report> } | null;
+const box = globalThis as typeof globalThis & { __hqReport?: Kept };
+
+/* After something changes what the report says (a message marked read), so the next page asks again. */
+export function forgetReport() {
+  box.__hqReport = null;
+}
 
 export function getReport(fresh = false): Promise<Report> {
+  const kept = box.__hqReport;
   if (!fresh && kept && Date.now() - kept.at < KEEP_MS) return kept.report;
   const report = build().catch((e) => {
-    kept = null;
+    box.__hqReport = null;
     throw e;
   });
-  kept = { at: Date.now(), report };
+  box.__hqReport = { at: Date.now(), report };
   return report;
 }
 
@@ -56,7 +65,8 @@ async function build(): Promise<Report> {
   if (!db) problems.push('HQ isn’t connected to Supabase yet, so quote taps and sign-ups are missing.');
 
   const leads = dbRep ? leadsOf(dbRep, today) : null;
-  let insights = buildInsights(sites, leads, today);
+  const messages = dbRep?.b3d ? messagesOf(dbRep.b3d, today) : null;
+  let insights = buildInsights(sites, leads, today, messages);
 
   if (db && insights.length) {
     try {
@@ -73,7 +83,20 @@ async function build(): Promise<Report> {
     } catch {}
   }
 
-  return { at: now.getTime(), today, sites, leads, insights, vercel, db, problems };
+  return { at: now.getTime(), today, sites, leads, insights, messages, vercel, db, problems };
+}
+
+/* Tell us on Build It in 3D: messages only (the faces on a passed lesson are on the Messages page). */
+function messagesOf(b: NonNullable<DbReport['b3d']>, today: string): NonNullable<Report['messages']> {
+  const y = addDays(today, -1);
+  const w0 = addDays(today, -7);
+  const msgs = b.days.filter((d) => d.kind !== 'rating');
+  return {
+    unread: b.unread,
+    newest: b.newest,
+    yesterday: sum(msgs.filter((d) => d.day === y).map((d) => d.n)),
+    week: sum(msgs.filter((d) => d.day >= w0 && d.day < today).map((d) => d.n)),
+  };
 }
 
 function emptySite(s: Site, status: SiteStats['status'], error?: string): SiteStats {

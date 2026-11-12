@@ -85,6 +85,8 @@ export type Report = {
   sites: SiteStats[];
   leads: Leads | null;
   insights: Insight[];
+  /* Messages sent with Tell us on Build It in 3D: not read yet, the newest one's number, yesterday's and the week's. */
+  messages: { unread: number; newest: number | null; yesterday: number; week: number } | null;
   vercel: boolean;
   db: boolean;
   problems: string[];

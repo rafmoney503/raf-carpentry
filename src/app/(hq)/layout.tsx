@@ -14,9 +14,9 @@ export default async function HqLayout({ children }: { children: React.ReactNode
   });
   return (
     <div className="hq">
-      <Sidebar sites={sites} />
+      <Sidebar sites={sites} unread={r?.messages?.unread ?? 0} />
       <main className="hq-main">{children}</main>
-      <Tabs />
+      <Tabs unread={r?.messages?.unread ?? 0} />
     </div>
   );
 }

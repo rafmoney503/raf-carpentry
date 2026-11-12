@@ -21,6 +21,12 @@ it): `create_deployment` with gitSource github rafmoney503/raf-carpentry, ref `r
   each "worth knowing" was first seen (`hq.insights`), the phones that get the morning summary (`hq.push`) and the
   days it was sent (`hq.sent`).
 
+- **Messages** (12 Nov 2026): what people send with Tell us on builditin3d.com (`b3d.suggestions`, made by
+  builditin3d's supabase/b3d.sql), read through `hq_api` (migration `hq_api_b3d`): 'report' brings how many are new,
+  'suggestions' the latest 200 and the lesson faces of the last 90 days, 'suggestions_read' marks them read or new.
+  The Messages page (with the count on the tab), a card on Today while some are new, and a line in the morning
+  summary for yesterday's. Nothing is deleted from HQ.
+
 The sites and what counts as their home page and key pages are in `src/lib/sites.ts`. The "worth knowing" rules are
 `src/lib/insights.ts` (checked by `npm run check`).
 

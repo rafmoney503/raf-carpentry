@@ -1,5 +1,6 @@
 -- Rafal Solutions HQ: the numbers HQ reads from the cabinetos Supabase project, behind one secret.
--- Applied as migration 'hq_api' (11 Nov 2026). Nothing here removes rows: the connector refuses those words,
+-- Applied as migration 'hq_api' (11 Nov 2026), then 'hq_api_b3d' (12 Nov 2026: Build It in 3D's Tell us, from
+-- b3d.suggestions, which builditin3d's supabase/b3d.sql makes). Nothing here removes rows: the connector refuses those words,
 -- and a push address that stops working is marked gone instead.
 
 create schema if not exists hq;
@@ -97,8 +98,57 @@ begin
             where kind = 'sketchup' and created_at >= since
             group by 1, 2
           ) k), '[]'::jsonb)
+      ),
+      -- Build It in 3D's Tell us (migration 'hq_api_b3d', 12 Nov 2026): messages not read yet, and what came in a day.
+      'b3d', jsonb_build_object(
+        'unread', (select count(*) from b3d.suggestions where read_at is null and kind <> 'rating'),
+        'newest', (select max(id) from b3d.suggestions where kind <> 'rating'),
+        'days', coalesce((
+          select jsonb_agg(jsonb_build_object('day', x.day, 'kind', x.kind, 'n', x.n))
+          from (
+            select (created_at at time zone 'Europe/London')::date as day, kind, count(*) as n
+            from b3d.suggestions
+            where created_at >= since
+            group by 1, 2
+          ) x), '[]'::jsonb)
       )
     );
+
+  elsif p_action = 'suggestions' then
+    return jsonb_build_object(
+      'items', coalesce((
+        select jsonb_agg(to_jsonb(t) order by t.id desc)
+        from (
+          select id, created_at, kind, body, who, page, lang, course, lesson, read_at
+          from b3d.suggestions
+          where kind <> 'rating'
+          order by id desc
+          limit least(greatest(coalesce((p->>'limit')::integer, 200), 1), 500)
+        ) t), '[]'::jsonb),
+      'unread', (select count(*) from b3d.suggestions where read_at is null and kind <> 'rating'),
+      'ratings', coalesce((
+        select jsonb_agg(jsonb_build_object('course', r.course, 'lesson', r.lesson, 'rating', r.rating, 'n', r.n))
+        from (
+          select course, lesson, rating, count(*) as n
+          from b3d.suggestions
+          where kind = 'rating' and created_at > now() - interval '90 days'
+          group by 1, 2, 3
+        ) r), '[]'::jsonb)
+    );
+
+  elsif p_action = 'suggestions_read' then
+    if coalesce((p->>'all')::boolean, false) then
+      update b3d.suggestions set read_at = now() where read_at is null and kind <> 'rating';
+    else
+      if jsonb_typeof(p->'ids') <> 'array' or jsonb_array_length(p->'ids') > 500 then
+        raise exception 'bad doc';
+      end if;
+      update b3d.suggestions
+      set read_at = case when coalesce((p->>'read')::boolean, true) then coalesce(read_at, now()) else null end
+      where id in (select (value #>> '{}')::bigint from jsonb_array_elements(p->'ids'));
+    end if;
+    get diagnostics n = row_count;
+    return jsonb_build_object('ok', true, 'n', n);
 
   elsif p_action = 'seen' then
     if jsonb_typeof(p->'items') <> 'array' or jsonb_array_length(p->'items') > 60 then

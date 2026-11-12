@@ -81,5 +81,14 @@ const m = morningSummary([site('a', Array(28).fill(10)), site('b', Array(28).fil
 ok(m.title === 'Yesterday: 15 visitors across 2 sites', 'morning title: ' + m.title);
 ok(m.body.includes('a 10 · b 5') && m.body.includes('3 taps to get in touch') && m.body.includes('1 new CabinetOS account'), 'morning body: ' + m.body);
 
+// Tell us on Build It in 3D: a card while there are new messages, a new one when another comes in, a morning line.
+const msgs = { unread: 2, newest: 41, yesterday: 1, week: 3 };
+const ti = buildInsights([flat], null, today, msgs);
+ok(ti.some((i) => i.id === 'tellus:41' && i.title === '2 new messages on Build It in 3D' && i.action?.href === '/messages'), 'Tell us card');
+ok(!buildInsights([flat], null, today, { ...msgs, unread: 0 }).some((i) => i.id.startsWith('tellus:')), 'no Tell us card once read');
+ok(buildInsights([flat], null, today, { ...msgs, newest: 42 }).some((i) => i.id === 'tellus:42'), 'a new message makes a new card');
+const tm = morningSummary([site('a', Array(28).fill(10))], null, today, msgs);
+ok(tm.body.includes('1 message on Build It in 3D'), 'morning line for messages: ' + tm.body);
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

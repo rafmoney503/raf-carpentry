@@ -41,6 +41,12 @@ const ICONS: Record<string, ReactNode> = {
       <path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" />
     </>
   ),
+  messages: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3.5 6.5l8.5 6.5 8.5-6.5" />
+    </>
+  ),
   back: <path d="M15 18l-6-6 6-6" />,
   open: (
     <>

@@ -1,14 +1,28 @@
 import { median, plural, sum } from './format';
 import { addDays, dayMonth } from './time';
-import type { Insight, Leads, SiteStats } from './types';
+import type { Insight, Leads, Report, SiteStats } from './types';
 
 /* "Worth knowing": plain rules over the numbers, newest problems first. No guessing: every line is a count HQ
    read. Ids stay the same while the same thing is true, so HQ knows when it first saw each one. */
 
 const DASH = 'https://vercel.com/rafals-projects-ecbcd9de';
 
-export function buildInsights(sites: SiteStats[], leads: Leads | null, today: string): Insight[] {
+export function buildInsights(sites: SiteStats[], leads: Leads | null, today: string, messages: Report['messages'] = null): Insight[] {
   const out: Insight[] = [];
+
+  /* New messages from Tell us: a new card (and a line in the morning summary) each time another one comes in. */
+  if (messages && messages.unread > 0 && messages.newest) {
+    out.push({
+      id: `tellus:${messages.newest}`,
+      site: 'builditin3d',
+      tone: 'good',
+      mark: String(messages.unread),
+      where: 'Build It in 3D',
+      title: `${plural(messages.unread, 'new message')} on Build It in 3D`,
+      body: 'What people sent with Tell us: ideas, things that didn’t work, where they got stuck. Read them, then mark them read.',
+      action: { label: 'Read them', href: '/messages' },
+    });
+  }
   const week = addDays(today, -7);
 
   for (const s of sites) {
@@ -197,7 +211,7 @@ function weekChange(s: SiteStats, out: Insight[], today: string) {
 }
 
 /* The morning summary: yesterday's visitors per site, and leads. */
-export function morningSummary(sites: SiteStats[], leads: Leads | null, today: string): { title: string; body: string } {
+export function morningSummary(sites: SiteStats[], leads: Leads | null, today: string, messages: Report['messages'] = null): { title: string; body: string } {
   const counted = sites.filter((s) => s.status === 'ok');
   const y = addDays(today, -1);
   const total = sum(counted.map((s) => s.yesterday));
@@ -208,6 +222,7 @@ export function morningSummary(sites: SiteStats[], leads: Leads | null, today: s
     if (qy && qy.taps) extra.push(`${plural(qy.taps, 'tap')} to get in touch on rafcarpentry.com`);
     if (leads.cabinetos.signupsYesterday) extra.push(plural(leads.cabinetos.signupsYesterday, 'new CabinetOS account'));
   }
+  if (messages?.yesterday) extra.push(`${plural(messages.yesterday, 'message')} on Build It in 3D`);
   return {
     title: `Yesterday: ${plural(total, 'visitor')} across ${plural(counted.length, 'site')}`,
     body: [parts.join(' · '), extra.join(' · ')].filter(Boolean).join('\n'),

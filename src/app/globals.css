@@ -95,7 +95,7 @@ h1, h2, h3, .display { font-family: var(--display); letter-spacing: -0.015em; }
   -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--line);
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   padding: 6px 8px calc(8px + env(safe-area-inset-bottom));
 }
 .tab {
@@ -114,6 +114,32 @@ h1, h2, h3, .display { font-family: var(--display); letter-spacing: -0.015em; }
 .tab[aria-current='page'] { color: var(--ink); font-weight: 700; }
 .tab svg { stroke: currentColor; }
 .tab .badge { position: absolute; }
+.tab-ic { position: relative; display: inline-flex; }
+.count {
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--yellow); color: #121417;
+  font-size: 11px; font-weight: 700; line-height: 18px; text-align: center;
+}
+.tab-ic .count { position: absolute; top: -6px; inset-inline-start: 14px; }
+.side-link .count { margin-inline-start: auto; }
+
+/* Messages (Tell us on Build It in 3D) */
+.msgs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.msg { display: flex; flex-direction: column; gap: 6px; padding: 14px 0; border-top: 1px solid var(--line); }
+.msg:first-child { border-top: 0; padding-top: 4px; }
+.msg-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 13px; color: var(--muted); }
+.msg-kind { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--chip); color: var(--ink); }
+.msg-kind[data-kind='broke'], .msg-kind[data-kind='stuck'] { background: var(--down-bg); color: var(--down); }
+.msg-kind[data-kind='liked'] { background: var(--up-bg); color: var(--up); }
+.msg-new { width: 8px; height: 8px; border-radius: 999px; background: var(--yellow); box-shadow: 0 0 0 1.5px #121417; }
+.msg-body { margin: 0; font-size: 16px; line-height: 1.5; color: var(--ink); white-space: pre-line; overflow-wrap: anywhere; }
+.msg[data-read='true'] .msg-body { color: var(--text); }
+.msg-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 13px; color: var(--muted); }
+.msg-foot a { color: var(--muted); }
+.msg-foot button { margin-inline-start: auto; background: none; border: 0; padding: 8px 0; min-height: 40px; font-size: 13px; font-weight: 600; color: var(--ink); text-decoration: underline; cursor: pointer; }
+.faces { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.faces li { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: center; font-size: 15px; }
+.faces .split { grid-column: 1 / -1; display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--soft); }
+.faces small { font-size: 12px; color: var(--muted); }
 
 @media (min-width: 1024px) {
   .hq { flex-direction: row; }

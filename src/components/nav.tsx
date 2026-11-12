@@ -8,6 +8,7 @@ const LINKS = [
   { href: '/', label: 'Today', icon: 'today' },
   { href: '/apps', label: 'Apps', icon: 'apps' },
   { href: '/leads', label: 'Leads', icon: 'leads' },
+  { href: '/messages', label: 'Messages', icon: 'messages' },
   { href: '/alerts', label: 'Alerts', icon: 'alerts' },
 ];
 
@@ -17,7 +18,8 @@ function current(path: string, href: string) {
 
 export type SideSite = { key: string; name: string; color: string; light: string; ink: string; state: string; good: boolean };
 
-export function Sidebar({ sites }: { sites: SideSite[] }) {
+/* `unread`: messages not read yet, shown on Messages. */
+export function Sidebar({ sites, unread = 0 }: { sites: SideSite[]; unread?: number }) {
   const path = usePathname();
   return (
     <aside className="side">
@@ -33,6 +35,7 @@ export function Sidebar({ sites }: { sites: SideSite[] }) {
           <Link key={l.href} href={l.href} className="side-link" aria-current={current(path, l.href) ? 'page' : undefined}>
             <span className="dot" aria-hidden="true" />
             {l.label}
+            {l.href === '/messages' && unread > 0 ? <span className="count" aria-label={`${unread} new`}>{unread}</span> : null}
           </Link>
         ))}
       </nav>
@@ -51,13 +54,16 @@ export function Sidebar({ sites }: { sites: SideSite[] }) {
   );
 }
 
-export function Tabs() {
+export function Tabs({ unread = 0 }: { unread?: number }) {
   const path = usePathname();
   return (
     <nav className="tabs" aria-label="HQ">
       {LINKS.map((l) => (
         <Link key={l.href} href={l.href} className="tab" aria-current={current(path, l.href) ? 'page' : undefined}>
-          <Icon name={l.icon} />
+          <span className="tab-ic">
+            <Icon name={l.icon} />
+            {l.href === '/messages' && unread > 0 ? <span className="count" aria-label={`${unread} new`}>{unread}</span> : null}
+          </span>
           {l.label}
         </Link>
       ))}
