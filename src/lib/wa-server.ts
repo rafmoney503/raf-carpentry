@@ -204,8 +204,10 @@ export async function readChat(wa: string): Promise<WaRead> {
   for (const id of photoIds) {
     const f = (await waRpc('file-get', { id }, 20000).catch(() => null)) as { b64?: string; mime?: string } | null;
     if (!f?.b64 || f.mime !== 'image/jpeg') continue;
+    // Postgres's encode(..., 'base64') breaks the text every 76 characters; Claude turns the photo down with them in
+    const data = f.b64.replace(/\s+/g, '');
     content.push({ type: 'text', text: `Photo ${++sent} they sent:` });
-    content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: f.b64 } });
+    content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data } });
   }
   let model = MODEL();
   let { res, text } = await ask(model, content);
@@ -256,6 +258,7 @@ export async function runRead(wa: string, force = false): Promise<{ ok: boolean;
   } catch (e) {
     const code = e instanceof ReadError ? e.code : 'ai-error';
     if (!(e instanceof ReadError)) console.error('wa read', wa, e);
+    else if (code === 'ai-error') console.error('wa read', code, e.detail);
     await waRpc('read-save', { wa, state: 'failed', read: { error: code } }).catch(() => null);
     return { ok: false, error: code };
   }
