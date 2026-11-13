@@ -193,7 +193,10 @@ const shapeOf = (v: unknown): string =>
 function logPhotos(job: string, seen: Seen[], jobFiles: Row[], entries: DiaryEntry[], got: { asked: number; refs: number }) {
   const found = new Set(entries.filter((e) => e.kind === 'file' && e.file).map((e) => photoKey(e.file!.name)));
   const theirs = seen.filter((x) => x.mail.dir === 'in' && !x.mail.copy);
-  const missing = theirs.filter((x) => photoMarks(`${x.mail.text}\n${x.mail.full}`).photos.some((n) => !found.has(photoKey(n))));
+  const missing = theirs.filter((x) => {
+    const m = photoMarks(`${x.mail.text}\n${x.mail.full}`);
+    return m.unnamed > 0 || m.photos.some((n) => !found.has(photoKey(n)));
+  });
   const refLike = theirs.filter((x) => Object.keys(x.row).some((k) => REF_LIKE.test(k)));
   if (!missing.length && !refLike.length) return;
   const sample = (missing[0] ?? refLike[0]).row;

@@ -198,8 +198,11 @@ export function fileRefs(r: Row): FileRef[] {
 function htmlOnlyPhotos(r: Row, words: string): string[] {
   const html = first(r, HTML_KEYS);
   if (!html || !/cid:/i.test(html)) return [];
-  const named = new Set(photoMarks(words).photos.map(photoKey));
-  return photoMarks(freshPart(htmlToText(html)).text).photos.filter((n) => !named.has(photoKey(n)));
+  const said = photoMarks(words);
+  const named = new Set(said.photos.map(photoKey));
+  const shown = photoMarks(freshPart(htmlToText(html)).text);
+  const more = shown.unnamed - said.unnamed; // pasted in with no name: "[2 photos in the email]"
+  return [...shown.photos.filter((n) => !named.has(photoKey(n))).map((n) => `[image: ${n}]`), ...(more > 0 ? [more === 1 ? '[a photo in the email]' : `[${more} photos in the email]`] : [])];
 }
 
 function dirOf(r: Row, customer: string): 'in' | 'out' {
@@ -217,7 +220,7 @@ export function mailOf(r: Row, customer: string, dir?: 'in' | 'out'): Mail {
   const part = freshPart(raw);
   let text = way === 'out' ? withoutSignOff(part.text) : part.text;
   const extra = htmlOnlyPhotos(r, raw);
-  if (extra.length) text = [text, ...extra.map((n) => `[image: ${n}]`)].filter(Boolean).join('\n');
+  if (extra.length) text = [text, ...extra].filter(Boolean).join('\n');
   const mail: Mail = {
     id: str(r.uuid),
     via: 'email',

@@ -114,28 +114,52 @@ export function e164(raw: string) {
    the names come back so the Job Kit's diary can show the photos themselves (an emailed photo is an attachment
    in ServiceM8, on the job or on the email: src/lib/servicem8-diary.ts messageFiles). Raf, 3 Nov 2026: customers'
    photos showed as "just img something". */
-export function photoMarks(text: string): { text: string; photos: string[] } {
+export function photoMarks(text: string): { text: string; photos: string[]; unnamed: number } {
   const photos: string[] = [];
   const mark = (name: string) => {
     const n = name.trim().replace(/@.*$/, '');
     if (!n) return '';
+    if (noName(n)) return UNNAMED; // Outlook's "f5f95524-0fcd-..." is no name: counted, not shown
     if (!photos.includes(n)) photos.push(n);
     return `[photo: ${n}]`;
   };
-  const out = text
-    .replace(/\[image:\s*([^\]\n]{1,160})\]/gi, (_, n: string) => mark(n))
-    .replace(/\[cid:([^\]\s]{1,200})\]/gi, (_, n: string) => mark(n))
-    .replace(/<([^<>\n]{1,120}\.(?:jpe?g|png|heic|heif|gif|webp|tiff?))>/gi, (_, n: string) => mark(n));
-  return { text: out, photos };
+  const out = sayUnnamed(
+    text
+      .replace(/\[photo:\s*([^\]\n]{1,160})\]/gi, (_, n: string) => mark(n)) // cleanLinks has made it one already
+      .replace(/\[image:\s*([^\]\n]{1,160})\]/gi, (_, n: string) => mark(n))
+      .replace(/\[cid:([^\]\s]{1,300})\]/gi, (_, n: string) => mark(n))
+      .replace(/<([^<>\n]{1,120}\.(?:jpe?g|png|heic|heif|gif|webp|tiff?))>/gi, (_, n: string) => mark(n)),
+  );
+  // photos pasted in with no name ("[3 photos in the email]"): counted, so the diary can look for them
+  let unnamed = 0;
+  for (const m of out.matchAll(UNNAMED_WORDS)) unnamed += m[1].toLowerCase() === 'a' ? 1 : Number(m[1]);
+  return { text: out, photos, unnamed };
 }
+export const UNNAMED_WORDS = /\[(a|\d{1,3}) photos? in the email\]/gi;
+export const UNNAMED_LINE = /^\s*\[(?:a|\d{1,3}) photos? in the email\]\s*$/i;
+const UNNAMED = '\u0000photo\u0000';
+const UNNAMED_RUN = new RegExp(`${UNNAMED}(?:\\s*${UNNAMED})*`, 'g');
+const PHOTO_FILE = /\.(?:jpe?g|png|heic|heif|gif|webp|tiff?|bmp)$/i;
+// a content id, not a name: "f5f95524-0fcd-45b2-a460-a61acd1e4052", "ii_19a3f7c2b1e"
+const noName = (n: string) => !PHOTO_FILE.test(n) && (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(n) || /^[0-9a-f-]{16,}$/i.test(n) || /^ii_[0-9a-z]{6,}$/i.test(n));
+// a run of photos with no name (one to a line, or side by side) is said once
+const sayUnnamed = (text: string) =>
+  text.includes(UNNAMED)
+    ? text.replace(UNNAMED_RUN, (run) => {
+        const n = run.split(UNNAMED).length - 1;
+        return n === 1 ? '[a photo in the email]' : `[${n} photos in the email]`;
+      })
+    : text;
 
 /* Pictures from the web and link addresses taken out of an email's plain text. Outlook writes a picture with no
    words as its address in brackets ("[https://signaturehound.com/api/v1/png/mobile/default/177a68.png]": the
    little phone, map and Instagram icons of an email signature, logos, tracking pixels) and a link as its words
    followed by the address ("cayana.co.uk<http://www.cayana.co.uk>", "07706500926<tel:07706500926>"). They read
    like photos that never load. Raf, 8 Nov 2026: a new job "showing signs of links as pictures but no pictures".
-   Kept: photos in the email itself ("[cid:...]", "[image: ...]": photoMarks), and every link address that isn't
-   just its own words again (a Pinterest board stays). */
+   Kept: photos in the email itself ("[image: ...]": photoMarks), and every link address that isn't just its own
+   words again (a Pinterest board stays). Outlook's "[cid:image001.jpg@01DB...]" becomes "[photo: image001.jpg]";
+   a photo pasted into the email has no name at all ("[cid:f5f95524-0fcd-...@GBRP123.PROD.OUTLOOK.COM]"), so a
+   run of those becomes one "[3 photos in the email]" (Raf, 13 Nov 2026: a job's description full of cid lines). */
 const bareLink = (s: string) => s.replace(/^(?:mailto|tel):/i, '');
 const sameLink = (word: string, url: string) => {
   const n = (s: string) =>
@@ -151,9 +175,18 @@ const sameLink = (word: string, url: string) => {
   // "07706 500926<tel:07706500926>": only the last part of a phone number is right before the address
   return a === b || (/^\d{4,}$/.test(a) && /^\d+$/.test(b) && b.endsWith(a));
 };
+function cidMarks(text: string): string {
+  if (!/\[cid:/i.test(text)) return text;
+  return sayUnnamed(
+    text.replace(/\[cid:([^\]\s]{1,300})\]/gi, (_, id: string) => {
+      const name = id.replace(/@.*$/, '').trim();
+      return name && PHOTO_FILE.test(name) ? `[photo: ${name}]` : UNNAMED;
+    }),
+  );
+}
 export function cleanLinks(text: string): string {
-  if (!/\[https?:\/\/|<(?:https?:\/\/|mailto:|tel:)/i.test(text)) return text;
-  const lines = text
+  if (!/\[https?:\/\/|<(?:https?:\/\/|mailto:|tel:)|\[cid:/i.test(text)) return text;
+  const lines = cidMarks(text)
     .replace(/\[(?:https?:\/\/)[^\]\s]{1,2000}\]/gi, '')
     .replace(/([^\s<>[\]]+)<((?:https?:\/\/|mailto:|tel:)[^<>\s]{1,2000})>/gi, (_, word: string, url: string) => (sameLink(word, url) ? word : `${word} ${bareLink(url)}`))
     .replace(/<((?:https?:\/\/|mailto:|tel:)[^<>\s]{1,2000})>/gi, (_, url: string) => bareLink(url))

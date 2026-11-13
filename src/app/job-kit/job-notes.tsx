@@ -5,7 +5,7 @@ import type { DiaryEntry, DiaryFile, DiaryKind, JobDiary, JobNote, Missing } fro
 import type { MailPhoto } from '@/lib/email-photos';
 import { Icon } from './icons';
 import { field, label } from './parts';
-import { photoKey, photoMarks } from '@/lib/mail-text';
+import { photoKey, photoMarks, UNNAMED_LINE } from '@/lib/mail-text';
 import { SecIcon } from './job-menu';
 import { post, problemText } from './sm8-post';
 import { readPin } from './uploader';
@@ -585,8 +585,9 @@ export function JobNotes({ job, staff }: { job: CurrentJob; staff: Staff[] }) {
     const short: Item[] = [];
     for (const m of items) {
       if (m.kind !== 'email' && m.kind !== 'sms') continue;
-      let notFound = 0;
-      for (const n of photoMarks(m.text ?? '').photos) {
+      const marks = photoMarks(m.text ?? '');
+      let notFound = marks.unnamed;
+      for (const n of marks.photos) {
         const f = byName.get(photoKey(n));
         if (f) put(m.id, f);
         else notFound++;
@@ -996,11 +997,12 @@ function Entry({ item: x, soon, who, staffName, whole, onWhole, onFile, shots, p
     const photos = shots.filter((f) => f.photo).length;
     // a line that only named a photo goes when the photo is shown under it (found by name, or the photos shown are
     // as many as it names); one the Job Kit couldn't get says so
-    const covered = (n: string) => Boolean(photoNamed(n) && shots.some((f) => f.uuid === photoNamed(n)!.uuid)) || photos >= marks.photos.length;
+    const covered = (n: string) => Boolean(photoNamed(n) && shots.some((f) => f.uuid === photoNamed(n)!.uuid)) || photos >= marks.photos.length + marks.unnamed;
     const words = marks.text
       .split('\n')
       .filter((l) => {
         const only = /^\s*\[photo: ([^\]]+)\]\s*$/.exec(l);
+        if (UNNAMED_LINE.test(l)) return photos < marks.photos.length + marks.unnamed; // "[3 photos in the email]": shown under it
         return !(only && covered(only[1]));
       })
       .map((l) => l.replace(/\[photo: ([^\]]+)\]/g, (m, n: string) => (covered(n) ? '' : `(photo ${n}: open it in ServiceM8)`)).replace(/\s{2,}/g, ' '))
