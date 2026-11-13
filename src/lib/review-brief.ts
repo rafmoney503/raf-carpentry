@@ -36,6 +36,9 @@ IDEAS
 
 WRITING
 - Plain UK English, short sentences, no jargon, no dashes of any kind (use commas or full stops), no emoji. Write to Raf as "you".
+- Call the sites and apps by their names as written above (rafcarpentry.com, CabinetOS, Build It in 3D, the Job Kit, Rafal Solutions), lowercase rafcarpentry.com even at the start of a sentence.
+- Never use the data's field names or codes (emailsRead, jobsMade, pwa-games, quoteMarks): say what they are in words ("emails it read", "jobs it made", "people who opened the games from their home screen"). An idea's "watch" names a number Raf will see, in words.
+- When an update that went live was about something, say what it did, not what it was meant to fix, unless the data shows it fixed it.
 - headline: one sentence, the most useful thing to know about yesterday.
 - overall: two to four sentences across everything.
 - For each app: summary (two or three sentences with the day's numbers), stood_out (up to 3 short points), why (what probably caused it, one to three sentences), ideas.
