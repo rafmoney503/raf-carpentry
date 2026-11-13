@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Icon, type IconName } from './icons';
+import { secClass, type SecId } from './sections';
 
 /* The job screen's own menu (Raf, 3 Nov 2026: "can we make like a mini menu for the job sections so its easy to
    navigate and also distinguish the sections better"). A row of chips that sticks under the top bar once the
@@ -9,7 +10,10 @@ import { Icon, type IconName } from './icons';
    on the way. The same icon heads each section, so the chip and the box it jumps to match.
    Sections join by themselves: any box on the job screen with data-jsec="<key>" is listed in screen order, with
    data-jsec-note for its word and data-jsec-alert="1" when it wants Raf (a new message, money owed). A box that
-   isn't there (no money yet, no WhatsApp chat) has no chip. A fold button inside a box carries data-jsec-fold. */
+   isn't there (no money yet, no WhatsApp chat) has no chip. A fold button inside a box carries data-jsec-fold.
+   Today has the same row (13 Nov 2026, Raf: 'is it a good idea to have something like in job quick buttons or tabs on
+   main page of jobkit'): ChipMenu with its own attribute (data-tsec on Today's boxes, TODAY_SECS), each chip in its
+   section's colour. */
 
 export type SecKey = 'status' | 'quote' | 'whatsapp' | 'photos' | 'notes' | 'diary' | 'goodnotes' | 'property' | 'bookings' | 'emails' | 'money' | 'made' | 'more';
 
@@ -38,39 +42,61 @@ export function SecIcon({ k, className = '' }: { k: SecKey; className?: string }
   );
 }
 
-type Item = { k: SecKey; note: string; alert: boolean };
+/* Today's boxes, in the order they stand on the screen. */
+export type TodayKey = 'assistant' | 'review' | 'todo' | 'personal' | 'customers' | 'whatsapp' | 'timeline' | 'designs' | 'website' | 'credit' | 'photos';
+export const TODAY_SECS: Record<TodayKey, Def> = {
+  assistant: { label: 'Assistant', icon: 'assistant', sec: 'todo' },
+  review: { label: 'Review', icon: 'idea', sec: 'todo' },
+  todo: { label: 'To do', icon: 'steps', sec: 'todo' },
+  personal: { label: 'Personal', icon: 'home', sec: 'personal' },
+  customers: { label: 'Customers', icon: 'person', sec: 'customers' },
+  whatsapp: { label: 'WhatsApp', icon: 'chat', sec: 'whatsapp' },
+  timeline: { label: 'Timeline', icon: 'gantt', sec: 'timeline' },
+  designs: { label: 'Designs', icon: 'designs', sec: 'designs' },
+  website: { label: 'Website', icon: 'stats', sec: 'website' },
+  credit: { label: 'Credit', icon: 'money' },
+  photos: { label: 'Photos', icon: 'kit', sec: 'photos' },
+};
+
+type Def = { label: string; icon: IconName; sec?: SecId };
+type Item = { k: string; note: string; alert: boolean };
 const same = (a: Item[], b: Item[]) => a.length === b.length && a.every((x, i) => x.k === b[i].k && x.note === b[i].note && x.alert === b[i].alert);
-const sectionIn = (nav: HTMLElement | null, k: SecKey) => nav?.parentElement?.querySelector<HTMLElement>(`[data-jsec="${k}"]`) ?? null;
+const sectionIn = (nav: HTMLElement | null, attr: string, k: string) => nav?.parentElement?.querySelector<HTMLElement>(`[data-${attr}="${k}"]`) ?? null;
 const calm = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export function JobMenu({ first }: { first: string }) {
+  return <ChipMenu attr="jsec" defs={JOB_SECS} first={first} label="Sections of this job" />;
+}
+
+/* The row itself: chips for every box below it carrying data-<attr>="<key>" (with data-<attr>-note and -alert). */
+export function ChipMenu({ attr, defs, first, label, className = 'mt-5' }: { attr: 'jsec' | 'tsec'; defs: Record<string, Def>; first: string; label: string; className?: string }) {
   const nav = useRef<HTMLElement>(null);
   const row = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<Item[]>([]);
-  const [active, setActive] = useState<SecKey | 'top'>('top');
+  const [active, setActive] = useState<string>('top');
   const [top, setTop] = useState(60);
   const [stuck, setStuck] = useState(false);
   const [ends, setEnds] = useState({ left: false, right: false });
-  const jumping = useRef<{ k: SecKey | 'top'; until: number } | null>(null);
+  const jumping = useRef<{ k: string; until: number } | null>(null);
 
   const root = () => nav.current?.parentElement ?? null;
-  const sectionOf = (k: SecKey) => sectionIn(nav.current, k);
+  const sectionOf = (k: string) => sectionIn(nav.current, attr, k);
 
   // the sections on the screen, in order, with their words
   useEffect(() => {
     const box = root();
     if (!box) return;
     const read = () => {
-      const list = [...box.querySelectorAll<HTMLElement>('[data-jsec]')]
-        .map((el) => ({ k: el.dataset.jsec as SecKey, note: el.dataset.jsecNote ?? '', alert: el.dataset.jsecAlert === '1' }))
-        .filter((x, i, a) => x.k in JOB_SECS && a.findIndex((y) => y.k === x.k) === i);
+      const list = [...box.querySelectorAll<HTMLElement>(`[data-${attr}]`)]
+        .map((el) => ({ k: el.dataset[attr] ?? '', note: el.dataset[`${attr}Note`] ?? '', alert: el.dataset[`${attr}Alert`] === '1' }))
+        .filter((x, i, a) => x.k in defs && a.findIndex((y) => y.k === x.k) === i);
       setItems((prev) => (same(prev, list) ? prev : list));
     };
     read();
     const watch = new MutationObserver(read);
-    watch.observe(box, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-jsec', 'data-jsec-note', 'data-jsec-alert'] });
+    watch.observe(box, { subtree: true, childList: true, attributes: true, attributeFilter: [`data-${attr}`, `data-${attr}-note`, `data-${attr}-alert`] });
     return () => watch.disconnect();
-  }, []);
+  }, [attr, defs]);
 
   // where it sticks (just under the top bar, which is taller on an iPhone by its notch), and how much it covers,
   // so a jump to any box on the job (this menu's or the screen's own buttons) lands below it
@@ -107,9 +133,9 @@ export function JobMenu({ first }: { first: string }) {
       if (j && Date.now() < j.until) return setActive(j.k);
       jumping.current = null;
       const line = navBox.bottom + 24;
-      let now: SecKey | 'top' = 'top';
+      let now = 'top';
       for (const it of items) {
-        const el = sectionIn(n, it.k);
+        const el = sectionIn(n, attr, it.k);
         if (el && el.getBoundingClientRect().top <= line) now = it.k;
       }
       const end = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
@@ -127,19 +153,19 @@ export function JobMenu({ first }: { first: string }) {
       window.removeEventListener('resize', onScroll);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [items, top]);
+  }, [items, top, attr]);
 
   // the chip being read stays in view in the row; the row's ends fade when there's more to slide to
   useEffect(() => {
     const r = row.current;
     if (!r) return;
-    const chip = r.querySelector<HTMLElement>(`[data-jsec-chip="${active}"]`);
+    const chip = r.querySelector<HTMLElement>(`[data-${attr}-chip="${active}"]`);
     if (chip) {
       const pad = 44; // clear of the faded end
       if (chip.offsetLeft - pad < r.scrollLeft) r.scrollTo({ left: chip.offsetLeft - pad, behavior: calm() ? 'auto' : 'smooth' });
       else if (chip.offsetLeft + chip.offsetWidth + pad > r.scrollLeft + r.clientWidth) r.scrollTo({ left: chip.offsetLeft + chip.offsetWidth + pad - r.clientWidth, behavior: calm() ? 'auto' : 'smooth' });
     }
-  }, [active, stuck, items]);
+  }, [active, stuck, items, attr]);
   useEffect(() => {
     const r = row.current;
     if (!r) return;
@@ -154,7 +180,7 @@ export function JobMenu({ first }: { first: string }) {
     };
   }, [items, stuck]);
 
-  const go = (k: SecKey | 'top') => {
+  const go = (k: string) => {
     jumping.current = { k, until: Date.now() + 900 };
     setActive(k);
     const behavior = calm() ? 'auto' : 'smooth';
@@ -164,7 +190,7 @@ export function JobMenu({ first }: { first: string }) {
     }
     const el = sectionOf(k);
     if (!el) return;
-    const fold = el.querySelector<HTMLElement>('[data-jsec-fold][aria-expanded="false"]');
+    const fold = el.querySelector<HTMLElement>(`[data-${attr}-fold][aria-expanded="false"]`);
     if (fold) fold.click();
     requestAnimationFrame(() => {
       const h = nav.current?.getBoundingClientRect().height ?? 52;
@@ -182,30 +208,32 @@ export function JobMenu({ first }: { first: string }) {
   // always there (it finds the sections from where it sits), shown once there are two to choose between
   const chip = 'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-sm border px-2.5 text-[13.5px] leading-none whitespace-nowrap';
   return (
-    <nav ref={nav} hidden={items.length < 2} aria-label="Sections of this job" data-job-menu data-stuck={stuck ? '1' : undefined} className="jk-jobnav sticky z-20 -mx-4 mt-5" style={{ top }}>
+    <nav ref={nav} hidden={items.length < 2} aria-label={label} data-job-menu={attr === 'jsec' ? '' : undefined} data-today-menu={attr === 'tsec' ? '' : undefined} data-stuck={stuck ? '1' : undefined} className={`jk-jobnav sticky z-20 -mx-4 ${className}`} style={{ top }}>
       <div className="relative">
         <div ref={row} onWheel={wheel} className="jk-jobnav-row flex gap-1.5 overflow-x-auto px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {stuck ? (
-            <button type="button" data-jsec-chip="top" onClick={() => go('top')} className={`${chip} border-line-strong bg-mount font-semibold text-ink`} aria-label={`Back to the top: ${first}`}>
+            <button type="button" {...{ [`data-${attr}-chip`]: 'top' }} onClick={() => go('top')} className={`${chip} border-line-strong bg-mount font-semibold text-ink`} aria-label={`Back to the top: ${first}`}>
               <span aria-hidden>↑</span>
               <span className="max-w-[9ch] truncate">{first}</span>
             </button>
           ) : null}
           {items.map((it) => {
             const on = active === it.k;
-            const s = JOB_SECS[it.k];
+            const s = defs[it.k];
+            // a chip in its section's colour (Today), or the accent (the job's)
+            const look = s.sec
+              ? `jk-chip-sec ${secClass(s.sec)} ${on ? 'is-on' : it.alert ? 'is-alert text-ink' : 'border-line-strong bg-mount text-ink'}`
+              : on
+                ? 'border-accent bg-accent text-on-accent'
+                : it.alert
+                  ? 'border-accent bg-accent-soft text-ink'
+                  : 'border-line-strong bg-mount text-ink';
+            const ink = s.sec ? 'jk-sec-ink' : 'text-accent';
             return (
-              <button
-                key={it.k}
-                type="button"
-                data-jsec-chip={it.k}
-                aria-current={on ? 'location' : undefined}
-                onClick={() => go(it.k)}
-                className={`${chip} ${on ? 'border-accent bg-accent text-on-accent' : it.alert ? 'border-accent bg-accent-soft text-ink' : 'border-line-strong bg-mount text-ink'}`}
-              >
-                <Icon name={s.icon} className={`h-[17px] w-[17px] shrink-0 ${on ? '' : 'text-accent'}`} />
+              <button key={it.k} type="button" {...{ [`data-${attr}-chip`]: it.k }} aria-current={on ? 'location' : undefined} onClick={() => go(it.k)} className={`${chip} ${look}`}>
+                <Icon name={s.icon} className={`h-[17px] w-[17px] shrink-0 ${on ? '' : ink}`} />
                 {s.label}
-                {it.note ? <span className={`font-mono text-[11.5px] ${on ? 'opacity-85' : it.alert ? 'font-semibold text-accent' : 'text-faint'}`}>{it.note}</span> : it.alert ? <span aria-label="needs you" className={`h-2 w-2 rounded-full ${on ? 'bg-on-accent' : 'bg-accent'}`} /> : null}
+                {it.note ? <span className={`font-mono text-[11.5px] ${on ? 'opacity-85' : it.alert ? `font-semibold ${ink}` : 'text-faint'}`}>{it.note}</span> : it.alert ? <span aria-label="needs you" className={`jk-chip-dot h-2 w-2 rounded-full ${on ? 'bg-on-accent' : s.sec ? '' : 'bg-accent'}`} /> : null}
               </button>
             );
           })}

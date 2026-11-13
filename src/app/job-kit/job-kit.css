@@ -301,3 +301,10 @@ button:active > .jk-check { transform: scale(0.9); }
 /* on a computer every section shows at once: the chips wrap onto a second row rather than slide */
 .jk-desk .jk-jobnav-row { flex-wrap: wrap; overflow: visible; }
 .jk-desk .jk-jobnav-row > button { height: 32px; font-size: 13px; }
+/* Today's row (13 Nov 2026): each chip in its box's colour, a 3 px edge like the box's; filled in when it's the box
+   being read, washed when it wants Raf */
+.jk-chip-sec { border-left: 3px solid var(--sec-mark, var(--sec)) !important; }
+.jk-chip-sec.is-on { background: var(--sec); border-color: var(--sec); color: var(--color-on-accent); }
+.jk-chip-sec.is-alert { background: color-mix(in srgb, var(--sec) 14%, var(--color-mount)); border-color: var(--sec); }
+.jk-chip-sec .jk-chip-dot { background: var(--sec-mark, var(--sec)); }
+.jk-chip-sec.is-on .jk-chip-dot { background: var(--color-on-accent); }

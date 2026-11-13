@@ -35,7 +35,7 @@ function snapshot(): Assistant | null {
   if (raw !== cache.raw) {
     let val: Assistant | null = null;
     try {
-      val = raw ? (JSON.parse(raw) as Assistant) : null;
+      val = raw ? whole(JSON.parse(raw) as Partial<Assistant>) : null;
     } catch {
       val = null;
     }
@@ -62,6 +62,11 @@ const subscribe = (cb: () => void) => {
 export const useAssistant = () => useSyncExternalStore(subscribe, snapshot, () => null);
 
 const EMPTY: Assistant = { items: [], settings: { paused: false, jobsFromEmail: true, drawings: true }, seen: 0, run: {}, runs: [], now: 0, fetchedAt: 0 };
+// what's kept or answered with a part missing (an answer cut off, an older copy) is filled in, so Today never breaks on it
+function whole(v: Partial<Assistant> | null | undefined): Assistant {
+  const o = v && typeof v === 'object' ? v : {};
+  return { ...EMPTY, ...o, items: Array.isArray(o.items) ? o.items : [], runs: Array.isArray(o.runs) ? o.runs : [], run: o.run && typeof o.run === 'object' ? o.run : {}, settings: { ...EMPTY.settings, ...(o.settings ?? {}) } };
+}
 
 /* Asks the store, at most every 2 minutes unless forced; an error keeps what was there. */
 export async function fetchAssistant(force = false): Promise<void> {
@@ -72,7 +77,7 @@ export async function fetchAssistant(force = false): Promise<void> {
     keep({ ...(cur ?? EMPTY), error: r.error });
     return;
   }
-  keep({ ...r.data, fetchedAt: Date.now() });
+  keep(whole({ ...r.data, fetchedAt: Date.now() }));
 }
 
 /* Raf has looked: what's there now isn't new any more (here at once, then in the store). */

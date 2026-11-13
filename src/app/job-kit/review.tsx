@@ -55,13 +55,18 @@ function snapshot(): Review | null {
   if (raw !== cache.raw) {
     let val: Review | null = null;
     try {
-      val = raw ? (JSON.parse(raw) as Review) : null;
+      val = raw ? whole(JSON.parse(raw) as Partial<Review>) : null;
     } catch {
       val = null;
     }
     cache = { raw, val };
   }
   return cache.val;
+}
+// a part missing (an answer cut off, an older copy) is filled in, so Today never breaks on it
+function whole(v: Partial<Review> | null | undefined): Review {
+  const o = v && typeof v === 'object' ? v : {};
+  return { fetchedAt: 0, ...o, days: Array.isArray(o.days) ? o.days : [], marks: o.marks && typeof o.marks === 'object' ? o.marks : {} };
 }
 function keep(s: Review) {
   try {
@@ -89,8 +94,9 @@ export async function fetchReview(force = false): Promise<void> {
     keep({ ...(cur ?? { days: [], marks: {} }), fetchedAt: cur?.fetchedAt ?? 0, error: r.error });
     return;
   }
-  const running = cur?.running && Date.now() - cur.running < 6 * 60_000 && !r.data.days.some((d) => d.day === r.data.yesterday && d.state !== 'working' && Date.parse(d.at) > (cur.running ?? 0)) ? cur.running : undefined;
-  keep({ ...r.data, fetchedAt: Date.now(), running });
+  const got = whole({ ...r.data, fetchedAt: Date.now() });
+  const running = cur?.running && Date.now() - cur.running < 6 * 60_000 && !got.days.some((d) => d.day === got.yesterday && d.state !== 'working' && Date.parse(d.at) > (cur.running ?? 0)) ? cur.running : undefined;
+  keep({ ...got, running });
 }
 
 const isWriting = (r: Review | null) => Boolean(r?.running && Date.now() - r.running < 6 * 60_000) || Boolean(r?.days.some((d) => d.state === 'working' && Date.now() - Date.parse(d.at) < 6 * 60_000));

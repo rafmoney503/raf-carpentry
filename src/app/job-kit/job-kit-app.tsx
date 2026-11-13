@@ -91,6 +91,7 @@ import { addSend, enquiryFromChat, WaChatView, waHomeLine, WaJobBox, WaList, waT
 import { getWaFile as getWaFileBlob, pickedOf, pickedText, sendToJob, updateChat, useWaChats, waChat, type WaChat } from './wa-store';
 import type { Change } from '@/lib/job-timeline';
 import { ColourKey, KeyDots, secClass, secOfLine, secOfScreen, TintSwitch, useColourKey, useTint, type SecId } from './sections';
+import { ChipMenu, TODAY_SECS, type TodayKey } from './job-menu';
 import { HQ_URL, LIST_SCREENS, PickNote, Sidebar, sideOf, useWide, type SideId } from './desktop';
 import { onApplied, onSync, startSync, syncNow, syncSoon, syncWords, type SyncState } from './sync';
 import { reloadFor, safeToReload, watchVersion } from './update';
@@ -2237,6 +2238,11 @@ function Home({
   const madeLine = sm8.at || Object.keys(costs.snaps).length ? madeHomeLine(madeRows(costs, sm8.jobs, sm8.bookings ?? null, rate), rate) : 'Price, costs and days on site of each finished job';
   const lines = [...(creditToday ? [creditToday] : []), ...(mailLine ? [mailLine] : []), ...madeLines.filter((l) => l.go === 'receipt'), ...quoteLines, ...waLines, ...(socialNew ? [socialNew] : []), ...todayLines({ sm8, marks, kit: [...jobs, ...designJobs], designs, done, postsLeft: posts.length - postedEverywhere(posts) }), ...madeLines.filter((l) => l.go !== 'receipt')];
   const goingAhead = sm8.jobs.filter((j) => j.status === 'Work Order').length;
+  // the chips at the top (ChipMenu): a word on each box and which want Raf
+  const assistantNew = /^\d+ new$/.test(assistantRight ?? '');
+  const postsLeft = posts.length - postedEverywhere(posts);
+  const lateChores = personal.due.some((c) => c.due && c.due < personal.today);
+  const tsec = (k: TodayKey, note = '', alert = false) => ({ 'data-tsec': k, 'data-tsec-note': note || undefined, 'data-tsec-alert': alert ? '1' : undefined });
   const [install, setInstall] = useState<(Event & { prompt: () => Promise<void> }) | null>(null);
   useEffect(() => {
     const keep = (e: Event) => {
@@ -2251,6 +2257,8 @@ function Home({
     <div className="pt-7">
       <p className="kicker">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
       <h1 className="mt-1 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">Today</h1>
+      {/* a phone: a row of chips to every box below, sticking under the top bar (a computer has the sidebar) */}
+      {!wide ? <ChipMenu attr="tsec" defs={TODAY_SECS} first="Today" label="Boxes on Today" className="mt-3" /> : null}
 
       {!standalone && !wide ? (
         <div className="mt-5 rounded-sm border border-accent bg-accent-soft px-4 py-3.5 text-[15px] leading-relaxed">
@@ -2285,7 +2293,7 @@ function Home({
         <SnapButton big wide={wide} line={snapLine(sm8.jobs, sm8.bookings ?? null)} onFile={(f) => onSnap(f)} onOther={() => onSnap(null)} other={wide ? 'More ways: no receipt, or a cost by hand' : 'A PDF, a photo from the phone, or no receipt'} />
       </div>
 
-      <section data-assistant-box className={`jk-band ${secClass('todo')} mt-5 rounded-sm border border-line-strong bg-mount`}>
+      <section data-assistant-box {...tsec('assistant', assistantNew ? assistantRight : '', assistantNew)} className={`jk-band ${secClass('todo')} mt-5 rounded-sm border border-line-strong bg-mount`}>
         <div className="jk-band-head flex h-11 items-center gap-2.5 px-4">
           <Icon name="assistant" className="h-5 w-5 shrink-0 jk-sec-ink" />
           <h2 className="flex-1 font-mono text-[13px] font-semibold uppercase tracking-[0.08em] jk-sec-ink">Assistant</h2>
@@ -2294,7 +2302,7 @@ function Home({
         {assistant}
       </section>
 
-      <section data-review-box className={`jk-band ${secClass('todo')} mt-5 rounded-sm border border-line-strong bg-mount`}>
+      <section data-review-box {...tsec('review')} className={`jk-band ${secClass('todo')} mt-5 rounded-sm border border-line-strong bg-mount`}>
         <div className="jk-band-head flex h-11 items-center gap-2.5 px-4">
           <Icon name="idea" className="h-5 w-5 shrink-0 jk-sec-ink" />
           <h2 className="flex-1 font-mono text-[13px] font-semibold uppercase tracking-[0.08em] jk-sec-ink">Daily review</h2>
@@ -2304,7 +2312,7 @@ function Home({
       </section>
 
       <div className="jk-home-bands">
-      <HomeBand tone="accent" label="To do" right={lines.length ? `${lines.length} thing${lines.length === 1 ? '' : 's'}` : 'All clear'}>
+      <HomeBand tone="accent" menu={tsec('todo', lines.length ? String(lines.length) : '', lines.some((l) => l.urgent))} label="To do" right={lines.length ? `${lines.length} thing${lines.length === 1 ? '' : 's'}` : 'All clear'}>
         <div className="px-4 py-1">
           {lines.length ? (
             <ul className="jk-todo divide-y divide-line">
@@ -2337,11 +2345,11 @@ function Home({
         </div>
       </HomeBand>
 
-      <HomeBand sec="personal" icon="home" label="Personal" right={personal.due.length ? `${personal.due.length} today` : personal.list.length ? 'Nothing today' : undefined}>
+      <HomeBand sec="personal" menu={tsec('personal', personal.due.length ? String(personal.due.length) : '', lateChores)} icon="home" label="Personal" right={personal.due.length ? `${personal.due.length} today` : personal.list.length ? 'Nothing today' : undefined}>
         <PersonalToday onOpen={onPersonal} />
       </HomeBand>
 
-      <HomeBand sec="customers" icon="person" label="Customers" right="ServiceM8">
+      <HomeBand sec="customers" menu={tsec('customers', '', Boolean(mailLine))} icon="person" label="Customers" right="ServiceM8">
         <div className="px-4 pb-1">
           {find}
           <HomeRow onClick={onDiary} title="Diary" line={diaryLine(sm8)} />
@@ -2351,13 +2359,13 @@ function Home({
         </div>
       </HomeBand>
 
-      <HomeBand sec="whatsapp" icon="chat" label="WhatsApp" right={waChats.length ? `${waChats.length} chat${waChats.length === 1 ? '' : 's'}` : undefined}>
+      <HomeBand sec="whatsapp" menu={tsec('whatsapp', waChats.length ? String(waChats.length) : '', waLines.length > 0)} icon="chat" label="WhatsApp" right={waChats.length ? `${waChats.length} chat${waChats.length === 1 ? '' : 's'}` : undefined}>
         <div className="px-4">
           <HomeRow onClick={onWhatsApp} title="WhatsApp chats" line={waHomeLine(waChats)} truncate last />
         </div>
       </HomeBand>
 
-      <HomeBand sec="timeline" icon="gantt" label="Job timeline" right={goingAhead ? `${goingAhead} going ahead` : undefined}>
+      <HomeBand sec="timeline" menu={tsec('timeline', goingAhead ? String(goingAhead) : '')} icon="gantt" label="Job timeline" right={goingAhead ? `${goingAhead} going ahead` : undefined}>
         <TimelineMini sm8={sm8} marks={marks} onOpen={onTimeline} />
         <div className="border-t border-line px-4">
           <HomeRow onClick={onBoard} title="Clients board" line={sm8.at ? boardLine(buildBoard(sm8.jobs, sm8.bookings, marks)) : 'Every client from ServiceM8, step by step'} truncate />
@@ -2365,14 +2373,14 @@ function Home({
         </div>
       </HomeBand>
 
-      <HomeBand sec="designs" icon="designs" label="Designs in 3D" right={libraryCount ? `${libraryCount} in the library` : undefined}>
+      <HomeBand sec="designs" menu={tsec('designs')} icon="designs" label="Designs in 3D" right={libraryCount ? `${libraryCount} in the library` : undefined}>
         <div className="px-4">
           <HomeRow onClick={onDesigns} title="Designs for customers" line={designLine(designJobs, designs)} last={!libraryCount} />
           {libraryCount ? <HomeRow onClick={onLibrary} title="Design library" line={libraryLine} last /> : null}
         </div>
       </HomeBand>
 
-      <HomeBand sec="website" icon="stats" label="Website" right="rafcarpentry.com">
+      <HomeBand sec="website" menu={tsec('website')} icon="stats" label="Website" right="rafcarpentry.com">
         <div className="px-4">
           <HomeRow onClick={onStats} title="Website stats" line={webLine} />
           <a href={HQ_URL} target="_blank" rel="noopener" data-hq-link className="flex min-h-[60px] w-full items-center gap-3 py-2.5 text-left">
@@ -2386,13 +2394,13 @@ function Home({
         </div>
       </HomeBand>
 
-      <HomeBand icon="money" label="Claude credit" right="Quotes, designs, drafts">
+      <HomeBand menu={tsec('credit', '', Boolean(creditToday))} icon="money" label="Claude credit" right="Quotes, designs, drafts">
         <div className="px-4">
           <HomeRow onClick={onClaude} title="Claude credit" line={creditLine(credit)} last />
         </div>
       </HomeBand>
 
-      <HomeBand sec="photos" id="kit-jobs" icon="kit" label="Photos and posts">
+      <HomeBand sec="photos" id="kit-jobs" menu={tsec('photos', postsLeft > 0 ? String(postsLeft) : '')} icon="kit" label="Photos and posts">
         <div className="px-4 pb-4">
           {posts.length ? <HomeRow onClick={onPosts} title="Posts for Instagram, TikTok and YouTube" line={postsLine(posts)} /> : null}
           <HomeRow onClick={onSocial} title="Social media" line={socialLine(social)} truncate />
@@ -2484,10 +2492,10 @@ function KitJobs({ jobs, items, done, onClear, onNew, onOpen, heading }: { jobs:
   );
 }
 
-function HomeBand({ label, right, icon, tone, sec, id, children }: { label: string; right?: string; icon?: IconName; tone?: 'accent'; sec?: SecId; id?: string; children: React.ReactNode }) {
+function HomeBand({ label, right, icon, tone, sec, id, menu, children }: { label: string; right?: string; icon?: IconName; tone?: 'accent'; sec?: SecId; id?: string; menu?: Record<string, string | undefined>; children: React.ReactNode }) {
   const accent = tone === 'accent';
   return (
-    <section id={id} className={`mt-5 scroll-mt-20 rounded-sm border bg-mount ${accent ? 'border-accent' : 'border-line-strong'} ${sec ? `jk-band ${secClass(sec)}` : ''}`}>
+    <section id={id} {...menu} className={`mt-5 scroll-mt-20 rounded-sm border bg-mount ${accent ? 'border-accent' : 'border-line-strong'} ${sec ? `jk-band ${secClass(sec)}` : ''}`}>
       <div className={`flex h-11 items-center gap-2.5 px-4 ${accent ? 'bg-accent text-on-accent' : sec ? 'jk-band-head' : 'border-b border-line-strong bg-raised'}`}>
         {icon ? <Icon name={icon} className="h-5 w-5 shrink-0 jk-sec-ink" /> : null}
         <h2 className={`flex-1 font-mono text-[13px] font-semibold uppercase tracking-[0.08em] ${sec ? 'jk-sec-ink' : ''}`}>{label}</h2>
