@@ -41,6 +41,14 @@ it): `create_deployment` with gitSource github rafmoney503/raf-carpentry, ref `r
   value is set in raf-carpentry with `HQ_NOTIFY_URL` https://rafal-hq.vercel.app/api/notify). HQ sends it as Web Push
   to the phones that turned notifications on (Alerts), tapping it opens Today. The assistant keeps quiet from 21:30 to
   7:00 itself and buzzes then. The route is outside the sign-in (its own secret), like the morning job.
+- **Daily review** (13 Nov 2026): rafcarpentry.com writes a review of yesterday across every app at about 6 each
+  morning (raf-carpentry `src/lib/review-writer.ts`, kept in `jobkit.reviews`). HQ gives it the sites' numbers:
+  `GET /api/review/data?day=` with `Bearer HQ_NOTIFY_SECRET` (outside the sign-in, `src/lib/reviewdata.ts`: Vercel
+  visitors, views, sources, pages, countries, devices, HQ's own counts and what went live that day, against the 7 days
+  before; live since 13 Nov 2026). The screens (branch `hq-review` until merged): a Review tab, the card first on Today,
+  each app's numbers, what stood out, why, the ideas to mark I'll do it / Done / Not for me (the same marks as in the
+  Job Kit and CabinetOS) or copy for Claude, the ideas still open; the 7:43 buzz adds the headline. Read and marked
+  through `public.hq_review` (HQ_DB_SECRET); the review types are a copy of raf-carpentry's `src/lib/review-types.ts`.
 
 The sites and what counts as their home page and key pages are in `src/lib/sites.ts`. The "worth knowing" rules are
 `src/lib/insights.ts` (checked by `npm run check`).
@@ -55,7 +63,7 @@ The sites and what counts as their home page and key pages are in `src/lib/sites
 | `HQ_SESSION_SECRET` | Signs the sign-in cookie (90 days). |
 | `CRON_SECRET` | Vercel sends it to `/api/cron/morning`. |
 | `HQ_VAPID_PUBLIC`, `HQ_VAPID_PRIVATE` | Web Push keys for the morning summary. |
-| `HQ_NOTIFY_SECRET` | The Job Kit assistant's buzz (Sensitive; 24 characters or more). |
+| `HQ_NOTIFY_SECRET` | The Job Kit assistant's buzz and the daily review's numbers (Sensitive; 24 characters or more). |
 | `HQ_PIN` | Optional. Without it the PIN is checked against the Job Kit's (rafcarpentry.com `/api/pots`, action check). |
 
 ## Morning summary
