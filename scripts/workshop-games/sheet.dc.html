@@ -107,6 +107,17 @@ body{margin:0}
       <div class="mono" style="font-size: 10.5px; letter-spacing: 0.1em; color: #1f7a4a">{{ cardKicker }}</div>
       <div style="margin-top: 4px; font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05">{{ cardTitle }}</div>
       <div class="mono" style="margin-top: 6px; font-size: 12px; color: #4f555b">{{ cardStats }}</div>
+      <sc-if value="{{ rankShow }}" hint-placeholder-val="{{ true }}">
+          <div data-rank style="margin-top: 10px; padding: 8px 10px; border-radius: 9px; background: rgba(37,71,208,0.09); opacity: {{ rankOp }}; transition: opacity .25s">
+            <div style="display: flex; align-items: baseline; gap: 8px">
+              <span data-rank-line style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 15px; font-weight: 760; letter-spacing: -0.01em; color: #16191c">{{ rankLine }}</span>
+              <span data-rank-more class="mono" style="margin-left: auto; font-size: 11px; color: #4f555b; white-space: nowrap">{{ rankMore }}</span>
+            </div>
+            <sc-if value="{{ rankHasNext }}" hint-placeholder-val="{{ true }}">
+              <div data-rank-next class="mono" style="margin-top: 3px; font-size: 11px; color: #2547d0">{{ rankNext }}</div>
+            </sc-if>
+          </div>
+        </sc-if>
       <div style="margin-top: 12px; display: grid; grid-template-columns: {{ cardCols }}; gap: 8px">
         <sc-if value="{{ hasNext }}" hint-placeholder-val="{{ true }}">
           <button type="button" class="ss-btn" onClick="{{ nextBoard }}" style="height: 44px; border: 0; border-radius: 9px; background: #6fcf97; color: #0e1114; font-family: Geist, system-ui, sans-serif; font-size: 14px; font-weight: 700; cursor: pointer">{{ nextLabel }}</button>
@@ -159,6 +170,17 @@ class Component extends DCLogic {
   }
   soundPref() { try { return localStorage.getItem('raf_games_sound') !== '0'; } catch (e) { return true; } }
   saveSound(on) { try { localStorage.setItem('raf_games_sound', on ? '1' : '0'); } catch (e) {} }
+  // When a game ends: its place among everyone's games today (games-app.tsx asks the website; nothing with no signal)
+  rank(p) {
+    const id = (this.rankN = (this.rankN || 0) + 1);
+    if (this.state.rank) this.setState({ rank: null });
+    if (typeof this.rankScore === 'function') this.rankScore(p, (r) => { if (this.rankN === id) this.setState({ rank: r }); });
+  }
+  unrank() { this.rankN = (this.rankN || 0) + 1; if (this.state.rank) this.setState({ rank: null }); }
+  rankVals() {
+    const r = this.state.rank, ok = !!(r && !r.wait);
+    return { rankShow: !!r, rankOp: ok ? '1' : '0.55', rankLine: ok ? r.line : 'Finding your place…', rankMore: ok ? r.more || '' : '', rankNext: ok ? '↑ ' + (r.next || '') : '', rankHasNext: ok && !!r.next };
+  }
   share(p) { if (typeof this.shareScore === 'function') this.shareScore(p); }
   // Boards 1 to 30 (41 up are the daily boards). 'daily', nothing saved or an old daily: today's.
   resolve(v) { const n = parseInt(v || '', 10); return n >= 1 && n <= 30 ? n : this.todayN; }
@@ -246,9 +268,10 @@ class Component extends DCLogic {
     return this.PUZZLES[1];
   }
   fresh() {
+    this.rankN = (this.rankN || 0) + 1;
     const P = this.P(), parts = [], rot = {};
     Object.keys(P.types).forEach((type) => { rot[type] = false; for (let i = 0; i < P.types[type].n; i++) parts.push({ id: type + i, type: type, w: P.types[type].w, h: P.types[type].h, on: false, x: 0, y: 0 }); });
-    return { parts: parts, rot: rot, turnFx: '', drag: null, t0: 0, now: 0, turns: 0, won: false, shown: false, card: false,
+    return { parts: parts, rot: rot, turnFx: '', drag: null, t0: 0, now: 0, turns: 0, won: false, shown: false, card: false, rank: null,
       msg: P.kerf ? 'Drag parts on. They snap 3 mm apart for the saw.' : 'Drag a part onto the board. Tap a card to turn it.', msgC: '#a3abb3', flashId: '', badId: '' };
   }
   setPuzzle(pid) {
@@ -402,6 +425,7 @@ class Component extends DCLogic {
       stars = Object.assign({}, stars); stars[this.pid] = Math.max(stars[this.pid] || 0, earned);
       const tk = this.pid + '_t'; stars[tk] = stars[tk] == null ? secs : Math.min(stars[tk], secs);
       try { localStorage.setItem('raf_games_stars_sheet', JSON.stringify(stars)); } catch (e) {}
+      this.rank({ g: 'sheet', b: this.pid, t: secs });
       // the layout you found, for the boards screen to draw
       try {
         const done = JSON.parse(localStorage.getItem('raf_games_sheet_done') || '{}') || {};
@@ -461,6 +485,7 @@ class Component extends DCLogic {
     const clock = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
     const nextId = this.pid >= 1 && this.pid < 30 ? this.pid + 1 : 0;
     return {
+      ...this.rankVals(),
       kicker: P.kicker || 'BOARD ' + this.pid + ' · ' + P.chapter.toUpperCase(),
       goalTitle: P.kerf ? 'Fit them with 3 mm saw cuts' : Object.values(types).some((t) => t.grain) ? 'Fit them with the grain' : 'Fit all ' + total + ' parts on one board',
       partCount: total, cardCount: Object.keys(types).length,

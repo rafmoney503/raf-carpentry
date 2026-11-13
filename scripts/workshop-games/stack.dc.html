@@ -90,6 +90,17 @@ body{margin:0}
           <span style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 16px; font-weight: 700">boards</span>
           <span class="mono" style="margin-left: auto; font-size: 11.5px; color: #4f555b; text-align: right">{{ cardLine }}</span>
         </div>
+        <sc-if value="{{ rankShow }}" hint-placeholder-val="{{ true }}">
+          <div data-rank style="margin-top: 10px; padding: 8px 10px; border-radius: 9px; background: rgba(37,71,208,0.09); opacity: {{ rankOp }}; transition: opacity .25s">
+            <div style="display: flex; align-items: baseline; gap: 8px">
+              <span data-rank-line style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 15px; font-weight: 760; letter-spacing: -0.01em; color: #16191c">{{ rankLine }}</span>
+              <span data-rank-more class="mono" style="margin-left: auto; font-size: 11px; color: #4f555b; white-space: nowrap">{{ rankMore }}</span>
+            </div>
+            <sc-if value="{{ rankHasNext }}" hint-placeholder-val="{{ true }}">
+              <div data-rank-next class="mono" style="margin-top: 3px; font-size: 11px; color: #2547d0">{{ rankNext }}</div>
+            </sc-if>
+          </div>
+        </sc-if>
         <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
           <button type="button" class="ts-btn" onClick="{{ primary }}" style="height: 44px; border: 0; border-radius: 9px; background: {{ primaryBg }}; color: {{ primaryFg }}; font-family: Geist, system-ui, sans-serif; font-size: 14.5px; font-weight: 700; cursor: pointer">{{ primaryLabel }}</button>
           <a href="{{ secondHref }}" class="ts-btn" onClick="{{ holdCount }}" style="height: 44px; display: grid; place-items: center; border-radius: 9px; background: #2547d0; color: #ffffff; font-size: 14.5px; font-weight: 650; text-decoration: none">{{ secondLabel }}</a>
@@ -169,6 +180,17 @@ class Component extends DCLogic {
   }
   soundPref() { try { return localStorage.getItem('raf_games_sound') !== '0'; } catch (e) { return true; } }
   saveSound(on) { try { localStorage.setItem('raf_games_sound', on ? '1' : '0'); } catch (e) {} }
+  // When a game ends: its place among everyone's games today (games-app.tsx asks the website; nothing with no signal)
+  rank(p) {
+    const id = (this.rankN = (this.rankN || 0) + 1);
+    if (this.state.rank) this.setState({ rank: null });
+    if (typeof this.rankScore === 'function') this.rankScore(p, (r) => { if (this.rankN === id) this.setState({ rank: r }); });
+  }
+  unrank() { this.rankN = (this.rankN || 0) + 1; if (this.state.rank) this.setState({ rank: null }); }
+  rankVals() {
+    const r = this.state.rank, ok = !!(r && !r.wait);
+    return { rankShow: !!r, rankOp: ok ? '1' : '0.55', rankLine: ok ? r.line : 'Finding your place…', rankMore: ok ? r.more || '' : '', rankNext: ok ? '↑ ' + (r.next || '') : '', rankHasNext: ok && !!r.next };
+  }
   share(p) { if (typeof this.shareScore === 'function') this.shareScore(p); }
 
   fresh() {
@@ -184,6 +206,7 @@ class Component extends DCLogic {
     g.cur = { x: this.WORLD - last.w * 0.15, w: last.w, sp: sp, seed: n * 7919 + 13, dir: -1 };
   }
   setLevel(lv) {
+    this.unrank();
     this.lv = lv; this.g = this.fresh();
     try { localStorage.setItem('raf_games_level_stack', String(lv)); } catch (e) {}
     this.setState({ phase: 'ready', lv: lv, score: 0, newBest: false, tall: 47, perfects: 0, earned: 0, nextTxt: this.nextText(47, 0) });
@@ -243,6 +266,7 @@ class Component extends DCLogic {
     this.drop();
   }
   restart() {
+    this.unrank();
     this.g = this.fresh();
     this.setState({ phase: 'playing', score: 0, newBest: false, count: 4, tall: 47, perfects: 0, earned: 0, nextTxt: this.nextText(47, 0) });
     this.tone(523, 0.08, { vol: 0.12 }); this.tone(784, 0.1, { vol: 0.12, at: 0.07 });
@@ -305,6 +329,7 @@ class Component extends DCLogic {
     for (let i = 0; i < earned; i++) this.tone([784, 988, 1318][i], 0.3, { vol: 0.13, at: 1.2 + i * 0.22 });
     this.flash('win'); this.buzz([20, 40, 20, 40, 60]);
     this.setState({ earned: earned, stars: stars });
+    this.rank({ g: 'stack', lv: L.n, n: placed, won: 1, pf: Math.min(placed, g.perfects || 0) });
   }
   over() {
     const g = this.g, cur = g.cur, level = g.stack.length;
@@ -314,6 +339,7 @@ class Component extends DCLogic {
     this.flash('miss'); this.buzz([60, 30, 120]);
     const score = g.stack.length - 1;
     if (!this.L() && score > this.state.best) { try { localStorage.setItem('raf_games_stack_best', String(score)); } catch (e) {} this.setState({ best: score, newBest: true }); }
+    this.rank({ g: 'stack', lv: this.L() ? this.L().n : 0, n: score, won: 0, pf: Math.min(score, g.perfects || 0) });
   }
 
   step(dt) {
@@ -496,6 +522,7 @@ class Component extends DCLogic {
     const goalBoards = L ? Math.ceil(L.goal / this.THICK) - 1 : 0;
     const hasNext = L && L.n < 10;
     return {
+      ...this.rankVals(),
       kicker: L ? 'LEVEL ' + L.n + ' · ' + L.name.toUpperCase() : 'FREE STACK · NO GOAL',
       leftLabel: L ? 'TIMBER' : 'BEST', leftValue: L ? (L.sp >= 0 ? this.SPECIES[L.sp].name : 'mixed') : st.best,
       rightLabel: L ? 'GOAL ' + L.goal : 'NEXT', rightColor: L ? '#6fcf97' : '#f2c94c',

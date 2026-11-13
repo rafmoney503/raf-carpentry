@@ -196,6 +196,17 @@ button:focus-visible,a:focus-visible{outline:2px solid #b5e655;outline-offset:2p
           <div class="mono ok">{{ overKicker }}</div>
           <div class="orow"><span class="ot">{{ overTitle }}</span><sc-if value="{{ showStars }}" hint-placeholder-val="{{ true }}"><span class="ostars" aria-hidden="true"><sc-for list="{{ overStars }}" as="st" hint-placeholder-count="3"><span style="color: {{ st.c }}">★</span></sc-for></span></sc-if></div>
           <div class="ol">{{ overLine }}</div>
+          <sc-if value="{{ rankShow }}" hint-placeholder-val="{{ true }}">
+          <div data-rank style="margin-top: 9px; padding: 8px 10px; border-radius: 9px; background: rgba(37,71,208,0.09); opacity: {{ rankOp }}; transition: opacity .25s">
+            <div style="display: flex; align-items: baseline; gap: 8px">
+              <span data-rank-line style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 15px; font-weight: 760; letter-spacing: -0.01em; color: #16191c">{{ rankLine }}</span>
+              <span data-rank-more class="mono" style="margin-left: auto; font-size: 11px; color: #4f555b; white-space: nowrap">{{ rankMore }}</span>
+            </div>
+            <sc-if value="{{ rankHasNext }}" hint-placeholder-val="{{ true }}">
+              <div data-rank-next class="mono" style="margin-top: 3px; font-size: 11px; color: #2547d0">{{ rankNext }}</div>
+            </sc-if>
+          </div>
+        </sc-if>
           <div class="obtns">
             <button type="button" onClick="{{ main }}" class="b-main">{{ mainLabel }}</button>
             <button type="button" onClick="{{ shareIt }}" class="b-share">Share score</button>
@@ -380,6 +391,17 @@ class Component extends DCLogic {
   }
   soundPref() { try { return localStorage.getItem('raf_games_sound') !== '0'; } catch (e) { return true; } }
   saveSound(on) { try { localStorage.setItem('raf_games_sound', on ? '1' : '0'); } catch (e) {} }
+  // When a game ends: its place among everyone's games today (games-app.tsx asks the website; nothing with no signal)
+  rank(p) {
+    const id = (this.rankN = (this.rankN || 0) + 1);
+    if (this.state.rank) this.setState({ rank: null });
+    if (typeof this.rankScore === 'function') this.rankScore(p, (r) => { if (this.rankN === id) this.setState({ rank: r }); });
+  }
+  unrank() { this.rankN = (this.rankN || 0) + 1; if (this.state.rank) this.setState({ rank: null }); }
+  rankVals() {
+    const r = this.state.rank, ok = !!(r && !r.wait);
+    return { rankShow: !!r, rankOp: ok ? '1' : '0.55', rankLine: ok ? r.line : 'Finding your place…', rankMore: ok ? r.more || '' : '', rankNext: ok ? '↑ ' + (r.next || '') : '', rankHasNext: ok && !!r.next };
+  }
   share(p) { if (typeof this.shareScore === 'function') this.shareScore(p); }
   readSaved() {
     const rd = (k) => { try { const o = JSON.parse(localStorage.getItem(k) || '{}'); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } };
@@ -942,7 +964,8 @@ class Component extends DCLogic {
       diffs: J.diffs.map((d) => ({ box: d.box, label: d.label, tier: d.tier, found: false, missed: false, num: 0, at: 0, hinted: false })) };
     this.marks = []; this.floats = []; this.hintRing = null; this.hold = null; this.beatAt = -9; this.nextBeat = 0; this.lateAt = 0;
     [784, 1047].forEach((f, i) => this.tone(f, 0.12, { vol: 0.08, at: i * 0.09 }));
-    this.setState({ phase: 'play', mode: this.g.mode, map: false, left: this.g.T, hints: sp.hints, found: 0, res: null, alarm: '', save: this.savePick(daily ? 'daily' : j), live: (daily ? "Today's job" : 'Level ' + j) + '. Find ' + this.g.n + ' differences.' });
+    this.rankN = (this.rankN || 0) + 1;
+    this.setState({ phase: 'play', mode: this.g.mode, map: false, rank: null, left: this.g.T, hints: sp.hints, found: 0, res: null, alarm: '', save: this.savePick(daily ? 'daily' : j), live: (daily ? "Today's job" : 'Level ' + j) + '. Find ' + this.g.n + ' differences.' });
     // the snag list is taller with seven snags, so the stage is fitted again
     setTimeout(() => { if (this._fit) this._fit(); }, 0);
   }
@@ -1032,6 +1055,7 @@ class Component extends DCLogic {
       const keys = Object.keys(sv.daily).map(Number).sort((a, b) => b - a); keys.slice(60).forEach((k) => { delete sv.daily[k]; });
     }
     this.persist(sv);
+    if (!(g.mode === 'daily' && g.replay)) this.rank({ g: 'diff', l: g.mode === 'daily' ? 0 : g.job, d: g.mode === 'daily' ? g.job : 0, f: g.nfound, n: g.n, t: Math.round(used) });
     if (g.win) { this.tone(110, 0.12, { type: 'triangle', vol: 0.2 }); this.noise(0.08, { f: 300, q: 1, vol: 0.12 }); [784, 988, 1175, 1568].forEach((f, i) => this.tone(f, 0.12, { type: 'triangle', vol: 0.07, at: 0.12 + i * 0.08 })); }
     this.setState({ phase: 'over', save: sv, alarm: g.win ? '' : this.state.alarm, res: { mode: g.mode, job: g.job, win: g.win, found: g.nfound, used: used, hints: g.hintsUsed, wrong: g.wrong, stars: stars, replay: g.replay, close: g.win && g.T - used <= this.WARN, n: g.n, room: g.room, ch: g.ch, chapterDone: g.mode === 'level' && g.win && g.k === 9, nextRoom: g.ch >= 0 && this.CHAPTERS[g.ch + 1] ? this.CHAPTERS[g.ch + 1].name : '', last: g.job >= this.LEVELS },
       live: g.win ? 'Snag free in ' + this.fmt(used) + '.' : g.nfound + ' of ' + g.n + ' found.' });
@@ -1639,6 +1663,7 @@ class Component extends DCLogic {
     const daily = r && r.mode === 'daily', rn = r ? r.n || 5 : 5, miss = r ? rn - r.found : 0;
     const showStars = !!(r && r.win);
     return {
+      ...this.rankVals(),
       setRoot: this.setRoot, setTime: this.setTime, setBar: this.setBar, setBox: this.setBox, setStage: this.setStage, setCvA: this.setCvA, setCvB: this.setCvB,
       setDanger: this.setDanger, setFlash: this.setFlash, setList: this.setList, stageScale: st.stageScale || 1,
       pdA: this.pdA, pmA: this.pmA, puA: this.puA, pdB: this.pdB, pmB: this.pmB, puB: this.puB, pCan: this.pCan, noMenu: this.noMenu,

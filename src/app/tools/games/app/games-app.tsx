@@ -120,6 +120,8 @@ export default function GamesApp() {
         Object.defineProperty(inst, k, { configurable: true, get: () => audio, set: (v) => { audio = v; } });
       }
       inst.setScreenHeight = (h: number) => setScreenH(h >= 600 && h <= 2000 ? h : null);
+      // the screen on show, for tests (as the Mini Raf stage's window.__miniRafShow)
+      (window as unknown as { __gamesScreen?: Inst }).__gamesScreen = inst;
       inst.shareScore = (p: Record<string, unknown>) => {
         const s = readScore(p);
         if (!s) return;
@@ -134,6 +136,20 @@ export default function GamesApp() {
         }
         if (copy(`${message}\n${url}`)) say('Copied. Paste it into WhatsApp or a text.');
         else say(url);
+      };
+      // a game that has just ended: its place among today's games, for the end card (nothing with no signal)
+      inst.rankScore = (p: Record<string, unknown>, done: (r: Record<string, unknown> | null) => void) => {
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+        done({ wait: true });
+        fetch('/api/games/rank', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(p),
+          signal: AbortSignal.timeout(8000),
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((a) => done(a && typeof a.line === 'string' ? a : null))
+          .catch(() => done(null));
       };
       // the home screen's 'Keep it on your phone' card
       const sync = () => inst.setState({ instStandalone: isStandalone(), instOs: osOf(), instCan: canPrompt() });

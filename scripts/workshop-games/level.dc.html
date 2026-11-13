@@ -110,6 +110,17 @@ body{margin:0}
           <span class="mono" style="margin-left: auto; font-size: 11.5px; color: #4f555b">{{ resPar }}</span>
         </div>
         <div style="margin-top: 6px; font-size: 13px; line-height: 1.4; color: #4f555b">{{ resLine }}</div>
+        <sc-if value="{{ rankShow }}" hint-placeholder-val="{{ true }}">
+          <div data-rank style="margin-top: 10px; padding: 8px 10px; border-radius: 9px; background: rgba(37,71,208,0.09); opacity: {{ rankOp }}; transition: opacity .25s">
+            <div style="display: flex; align-items: baseline; gap: 8px">
+              <span data-rank-line style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 15px; font-weight: 760; letter-spacing: -0.01em; color: #16191c">{{ rankLine }}</span>
+              <span data-rank-more class="mono" style="margin-left: auto; font-size: 11px; color: #4f555b; white-space: nowrap">{{ rankMore }}</span>
+            </div>
+            <sc-if value="{{ rankHasNext }}" hint-placeholder-val="{{ true }}">
+              <div data-rank-next class="mono" style="margin-top: 3px; font-size: 11px; color: #2547d0">{{ rankNext }}</div>
+            </sc-if>
+          </div>
+        </sc-if>
         <div style="margin-top: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
           <sc-if value="{{ hasNext }}" hint-placeholder-val="{{ true }}">
             <button type="button" onClick="{{ next }}" class="lb-btn" style="height: 44px; border: 0; border-radius: 9px; background: #16191c; color: #b5e655; font-family: Geist, system-ui, sans-serif; font-size: 14.5px; font-weight: 700; cursor: pointer">Next board</button>
@@ -366,6 +377,17 @@ class Component extends DCLogic {
   }
   soundPref() { try { return localStorage.getItem('raf_games_sound') !== '0'; } catch (e) { return true; } }
   saveSound(on) { try { localStorage.setItem('raf_games_sound', on ? '1' : '0'); } catch (e) {} }
+  // When a game ends: its place among everyone's games today (games-app.tsx asks the website; nothing with no signal)
+  rank(p) {
+    const id = (this.rankN = (this.rankN || 0) + 1);
+    if (this.state.rank) this.setState({ rank: null });
+    if (typeof this.rankScore === 'function') this.rankScore(p, (r) => { if (this.rankN === id) this.setState({ rank: r }); });
+  }
+  unrank() { this.rankN = (this.rankN || 0) + 1; if (this.state.rank) this.setState({ rank: null }); }
+  rankVals() {
+    const r = this.state.rank, ok = !!(r && !r.wait);
+    return { rankShow: !!r, rankOp: ok ? '1' : '0.55', rankLine: ok ? r.line : 'Finding your place…', rankMore: ok ? r.more || '' : '', rankNext: ok ? '↑ ' + (r.next || '') : '', rankHasNext: ok && !!r.next };
+  }
   share(p) { if (typeof this.shareScore === 'function') this.shareScore(p); }
   // Nothing touches the screen while the phone steers, so keep it from going dark mid-board.
   wake(on) {
@@ -396,7 +418,8 @@ class Component extends DCLogic {
     };
     g.layer = this.renderStatic(L);
     this.g = g; this.keys = {}; this.drag = null;
-    this.setState({ li: li, phase: g.phase, res: null, toastOn: false, hud: { t: 0, got: 0, drops: 0, hold: 0, deg: '0.0', level: true } });
+    this.rankN = (this.rankN || 0) + 1;
+    this.setState({ li: li, phase: g.phase, res: null, rank: null, toastOn: false, hud: { t: 0, got: 0, drops: 0, hold: 0, deg: '0.0', level: true } });
     try { localStorage.setItem('raf_games_level_level', String(li + 1)); } catch (e) {}
   }
   go() {
@@ -555,6 +578,7 @@ class Component extends DCLogic {
     try { localStorage.setItem('raf_games_stars_level', JSON.stringify(stars)); localStorage.setItem('raf_games_best_level', JSON.stringify(best)); } catch (e) {}
     for (let k = 0; k < 22; k++) { const a = Math.random() * 6.28, sp = 50 + Math.random() * 150; g.parts.push({ x: L.home[0], y: L.home[1], vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 40, grav: 120, life: 1.1, max: 1.1, curl: true, rot: Math.random() * 6, spin: (Math.random() - 0.5) * 12, r: 3 + Math.random() * 3, c: wd.light ? 'rgba(236,206,150,' : 'rgba(214,170,120,' }); }
     this.seated(); this.buzz([20, 40, 20]); this.wake(false);
+    this.rank({ g: 'level', b: L.n, t: Math.round(g.t * 10) });
     this.setState({ phase: 'done', stars: stars, best: best, res: { s: s, t: g.t, got: got, under: under, drops: g.drops, best: best[L.n], newBest: newBest && !!prevBest } });
   }
 
@@ -877,6 +901,7 @@ class Component extends DCLogic {
       drag: 'Drag on the board to tilt it, or use the arrow keys. On a phone, the phone itself steers it.',
     };
     return {
+      ...this.rankVals(),
       n: L.n, name: L.name, woodUpper: wd.name.toUpperCase(), tagUpper: L.tag.toUpperCase(),
       levelStars: '★★★'.slice(0, s) + '☆☆☆'.slice(0, 3 - s),
       introTitle: L.intro[0], introText: L.intro[1],
