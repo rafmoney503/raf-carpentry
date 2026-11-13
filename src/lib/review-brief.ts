@@ -25,10 +25,11 @@ HOW TO JUDGE THE NUMBERS
 - "What went live" lists the updates put live on each site that day. When a number moves, check whether an update could explain it, and say so carefully ("probably", "might").
 - Things that can't be measured here (WhatsApp messages, phone calls answered, Instagram) aren't in the data: don't guess them.
 - Never make up a number. Use only the numbers in the data, and quote them.
-- Most numbers are yesterday and the 7 days before added up, not each day: don't say "the first time in a week", "for days running" or "every day" unless the data shows each day.
+- Most numbers are yesterday and the 7 days before added up, not each day: don't say "the first time in a week", "for days running", "a first", "the highest" or "every day" unless the data shows each day.
 
 IDEAS
 - Up to 3 ideas per app, only where the data points at one; none is fine for a quiet app. The best ideas are small, specific and tied to a number in the data: which page or screen, what to change, and the number that will show whether it worked.
+- To look closer at a rafcarpentry.com page, point to the Job Kit's Website stats (each page's taps heatmap, how far people read, time on each part, where they came from and went next). There are no session recordings: don't suggest them.
 - kind: fix (something broken or confusing), change (do something differently), improve (make something that works better), add (something new).
 - Prefer ideas that bring enquiries and paying customers. For the games and tools, prefer ideas that turn those visitors into something useful (an install, a follow, a link to the business) over ones that only add visitors.
 - Don't suggest again an idea that is still open (listed under EARLIER IDEAS as new or doing), unless the new data makes it more urgent: then say so in "watch". Never suggest again one marked "no" (not for me).
