@@ -181,7 +181,12 @@ export function stretchOf<T extends { at: number }>(rows: T[]): T[] {
   return rows.slice(Math.max(0, Math.min(start, rows.length - 40) - 3));
 }
 
-const clip = (s: unknown, n: number) => (typeof s === 'string' ? s.replace(/[–—]/g, ',').replace(/\s+/g, ' ').trim().slice(0, n) : '');
+// Claude sometimes fills a blank with a placeholder ('<UNKNOWN>', 'N/A', 'Not stated'): those count as empty
+const BLANK = /^[<[(]?\s*(unknown|n\/?a|none|null|nothing|not (known|given|stated|clear|mentioned)|-+)\s*[>\])]?\.?$/i;
+const clip = (s: unknown, n: number) => {
+  const t = typeof s === 'string' ? s.replace(/[–—]/g, ',').replace(/\s+/g, ' ').trim().slice(0, n) : '';
+  return BLANK.test(t) ? '' : t;
+};
 
 export async function readChat(wa: string): Promise<WaRead> {
   if (!process.env.ANTHROPIC_API_KEY) throw new ReadError('ai-not-set-up');

@@ -308,11 +308,18 @@ function LiveCard() {
   const load = () => post<LiveStatus>(readPin(), { action: 'status' }, '/api/job-kit/wa').then(take);
   useEffect(() => {
     let gone = false;
-    void post<LiveStatus>(readPin(), { action: 'status' }, '/api/job-kit/wa').then((r) => {
-      if (!gone) take(r);
-    });
+    const ask = () =>
+      void post<LiveStatus>(readPin(), { action: 'status' }, '/api/job-kit/wa').then((r) => {
+        if (!gone) take(r);
+      });
+    ask();
+    // the card stays on screen beside a chat on a computer, so its counts are asked for again every minute
+    const t = setInterval(() => {
+      if (document.visibilityState === 'visible') ask();
+    }, 60000);
     return () => {
       gone = true;
+      clearInterval(t);
     };
   }, []);
   const act = async (action: 'setup' | 'templates-make') => {
