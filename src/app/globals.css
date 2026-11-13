@@ -95,8 +95,8 @@ h1, h2, h3, .display { font-family: var(--display); letter-spacing: -0.015em; }
   -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--line);
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  padding: 6px 8px calc(8px + env(safe-area-inset-bottom));
+  grid-template-columns: repeat(6, 1fr);
+  padding: 6px 4px calc(8px + env(safe-area-inset-bottom));
 }
 .tab {
   display: flex;
@@ -490,3 +490,72 @@ h1, h2, h3, .display { font-family: var(--display); letter-spacing: -0.015em; }
 .card .enq-needs { font-size: 13.5px; font-weight: 600; }
 .card .enq-problem { color: #8a2a17; }
 @media (min-width: 1024px) { .card .enq-problem { color: #ffb4a6; } }
+
+/* Daily review (Review page and the card on Today) */
+.rv-card h3 { font-size: 19px; }
+.rv-mini { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.rv-mini li { display: flex; align-items: center; gap: 8px; font-size: 14px; min-width: 0; }
+.rv-mini .sq, .rv-head .sq { width: 10px; height: 10px; border-radius: 3px; background: var(--app); flex: none; }
+.rv-mini .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rv-mini .pill { padding: 2px 8px; font-size: 12px; }
+.rv-mini .n { margin-inline-start: auto; font-size: 13px; color: var(--muted); white-space: nowrap; }
+.rv-days { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; margin-inline: -20px; padding-inline: 20px; }
+.rv-days::-webkit-scrollbar { display: none; }
+.rv-days a, .rv-days button {
+  flex: none; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card);
+  display: inline-flex; align-items: center; font-size: 14px; font-weight: 600; text-decoration: none; color: var(--text); cursor: pointer;
+}
+.rv-days a[aria-current='page'], .rv-days button[aria-pressed='true'] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+@media (min-width: 1024px) { .rv-days { margin-inline: 0; padding-inline: 0; flex-wrap: wrap; } }
+.rv-grid { display: flex; flex-direction: column; gap: 12px; }
+@media (min-width: 1024px) { .rv-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; } }
+.rv-app { border-top: 4px solid var(--app); }
+.rv-head { display: flex; align-items: center; gap: 10px; }
+.rv-head .nm { display: flex; flex-direction: column; margin-inline-end: auto; min-width: 0; }
+.rv-head .nm b { font-family: var(--display); font-size: 18px; }
+.rv-head .nm small { font-size: 12px; color: var(--muted); }
+.rv-nums { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.rv-nums > div { background: var(--chip); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rv-nums dt { font-size: 12px; color: var(--muted); line-height: 1.25; }
+.rv-nums dd { margin: 0; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.rv-nums b { font-family: var(--display); font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+.rv-nums em { font-style: normal; font-size: 12px; }
+.rv-nums .tone-up { color: var(--up); }
+.rv-nums .tone-down { color: var(--down); }
+.rv-nums .tone-flat { color: var(--muted); }
+.card .rv-sum { font-size: 15px; color: var(--ink); }
+.rv-out { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.rv-out li { position: relative; padding-inline-start: 18px; font-size: 14px; line-height: 1.45; color: var(--text); }
+.rv-out li::before { content: ''; position: absolute; inset-inline-start: 2px; top: 6px; width: 8px; height: 8px; border-radius: 999px; background: var(--dash); }
+.rv-out li[data-tone='good']::before { background: #2f9e5e; }
+.rv-out li[data-tone='bad']::before { background: #d4572f; }
+.card .rv-why { font-size: 14px; color: var(--text); }
+.rv-why span, .rv-after h2 { display: block; font-family: var(--display); font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+.rv-after h2 { margin: 0; }
+.rv-live { font-size: 13px; color: var(--muted); }
+.rv-live summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
+.rv-live ul { margin: 4px 0 0; padding-inline-start: 18px; display: flex; flex-direction: column; gap: 4px; }
+.rv-ideas { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
+.rv-idea { border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 6px; background: var(--card); }
+.rv-idea[data-status='done'], .rv-idea[data-status='no'] { opacity: 0.62; }
+.rv-idea[data-status='doing'] { border-color: var(--app); }
+.rv-idea h3 { margin: 0; font-size: 16px; line-height: 1.3; }
+.rv-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.card .rv-tags span { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--chip); color: var(--muted); }
+.card .rv-tags .k { background: var(--app); color: var(--app-ink); }
+.card .rv-tags .st { background: var(--ink); color: var(--bg); }
+.rv-btns { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px; }
+.rv-btns button {
+  min-height: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--chip);
+  font-size: 13px; font-weight: 600; cursor: pointer; color: var(--ink);
+}
+.rv-btns button[aria-pressed='true'] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.rv-btns .cp { margin-inline-start: auto; background: transparent; }
+.rv-follow, .rv-watch { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.rv-follow li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 14px; }
+.rv-follow li p { flex-basis: 100%; }
+.rv-follow .v { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--flat-bg); color: var(--flat); }
+.rv-follow li[data-verdict='worked'] .v { background: var(--up-bg); color: var(--up); }
+.rv-follow li[data-verdict='worse'] .v { background: var(--down-bg); color: var(--down); }
+.rv-watch li { position: relative; padding-inline-start: 18px; font-size: 14px; line-height: 1.45; }
+.rv-watch li::before { content: '→'; position: absolute; inset-inline-start: 0; color: var(--muted); }

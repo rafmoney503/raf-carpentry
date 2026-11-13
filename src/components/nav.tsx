@@ -6,6 +6,7 @@ import { Icon, Mark, appStyle } from './ui';
 
 const LINKS = [
   { href: '/', label: 'Today', icon: 'today' },
+  { href: '/review', label: 'Review', icon: 'review' },
   { href: '/apps', label: 'Apps', icon: 'apps' },
   { href: '/leads', label: 'Leads', icon: 'leads' },
   { href: '/messages', label: 'Messages', icon: 'messages' },

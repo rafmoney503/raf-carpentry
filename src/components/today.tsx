@@ -7,6 +7,7 @@ import { clock, dayNumber, greeting, longDay, shortDay, when } from '@/lib/time'
 import type { Report, SiteStats } from '@/lib/types';
 import { AppCard, OffCard } from './apps';
 import { AssistantCard, SupportCard } from './assistant';
+import { ReviewCard } from './review';
 import { Health } from './health';
 import { Icon, InsightCard, Mark } from './ui';
 
@@ -78,6 +79,7 @@ export function Today({ r, now }: { r: Report; now: number }) {
         </p>
       ))}
 
+      {r.review ? <ReviewCard list={r.review} /> : null}
       {r.assistant ? <AssistantCard a={r.assistant} now={now} /> : null}
       {r.assistant ? <SupportCard a={r.assistant} now={now} /> : null}
 

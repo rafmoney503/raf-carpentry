@@ -1,4 +1,5 @@
 import type { AssistantSummary } from './assistant';
+import type { ReviewList } from './review-types';
 /* What the HQ screens get. Shared by the server (report.ts) and the screens. */
 
 export type DayPoint = { day: string; visitors: number; views: number };
@@ -90,6 +91,8 @@ export type Report = {
   messages: { unread: number; newest: number | null; yesterday: number; week: number } | null;
   /* The Job Kit assistant on rafcarpentry.com: new enquiries and what it did with them. */
   assistant: AssistantSummary | null;
+  /* The daily review (written each morning on rafcarpentry.com): the last few days and the marks on their ideas. */
+  review: ReviewList | null;
   vercel: boolean;
   db: boolean;
   problems: string[];
