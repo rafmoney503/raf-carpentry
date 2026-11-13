@@ -45,7 +45,7 @@ it): `create_deployment` with gitSource github rafmoney503/raf-carpentry, ref `r
   morning (raf-carpentry `src/lib/review-writer.ts`, kept in `jobkit.reviews`). HQ gives it the sites' numbers:
   `GET /api/review/data?day=` with `Bearer HQ_NOTIFY_SECRET` (outside the sign-in, `src/lib/reviewdata.ts`: Vercel
   visitors, views, sources, pages, countries, devices, HQ's own counts and what went live that day, against the 7 days
-  before; live since 13 Nov 2026). The screens (branch `hq-review` until merged): a Review tab, the card first on Today,
+  before; live since 13 Nov 2026). The screens (live since 13 Nov 2026): a Review tab, the card first on Today,
   each app's numbers, what stood out, why, the ideas to mark I'll do it / Done / Not for me (the same marks as in the
   Job Kit and CabinetOS) or copy for Claude, the ideas still open; the 7:43 buzz adds the headline. Read and marked
   through `public.hq_review` (HQ_DB_SECRET); the review types are a copy of raf-carpentry's `src/lib/review-types.ts`.
