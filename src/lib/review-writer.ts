@@ -204,16 +204,35 @@ const str = (v: unknown, max: number) =>
         .slice(0, max)
     : '';
 const pick = <T extends string>(v: unknown, list: readonly T[], or: T): T => (list.includes(v as T) ? (v as T) : or);
+/* A list from Claude's answer: models sometimes send a nested list as a JSON string, so that's read too. */
+function items(v: unknown): Record<string, unknown>[] {
+  let x = v;
+  if (typeof x === 'string') {
+    try {
+      x = JSON.parse(x);
+    } catch {
+      return [];
+    }
+  }
+  return Array.isArray(x) ? (x as Record<string, unknown>[]) : [];
+}
+/* What came back, for the error line when a review is empty: each field's type (and length). */
+export function shapeOf(raw: Record<string, unknown>): string {
+  return Object.entries(raw)
+    .map(([k, v]) => `${k} ${Array.isArray(v) ? `list ${v.length}` : typeof v === 'string' ? `text ${v.length}` : typeof v}`)
+    .join(', ')
+    .slice(0, 160);
+}
 
 /* Claude's answer made safe: known apps only, in order, once each; ideas numbered; follow-ups only for done ideas. */
 export function cleanReview(raw: Record<string, unknown>, day: string, earlier: Earlier[]): DayReview {
   const seen = new Set<ReviewApp>();
   const apps: AppReview[] = [];
-  for (const a of Array.isArray(raw.apps) ? (raw.apps as Record<string, unknown>[]) : []) {
+  for (const a of items(raw.apps)) {
     const app = a?.app as ReviewApp;
     if (!REVIEW_APPS.includes(app) || seen.has(app)) continue;
     seen.add(app);
-    const ideas: Idea[] = (Array.isArray(a.ideas) ? (a.ideas as Record<string, unknown>[]) : [])
+    const ideas: Idea[] = items(a.ideas)
       .map((i) => ({ title: str(i?.title, 90), what: str(i?.what, 600), why: str(i?.why, 400), kind: pick(i?.kind, IDEA_KINDS, 'improve'), effort: pick(i?.effort, EFFORTS, 'small'), where: str(i?.where, 100), watch: str(i?.watch, 200) }))
       .filter((i) => i.title && i.what)
       .slice(0, 3)
@@ -222,7 +241,7 @@ export function cleanReview(raw: Record<string, unknown>, day: string, earlier: 
       app,
       trend: pick(a.trend, TRENDS, 'same'),
       summary: str(a.summary, 600),
-      stoodOut: (Array.isArray(a.stood_out) ? (a.stood_out as Record<string, unknown>[]) : [])
+      stoodOut: items(a.stood_out)
         .map((s) => ({ text: str(s?.text, 240), tone: pick(s?.tone, ['good', 'bad', 'note'] as const, 'note') }))
         .filter((s) => s.text)
         .slice(0, 3),
@@ -232,7 +251,7 @@ export function cleanReview(raw: Record<string, unknown>, day: string, earlier: 
   }
   apps.sort((x, y) => REVIEW_APPS.indexOf(x.app) - REVIEW_APPS.indexOf(y.app));
   const done = new Map(earlier.filter((e) => e.status === 'done').map((e) => [e.id, e]));
-  const followups: Followup[] = (Array.isArray(raw.followups) ? (raw.followups as Record<string, unknown>[]) : [])
+  const followups: Followup[] = items(raw.followups)
     .filter((f) => done.has(String(f?.id)))
     .map((f) => ({ id: String(f.id), title: done.get(String(f.id))!.title, verdict: pick(f.verdict, VERDICTS, 'too_early'), text: str(f.text, 400) }))
     .filter((f, i, all) => f.text && all.findIndex((g) => g.id === f.id) === i);
@@ -242,7 +261,7 @@ export function cleanReview(raw: Record<string, unknown>, day: string, earlier: 
     overall: str(raw.overall, 900),
     apps,
     followups,
-    watch: (Array.isArray(raw.watch) ? raw.watch : []).map((w) => str(w, 220)).filter(Boolean).slice(0, 3),
+    watch: (items(raw.watch) as unknown[]).map((w) => str(w, 220)).filter(Boolean).slice(0, 3),
   };
 }
 
@@ -325,7 +344,7 @@ export async function runReview(opts: { day?: string; force?: boolean; why: 'cro
     const prompt = reviewPrompt(day, sql, hq, biz, list, missing);
     const { raw, model, cost } = await writeWithClaude(prompt);
     const review = cleanReview(raw, day, earlierIdeas(list, day));
-    if (!review.headline || !review.apps.length) throw new ReviewError('ai-error', 'an empty review');
+    if (!review.headline || !review.apps.length) throw new ReviewError('ai-error', `an empty review: ${shapeOf(raw)}`);
 
     const data: ReviewData & { input: unknown } = {
       review,
@@ -341,7 +360,7 @@ export async function runReview(opts: { day?: string; force?: boolean; why: 'cro
     await reviewRpc('save', { day, data }, 30_000);
     return { day, state: 'ready' };
   } catch (e) {
-    const err = e instanceof ReviewError ? `${PROBLEM[e.code]}${e.detail ? ` (${e.detail.slice(0, 120)})` : ''}` : `It stopped: ${(e as Error)?.message ?? e}`;
+    const err = e instanceof ReviewError ? `${PROBLEM[e.code]}${e.detail ? ` (${e.detail.slice(0, 220)})` : ''}` : `It stopped: ${(e as Error)?.message ?? e}`;
     console.error('review', day, err);
     await reviewRpc('fail', { day, error: err }).catch(() => {});
     return { day, state: 'failed', error: err };
