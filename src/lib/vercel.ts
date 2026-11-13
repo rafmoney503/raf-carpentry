@@ -85,3 +85,19 @@ export async function lastDeploy(projectId: string): Promise<Deploy | null> {
   const message = (d.meta?.githubCommitMessage ?? '').split('\n')[0].slice(0, 120);
   return { state: d.state ?? d.readyState ?? 'UNKNOWN', at: d.createdAt ?? d.created ?? 0, message, url: d.url ?? '' };
 }
+
+/* The production deployments made between two times (the daily review's "what went live"), oldest first. */
+export async function deploysBetween(projectId: string, since: Date, until: Date): Promise<Deploy[]> {
+  const j = (await get('/v6/deployments', { projectId, target: 'production', since: since.getTime(), until: until.getTime(), limit: 40 })) as {
+    deployments?: { state?: string; readyState?: string; created?: number; createdAt?: number; url?: string; meta?: Record<string, string> }[];
+  };
+  return (j.deployments ?? [])
+    .map((d) => ({
+      state: d.state ?? d.readyState ?? 'UNKNOWN',
+      at: d.createdAt ?? d.created ?? 0,
+      message: (d.meta?.githubCommitMessage ?? '').split('\n')[0].slice(0, 160),
+      url: d.url ?? '',
+    }))
+    .filter((d) => d.at >= since.getTime() && d.at < until.getTime())
+    .sort((a, b) => a.at - b.at);
+}
