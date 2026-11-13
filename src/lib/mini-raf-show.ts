@@ -1,8 +1,10 @@
 /* Mini Raf's show beside the name (phones and tablets; src/components/MiniRafStage.tsx draws it). Rafal, 13 Nov 2026:
    'walking beside the Rafcarpentry name and if scrolled down level pop up and he is still in same section ... after
    he kicks log new unit pop up ... seamless so after that ... he is dancing then go and make another unit, run and make
-   another, crawl and make another do some jumping jacks make a wardrobe or media wall ... interactive'. One show, about
-   38 s, then he rests by his last piece; tapping him starts another show with new pieces.
+   another, crawl and make another do some jumping jacks make a wardrobe or media wall ... interactive', then (13 Nov
+   2026) 'can it be played infinitely while someone is on site'. A show is about 39 s; when it ends the next one starts
+   by itself with new pieces and colours, so it goes on for as long as the page is open (the button pauses it). Each
+   show after the first starts with him walking on from the pieces he made last (legacy), so there is no join.
    Everything here is worked out from the time alone (frameAt), so the show can carry on from any moment: across pages,
    after a tap that skips a trick, or after a reload in the same tab. No DOM, no React: it can be tested on its own.
    The scene is 80 units high with the floor at 74, and x is measured from the scene's right edge (negative to the
@@ -67,8 +69,10 @@ export function showPieces(n: number): LegacyPiece[] {
   return kinds.map((kind, k) => ({ kind, colour: MINI_RAF_COLOURS[(n + k) % MINI_RAF_COLOURS.length], mm: MM[kind] }));
 }
 
-/* Show n. A replay starts with him walking from the piece he made last (legacy) to a new log instead of walking in. */
-export function buildShow(n: number, replay: boolean, legacy: LegacyPiece | null = null): Show {
+/* Show n. A replay starts with him walking from the pieces he made last (legacy, oldest first: the last one is
+   beside him) to a new log instead of walking in. They stand where they stood at the end of the show before. */
+export const LEGACY_KEEP = 4; // pieces carried over: as many as the widest stage can show
+export function buildShow(n: number, replay: boolean, legacy: LegacyPiece[] = []): Show {
   const kinds = showPieces(n);
   const segs: Seg[] = [];
   const scrolls: Scroll[] = [];
@@ -93,7 +97,11 @@ export function buildShow(n: number, replay: boolean, legacy: LegacyPiece | null
     segs.push({ kind: 'kick', t0: t, t1: t + len, piece: k, logX: LOG_X + off, finale });
     t += len;
   };
-  if (legacy) pieces.push({ id: `${n}-old`, ...legacy, x: PIECE_X, popT: -1000, finale: false });
+  const kept = legacy.slice(-LEGACY_KEEP);
+  kept.forEach((l, i) => {
+    const back = kept.length - 1 - i; // 0 = the one beside him
+    pieces.push({ id: back ? `${n}-old-${back}` : `${n}-old`, ...l, x: PIECE_X - back * STEP, popT: -1000, finale: false });
+  });
 
   acts.push({ name: replay ? 'walk' : 'enter', t0: 0 });
   if (replay) go('walk', WALK_V);
@@ -289,7 +297,8 @@ export function actAt(show: Show, t: number): ActName {
   return name;
 }
 
-/* The next act's start after t (a tap on Raf skips to it), or null in the rest at the end. */
+/* The next act's start after t (a tap on Raf skips to it), or null in the wave at the end (a tap there starts the
+   next show). */
 export function nextActStart(show: Show, t: number): number | null {
   for (const a of show.acts) if (a.t0 > t + 0.05) return a.t0;
   return null;
@@ -374,9 +383,17 @@ export function nextShowIndex(): number {
   return next;
 }
 
-/* How far this tab's show has got, so a page loaded afresh in the same tab carries on (and a show that has finished
-   stays finished: he rests by his last piece until tapped). sessionStorage: gone when the tab closes. */
-export type ShowNow = { n: number; replay: boolean; legacy: LegacyPiece | null; t: number; paused: boolean };
+/* The pieces show n hands over to the next one: its last LEGACY_KEEP, oldest first. */
+export function legacyOf(show: Show): LegacyPiece[] {
+  return show.pieces
+    .filter((p) => !p.id.includes('-old'))
+    .slice(-LEGACY_KEEP)
+    .map((p) => ({ kind: p.kind, colour: p.colour, mm: p.mm }));
+}
+
+/* How far this tab's show has got, so a page loaded afresh in the same tab carries on. sessionStorage: gone when the
+   tab closes. */
+export type ShowNow = { n: number; replay: boolean; legacy: LegacyPiece[]; t: number; paused: boolean };
 const NOW_KEY = 'raf_mini_raf_now';
 const KINDS: ShowKind[] = ['cupboard', 'chest', 'wardrobe', 'bookcase', 'bedside', 'tv', 'media'];
 export function readShowNow(): ShowNow | null {
@@ -386,9 +403,11 @@ export function readShowNow(): ShowNow | null {
     const n = Number(v.n);
     const t = Number(v.t);
     if (!Number.isInteger(n) || n < 0 || !Number.isFinite(t) || t < 0) return null;
-    const l = v.legacy;
-    const legacy: LegacyPiece | null =
-      l && KINDS.includes(l.kind) && typeof l.colour === 'string' && /^#[0-9a-f]{6}$/i.test(l.colour) && typeof l.mm === 'string' && /^\d{3,4}$/.test(l.mm) ? { kind: l.kind, colour: l.colour, mm: l.mm } : null;
+    const good = (l: { kind?: unknown; colour?: unknown; mm?: unknown } | null): l is LegacyPiece =>
+      !!l && KINDS.includes(l.kind as ShowKind) && typeof l.colour === 'string' && /^#[0-9a-f]{6}$/i.test(l.colour) && typeof l.mm === 'string' && /^\d{3,4}$/.test(l.mm);
+    // a list now; one piece in a tab left open from before
+    const list = (Array.isArray(v.legacy) ? v.legacy : [v.legacy]).filter(good).slice(-LEGACY_KEEP);
+    const legacy = list.map((l: LegacyPiece) => ({ kind: l.kind, colour: l.colour, mm: l.mm }));
     return { n, replay: !!v.replay, legacy, t: Math.min(t, 600), paused: !!v.paused };
   } catch {
     return null;

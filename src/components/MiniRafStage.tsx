@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type RefObject } from 'react';
 import { LogShape, NoteShape, PIECES, PUFFS } from './MiniRaf';
 import {
   buildShow,
@@ -7,6 +7,7 @@ import {
   CSS_TRICK,
   frameAt,
   GROUND,
+  legacyOf,
   nextActStart,
   nextShowIndex,
   RAF_X,
@@ -20,16 +21,17 @@ import {
 /* Mini Raf's show beside the name, on phones and tablets (Rafal, 13 Nov 2026; the timeline and the why are in
    src/lib/mini-raf-show.ts). The Navbar gives it the room between the name and the buttons; it plays there when that
    room is at least STAGE_MIN wide, under 1024 px (computers keep the page-by-page round in the name's place), and
-   never for anyone who asked for less motion. One show, then he rests by his last piece. It carries on from page to
-   page (the Navbar stays put, and the time is kept for the tab), stops while the tab is hidden, and has a small
-   button to pause it (or, once he rests, to watch another show).
-   Taps: Raf skips to his next trick, or starts another show when he is resting; a piece plays its trick again (doors,
+   never for anyone who asked for less motion. When a show ends the next starts by itself, so it plays for as long as
+   the page is open. It carries on from page to page (the Navbar stays put, and the time is kept for the tab), stops
+   while the tab is hidden, and has a small button to pause it (WCAG 2.2.2: anything that moves for over 5 s).
+   Taps: Raf skips to his next trick (in the wave at the end, to the next show); a piece plays its trick again (doors,
    drawers, books, the lamp, the TV). Raf, the log and the floor are moved here each frame; each piece's own moves are
    the page-by-page round's CSS keyframes, started from the moment it popped up. */
 
 const STAGE_MIN = 104; // px: the scene (at least 76) and the button
 const STAGE_MAX = 248;
 const BUTTON = 28; // the 24 px button and the gap before it
+const TICK = 15; // the floor's marks: a stretch (STEP, 120) is a whole number of them, so a new show starts on the same marks
 
 export function stageFits(el: HTMLElement | null): boolean {
   if (!el || typeof window === 'undefined') return false;
@@ -41,7 +43,7 @@ export function stageFits(el: HTMLElement | null): boolean {
 /* This tab's show (kept across pages here, and across reloads in sessionStorage) */
 let now: ShowNow | null = null;
 function current(): ShowNow {
-  if (!now) now = readShowNow() ?? { n: nextShowIndex(), replay: false, legacy: null, t: 0, paused: false };
+  if (!now) now = readShowNow() ?? { n: nextShowIndex(), replay: false, legacy: [], t: 0, paused: false };
   return now;
 }
 
@@ -104,7 +106,6 @@ function Stage({ w, h }: { w: number; h: number }) {
   const show = useMemo(() => buildShow(seed.n, seed.replay, seed.legacy), [seed]);
   const [shown, setShown] = useState<Shown[]>(() => shownAt(show, frameAt(show, seed.t, S).pieces, seed.t));
   const [paused, setPaused] = useState(seed.paused);
-  const [done, setDone] = useState(seed.t >= show.end);
   const [hidden, setHidden] = useState(false);
 
   const pos = useRef<SVGGElement>(null);
@@ -131,7 +132,7 @@ function Stage({ w, h }: { w: number; h: number }) {
       const r = f.raf;
       const set = (el: SVGElement | null, v: string) => el && el.setAttribute('transform', v);
       set(world.current, `translate(${(-f.off).toFixed(2)} 0)`);
-      set(floor.current, `translate(${(-(f.off % 16)).toFixed(2)} 0)`);
+      set(floor.current, `translate(${(-(f.off % TICK)).toFixed(2)} 0)`);
       set(pos.current, `translate(${r.x.toFixed(2)} ${(GROUND + r.y).toFixed(2)}) scale(${r.flip.toFixed(3)} 1)`);
       pos.current?.setAttribute('opacity', r.alpha.toFixed(2));
       set(shadow.current, `translate(${r.x.toFixed(2)} ${GROUND}) scale(${(1 + r.y / 30).toFixed(3)} 1)`);
@@ -176,12 +177,26 @@ function Stage({ w, h }: { w: number; h: number }) {
     [show],
   );
 
-  // The clock: runs while the show is on, not paused and the tab is shown (frames stop by themselves when it is
-  // hidden; a long gap counts as one frame, so he carries on where he was).
-  useEffect(() => {
+  // The next show: new pieces and colours, walking on from the ones just made.
+  const replay = useCallback(() => {
+    const next: ShowNow = { n: nextShowIndex(), replay: true, legacy: legacyOf(show), t: 0, paused: false };
+    now = next;
+    saveShowNow(next);
+    const s2 = buildShow(next.n, true, next.legacy);
+    const first = frameAt(s2, 0, S).pieces;
+    ids.current = first.join();
+    setShown(shownAt(s2, first, 0));
+    setSeed({ ...next });
+    setPaused(false);
+  }, [show, S]);
+
+  // The clock: runs while not paused and the tab is shown (frames stop by themselves when it is hidden; a long gap
+  // counts as one frame, so he carries on where he was). At the end of a show it hands over to the next. A layout
+  // effect, so the first frame of a show (the floor back at its start) is set before the new pieces are painted.
+  useLayoutEffect(() => {
     const n = current();
-    apply(frameAt(show, n.t, S));
-    if (paused || done) return;
+    apply(frameAt(show, Math.min(n.t, show.end), S));
+    if (paused) return;
     let id = 0;
     let last = 0;
     let saved = 0;
@@ -196,16 +211,12 @@ function Stage({ w, h }: { w: number; h: number }) {
         saveShowNow(n);
         saved = ts;
       }
-      if (f.done) {
-        saveShowNow(n);
-        setDone(true);
-        return;
-      }
+      if (f.done) return replay();
       id = requestAnimationFrame(tick);
     };
     id = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(id);
-  }, [show, S, paused, done, apply, sync]);
+  }, [show, S, paused, apply, sync, replay]);
 
   useEffect(() => {
     const vis = () => setHidden(document.hidden);
@@ -218,23 +229,8 @@ function Stage({ w, h }: { w: number; h: number }) {
     };
   }, []);
 
-  const replay = useCallback(() => {
-    const finale = show.pieces[show.pieces.length - 1];
-    const next: ShowNow = { n: nextShowIndex(), replay: true, legacy: { kind: finale.kind, colour: finale.colour, mm: finale.mm }, t: 0, paused: false };
-    now = next;
-    saveShowNow(next);
-    const s2 = buildShow(next.n, true, next.legacy);
-    const first = frameAt(s2, 0, S).pieces;
-    ids.current = first.join();
-    setShown(shownAt(s2, first, 0));
-    setSeed({ ...next });
-    setPaused(false);
-    setDone(false);
-  }, [show, S]);
-
   const togglePause = () => {
     const n = current();
-    if (done) return replay();
     n.paused = !paused;
     saveShowNow(n);
     setPaused(n.paused);
@@ -253,9 +249,9 @@ function Stage({ w, h }: { w: number; h: number }) {
     }
     const what = el.getAttribute('data-tap');
     if (what === 'raf') {
-      if (done) return replay();
       const t2 = nextActStart(show, n.t);
-      if (t2 !== null) n.t = t2;
+      if (t2 === null) return replay();
+      n.t = t2;
     } else if (what) setShown((list) => list.map((p) => (p.id === what ? { ...p, at: -CSS_TRICK, tap: p.tap + 1 } : p)));
   };
 
@@ -266,7 +262,6 @@ function Stage({ w, h }: { w: number; h: number }) {
       now: () => ({ ...current(), end: show.end, acts: show.acts }),
       seek: (t: number) => {
         current().t = t;
-        if (t < show.end) setDone(false);
         const f = frameAt(show, t, S);
         apply(f);
         sync(f);
@@ -279,7 +274,7 @@ function Stage({ w, h }: { w: number; h: number }) {
 
   const ticks = useMemo(() => {
     const xs: number[] = [];
-    for (let x = Math.floor(-S / 16) * 16 - 16; x <= 16; x += 16) xs.push(x);
+    for (let x = Math.floor(-S / TICK) * TICK - TICK; x <= TICK; x += TICK) xs.push(x);
     return xs;
   }, [S]);
   const pieces = shown.map((s) => ({ s, p: show.pieces.find((x) => x.id === s.id)! })).filter((x) => x.p);
@@ -296,7 +291,6 @@ function Stage({ w, h }: { w: number; h: number }) {
         focusable="false"
         data-mraf-show={seed.n}
         data-paused={paused || hidden ? '' : undefined}
-        data-done={done ? '' : undefined}
         onClick={onTap}
       >
         <defs>
@@ -401,15 +395,13 @@ function Stage({ w, h }: { w: number; h: number }) {
       <button
         type="button"
         onClick={togglePause}
-        aria-label={done ? 'Watch Raf build some more' : paused ? 'Play the little animation' : 'Pause the little animation'}
-        title={done ? 'Again' : paused ? 'Play' : 'Pause'}
-        data-mraf-button={done ? 'again' : paused ? 'play' : 'pause'}
+        aria-label={paused ? 'Play the little animation' : 'Pause the little animation'}
+        title={paused ? 'Play' : 'Pause'}
+        data-mraf-button={paused ? 'play' : 'pause'}
         className="ml-1 grid h-6 w-6 flex-none place-items-center rounded-full border border-line-strong bg-mount text-muted transition-colors hover:border-ink hover:text-ink"
       >
         <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true">
-          {done ? (
-            <path d="M8.6 5.2A3.6 3.6 0 1 1 7.5 2.4" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-          ) : paused ? (
+          {paused ? (
             <path d="M3 1.8 L8.4 5 L3 8.2 Z" />
           ) : (
             <>
@@ -417,7 +409,6 @@ function Stage({ w, h }: { w: number; h: number }) {
               <rect x="5.8" y="1.8" width="2" height="6.4" rx="0.5" />
             </>
           )}
-          {done ? <path d="M6.2 0.9 L8.6 2.3 L6.6 4.1 Z" /> : null}
         </svg>
       </button>
     </div>
