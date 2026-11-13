@@ -172,7 +172,7 @@ const TOOL = {
   input_schema: {
     type: 'object',
     properties: {
-      headline: { type: 'string', description: 'One sentence: the most useful thing to know about yesterday.' },
+      headline: { type: 'string', description: 'One short sentence, at most 25 words: the most useful thing to know about yesterday.' },
       overall: { type: 'string', description: 'Two to four sentences across everything.' },
       apps: {
         type: 'array',
@@ -204,15 +204,19 @@ const TOOL = {
   },
 };
 
-const str = (v: unknown, max: number) =>
-  typeof v === 'string'
-    ? v
-        .replace(/\s*[—–]\s*/g, ', ')
-        .replace(/[ \t]+/g, ' ')
-        .replace(/\s*\n\s*/g, ' ')
-        .trim()
-        .slice(0, max)
-    : '';
+/* Claude's words made safe: dashes to commas, one line, and cut at a word (with …) when too long. */
+const str = (v: unknown, max: number) => {
+  if (typeof v !== 'string') return '';
+  const t = v
+    .replace(/\s*[—–]\s*/g, ', ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\s*\n\s*/g, ' ')
+    .trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max - 1);
+  const at = cut.lastIndexOf(' ');
+  return `${(at > max * 0.6 ? cut.slice(0, at) : cut).replace(/[\s,;:.]+$/, '')}…`;
+};
 const pick = <T extends string>(v: unknown, list: readonly T[], or: T): T => (list.includes(v as T) ? (v as T) : or);
 /* A list from Claude's answer: models sometimes send a nested list as a JSON string, so that's read too. */
 function items(v: unknown): Record<string, unknown>[] {
@@ -267,7 +271,7 @@ export function cleanReview(raw: Record<string, unknown>, day: string, earlier: 
     .filter((f, i, all) => f.text && all.findIndex((g) => g.id === f.id) === i);
   return {
     day,
-    headline: str(raw.headline, 200),
+    headline: str(raw.headline, 260),
     overall: str(raw.overall, 900),
     apps,
     followups,
