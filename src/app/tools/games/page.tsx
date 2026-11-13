@@ -52,7 +52,8 @@ const FAQ = [
   { q: 'What changes every day?', a: 'Measure Up has five new tapes, Sheet Saver a new board and Find the Difference a new job at midnight, London time, the same for everyone. Measure Up gets harder through the week: by the weekend more is hidden and the grid goes.' },
   { q: 'Does it work with no signal?', a: 'Yes, once the games have been opened with signal. They keep a copy on the phone, so they play in a loft, on the Tube or on a site with no reception.' },
   { q: 'How does Level Best know which way I tilt?', a: 'It reads the phone’s motion sensor. An iPhone asks once whether the games may use motion: tap Allow. Turn on rotation lock so the screen stays upright. On a computer, drag the board or use the arrow keys.' },
-  { q: 'Where are my scores kept?', a: 'On your phone only: your stars, your best stack and your Measure Up streak. Nothing is sent anywhere. Share sends a link with the one score you chose to share.' },
+  { q: 'Where are my scores kept?', a: 'Your stars, your best stack and your Measure Up streak stay on your phone. When a game ends, only its score goes to the website, with the game and the level, so it can say where you came today. Nothing about who played it: no name, no account. Share sends a link with the one score you chose to share.' },
+  { q: 'How does the ranking work?', a: 'Every game that ends counts: Timber Stack by boards (a finished level by its perfect drops), Nail Pop by nails, Measure Up by the fewest millimetres off, Sheet Saver and Level Best by the fastest time, Find the Difference by snags found and then time. You are placed among today’s games on the same level, board or day. On a level few people have played today, it counts the past year’s games instead and says so far.' },
   { q: 'Who made them?', a: 'Me, Raf, a carpenter in London. Something for the tea break, about the things I measure, cut and fix every day.' },
 ];
 
@@ -145,6 +146,9 @@ export default async function WorkshopGamesPage() {
               <p className="mt-3 max-w-[52ch] text-[16px] leading-relaxed text-muted">
                 The daily ones are the same for everyone in the country, so the whole site team can try today&apos;s board at break and compare.
               </p>
+              <p className="mt-3 max-w-[52ch] text-[16px] leading-relaxed text-muted">
+                And the end of every game says where it came among everyone&apos;s games today, and what gets you the next place up. No names: it counts games, not who played them.
+              </p>
             </div>
             <div className="md:col-span-6">
               <div className="mx-auto max-w-[360px] rounded-[14px] border border-line-strong bg-mount p-4 shadow-[0_18px_40px_-24px_rgba(22,25,28,0.4)]">
@@ -156,6 +160,14 @@ export default async function WorkshopGamesPage() {
                   </p>
                   <p className="mt-1">Can you beat it?</p>
                   <p className="mt-1 break-all text-accent underline">rafcarpentry.com/tools/games/beat?g=measure…</p>
+                </div>
+                <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.1em] text-faint">At the end of a game</p>
+                <div className="mt-2 rounded-[9px] bg-accent/10 px-3 py-2.5" data-rank-example>
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-display text-[16px] font-[700] tracking-[-0.01em] text-ink">14th of 230 today</span>
+                    <span className="ms-auto whitespace-nowrap font-mono text-[11px] text-muted">better than 94%</span>
+                  </div>
+                  <p className="mt-0.5 font-mono text-[11px] text-accent">↑ 31 boards gets you 13th</p>
                 </div>
               </div>
             </div>

@@ -239,6 +239,100 @@ export function playKey(v: string | null): { key: string; value: string } | null
   return null;
 }
 
+/* Rankings (13 Nov 2026, Raf: 'When a player plays the game at the end can you show them their ranking automatically
+   to keep them playing'). When a game ends it sends what it was and how it went to /api/games/rank, which keeps one
+   number for it (higher = better) under its game and key (the level, board, pack or day) and answers where it stands
+   among today's games: '14th of 230 today · better than 94%', and what gets the next place up. Nothing about who
+   played is kept (no name, visitor code or IP address), so it counts games, not players. What each game sends:
+     stack   { lv (0 = the free stack), n boards, won 0|1, pf perfect drops }   level games: a finished level beats any
+             that wasn't, then the most perfect drops; the free stack and a missed level: the most boards
+     nail    { lv, n nails }                      measure { d (today's tapes) or p (a pack), m mm off in all }
+     sheet   { b board, t seconds }               level   { b board, t tenths of a second }
+     diff    { l level (0 = the daily job), d the daily job, f found, n snags, t seconds }: most found, then fastest */
+export type RankEntry = { game: GameId; key: string; v: number; daily: boolean; unit: RankUnit };
+type RankUnit = 'boards' | 'stackLevel' | 'nails' | 'mm' | 'secs' | 'tenths' | 'snags';
+
+export function readRank(q: Record<string, unknown>, at = new Date()): RankEntry | null {
+  const g = q.g;
+  const yesterday = new Date(at.getTime() - 86400000);
+  const isToday = (d: number) => d === dailyBoard(at) || d === dailyBoard(yesterday);
+  if (g === 'stack') {
+    const lv = int(q.lv ?? 0, 0, 10), n = int(q.n, 0, 400), won = int(q.won ?? 0, 0, 1), pf = int(q.pf ?? 0, 0, 400);
+    if (lv == null || n == null || won == null || pf == null || pf > n || (won && !lv)) return null;
+    if (!lv) return { game: g, key: 'free', v: n, daily: false, unit: 'boards' };
+    return { game: g, key: `L${lv}`, v: won ? 1000 + pf : n, daily: false, unit: 'stackLevel' };
+  }
+  if (g === 'nail') {
+    const lv = int(q.lv, 1, NAIL_LEVELS.length), n = int(q.n, 0, 300);
+    return lv == null || n == null ? null : { game: g, key: `L${lv}`, v: n, daily: false, unit: 'nails' };
+  }
+  if (g === 'measure') {
+    const m = int(q.m, 0, 50000);
+    if (m == null) return null;
+    if (typeof q.d === 'string') {
+      // today's tapes, or yesterday's finished just after midnight
+      if (q.d !== londonKey(at) && q.d !== londonKey(yesterday)) return null;
+      return { game: g, key: `d${q.d}`, v: -m, daily: true, unit: 'mm' };
+    }
+    return typeof q.p === 'string' && MEASURE_PACKS[q.p] ? { game: g, key: `p${q.p}`, v: -m, daily: false, unit: 'mm' } : null;
+  }
+  if (g === 'sheet') {
+    const b = int(q.b, 1, 99999), t = int(q.t, 3, 36000);
+    if (b == null || t == null || (b > 30 && !isToday(b))) return null;
+    return { game: g, key: `b${b}`, v: -t, daily: b > 30, unit: 'secs' };
+  }
+  if (g === 'level') {
+    const b = int(q.b, 1, LEVEL_BOARDS.length), t = int(q.t, 20, 36000);
+    return b == null || t == null ? null : { game: g, key: `b${b}`, v: -t, daily: false, unit: 'tenths' };
+  }
+  if (g === 'diff') {
+    const l = int(q.l ?? 0, 0, DIFF_LEVELS), n = int(q.n, 5, 7), t = int(q.t, 0, 999);
+    const f = n == null ? null : int(q.f, 0, n);
+    if (l == null || n == null || f == null || t == null) return null;
+    if (l) return { game: g, key: `L${l}`, v: f * 1000 - t, daily: false, unit: 'snags' };
+    const d = int(q.d, 1, 99999);
+    return d == null || !isToday(d) ? null : { game: g, key: `d${d}`, v: f * 1000 - t, daily: true, unit: 'snags' };
+  }
+  return null;
+}
+
+export type RankCount = { of: number; above: number; below: number; next: number | null; nextAbove: number };
+export type RankWords = { line: string; more: string; next: string };
+
+export const ordinal = (n: number) => {
+  const t = n % 100, u = n % 10;
+  return `${thousands(n)}${t >= 11 && t <= 13 ? 'th' : u === 1 ? 'st' : u === 2 ? 'nd' : u === 3 ? 'rd' : 'th'}`;
+};
+
+// what a score of v is, in the game's own words ('31 boards', '0:52', '12 mm off')
+function rankAmount(e: RankEntry, v: number, mine: number): string {
+  const plural = (n: number, w: string) => `${thousands(n)} ${w}${n === 1 ? '' : 's'}`;
+  if (e.unit === 'boards') return plural(v, 'board');
+  if (e.unit === 'stackLevel') return v >= 1000 ? (mine >= 1000 ? plural(v - 1000, 'perfect drop') : 'Finishing the level') : plural(v, 'board');
+  if (e.unit === 'nails') return plural(v, 'nail');
+  if (e.unit === 'mm') return `${thousands(-v)} mm off`;
+  if (e.unit === 'secs') return clock(-v);
+  if (e.unit === 'tenths') return tenths(-v);
+  // snags: more found, or the same found in a faster time
+  const f = Math.ceil(v / 1000);
+  return f > Math.ceil(mine / 1000) ? plural(f, 'snag') : clock(f * 1000 - v);
+}
+
+/* The card's lines from the database's counts: today's games when there were a few (5 or more), else the last year's
+   ('so far'); a daily game is always today's. */
+export function rankWords(e: RankEntry, r: { today: RankCount; all: RankCount }): RankWords {
+  const useToday = e.daily ? false : r.today.of >= 5;
+  const c = useToday ? r.today : r.all;
+  const when = e.daily || useToday ? 'today' : 'so far';
+  if (c.of <= 1) return { line: e.daily ? 'First to play it today' : 'First to play this one', more: 'the score to beat', next: '' };
+  const place = c.above + 1;
+  const pct = Math.floor((c.below / (c.of - 1)) * 100);
+  const line = `${ordinal(place)} of ${thousands(c.of)} ${when}`;
+  const more = place === 1 ? (c.above === 0 && c.below === c.of - 1 ? 'the top score' : 'joint top') : pct >= 1 ? `better than ${pct}%` : 'keep going';
+  const next = place > 1 && c.next != null ? `${rankAmount(e, c.next, e.v)} gets you ${ordinal(c.nextAbove + 1)}` : '';
+  return { line, more, next };
+}
+
 /* Stills of the app for its page (taken from the app with Playwright as an iPhone 13, 25 Oct 2026, home and Level Best
    27 Oct 2026; 780 x 1688). */
 export const GAMES_SCREENS = {

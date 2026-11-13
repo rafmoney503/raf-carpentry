@@ -111,6 +111,11 @@ export default function Privacy() {
             From these counts the site sometimes shows a small card saying a job was looked at or saved for a brief lately (for example “Looked at 40
             minutes ago”). It says nothing about who that was or where they were, and never shows you your own visit.
           </p>
+          <p id="game-rankings">
+            When a game in Workshop Games ends, its score goes to the site so the end of the game can say where it came among the day&apos;s games (for example
+            “14th of 230 today”). Only the game, its level, board or day, and the score are kept: nothing about who played it, no visitor code and no IP
+            address. Kept for 13 months, in the same database.
+          </p>
           <p>
             Counting visits only to improve the site is allowed without asking first, as long as you can say no easily. The switch below does that for this
             browser, and both counters also stop if your browser sends Global Privacy Control.

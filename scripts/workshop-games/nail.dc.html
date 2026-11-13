@@ -96,6 +96,17 @@ body{margin:0}
           <span style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 16px; font-weight: 700">nails flush</span>
           <span class="mono" style="margin-left: auto; font-size: 11.5px; color: #4f555b">{{ starLine }}</span>
         </div>
+        <sc-if value="{{ rankShow }}" hint-placeholder-val="{{ true }}">
+          <div data-rank style="margin-top: 10px; padding: 8px 10px; border-radius: 9px; background: rgba(37,71,208,0.09); opacity: {{ rankOp }}; transition: opacity .25s">
+            <div style="display: flex; align-items: baseline; gap: 8px">
+              <span data-rank-line style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 15px; font-weight: 760; letter-spacing: -0.01em; color: #16191c">{{ rankLine }}</span>
+              <span data-rank-more class="mono" style="margin-left: auto; font-size: 11px; color: #4f555b; white-space: nowrap">{{ rankMore }}</span>
+            </div>
+            <sc-if value="{{ rankHasNext }}" hint-placeholder-val="{{ true }}">
+              <div data-rank-next class="mono" style="margin-top: 3px; font-size: 11px; color: #2547d0">{{ rankNext }}</div>
+            </sc-if>
+          </div>
+        </sc-if>
         <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px">
           <button type="button" class="np-btn" onClick="{{ again }}" style="height: 44px; border: 0; border-radius: 9px; background: #16191c; color: #f4f1ea; font-family: Geist, system-ui, sans-serif; font-size: 14.5px; font-weight: 650; cursor: pointer">Play again</button>
           <sc-if value="{{ canNext }}" hint-placeholder-val="{{ true }}">
@@ -173,6 +184,17 @@ class Component extends DCLogic {
   }
   soundPref() { try { return localStorage.getItem('raf_games_sound') !== '0'; } catch (e) { return true; } }
   saveSound(on) { try { localStorage.setItem('raf_games_sound', on ? '1' : '0'); } catch (e) {} }
+  // When a game ends: its place among everyone's games today (games-app.tsx asks the website; nothing with no signal)
+  rank(p) {
+    const id = (this.rankN = (this.rankN || 0) + 1);
+    if (this.state.rank) this.setState({ rank: null });
+    if (typeof this.rankScore === 'function') this.rankScore(p, (r) => { if (this.rankN === id) this.setState({ rank: r }); });
+  }
+  unrank() { this.rankN = (this.rankN || 0) + 1; if (this.state.rank) this.setState({ rank: null }); }
+  rankVals() {
+    const r = this.state.rank, ok = !!(r && !r.wait);
+    return { rankShow: !!r, rankOp: ok ? '1' : '0.55', rankLine: ok ? r.line : 'Finding your place…', rankMore: ok ? r.more || '' : '', rankNext: ok ? '↑ ' + (r.next || '') : '', rankHasNext: ok && !!r.next };
+  }
   share(p) { if (typeof this.shareScore === 'function') this.shareScore(p); }
   spotsFor(L, li) {
     const W = 358, spots = [];
@@ -242,6 +264,7 @@ class Component extends DCLogic {
   flash(kind) { this.setState({ flash: '' }); clearTimeout(this.flT); this.flT = setTimeout(() => this.setState({ flash: kind }), 16); }
 
   begin() {
+    this.unrank();
     const g = this.fresh(this.state.lvl);
     g.playing = true; g.next = 0.5;
     this.g = g;
@@ -321,6 +344,7 @@ class Component extends DCLogic {
     const L = this.LEVELS[this.state.lvl], sc = this.state.score, earned = L.stars.filter((s) => sc >= s).length;
     const stars = Object.assign({}, this.state.stars); stars[L.n] = Math.max(stars[L.n] || 0, earned);
     try { localStorage.setItem('raf_games_stars_nail', JSON.stringify(stars)); } catch (e) {}
+    this.rank({ g: 'nail', lv: L.n, n: sc });
     if (why === 'time') { this.tone(784, 0.3, { vol: 0.15 }); this.tone(523, 0.5, { vol: 0.15, at: 0.25 }); } else this.tone(120, 0.36, { to: 48, glide: 0.3, vol: 0.38 });
     for (let i = 0; i < earned; i++) this.tone([784, 988, 1318][i], 0.3, { vol: 0.13, at: 0.7 + i * 0.22 });
     setTimeout(() => this.setState({ phase: 'over', stars: stars, earned: earned, why: why === 'time' ? "TIME'S UP" : why.toUpperCase() }), 450);
@@ -541,6 +565,7 @@ class Component extends DCLogic {
     const next = L.stars.find((s) => st.score < s);
     const nextL = this.LEVELS[st.lvl + 1];
     return {
+      ...this.rankVals(),
       levelN: L.n, levelPlain: L.name, levelStars: starTxt(st.stars[L.n] || 0),
       lives: [0, 1, 2].map((i) => ({ c: i < st.squeaks ? '#c7ced5' : 'rgba(235,87,87,0.85)' })),
       score: st.score,
