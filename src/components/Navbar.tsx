@@ -14,6 +14,7 @@ import PullSearch from './PullSearch';
 import { MiniLevel } from './ScrollLevel';
 import { getDock, getUndocked, subscribeDock } from '@/lib/scroll-level';
 import MiniRaf from './MiniRaf';
+import MiniRafStage, { stageFits } from './MiniRafStage';
 import { MINI_RAF_MS, MINI_RAF_NAME_BACK_MS, nextMiniRafRound } from '@/lib/mini-raf';
 
 /* Phone menu lines with a mini icon, under the wardrobe planner's picture */
@@ -61,10 +62,15 @@ export default function Navbar({ menu = {}, barQuote = false }: { menu?: Record<
     return () => io.disconnect();
   }, []);
   const docked = level.present ? level.docked : scrolled;
-  // Mini Raf (src/components/MiniRaf.tsx): one round in the name's place each time a page opens, the next piece each
-  // page; tapping the R on the home page plays the next one. While it plays it keeps the name's place, even when the
-  // spirit level would dock there; the level comes in after it. Not for anyone who asked for less motion, not while
-  // the tab is hidden (it waits until it shows), and not where the name itself makes way (under 350 px wide).
+  // Mini Raf. Phones and tablets (Rafal, 13 Nov 2026: 'walking beside the Rafcarpentry name'): his show plays in the
+  // room between the name and the buttons (src/components/MiniRafStage.tsx), carrying on from page to page; the spirit
+  // level then docks over the name, which keeps its place, so he never moves. Computers, and phones too narrow for
+  // the show (src/components/MiniRaf.tsx): one round in the name's place each time a page opens, the next piece each
+  // page; tapping the R on the home page plays the next one. While a round plays it keeps the name's place, even when
+  // the spirit level would dock there; the level comes in after it. Not for anyone who asked for less motion, not
+  // while the tab is hidden (it waits until it shows), and not where the name itself makes way (under 350 px wide).
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [stageOn, setStageOn] = useState(false);
   const [raf, setRaf] = useState<{ round: number; ending: boolean } | null>(null);
   const barQuoteNow = useRef(barQuote);
   useEffect(() => {
@@ -72,6 +78,7 @@ export default function Navbar({ menu = {}, barQuote = false }: { menu?: Record<
   }, [barQuote]);
   const playRaf = useCallback(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (stageFits(stageRef.current)) return;
     if (!barQuoteNow.current && window.matchMedia('(max-width: 349px)').matches) return;
     setRaf({ round: nextMiniRafRound(), ending: false });
   }, []);
@@ -80,6 +87,7 @@ export default function Navbar({ menu = {}, barQuote = false }: { menu?: Record<
     const id = requestAnimationFrame(playRaf);
     return () => cancelAnimationFrame(id);
   }, [pathname, playRaf]);
+  const levelOver = stageOn && !raf; // the show is on: the level docks over the name
   const rafRound = raf?.round;
   useEffect(() => {
     if (rafRound === undefined) return;
@@ -174,12 +182,19 @@ export default function Navbar({ menu = {}, barQuote = false }: { menu?: Record<
             <Image src="/images/r-logo-final.png" alt="" width={36} height={36} className="h-full w-full object-cover" />
           </span>
           {/* Very narrow phones (under 350 px) show the R only, so the header never runs off the side. While the small
-              spirit level is docked the name makes way for it at every width (the menu bar is full from 1024 px).
-              While Mini Raf plays, the name keeps its place, see-through, and the scene sits over it. */}
-          <span className={raf ? 'relative' : docked ? 'sr-only' : barQuote ? '' : 'max-[349px]:sr-only'}>
+              spirit level is docked the name makes way for it at every width (the menu bar is full from 1024 px); with
+              Mini Raf's show beside it, the name keeps its place, see-through, and the level sits over it. While a
+              round of Mini Raf plays, the name keeps its place, see-through, and the scene sits over it. */}
+          <span className={raf || levelOver ? 'relative' : docked ? 'sr-only' : barQuote ? '' : 'max-[349px]:sr-only'}>
             <span
               data-name
-              className={raf ? `transition-opacity duration-300 ${raf.ending && !docked ? 'opacity-100' : 'opacity-0'}` : undefined}
+              className={
+                raf
+                  ? `transition-opacity duration-300 ${raf.ending && !docked ? 'opacity-100' : 'opacity-0'}`
+                  : levelOver
+                    ? `transition-opacity duration-300 ${docked ? 'opacity-0' : 'opacity-100'}`
+                    : undefined
+              }
             >
               Raf Carpentry
             </span>
@@ -189,10 +204,18 @@ export default function Navbar({ menu = {}, barQuote = false }: { menu?: Record<
                 round={raf.round}
                 className="absolute left-0 top-1/2 h-10 w-[120px] -translate-y-1/2 md:h-11 md:w-[132px] lg:max-xl:h-10 lg:max-xl:w-[120px]"
               />
+            ) : levelOver && docked ? (
+              <span className="absolute left-0 top-1/2 flex -translate-y-1/2">
+                <MiniLevel />
+              </span>
             ) : null}
           </span>
         </Link>
-        {docked && !raf ? <MiniLevel /> : null}
+        {docked && !raf && !levelOver ? <MiniLevel /> : null}
+        {/* the room for Mini Raf's show (phones and tablets) */}
+        <div ref={stageRef} className="h-10 min-w-0 flex-1 md:h-11 lg:hidden">
+          <MiniRafStage stageRef={stageRef} onActive={setStageOn} />
+        </div>
 
         <nav aria-label="Main" className="ml-auto hidden gap-1 lg:flex">
           {links.map((l) => (

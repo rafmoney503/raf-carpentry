@@ -83,7 +83,7 @@ export default function Privacy() {
             Some parts of the site remember things in your browser only, never sent to me: designs you save with the heart for your brief, the last few pages
             you looked at (so search can offer them again), which suggestions the small card at the bottom has already shown you (so it doesn’t
             repeat them), the calculator’s history, the sizes you last typed and the jobs you save in Workshop Tools, your stars, best scores and daily results in Workshop Games, the day you first opened Workshop Games or Workshop Tools
-            from your home screen (so that first open is counted once as an install), whether you’ve seen the planner’s quick guide and which piece the little figure beside the logo made last (so the next page shows a different one). Clearing your browser’s data removes them.
+            from your home screen (so that first open is counted once as an install), whether you’ve seen the planner’s quick guide and which piece the little figure beside the logo made last and which of his shows you last saw (so the next page and the next visit show different ones), and, until the tab is closed, how far this tab’s show has got (so a new page carries on where he was). Clearing your browser’s data removes them.
           </p>
 
           <H id="stats">How visits are counted</H>
