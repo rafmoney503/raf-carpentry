@@ -25,6 +25,7 @@ HOW TO JUDGE THE NUMBERS
 - "What went live" lists the updates put live on each site that day. When a number moves, check whether an update could explain it, and say so carefully ("probably", "might").
 - Things that can't be measured here (WhatsApp messages, phone calls answered, Instagram) aren't in the data: don't guess them.
 - Never make up a number. Use only the numbers in the data, and quote them.
+- Most numbers are yesterday and the 7 days before added up, not each day: don't say "the first time in a week", "for days running" or "every day" unless the data shows each day.
 
 IDEAS
 - Up to 3 ideas per app, only where the data points at one; none is fine for a quiet app. The best ideas are small, specific and tied to a number in the data: which page or screen, what to change, and the number that will show whether it worked.
