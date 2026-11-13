@@ -102,16 +102,26 @@ export function earlierIdeas(list: ReviewList | null, day: string): Earlier[] {
   return out;
 }
 
+/* The data's "before" figures are totals over the 7 days before; named so in what Claude reads, so a total is never
+   taken for a day ("viewsBefore" → "viewsBefore7DaysTotal", "before" → "before7DaysTotal"). */
+export function labelTotals(v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(labelTotals);
+  if (!v || typeof v !== 'object') return v;
+  const out: Record<string, unknown> = {};
+  for (const [k, x] of Object.entries(v as Record<string, unknown>)) out[/before$/i.test(k) && k !== 'dayBefore' ? `${k}7DaysTotal` : k] = labelTotals(x);
+  return out;
+}
+
 export function reviewPrompt(day: string, sql: SqlDay, hq: HqDay | null, biz: BizDay | null, list: ReviewList | null, missing: string[]): string {
   const site = (k: string) => hq?.sites.find((s) => s.key === k) ?? null;
-  const strip = (s: ReturnType<typeof site>) => (s ? { status: s.status, visitors: s.visitors, views: s.views, before7days: s.before, sameDayLastWeek: s.lastWeek, sources: s.sources, pages: s.pages, countries: s.countries, devices: s.devices, extras: s.extras, upNow: s.up } : null);
+  const strip = (s: ReturnType<typeof site>) => (s ? { status: s.status, visitors: s.visitors, views: s.views, before: s.before, sameDayLastWeek: s.lastWeek, sources: s.sources, pages: s.pages, countries: s.countries, devices: s.devices, extras: s.extras.map((e) => ({ label: e.label, visitors: e.visitors, aDayIn7DaysBefore: e.before })), upNow: s.up } : null);
   const b3 = sql.b3d ?? {};
   const messages = Array.isArray(b3.messages) ? (b3.messages as Record<string, unknown>[]).map((m) => ({ ...m, text: scrub(String(m.text ?? '')) })) : [];
   const jk = sql.jobkit ?? {};
   const data = {
-    rafcarpentry: { ownCounter: { ...sql.rafsite }, vercel: site('rafcarpentry') ? { visitors: site('rafcarpentry')!.visitors, before7days: site('rafcarpentry')!.before, upNow: site('rafcarpentry')!.up } : null },
+    rafcarpentry: { ownCounter: { ...sql.rafsite }, vercel: site('rafcarpentry') ? { visitors: site('rafcarpentry')!.visitors, before: site('rafcarpentry')!.before, upNow: site('rafcarpentry')!.up } : null },
     business: { servicem8: biz, jobKit: { claudeCreditUsed: jk.claude, claudeCreditUsed7daysBefore: jk.claudeBefore, assistant: jk.assistantRuns, roughQuotesWorkedOut: jk.quotesRead, quickDrawingsMade: jk.designsMade, receiptsAdded: jk.receiptsAdded, socialFollowers: jk.social } },
-    cabinetos: { ownTables: { ...sql.cabinetos }, vercel: site('cabinetos') ? { visitors: site('cabinetos')!.visitors, before7days: site('cabinetos')!.before, upNow: site('cabinetos')!.up } : null },
+    cabinetos: { ownTables: { ...sql.cabinetos }, vercel: site('cabinetos') ? { visitors: site('cabinetos')!.visitors, before: site('cabinetos')!.before, upNow: site('cabinetos')!.up } : null },
     builditin3d: { vercel: strip(site('builditin3d')), tellUs: { messages, ratings: b3.ratings, messages7daysBefore: b3.messagesBefore } },
     rafalsolutions: { vercel: strip(site('rafalsolutions')) },
     builtforyou: { vercel: strip(site('builtforyou')) },
@@ -129,8 +139,8 @@ export function reviewPrompt(day: string, sql: SqlDay, hq: HqDay | null, biz: Bi
     REVIEW_APPS.map((a) => `- ${APP_NAMES[a]}: ${(live[a] ?? []).join(' | ') || 'nothing'}`).join('\n'),
     '\nTHE NUMBERS SHOWN TO RAF (worked out from the data; "before" is the daily average of the 7 days before):',
     JSON.stringify(numbers),
-    '\nTHE DATA, BY APP ("before" totals are for the 7 days before unless they say otherwise):',
-    JSON.stringify(data),
+    '\nTHE DATA, BY APP (fields ending 7DaysTotal are the 7 days before added up, not a day: divide by 7 for a day):',
+    JSON.stringify(labelTotals(data)),
     '\nEARLIER IDEAS (last 3 weeks: id, day, app, title, status, when marked, what to watch):',
     earlier.length ? earlier.map((e) => `- [${e.id}] ${e.title} (${e.status}${e.markedAt ? ` ${when(e.markedAt)}` : ''}). Watch: ${e.watch}`).join('\n') : 'none yet: this is one of the first reviews.',
     '\nEARLIER HEADLINES:',
@@ -335,6 +345,7 @@ export async function runReview(opts: { day?: string; force?: boolean; why: 'cro
     const list = listR.status === 'fulfilled' ? listR.value : null;
     const missing = [
       !hq ? 'HQ (each site’s Vercel visitors and what went live)' : hq.vercel ? '' : 'Vercel visitors (HQ isn’t connected to Vercel)',
+      ...(hq?.vercel ? hq.sites.filter((s) => s.status === 'error').map((s) => `${s.name}’s Vercel visitors (Vercel didn’t answer)`) : []),
       !sm8 ? 'ServiceM8 (enquiries, quotes, jobs and money)' : '',
       !list ? 'the earlier reviews' : '',
     ].filter(Boolean);
