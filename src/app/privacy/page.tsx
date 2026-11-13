@@ -48,10 +48,14 @@ export default function Privacy() {
               They’re kept in the tools I run the business with: <b>ServiceM8</b> (my jobs, quotes and invoices, and the emails and texts about the job),{' '}
               <b>Microsoft 365</b> (the {EMAIL} mailbox) and, for a wardrobe planner design, <b>CabinetOS</b> (the app I draw and cut wardrobes with).
             </li>
-            <li>WhatsApp messages and calls stay on my phone, in WhatsApp and my call history.</li>
             <li>
-              My own job app keeps my notes on the job, and any WhatsApp chat about it that I bring in (its messages and small previews of its photos), in a
-              private database in the EU (<b>Supabase</b>, Frankfurt), so my phone and computer show the same.
+              WhatsApp messages come to my business number, and also reach my own job app through <b>360dialog</b>, a partner of Meta’s WhatsApp Business
+              Platform, so a new enquiry goes onto my job list without me copying it across. Calls stay on my phone.
+            </li>
+            <li>
+              My own job app keeps my notes on the job and the WhatsApp chats on my business number (the messages, and the photos and PDFs sent for up to 90
+              days), in a private database in the EU (<b>Supabase</b>, Frankfurt), so my phone and computer show the same. To sort new messages and emails into
+              jobs, it asks <b>Claude</b> (an AI from Anthropic) to read them, with phone numbers, email addresses and street addresses taken out first.
             </li>
             <li>If you leave an email address, you get one automatic email back with a few designs like yours. No newsletters, and I never sell or share your details for marketing.</li>
             <li>
@@ -116,7 +120,7 @@ export default function Privacy() {
           <H>Who else handles the details</H>
           <p>
             Only the companies that run the tools above, under their own data protection terms: Vercel (hosting the website), Supabase (the visit counts and my job app),
-            ServiceM8, Microsoft, CabinetOS and Stripe (card payments for drawings). Some of them may store data outside the UK, with the safeguards UK law requires.
+            ServiceM8, Microsoft, CabinetOS, Stripe (card payments for drawings), 360dialog and Meta (WhatsApp) and Anthropic (Claude). Some of them may store data outside the UK, with the safeguards UK law requires.
           </p>
 
           <H>Your rights</H>

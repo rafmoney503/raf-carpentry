@@ -7,9 +7,18 @@ import { label } from './parts';
 import { parseBrief } from './brief-paste';
 import { whatOf, type Enquiry } from './current';
 import { indexClients, personName, postcodeOf, sameCustomers, searchClients, type Client } from './customers';
-import { problemText } from './sm8-post';
+import { post, problemText } from './sm8-post';
+import { readPin } from './uploader';
+import { fillTemplate, TEMPLATES, windowLeft } from '@/lib/wa-live';
 import {
   bringIn,
+  hideLive,
+  loadThread,
+  pullLive,
+  readLive,
+  sendLive,
+  useLiveInfo,
+  type WaRead,
   fileOf,
   firstName,
   getWaFile,
@@ -62,17 +71,47 @@ export function chatStatus(c: WaChat): { text: string; tone: 'todo' | 'busy' | '
   return { text: `${where} in ServiceM8`, tone: 'done' };
 }
 
-/* Today: chats brought in but not sent to a job yet (last two weeks). */
+/* ---------- live chats: what Claude made of them ---------- */
+
+export const KIND_WORDS: Record<WaRead['kind'], string> = { new_enquiry: 'New enquiry', customer_update: 'Customer', supplier: 'Supplier or trade', personal: 'Not work', other: 'Other' };
+/* A chat for the job list: exported ones always; live ones once Claude reads them as an enquiry or a customer (and
+   before it has read them). */
+export const isWork = (c: WaChat) => !c.live || !c.read?.kind || c.read.kind === 'new_enquiry' || c.read.kind === 'customer_update';
+const lastSendAt = (c: WaChat) => c.sends[c.sends.length - 1]?.at ?? 0;
+/* A live chat with something for Raf: an enquiry or a customer's news since it last went to ServiceM8, not waiting
+   on them. */
+export function needsYou(c: WaChat) {
+  const r = c.read;
+  if (!c.live || c.hidden || !r || r.error || !(r.kind === 'new_enquiry' || r.kind === 'customer_update')) return false;
+  if ((r.upto ?? 0) <= lastSendAt(c) || r.waiting === 'them') return false;
+  // a customer's news: answered once Raf has written after it (an enquiry waits until it's in ServiceM8)
+  const mine = [...c.msgs].reverse().find((m) => m.from === c.me && !m.system);
+  return !(r.kind === 'customer_update' && (mine?.ts ?? 0) > (r.upto ?? 0));
+}
+const lowerFirst = (s: string) => (s && !/^[A-Z]{2}/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s);
+
+/* Today: live chats that need Raf; chats brought in but not sent to a job yet (last two weeks). */
 export function waTodayLines(chats: WaChat[]) {
-  const fresh = chats.filter((c) => !c.sends.length && Date.now() - c.updatedAt < 14 * 864e5 && c.picked.length);
-  const failed = chats.filter((c) => c.sends.some((s) => s.failed.length));
   const lines: { text: string; id: string; urgent?: boolean }[] = [];
+  for (const c of chats.filter(needsYou).slice(0, 3)) {
+    const who = c.clientName || c.name;
+    lines.push({
+      text: c.read!.kind === 'new_enquiry' ? `WhatsApp enquiry from ${who}${c.read!.what ? `: ${lowerFirst(c.read!.what)}` : ''}` : `WhatsApp from ${who}${c.read!.what ? `: ${lowerFirst(c.read!.what)}` : ''}`,
+      id: c.id,
+      urgent: true,
+    });
+  }
+  const fresh = chats.filter((c) => !c.live && !c.sends.length && Date.now() - c.updatedAt < 14 * 864e5 && c.picked.length);
+  const failed = chats.filter((c) => c.sends.some((s) => s.failed.length));
   for (const c of fresh.slice(0, 2)) lines.push({ text: `WhatsApp from ${c.clientName || c.name}: not in ServiceM8 yet`, id: c.id, urgent: true });
   for (const c of failed.slice(0, 1)) lines.push({ text: `WhatsApp files for ${c.clientName || c.name} didn’t all go`, id: c.id });
   return lines;
 }
 export function waHomeLine(chats: WaChat[]) {
   if (!chats.length) return 'Bring a customer’s chat in: the photos and words go into ServiceM8';
+  const live = chats.filter((c) => c.live && !c.hidden && isWork(c));
+  const need = chats.filter(needsYou).length;
+  if (live.length) return `${count(live.length, 'chat')}${need ? ` · ${need} need${need === 1 ? 's' : ''} you` : ''} · newest ${live[0].clientName || live[0].name}`;
   const todo = chats.filter((c) => !c.sends.length).length;
   return `${count(chats.length, 'chat')}${todo ? ` · ${todo} not in ServiceM8 yet` : ''} · newest ${chats[0].clientName || chats[0].name}`;
 }
@@ -106,25 +145,66 @@ function useBringIn(onDone: (id: string, added: number, isNew: boolean) => void)
 export function WaList({ chats, onOpen }: { chats: WaChat[]; onOpen: (id: string) => void }) {
   const input = useRef<HTMLInputElement>(null);
   const [note, setNote] = useState('');
+  const info = useLiveInfo();
+  const [showOther, setShowOther] = useState(false);
+  const [showHidden, setShowHidden] = useState(false);
   const { busy, problem, pick } = useBringIn((id, added, isNew) => {
     if (isNew) onOpen(id);
     else setNote(added ? `${count(added, 'new message')} added to that chat.` : 'Nothing new in that chat since last time.');
   });
+  useEffect(() => {
+    void pullLive(true);
+  }, []);
+  const live = chats.filter((c) => c.live);
+  const brought = chats.filter((c) => !c.live);
+  const need = live.filter(needsYou);
+  const work = live.filter((c) => !c.hidden && !needsYou(c) && isWork(c));
+  const other = live.filter((c) => !c.hidden && !isWork(c));
+  const hidden = live.filter((c) => c.hidden);
+  const linked = info.linked === true || live.length > 0;
   return (
     <div className="pt-7">
       <h1 className="flex items-center gap-3 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">
         <Icon name="chat" className="h-[32px] w-[32px] shrink-0 jk-sec-ink" />
         WhatsApp
       </h1>
-      <p className="mt-2 text-[15.5px] leading-relaxed text-muted">Bring in a customer’s chat, tick what’s for the job, and it goes into ServiceM8 with the photos and drawings.</p>
+      <p className="mt-2 text-[15.5px] leading-relaxed text-muted">
+        {linked
+          ? 'Your chats come in by themselves. Claude reads the new ones, and an enquiry goes into ServiceM8 with its photos in a couple of taps.'
+          : 'Bring in a customer’s chat, tick what’s for the job, and it goes into ServiceM8 with the photos and drawings.'}
+      </p>
 
-      <section className="mt-5 rounded-sm border border-line-strong bg-mount p-4">
-        <h2 className="text-[19px] font-[650]">Bring in a chat</h2>
+      <LiveCard />
+
+      {need.length ? <ChatGroup title={`Need you (${need.length})`} list={need} onOpen={onOpen} /> : null}
+      {work.length ? <ChatGroup title={need.length ? 'Other chats' : 'Chats'} list={work} onOpen={onOpen} /> : null}
+      {other.length ? (
+        <section className="mt-6">
+          <button type="button" className="flex h-10 w-full items-center justify-between text-left" aria-expanded={showOther} onClick={() => setShowOther(!showOther)}>
+            <span className={label}>Not work ({other.length})</span>
+            <span className="font-mono text-[13px] text-accent">{showOther ? 'Hide' : 'Show'}</span>
+          </button>
+          {showOther ? <ChatGroup list={other} onOpen={onOpen} /> : <p className="font-mono text-[12px] text-faint">Friends, family, suppliers: Claude read them as not a job.</p>}
+        </section>
+      ) : null}
+      {hidden.length ? (
+        <section className="mt-4">
+          <button type="button" className="flex h-10 w-full items-center justify-between text-left" aria-expanded={showHidden} onClick={() => setShowHidden(!showHidden)}>
+            <span className={label}>Hidden ({hidden.length})</span>
+            <span className="font-mono text-[13px] text-accent">{showHidden ? 'Hide' : 'Show'}</span>
+          </button>
+          {showHidden ? <ChatGroup list={hidden} onOpen={onOpen} /> : null}
+        </section>
+      ) : null}
+
+      <section className={`mt-7 rounded-sm border border-line-strong bg-mount p-4 ${linked ? 'border-dashed' : ''}`}>
+        <h2 className="text-[19px] font-[650]">{linked ? 'Bring in an older chat' : 'Bring in a chat'}</h2>
+        {linked ? <p className="mt-1 text-[14.5px] leading-snug text-muted">Only for a chat from before WhatsApp was linked that isn’t above.</p> : null}
         <ol className="mt-2.5 grid gap-1.5">
-          {STEPS.map((s, i) => (
-            <li key={s} className="flex gap-2.5 text-[15px] leading-snug">
+          {STEPS.map((st, i) => (
+            <li key={st} className="flex gap-2.5 text-[15px] leading-snug">
               <span className="w-5 shrink-0 font-mono text-[13px] leading-[1.5] jk-sec-ink">{String(i + 1).padStart(2, '0')}</span>
-              <span>{s}</span>
+              <span>{st}</span>
             </li>
           ))}
         </ol>
@@ -139,7 +219,7 @@ export function WaList({ chats, onOpen }: { chats: WaChat[]; onOpen: (id: string
             e.target.value = '';
           }}
         />
-        <button type="button" className="btn btn-primary mt-4 w-full" disabled={busy} onClick={() => input.current?.click()}>
+        <button type="button" className={`btn mt-4 w-full ${linked ? 'btn-ghost' : 'btn-primary'}`} disabled={busy} onClick={() => input.current?.click()}>
           {busy ? 'Reading the chat…' : 'Choose the exported chat'}
         </button>
         <p className="mt-2 font-mono text-[12px] leading-snug text-faint">It stays on this phone until you send it to a job. Videos and voice notes stay in WhatsApp.</p>
@@ -155,37 +235,148 @@ export function WaList({ chats, onOpen }: { chats: WaChat[]; onOpen: (id: string
         ) : null}
       </section>
 
-      {chats.length ? (
-        <section className="mt-7">
-          <h2 className={label}>Chats on this phone ({chats.length})</h2>
-          <ul className="mt-2.5 grid grid-cols-1 gap-2.5">
-            {chats.map((c) => {
-              const st = chatStatus(c);
-              const last = [...c.msgs].reverse().find((m) => !m.system && (m.text || m.file));
-              const photos = c.files.filter((f) => f.kind === 'photo').length;
-              return (
-                <li key={c.id}>
-                  <button type="button" data-jk-id={c.id} onClick={() => onOpen(c.id)} className="block w-full rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-left">
-                    <span className="flex items-baseline justify-between gap-3">
-                      <span className="truncate text-[16.5px] font-semibold leading-snug">{c.clientName || c.name}</span>
-                      <span className="shrink-0 font-mono text-[12px] text-faint">{ago(c.updatedAt)}</span>
-                    </span>
-                    {last ? <span className="mt-0.5 block truncate text-[14.5px] text-muted">{last.text || (last.kind === 'photo' ? 'Photo' : last.file)}</span> : null}
-                    <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[12.5px]">
-                      <span className="text-faint">
-                        {count(c.msgs.filter((m) => !m.system).length, 'message')}
-                        {photos ? ` · ${count(photos, 'photo')}` : ''}
-                      </span>
-                      <span className={`rounded-sm border px-1.5 py-0.5 ${st.tone === 'todo' ? 'border-ink text-ink' : st.tone === 'warn' ? 'border-ink font-semibold text-ink' : 'border-line-strong jk-sec-ink'}`}>{st.text}</span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ) : null}
+      {brought.length ? <ChatGroup title={`${linked ? 'Brought in' : 'Chats on this phone'} (${brought.length})`} list={brought} onOpen={onOpen} /> : null}
     </div>
+  );
+}
+
+function ChatGroup({ title, list, onOpen }: { title?: string; list: WaChat[]; onOpen: (id: string) => void }) {
+  return (
+    <section className={title ? 'mt-7' : 'mt-1'}>
+      {title ? <h2 className={label}>{title}</h2> : null}
+      <ul className="mt-2.5 grid grid-cols-1 gap-2.5">
+        {list.map((c) => (
+          <ChatRow key={c.id} c={c} onOpen={onOpen} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function ChatRow({ c, onOpen }: { c: WaChat; onOpen: (id: string) => void }) {
+  const st = chatStatus(c);
+  const last = [...c.msgs].reverse().find((m) => !m.system && (m.text || m.file));
+  const photos = c.files.filter((f) => f.kind === 'photo').length;
+  const need = needsYou(c);
+  return (
+    <li>
+      <button type="button" data-jk-id={c.id} onClick={() => onOpen(c.id)} className={`block w-full rounded-sm border bg-mount px-3.5 py-3 text-left ${need ? 'border-ink' : 'border-line-strong'}`}>
+        <span className="flex items-baseline justify-between gap-3">
+          <span className="truncate text-[16.5px] font-semibold leading-snug">{c.clientName || c.name}</span>
+          <span className="shrink-0 font-mono text-[12px] text-faint">{ago(c.updatedAt)}</span>
+        </span>
+        {c.live && c.read?.what ? <span className="mt-0.5 block truncate text-[14.5px] font-semibold jk-sec-ink">{c.read.what}</span> : null}
+        {last ? (
+          <span className="mt-0.5 block truncate text-[14.5px] text-muted">
+            {c.live && last.from === c.me ? 'You: ' : ''}
+            {last.text || (last.kind === 'photo' ? 'Photo' : last.kind === 'pdf' ? 'PDF' : last.kind === 'video' ? 'Video' : last.kind === 'audio' ? 'Voice note' : last.file)}
+          </span>
+        ) : null}
+        <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[12.5px]">
+          <span className="text-faint">
+            {count(c.msgs.filter((m) => !m.system).length, 'message')}
+            {photos ? ` · ${count(photos, 'photo')}` : ''}
+          </span>
+          {c.live && c.read?.kind && !c.read.error ? <span className="rounded-sm border border-line-strong px-1.5 py-0.5 text-muted">{KIND_WORDS[c.read.kind]}</span> : null}
+          {c.live && c.readState === 'working' ? <span className="rounded-sm border border-line-strong px-1.5 py-0.5 text-muted">Claude is reading it</span> : null}
+          {!c.live || c.sends.length || need ? (
+            <span className={`rounded-sm border px-1.5 py-0.5 ${st.tone === 'todo' ? 'border-ink text-ink' : st.tone === 'warn' ? 'border-ink font-semibold text-ink' : 'border-line-strong jk-sec-ink'}`}>{st.text}</span>
+          ) : null}
+        </span>
+      </button>
+    </li>
+  );
+}
+
+/* The link: is WhatsApp linked, is it set up to send here, how much has come in, and the message templates. */
+type LiveStatus = {
+  linked: boolean;
+  webhook: 'ok' | 'other' | 'none' | 'unknown';
+  templates: { name: string; label: string; status: string; category: string; reason?: string }[] | null;
+  store: { chats: number; msgs: number; inbound: number; files: number; history: number; lastAt: number | null; meta: Record<string, { value: unknown; at: number }> };
+};
+function LiveCard() {
+  const [st, setSt] = useState<LiveStatus | null>(null);
+  const [problem, setProblem] = useState('');
+  const [busy, setBusy] = useState('');
+  const take = (r: Awaited<ReturnType<typeof post<LiveStatus>>>) => {
+    if (r.ok) {
+      setSt(r.data);
+      setProblem('');
+    } else if (r.error !== 'sync-not-set-up' && r.error !== 'no-pin') setProblem(problemText(r.error, r.detail));
+  };
+  const load = () => post<LiveStatus>(readPin(), { action: 'status' }, '/api/job-kit/wa').then(take);
+  useEffect(() => {
+    let gone = false;
+    void post<LiveStatus>(readPin(), { action: 'status' }, '/api/job-kit/wa').then((r) => {
+      if (!gone) take(r);
+    });
+    return () => {
+      gone = true;
+    };
+  }, []);
+  const act = async (action: 'setup' | 'templates-make') => {
+    setBusy(action);
+    const r = await post<{ ok?: true }>(readPin(), { action }, '/api/job-kit/wa');
+    setBusy('');
+    if (!r.ok) setProblem(problemText(r.error, r.detail));
+    await load();
+  };
+  if (!st) return problem ? <p className="mt-4 text-[14.5px] font-semibold">{problem}</p> : null;
+  if (!st.linked)
+    return (
+      <section className="mt-5 rounded-sm border border-dashed border-line-strong p-4" data-wa-live="off">
+        <h2 className="text-[17px] font-[650]">Live WhatsApp isn’t linked yet</h2>
+        <p className="mt-1 text-[14.5px] leading-snug text-muted">Once your number is linked through 360dialog, every chat comes in here by itself and Claude turns new enquiries into jobs. Until then, bring a chat in below.</p>
+      </section>
+    );
+  const history = st.store.meta.history?.value as { off?: boolean; progress?: number } | undefined;
+  const templates = st.templates ?? [];
+  const missing = templates.some((t) => t.status === 'MISSING');
+  return (
+    <section className="mt-5 rounded-sm border border-line-strong bg-mount p-4" data-wa-live="on">
+      <h2 className="flex items-center gap-2 text-[17px] font-[650]">
+        <span className="inline-block h-2.5 w-2.5 rounded-full bg-whatsapp" aria-hidden />
+        Live: chats come in by themselves
+      </h2>
+      <p className="mt-1 font-mono text-[12.5px] leading-relaxed text-faint">
+        {st.store.lastAt ? `Last message ${ago(st.store.lastAt)}` : 'Nothing in yet'} · {count(st.store.chats, 'chat')} · {count(st.store.files, 'photo or PDF', 'photos and PDFs')} kept
+        {history?.off ? ' · past chats weren’t shared' : st.store.history ? ` · ${count(st.store.history, 'past message')}${history?.progress && history.progress < 100 ? ` (${history.progress}% in)` : ''}` : ''}
+      </p>
+      {st.webhook !== 'ok' ? (
+        <div className="mt-3 rounded-sm border border-ink p-3">
+          <p className="text-[14.5px] font-semibold leading-snug">{st.webhook === 'unknown' ? 'Couldn’t check where WhatsApp sends your messages.' : 'WhatsApp isn’t sending your messages here yet.'}</p>
+          <button type="button" className="btn btn-primary btn-sm mt-2" disabled={busy === 'setup'} onClick={() => void act('setup')}>
+            {busy === 'setup' ? 'Setting up…' : 'Finish setting up'}
+          </button>
+        </div>
+      ) : null}
+      {templates.length ? (
+        <div className="mt-3">
+          <h3 className={label}>Message templates (for after 24 hours)</h3>
+          <ul className="mt-1.5 grid gap-1">
+            {templates.map((t) => (
+              <li key={t.name} className="flex items-baseline justify-between gap-3 text-[14px]">
+                <span className="min-w-0 truncate">{t.label}</span>
+                <span className={`shrink-0 font-mono text-[12px] ${t.status === 'APPROVED' ? 'jk-sec-ink' : t.status === 'REJECTED' ? 'font-semibold text-ink' : 'text-faint'}`}>
+                  {t.status === 'APPROVED' ? `Approved · ${t.category === 'MARKETING' ? '£0.0458' : '£0.0159'} each` : t.status === 'MISSING' ? 'Not made yet' : t.status === 'REJECTED' ? `Turned down${t.reason ? `: ${t.reason.toLowerCase().replace(/_/g, ' ')}` : ''}` : 'Meta is checking it'}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {missing ? (
+            <button type="button" className="btn btn-ghost btn-sm mt-2" disabled={busy === 'templates-make'} onClick={() => void act('templates-make')}>
+              {busy === 'templates-make' ? 'Sending them to Meta…' : 'Make the message templates'}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      {problem ? (
+        <p role="alert" className="mt-2 text-[14px] font-semibold leading-snug">
+          {problem}
+        </p>
+      ) : null}
+    </section>
   );
 }
 
@@ -262,7 +453,9 @@ export function enquiryFromChat(c: WaChat, client?: Client): Enquiry {
   const person = client?.people.find((p) => p.mobile) ?? client?.people[0];
   const when = msgs.length ? dayLine(msgs[msgs.length - 1].at) : '';
   const files = filesWords(photos, pdfs);
-  const words = b.fromBrief ? b.description : withoutGreeting(pickedText(c));
+  // a live chat Claude has read: what they want as the first line (the job's name in the lists), then their words
+  const said = withoutGreeting(pickedText(c));
+  const words = b.fromBrief ? b.description : c.live && c.read?.what && !c.read.error ? `${c.read.what}\n\n${said}` : said;
   return {
     name: client?.name || b.name || (isNumber(c.name) ? '' : c.name),
     mobile: b.mobile || c.number || person?.mobile || '',
@@ -284,6 +477,7 @@ export function WaChatView({
   onOpenJob,
   onCustomer,
   onGone,
+  links = [],
 }: {
   chat: WaChat;
   clients: Client[];
@@ -294,8 +488,16 @@ export function WaChatView({
   onOpenJob: (uuid: string) => void;
   onCustomer: (uuid: string) => void;
   onGone: () => void;
+  links?: { label: string; href: string }[]; // for the reply box: their design, the 3D library
 }) {
   const index = useMemo(() => indexClients(clients), [clients]);
+  const info = useLiveInfo();
+  const [readProblem, setReadProblem] = useState('');
+  // a live chat: the whole thread from the server the first time it's opened (a pull brings only the last 30 days)
+  useEffect(() => {
+    if (chat.live && (!chat.threadAt || Date.now() - chat.threadAt > 10 * 60000)) void loadThread(chat.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chat.id]);
   const client = useMemo(
     () => (chat.client ? (clients.find((c) => c.uuid === chat.client) ?? { uuid: chat.client, name: chat.clientName ?? chat.name, address: '', people: [], edited: null }) : undefined),
     [chat.client, chat.clientName, chat.name, clients],
@@ -350,11 +552,12 @@ export function WaChatView({
   }
   return (
     <div className="pt-7 pb-24">
-      <p className="kicker">WhatsApp chat</p>
+      <p className="kicker">{chat.live ? 'WhatsApp · live' : 'WhatsApp chat'}</p>
       <h1 className="mt-1 font-display text-[30px] font-[680] leading-[1.05] tracking-[-0.025em]">{chat.clientName || chat.name}</h1>
       <p className="mt-2 font-mono text-[12.5px] leading-relaxed text-faint">
         {count(chat.msgs.filter((m) => !m.system).length, 'message')}
-        {chat.files.length ? ` · ${filesWords(chat.files.filter((f) => f.kind === 'photo').length, chat.files.filter((f) => f.kind === 'pdf').length)}` : ''} · brought in {ago(chat.updatedAt)}
+        {chat.files.length ? ` · ${filesWords(chat.files.filter((f) => f.kind === 'photo').length, chat.files.filter((f) => f.kind === 'pdf').length)}` : ''}
+        {chat.live ? ` · ${chat.number} · last message ${ago(chat.updatedAt)}` : ` · brought in ${ago(chat.updatedAt)}`}
         {chat.remote ? ` on ${holder(chat)}` : ''}
       </p>
       {chat.remote && chat.files.length ? (
@@ -371,13 +574,30 @@ export function WaChatView({
           e.target.value = '';
         }}
       />
-      <button type="button" className="h-9 font-mono text-[13px] text-accent underline" onClick={() => input.current?.click()} disabled={bring.busy}>
-        {bring.busy ? 'Reading…' : 'Bring it in again for newer messages'}
-      </button>
+      {chat.live ? null : (
+        <button type="button" className="h-9 font-mono text-[13px] text-accent underline" onClick={() => input.current?.click()} disabled={bring.busy}>
+          {bring.busy ? 'Reading…' : 'Bring it in again for newer messages'}
+        </button>
+      )}
       {note || bring.problem ? (
         <p role="status" className="text-[14.5px] font-semibold leading-snug jk-sec-ink">
           {bring.problem || note}
         </p>
+      ) : null}
+
+      {chat.live ? (
+        <ReadCard
+          chat={chat}
+          reading={info.reading === chat.id || chat.readState === 'working'}
+          problem={readProblem}
+          onAdd={() => setSheet(true)}
+          onRead={async () => {
+            setReadProblem('');
+            const e = await readLive(chat.id);
+            if (e) setReadProblem(problemText(e));
+          }}
+          onHide={() => void hideLive(chat.id, true)}
+        />
       ) : null}
 
       {chat.sends.length || chat.design ? (
@@ -537,13 +757,13 @@ export function WaChatView({
                       {file && kindOf(file) === 'pdf' ? (
                         <span className="flex items-center gap-2 rounded-sm border border-line-strong bg-paper px-2.5 py-2 text-[14px]">
                           <span className="rounded-sm bg-ink px-1 font-mono text-[10.5px] text-on-accent">PDF</span>
-                          <span className="min-w-0 truncate">{file.replace(/^\d{8}-/, '')}</span>
+                          <span className="min-w-0 truncate">{chat.live ? file.replace(/^[A-Za-z0-9]+-/, '') : file.replace(/^\d{8}-/, '')}</span>
                         </span>
                       ) : null}
                       {m.file && !file ? (
                         <span className="block font-mono text-[12.5px] text-faint">{m.kind === 'audio' ? 'Voice note: stays in WhatsApp' : m.kind === 'video' ? 'Video: stays in WhatsApp' : m.kind === 'sticker' ? 'Sticker' : 'A file: stays in WhatsApp'}</span>
                       ) : null}
-                      {m.omitted ? <span className="block font-mono text-[12.5px] text-faint">{m.kind === 'video' ? 'Video' : m.kind === 'audio' ? 'Voice note' : 'Photo'} not in the export</span> : null}
+                      {m.omitted ? <span className="block font-mono text-[12.5px] text-faint">{chat.live ? 'A photo: open it in WhatsApp' : `${m.kind === 'video' ? 'Video' : m.kind === 'audio' ? 'Voice note' : 'Photo'} not in the export`}</span> : null}
                       {m.text ? <p className={`whitespace-pre-wrap break-words text-[15px] leading-snug ${file ? 'mt-1.5' : ''}`}>{m.text}</p> : null}
                       <p className="mt-0.5 text-right font-mono text-[11px] text-faint">{m.at.slice(11, 16)}</p>
                     </div>
@@ -555,12 +775,23 @@ export function WaChatView({
         </ol>
       </section>
 
-      <div className="mt-10 border-t border-line pt-4">
-        <button type="button" className={`h-10 text-[14px] underline ${sure ? 'font-semibold text-ink' : 'text-muted'}`} onClick={remove}>
-          {sure ? 'Tap again to take it off your phone and computer' : 'Take this chat off the Job Kit'}
-        </button>
-        <p className="font-mono text-[12px] leading-snug text-faint">WhatsApp and ServiceM8 keep everything; only the Job Kit’s copy goes, on your phone and computer.</p>
-      </div>
+      {chat.live ? <LiveReply chat={chat} links={links} /> : null}
+
+      {chat.live ? (
+        <div className="mt-10 border-t border-line pt-4">
+          <button type="button" className="h-10 text-[14px] text-muted underline" onClick={() => void hideLive(chat.id, !chat.hidden)}>
+            {chat.hidden ? 'Show it in the list again' : 'Hide this chat from the Job Kit'}
+          </button>
+          <p className="font-mono text-[12px] leading-snug text-faint">{chat.hidden ? 'Hidden: new messages still come in, folded away under Hidden.' : 'It stays in WhatsApp; here it folds away under Hidden.'}</p>
+        </div>
+      ) : (
+        <div className="mt-10 border-t border-line pt-4">
+          <button type="button" className={`h-10 text-[14px] underline ${sure ? 'font-semibold text-ink' : 'text-muted'}`} onClick={remove}>
+            {sure ? 'Tap again to take it off your phone and computer' : 'Take this chat off the Job Kit'}
+          </button>
+          <p className="font-mono text-[12px] leading-snug text-faint">WhatsApp and ServiceM8 keep everything; only the Job Kit’s copy goes, on your phone and computer.</p>
+        </div>
+      )}
 
       {/* what's ticked, and where it can go */}
       <div className="jk-wa-bar">
@@ -607,6 +838,198 @@ export function WaChatView({
         </div>
       ) : null}
     </div>
+  );
+}
+
+/* ---------- a live chat: Claude's reading, and replying ---------- */
+
+function readWords(error?: string) {
+  if (error === 'ai-not-set-up') return 'Claude isn’t switched on here: ANTHROPIC_API_KEY is missing in Vercel.';
+  if (error === 'nothing') return 'Nothing from them to read yet.';
+  return problemText(error) || 'Claude couldn’t read it.';
+}
+
+function ReadCard({ chat, reading, problem, onAdd, onRead, onHide }: { chat: WaChat; reading: boolean; problem: string; onAdd: () => void; onRead: () => void; onHide: () => void }) {
+  const r = chat.read;
+  const work = r?.kind === 'new_enquiry' || r?.kind === 'customer_update';
+  const need = needsYou(chat);
+  return (
+    <section className="mt-4 rounded-sm border border-line-strong bg-mount p-3.5" data-wa-read>
+      <h2 className="flex items-baseline justify-between gap-3">
+        <span className={label}>Claude read it</span>
+        {r?.at && !reading ? <span className="font-mono text-[11.5px] text-faint">{ago(r.at)}</span> : null}
+      </h2>
+      {reading ? (
+        <p className="mt-2 text-[15px] text-muted">Claude is reading it…</p>
+      ) : r?.kind && !r.error ? (
+        <>
+          <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+            <span className="rounded-sm border border-ink px-1.5 font-mono text-[12px]">{KIND_WORDS[r.kind]}</span>
+            {r.what ? <span className="text-[17px] font-semibold leading-snug">{r.what}</span> : null}
+          </p>
+          {r.summary ? <p className="mt-1.5 text-[15px] leading-snug">{r.summary}</p> : null}
+          {r.details?.length ? (
+            <ul className="mt-2 grid gap-1">
+              {r.details.map((d) => (
+                <li key={d} className="flex gap-2 text-[14.5px] leading-snug">
+                  <span aria-hidden className="jk-sec-ink">
+                    ·
+                  </span>
+                  <span>{d}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {r.photos ? <p className="mt-1.5 text-[14px] leading-snug text-muted">Photos: {r.photos}</p> : null}
+          {r.next ? (
+            <p className="mt-1.5 text-[14.5px] leading-snug">
+              <span className="font-semibold">Next:</span> {r.next}
+            </p>
+          ) : null}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {work && need ? (
+              <button type="button" className="btn btn-primary btn-sm" onClick={onAdd}>
+                {r.kind === 'new_enquiry' && !chat.sends.length ? 'Add to ServiceM8' : 'Send to ServiceM8'}
+              </button>
+            ) : null}
+            {!work && !chat.hidden ? (
+              <button type="button" className="btn btn-ghost btn-sm" onClick={onHide}>
+                Not a job: hide it
+              </button>
+            ) : null}
+            <button type="button" className="h-9 px-1 font-mono text-[13px] text-accent underline" onClick={onRead}>
+              Read it again
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="mt-2 text-[14.5px] leading-snug text-muted">{r?.error ? readWords(r.error) : 'Not read yet: Claude reads a chat a minute or two after it goes quiet.'}</p>
+          <button type="button" className="btn btn-ghost btn-sm mt-2" onClick={onRead}>
+            Read it with Claude
+          </button>
+        </>
+      )}
+      {problem ? (
+        <p role="alert" className="mt-2 text-[14px] font-semibold leading-snug">
+          {problem}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
+const whenWord = (t: number) => {
+  const d = new Date(t);
+  const today = new Date();
+  const tom = new Date(Date.now() + 864e5);
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return d.toDateString() === today.toDateString() ? `today ${time}` : d.toDateString() === tom.toDateString() ? `tomorrow ${time}` : `${d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} ${time}`;
+};
+
+function LiveReply({ chat, links }: { chat: WaChat; links: { label: string; href: string }[] }) {
+  const left = windowLeft(chat.liveInAt);
+  const open = left > 0;
+  const first = chat.read?.first || firstName(chat.clientName || chat.name) || '';
+  const [text, setText] = useState('');
+  const [tpl, setTpl] = useState(TEMPLATES[0].name);
+  const t = TEMPLATES.find((x) => x.name === tpl) ?? TEMPLATES[0];
+  const [a, setA] = useState(first);
+  const second = (name: string) => (name === 'raf_follow_up' ? (chat.read?.what ? `the ${lowerFirst(chat.read.what)}` : '') : (links[0]?.href ?? ''));
+  const [b, setB] = useState(() => second(TEMPLATES[0].name));
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState('');
+  const [done, setDone] = useState('');
+  const send = async () => {
+    setBusy(true);
+    setProblem('');
+    setDone('');
+    const e = open ? await sendLive(chat.id, { text: text.trim() }) : await sendLive(chat.id, { template: t.name, values: [a.trim(), b.trim()] });
+    setBusy(false);
+    if (e) setProblem(problemText(e.error, e.detail));
+    else {
+      setText('');
+      setDone(open ? 'Sent: it’s in the chat above and in WhatsApp on your phone.' : `Sent. A ${t.category === 'MARKETING' ? 'marketing' : 'utility'} message: about ${t.category === 'MARKETING' ? '4.6p' : '1.6p'}.`);
+    }
+  };
+  const can = open ? Boolean(text.trim()) : Boolean(a.trim() && b.trim());
+  return (
+    <section className="mt-6 rounded-sm border border-line-strong bg-mount p-3.5" data-wa-reply>
+      <h2 className="text-[17px] font-[650]">Reply on WhatsApp</h2>
+      {open ? (
+        <>
+          <p className="mt-1 text-[14px] leading-snug text-muted">You can write freely until {whenWord((chat.liveInAt ?? 0) + 24 * 3600 * 1000)}, 24 hours after their last message. Replies you type in the WhatsApp app show here too.</p>
+          <textarea
+            className="mt-2.5 min-h-[96px] w-full min-w-0 rounded-sm border border-line-strong bg-paper px-3 py-2 text-[16px] leading-snug focus:border-accent focus:outline-none"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={first ? `Hi ${first}, ` : 'Your message'}
+            aria-label="Your reply"
+          />
+        </>
+      ) : (
+        <>
+          <p className="mt-1 text-[14px] leading-snug text-muted">
+            {chat.liveInAt ? 'It’s more than 24 hours since they last wrote' : 'They haven’t written since WhatsApp was linked'}, so WhatsApp only lets you start again with an approved template (or write from the WhatsApp app).
+          </p>
+          <div className="mt-2.5 flex flex-wrap gap-2" role="radiogroup" aria-label="Template">
+            {TEMPLATES.map((x) => (
+              <button
+                key={x.name}
+                type="button"
+                role="radio"
+                aria-checked={x.name === tpl}
+                className={`rounded-sm border px-2.5 py-1.5 text-[14px] ${x.name === tpl ? 'border-ink bg-ink text-on-accent' : 'border-line-strong'}`}
+                onClick={() => {
+                  setTpl(x.name);
+                  setB(second(x.name));
+                }}
+              >
+                {x.label}
+              </button>
+            ))}
+          </div>
+          <div className="mt-2.5 grid grid-cols-[minmax(0,1fr)] gap-2">
+            <label className="grid gap-1 text-[13.5px] text-muted">
+              Their first name
+              <input className="h-11 min-w-0 rounded-sm border border-line-strong bg-paper px-3 text-[16px] text-ink focus:border-accent focus:outline-none" value={a} onChange={(e) => setA(e.target.value)} />
+            </label>
+            <label className="grid gap-1 text-[13.5px] text-muted">
+              {t.second}
+              <input className="h-11 min-w-0 rounded-sm border border-line-strong bg-paper px-3 text-[16px] text-ink focus:border-accent focus:outline-none" value={b} onChange={(e) => setB(e.target.value)} />
+            </label>
+          </div>
+          <p className="mt-2 whitespace-pre-wrap rounded-sm border border-dashed border-line-strong px-3 py-2 text-[14px] leading-snug text-muted" aria-label="What they get">
+            {fillTemplate(t, a.trim() || '…', b.trim() || '…')}
+          </p>
+        </>
+      )}
+      {links.length && (open || t.name !== 'raf_follow_up') ? (
+        <div className="mt-2">
+          <p className="font-mono text-[12px] text-faint">Add a link</p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {links.map((l) => (
+              <button key={l.href} type="button" className="rounded-sm border border-line-strong px-2 py-1 text-[13px]" onClick={() => (open ? setText((x) => `${x.trim()}${x.trim() ? ' ' : ''}${l.href}`) : setB(l.href))}>
+                {l.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      <button type="button" className="btn btn-whatsapp mt-3 w-full disabled:opacity-40" disabled={!can || busy} onClick={() => void send()}>
+        {busy ? 'Sending…' : open ? 'Send on WhatsApp' : 'Send the template'}
+      </button>
+      {problem ? (
+        <p role="alert" className="mt-2 text-[14px] font-semibold leading-snug">
+          {problem}
+        </p>
+      ) : null}
+      {done ? (
+        <p role="status" className="mt-2 text-[14px] leading-snug jk-sec-ink">
+          {done}
+        </p>
+      ) : null}
+    </section>
   );
 }
 

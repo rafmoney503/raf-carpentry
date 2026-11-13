@@ -2,6 +2,7 @@
 import { useSyncExternalStore } from 'react';
 import { unzipSync } from 'fflate';
 import { guessMe, isNumber, kindOf, lastStretch, mergeMsgs, nameFromFile, parseChat, sameName, type WaKind, type WaMsg } from '@/lib/whatsapp-chat';
+import { londonAt, showNumber } from '@/lib/wa-live';
 import { shrinkPhoto } from './media';
 import { readPin } from './uploader';
 import { post } from './sm8-post';
@@ -19,7 +20,7 @@ import { deviceLabel } from './device';
    themselves stay on the device that brought the chat in (the other one marks the chat `remote`), and a trip with
    files started on the other device is sent from that one. */
 
-export type WaFile = { name: string; kind: WaKind; bytes: number };
+export type WaFile = { name: string; kind: WaKind; bytes: number; msg?: string }; // msg: a live chat's message id (the file is on the server)
 /* One trip to ServiceM8: a new job made from the chat, or ticked things added to a job they had already. */
 export type WaSend = {
   job: string;
@@ -53,6 +54,29 @@ export type WaChat = {
   design?: string; // a design request made from it
   importedOn?: string; // the device it was brought into (iPhone, Mac...): it has the photos and PDFs
   remote?: boolean; // on this device the photos and PDFs aren't here, only their previews (stays on the device)
+  // live chats (WhatsApp linked through 360dialog, since 13 Nov 2026): kept on the server, id 'live-<number>'
+  live?: boolean;
+  wa?: string; // their number, digits
+  profile?: string; // the name on their WhatsApp profile
+  read?: WaRead; // Claude's reading
+  readState?: string; // working | ready | failed
+  liveInAt?: number; // their last message since the link: WhatsApp's 24 hours run from it
+  stateAt?: number; // when Raf's picks last changed (shared with the computer through the server)
+  hidden?: boolean;
+  threadAt?: number; // when the whole thread was last fetched
+};
+export type WaRead = {
+  kind: 'new_enquiry' | 'customer_update' | 'supplier' | 'personal' | 'other';
+  first?: string;
+  what?: string;
+  summary?: string;
+  details?: string[];
+  photos?: string;
+  waiting?: 'raf' | 'them' | 'nobody';
+  next?: string;
+  upto?: number;
+  at?: number;
+  error?: string;
 };
 
 /* ---------- storage ---------- */
@@ -88,7 +112,17 @@ async function run<T>(store: string, mode: IDBTransactionMode, fn: (s: IDBObject
   });
 }
 const fileKey = (chat: string, name: string) => `${chat}/${name}`;
-export const getWaFile = (chat: string, name: string) => run<Blob | undefined>('files', 'readonly', (s) => s.get(fileKey(chat, name)));
+/* A chat's photo or PDF. A live chat's comes from the server the first time and is kept here after that. */
+export async function getWaFile(chat: string, name: string): Promise<Blob | undefined> {
+  const b = await run<Blob | undefined>('files', 'readonly', (s) => s.get(fileKey(chat, name)));
+  if (b) return b;
+  const c = waChat(chat);
+  const f = c?.live ? c.files.find((x) => x.name === name) : undefined;
+  if (!f?.msg) return undefined;
+  const got = await liveFile(f.msg);
+  if (got) await run<void>('files', 'readwrite', (s) => s.put(got, fileKey(chat, name))).catch(() => undefined);
+  return got;
+}
 export const getWaThumb = (chat: string, name: string) => run<string | undefined>('thumbs', 'readonly', (s) => s.get(fileKey(chat, name)));
 
 /* A small preview of a photo for the other device: 200 px, about 8 KB. */
@@ -169,11 +203,15 @@ export function useWaChats(): WaChat[] {
 }
 export const waChat = (id: string) => (chats ?? []).find((c) => c.id === id);
 
-async function save(c: WaChat, quiet = false) {
+async function save(c0: WaChat, quiet = false) {
+  // a change Raf made in a live chat: kept on the server, so the computer gets it with the messages
+  const c = c0.live && !quiet ? { ...c0, stateAt: Date.now() } : c0;
   await run<void>('chats', 'readwrite', (s) => s.put(c));
   chats = [c, ...(chats ?? []).filter((x) => x.id !== c.id)].sort((a, b) => b.updatedAt - a.updatedAt);
   emit();
-  if (!quiet) changed();
+  if (quiet) return;
+  if (c.live) pushSoon(c.id);
+  else changed();
 }
 /* A change to one chat (ticks, the customer picked); the latest copy is always the one changed. */
 export async function updateChat(id: string, change: (c: WaChat) => WaChat, touch = false) {
@@ -414,7 +452,8 @@ if (typeof window !== 'undefined') {
 
 export type WaThumb = { key: string; chat: string; name: string; thumb: string };
 export async function waForSync(): Promise<{ chats: WaChat[]; thumbs: WaThumb[] }> {
-  const list = chats ?? (await run<WaChat[]>('chats', 'readonly', (s) => s.getAll())) ?? [];
+  // live chats aren't sent between devices: both get them from the server
+  const list = (chats ?? (await run<WaChat[]>('chats', 'readonly', (s) => s.getAll())) ?? []).filter((c) => !c.live);
   const d = await db();
   const thumbs = await new Promise<WaThumb[]>((resolve, reject) => {
     const out: WaThumb[] = [];
@@ -424,7 +463,7 @@ export async function waForSync(): Promise<{ chats: WaChat[]; thumbs: WaThumb[] 
       if (!cur) return resolve(out);
       const key = String(cur.key);
       const i = key.indexOf('/');
-      out.push({ key, chat: key.slice(0, i), name: key.slice(i + 1), thumb: String(cur.value) });
+      if (!key.startsWith('live-')) out.push({ key, chat: key.slice(0, i), name: key.slice(i + 1), thumb: String(cur.value) });
       cur.continue();
     };
     req.onerror = () => reject(req.error);
@@ -456,6 +495,7 @@ function mergeChat(mine: WaChat, theirs: WaChat): WaChat {
 
 /* A chat from the other device ('kept': not taken off here while this device still has its files to send). */
 export async function waTakeChat(id: string, data: WaChat | null): Promise<'applied' | 'kept'> {
+  if (id.startsWith('live-')) return 'applied'; // live chats come from the server, not the other device
   if (chats === null) await load();
   const mine = await waChatNow(id);
   if (!data) {
@@ -475,3 +515,280 @@ export async function waTakeThumb(key: string, thumb: string | null) {
 }
 /* After chats came in: a trip started on the other device for files that are here goes now. */
 export const waKick = () => void kick();
+
+/* ---------- live chats (Raf's WhatsApp linked through 360dialog, 13 Nov 2026) ---------- */
+/* Every chat on his number comes to the server (/api/whatsapp/webhook, src/lib/wa-live.ts); the Job Kit pulls what
+   changed since its last pull (the last 30 days) into this same store as chats 'live-<number>', so the chat screen,
+   the ticks, the customer, New job, Add to #101 and design requests work as for an exported chat. Their photos and
+   PDFs stay on the server until opened or sent; Raf's ticks, customer and trips are kept on the server too (state),
+   so the computer shows the same. Claude reads each chat with something new (wa-server.ts readChat). */
+
+const ME = 'Raf';
+const REV_KEY = 'raf_jobkit_wa_rev';
+const WA_PATH = '/api/job-kit/wa';
+export type LiveRow = { id: string; wa: string; dir: 'in' | 'out'; src: string; at: number; type: string; body?: string | null; media?: { mime?: string; name?: string; caption?: string } | null; file?: string | null; thumb?: string | null; status?: string | null };
+export type LiveChatRow = { wa: string; name?: string | null; profile?: string | null; lastAt?: number | null; lastInAt?: number | null; liveInAt?: number | null; read?: WaRead | null; readState?: string | null; state?: Partial<LiveState> | null; stateAt?: number; rev?: number };
+type LiveState = { picked: string[]; client: string | null; clientName: string | null; sends: WaSend[]; design: string | null; hidden: boolean };
+
+export const liveId = (wa: string) => `live-${wa}`;
+
+/* What the screens know about the link: linked (null = not asked yet), the last good pull, the last problem. */
+export type LiveInfo = { linked: boolean | null; at: number; error: string; reading: string };
+let info: LiveInfo = { linked: null, at: 0, error: '', reading: '' };
+const infoSubs = new Set<() => void>();
+function setInfo(patch: Partial<LiveInfo>) {
+  info = { ...info, ...patch };
+  infoSubs.forEach((f) => f());
+}
+export function useLiveInfo(): LiveInfo {
+  return useSyncExternalStore(
+    (l) => {
+      infoSubs.add(l);
+      return () => void infoSubs.delete(l);
+    },
+    () => info,
+    () => info,
+  );
+}
+
+async function ask<T>(body: Record<string, unknown>) {
+  return post<T>(readPin(), body, WA_PATH);
+}
+
+async function liveFile(id: string): Promise<Blob | undefined> {
+  const pin = readPin();
+  if (!pin) return undefined;
+  try {
+    const res = await fetch(WA_PATH, { method: 'POST', headers: { 'x-job-kit-pin': pin, 'content-type': 'application/json' }, body: JSON.stringify({ action: 'file', id }), cache: 'no-store' });
+    if (!res.ok) return undefined;
+    const b = await res.blob();
+    return b.size ? b : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/* A row from the server as a chat message. */
+function rowToMsg(r: LiveRow, name: string): WaMsg {
+  const safe = r.id.replace(/[^A-Za-z0-9]/g, '').slice(-28) || String(r.at);
+  const mime = r.media?.mime ?? '';
+  let file: string | undefined;
+  let kind: WaKind | undefined;
+  if (r.type === 'image' || (r.type === 'document' && (r.file === 'photo' || /^image\//.test(mime)))) [file, kind] = [`${safe}.jpg`, 'photo'];
+  else if (r.type === 'document') {
+    // the file's own name after the id ("x1y2-sketch.pdf"), so the chat can show it
+    const own = (r.media?.name ?? '').replace(/[^\w. ()-]/g, '').trim();
+    const pdf = r.file === 'pdf' || mime === 'application/pdf' || /\.pdf$/i.test(own);
+    [file, kind] = pdf ? [`${safe}-${own.replace(/\.pdf$/i, '') || 'document'}.pdf`, 'pdf'] : [`${safe}-${own || 'file'}`, 'other'];
+  }
+  else if (r.type === 'video') [file, kind] = [`${safe}.mp4`, 'video'];
+  else if (r.type === 'audio') [file, kind] = [`${safe}.ogg`, 'audio'];
+  else if (r.type === 'sticker') [file, kind] = [`${safe}.webp`, 'sticker'];
+  const from = r.dir === 'out' ? ME : name;
+  const text =
+    r.type === 'reaction'
+      ? `${r.dir === 'out' ? 'You' : name} reacted ${r.body ?? ''}`.trim()
+      : r.type === 'unsupported'
+        ? 'A message the Job Kit can’t show: open it in WhatsApp'
+        : r.type === 'placeholder'
+          ? ''
+          : (r.body ?? '');
+  return {
+    id: r.id,
+    at: londonAt(r.at),
+    ts: r.at,
+    from,
+    text,
+    file: r.type === 'placeholder' ? `${safe}.jpg` : file,
+    kind: r.type === 'placeholder' ? 'photo' : kind,
+    omitted: r.type === 'placeholder' || undefined,
+    system: r.type === 'reaction' || undefined,
+  };
+}
+
+/* What a live chat starts with ticked: their messages, photos and PDFs since their last gap of a week (the gaps
+   counted between their own messages, so Raf's reply after a quiet spell doesn't hide what they sent). */
+function livePicks(msgs: WaMsg[]) {
+  const theirs = msgs.filter((m) => m.from !== ME && !m.system);
+  const from = theirs[lastStretch(theirs)];
+  if (!from) return [];
+  const i = msgs.indexOf(from);
+  return msgs
+    .slice(i)
+    .filter((m) => !m.system && !m.omitted && ((m.file && (m.kind === 'photo' || m.kind === 'pdf')) || (m.text && m.from !== ME)))
+    .map((m) => m.id);
+}
+
+/* Server rows into the store: new messages added (changed ones replaced), their previews kept, and Raf's picks from
+   the server when they're newer than this device's. New messages from them are ticked as an exported chat's are. */
+async function mergeLive(rows: LiveChatRow[], msgRows: LiveRow[]) {
+  if (chats === null) await load();
+  const byWa = new Map<string, LiveRow[]>();
+  for (const r of msgRows) byWa.set(r.wa, [...(byWa.get(r.wa) ?? []), r]);
+  const chatRows = new Map(rows.map((r) => [r.wa, r]));
+  for (const wa of byWa.keys()) if (!chatRows.has(wa)) chatRows.set(wa, { wa });
+  for (const [wa, row] of chatRows) {
+    const id = liveId(wa);
+    const old = waChat(id);
+    const name = row.name || row.profile || old?.name || showNumber(wa);
+    const fresh = (byWa.get(wa) ?? []).map((r) => rowToMsg(r, name));
+    const map = new Map((old?.msgs ?? []).map((m) => [m.id, m.from !== ME && m.from !== name ? { ...m, from: name } : m]));
+    const have = new Set(map.keys());
+    for (const m of fresh) map.set(m.id, m);
+    const msgs = [...map.values()].sort((a, b) => (a.ts ?? Date.parse(`${a.at}:00`)) - (b.ts ?? Date.parse(`${b.at}:00`)));
+    const files = [...(old?.files ?? [])];
+    for (const r of byWa.get(wa) ?? []) {
+      const m = msgs.find((x) => x.id === r.id);
+      if (!m?.file || (m.kind !== 'photo' && m.kind !== 'pdf') || m.omitted) continue;
+      if (!files.some((f) => f.name === m.file)) files.push({ name: m.file, kind: m.kind, bytes: 0, msg: r.id });
+      if (r.thumb) await run<void>('thumbs', 'readwrite', (s) => s.put(r.thumb, fileKey(id, m.file!))).catch(() => undefined);
+    }
+    const added = msgs.filter((m) => !have.has(m.id));
+    let picked = old?.picked ?? livePicks(msgs);
+    if (old && added.length) {
+      const freshPicks = livePicks(added);
+      picked = old.sends.length ? (freshPicks.length ? freshPicks : old.picked) : [...new Set([...old.picked, ...freshPicks])];
+    }
+    let c: WaChat = {
+      ...(old ?? { importedAt: Date.now(), sends: [], picked: [] }),
+      id,
+      live: true,
+      wa,
+      name,
+      number: showNumber(wa),
+      profile: row.profile ?? old?.profile,
+      me: ME,
+      people: [name, ME],
+      msgs,
+      files,
+      picked,
+      updatedAt: row.lastAt ?? old?.updatedAt ?? Date.now(),
+      read: row.read === undefined ? old?.read : (row.read ?? undefined),
+      readState: row.readState === undefined ? old?.readState : (row.readState ?? undefined),
+      liveInAt: row.liveInAt ?? old?.liveInAt,
+    } as WaChat;
+    const st = row.state;
+    if (st && (row.stateAt ?? 0) > (old?.stateAt ?? 0) && !dirty.has(id)) {
+      c = { ...c, picked: st.picked ?? c.picked, client: st.client ?? undefined, clientName: st.clientName ?? undefined, sends: st.sends ?? c.sends, design: st.design ?? undefined, hidden: Boolean(st.hidden), stateAt: row.stateAt };
+    }
+    await save(c, true);
+  }
+}
+
+/* Raf's picks for a live chat, to the server (a moment after the last change). */
+const dirty = new Set<string>();
+let pushTimer: ReturnType<typeof setTimeout> | undefined;
+function pushSoon(id: string) {
+  dirty.add(id);
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => void pushNow(), 800);
+}
+async function pushNow() {
+  for (const id of [...dirty]) {
+    const c = waChat(id);
+    if (!c?.live || !c.wa) {
+      dirty.delete(id);
+      continue;
+    }
+    const state: LiveState = { picked: c.picked, client: c.client ?? null, clientName: c.clientName ?? null, sends: c.sends, design: c.design ?? null, hidden: Boolean(c.hidden) };
+    const r = await ask<{ ok: true }>({ action: 'state', wa: c.wa, state, at: c.stateAt ?? Date.now() });
+    if (r.ok) dirty.delete(id);
+    else return; // no signal: tried again with the next pull
+  }
+}
+
+let pulling: Promise<void> | null = null;
+let lastPull = 0;
+/* What changed on the server since this device's last pull (at most every 15 s unless asked). */
+export function pullLive(force = false): Promise<void> {
+  if (pulling) return pulling;
+  if (!readPin() || (!force && Date.now() - lastPull < 15000)) return Promise.resolve();
+  pulling = (async () => {
+    try {
+      let since = Number(localStorage.getItem(REV_KEY) || 0) || 0;
+      for (let i = 0; i < 10; i++) {
+        const r = await ask<{ msgs: LiveRow[]; chats: LiveChatRow[]; rev: number; more: boolean; linked: boolean }>({ action: 'pull', since });
+        if (!r.ok) {
+          setInfo({ error: r.error });
+          return;
+        }
+        await mergeLive(r.data.chats ?? [], r.data.msgs ?? []);
+        since = Math.max(since, Number(r.data.rev) || 0);
+        try {
+          localStorage.setItem(REV_KEY, String(since));
+        } catch {
+          /* storage full or blocked: the next pull starts from the same place */
+        }
+        setInfo({ linked: Boolean(r.data.linked), at: Date.now(), error: '' });
+        if (!r.data.more) break;
+      }
+      if (dirty.size) await pushNow();
+      void kick();
+    } finally {
+      lastPull = Date.now();
+      pulling = null;
+    }
+  })();
+  return pulling;
+}
+
+/* The whole of one chat (a pull only brings the last 30 days of active chats). */
+export async function loadThread(id: string) {
+  const c = waChat(id);
+  if (!c?.live || !c.wa) return;
+  const r = await ask<{ msgs: LiveRow[]; chat: LiveChatRow | null }>({ action: 'thread', wa: c.wa });
+  if (!r.ok) return;
+  await mergeLive(r.data.chat ? [r.data.chat] : [], r.data.msgs ?? []);
+  const now = waChat(id);
+  if (now) await save({ ...now, threadAt: Date.now() }, true);
+}
+
+/* Claude reads a chat now (Read it again, or the first time). */
+export async function readLive(id: string, force = true): Promise<string> {
+  const c = waChat(id);
+  if (!c?.wa) return 'bad';
+  setInfo({ reading: id });
+  try {
+    const r = await ask<{ ok: boolean; error?: string }>({ action: 'read', wa: c.wa, force });
+    if (!r.ok) return r.error;
+    await pullLive(true);
+    return r.data.ok ? '' : r.data.error || 'ai-error';
+  } finally {
+    setInfo({ reading: '' });
+  }
+}
+
+let lastQueue = 0;
+/* The chats waiting for Claude (something new from them, quiet for 90 s): read one at a time, at most every 2 min.
+   The webhook reads them too; this catches the ones it didn't get to. */
+export async function readWaiting() {
+  if (!readPin() || Date.now() - lastQueue < 120000 || info.reading) return;
+  lastQueue = Date.now();
+  const r = await ask<{ list: string[] }>({ action: 'pending' });
+  if (!r.ok || !r.data.list?.length) return;
+  for (const wa of r.data.list.slice(0, 3)) {
+    if (!waChat(liveId(wa))) continue;
+    await readLive(liveId(wa), false);
+  }
+}
+
+/* Words to them through WhatsApp (within 24 hours of their last message), or an approved template. The message
+   shows in the chat straight away. */
+export async function sendLive(id: string, body: { text: string } | { template: string; values: string[] }): Promise<{ error: string; detail?: string } | null> {
+  const c = waChat(id);
+  if (!c?.wa) return { error: 'bad' };
+  const r = await ask<{ ok: true; msg: LiveRow }>('text' in body ? { action: 'send', wa: c.wa, text: body.text } : { action: 'template', wa: c.wa, name: body.template, values: body.values });
+  if (!r.ok) return { error: r.error, detail: r.detail };
+  await mergeLive([{ wa: c.wa }], [r.data.msg]);
+  return null;
+}
+
+export async function hideLive(id: string, hidden: boolean) {
+  await updateChat(id, (c) => ({ ...c, hidden }));
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    if (dirty.size) void pushNow();
+  });
+}

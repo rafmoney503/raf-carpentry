@@ -34,7 +34,7 @@ export type CreditStatus = {
   error?: string;
 };
 
-const NAMES: Record<string, string> = { quotes: 'Quotes (rough prices)', design: 'Design with Claude', draft: 'Draft a reply', pots: 'Money pots, Ask Claude', receipts: 'Receipts read', assistant: 'Assistant: reading new emails', review: 'Daily review' };
+const NAMES: Record<string, string> = { quotes: 'Quotes (rough prices)', design: 'Design with Claude', draft: 'Draft a reply', pots: 'Money pots, Ask Claude', receipts: 'Receipts read', assistant: 'Assistant: reading new emails', review: 'Daily review', whatsapp: 'WhatsApp chats read' };
 const nameOf = (f: string) => NAMES[f] ?? f;
 const usd = (v: number) => `$${(Math.round(v * 100) / 100).toFixed(2)}`;
 const day = (t: number) => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -157,7 +157,7 @@ export function ClaudeCreditView() {
     <div className="pt-7">
       <p className="kicker">Claude API · prepaid credit</p>
       <h1 className="mt-1 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">Claude credit</h1>
-      <p className="mt-2 text-[15px] leading-relaxed text-muted">What Quotes, Design with Claude, Draft a reply, receipts, the assistant, the daily review and Money pots use from your Claude account, and when to top up.</p>
+      <p className="mt-2 text-[15px] leading-relaxed text-muted">What Quotes, Design with Claude, Draft a reply, receipts, the assistant, the daily review, WhatsApp chats and Money pots use from your Claude account, and when to top up.</p>
 
       <section className={`mt-5 rounded-sm border-2 bg-mount p-4 ${st.kind === 'out' || st.kind === 'low' ? 'border-ink' : 'border-line-strong'}`} aria-live="polite">
         {st.kind === 'out' ? (

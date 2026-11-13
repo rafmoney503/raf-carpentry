@@ -41,6 +41,20 @@ export function problemText(error?: string, detail?: string, at?: number) {
       return `Only a job still on Quote can be removed from here, and ServiceM8 has this one on ${detail || 'another status'}. Refresh Current jobs.`;
     case 'sm8-paid':
       return 'This job has a payment on it in ServiceM8, so it can’t be removed from here. Take the payment off in ServiceM8 first if it really was a mistake.';
+    case 'wa-not-set-up':
+      return 'Live WhatsApp isn’t linked yet: D360_API_KEY (from 360dialog) is missing in Vercel.';
+    case 'wa-key':
+      return '360dialog turned the API key down. Make a new key in the 360dialog hub (your number, API key) and replace D360_API_KEY in Vercel, then Finish setting up again.';
+    case 'wa-window':
+      return 'It’s more than 24 hours since they last wrote, so WhatsApp only lets you send a template. Pick one below, or write from the WhatsApp app.';
+    case 'wa-number':
+      return 'WhatsApp couldn’t deliver to that number (not on WhatsApp, or it has blocked business messages).';
+    case 'wa-template':
+      return `WhatsApp turned the template down${detail ? `: ${detail}` : ''}. Check it’s approved under Message templates.`;
+    case 'wa-busy':
+      return 'WhatsApp (360dialog) is busy or didn’t answer. Try again in a minute.';
+    case 'wa-error':
+      return `WhatsApp didn’t take it${detail ? `: ${detail}` : '.'}`;
     case 'ai-not-set-up':
       return 'Draft a reply isn’t switched on yet: ANTHROPIC_API_KEY is missing in Vercel.';
     case 'ai-key':

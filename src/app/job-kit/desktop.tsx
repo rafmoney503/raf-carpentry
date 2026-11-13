@@ -184,7 +184,7 @@ const PICK: Record<string, { icon: IconName; text: string }> = {
   quotes: { icon: 'quote', text: 'Pick a quote on the left: the photos, what Claude read, your prices and the message to send.' },
   inbox: { icon: 'mail', text: 'Pick an email on the left. Opening one marks it read in Outlook, as on the phone.' },
   designs: { icon: 'designs', text: 'Pick a design request on the left, or start a New design.' },
-  whatsapp: { icon: 'chat', text: 'Pick a chat on the left. Chats brought in on your phone show here too, their photos as small previews.' },
+  whatsapp: { icon: 'chat', text: 'Pick a chat on the left. Live chats come in by themselves; chats brought in on your phone show here too, their photos as small previews.' },
   posts: { icon: 'posts', text: 'Pick a post on the left. Sharing to Instagram and TikTok works best from the phone.' },
   kit: { icon: 'kit', text: 'Pick a job on the left. Photos and clips are best taken on the phone; notes and sizes type easily here.' },
 };
