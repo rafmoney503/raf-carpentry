@@ -3,9 +3,11 @@ import './mini-raf.css';
 
 /* Mini Raf beside the logo: he comes in (walking, running or dancing), kicks a log, sawdust puffs and a piece of
    fitted furniture pops up with its size, its doors or drawers open and shut, then it all fades and the name comes
-   back. The Navbar plays one round on each page and takes it away after (src/lib/mini-raf.ts has the rounds, the
-   moves are in mini-raf.css). A picture only: the link keeps 'Raf Carpentry' for screen readers. Drawn in a
-   240 x 80 box; the parts that move turn about their group's 0 0. */
+   back. On a computer the Navbar plays one round on each page in the name's place and takes it away after
+   (src/lib/mini-raf.ts has the rounds, the moves are in mini-raf.css). On phones and tablets the pieces and a jointed
+   Raf (the jointed Raf is drawn there) are drawn by the show beside the name instead (src/components/MiniRafStage.tsx). A picture only: the
+   link keeps 'Raf Carpentry' for screen readers. Drawn in a 240 x 80 box; the parts that move turn about their
+   group's 0 0. */
 
 const INK = '#16191c';
 const BLUE = '#2547d0';
@@ -207,14 +209,96 @@ function TvUnit({ c, mm }: { c: string; mm: string }) {
   );
 }
 
+/* A media wall, 2400 wide: the TV in the middle over an electric fire, open shelves each side with their books and a
+   strip light, cupboards along the bottom (the show's last piece, every other show). */
+function MediaWall({ c, mm }: { c: string; mm: string }) {
+  return (
+    <>
+      <rect x="-36" y="-58" width="72" height="55" fill={MOUNT} stroke={INK} strokeWidth="1.3" />
+      <rect x="-34.5" y="-56.5" width="16" height="40" fill={c} opacity="0.35" />
+      <rect x="18.5" y="-56.5" width="16" height="40" fill={c} opacity="0.35" />
+      <rect x="-34.5" y="-56.5" width="16" height="1.6" fill="#f2c230" />
+      <rect x="18.5" y="-56.5" width="16" height="1.6" fill="#f2c230" />
+      <rect x="-34.5" y="-43" width="16" height="1.5" fill={INK} />
+      <rect x="-34.5" y="-30" width="16" height="1.5" fill={INK} />
+      <rect x="18.5" y="-43" width="16" height="1.5" fill={INK} />
+      <rect x="18.5" y="-30" width="16" height="1.5" fill={INK} />
+      <g transform="translate(-26.5 -43)">
+        <g className="mraf-bk1">
+          <rect x="-6" y="-8" width="2.4" height="8" fill={BLUE} />
+          <rect x="-3.2" y="-7" width="2.4" height="7" fill="#b9824e" />
+          <rect x="2" y="-5" width="5" height="5" rx="1" fill="#e7c08a" />
+        </g>
+      </g>
+      <g transform="translate(26.5 -43)">
+        <g className="mraf-bk2">
+          <circle cx="-3" cy="-3.5" r="3.3" fill="#7d8f76" />
+          <rect x="1" y="-9" width="2.4" height="9" fill="#f2c230" />
+          <rect x="3.8" y="-8" width="2.4" height="8" fill={INK} />
+        </g>
+      </g>
+      <g transform="translate(-26.5 -30)">
+        <g className="mraf-bk3">
+          <rect x="-6" y="-4" width="6" height="4" fill="#b9824e" />
+          <rect x="1.5" y="-8.5" width="2.4" height="8.5" fill="#7d8f76" />
+          <rect x="4.3" y="-7.5" width="2.4" height="7.5" fill={BLUE} />
+        </g>
+      </g>
+      <g transform="translate(26.5 -30)">
+        <g className="mraf-bk4">
+          <rect x="-6" y="-7" width="8" height="7" fill="#c9a47a" stroke={INK} strokeWidth="0.6" />
+          <rect x="3" y="-8" width="2.4" height="8" fill="#b9824e" />
+        </g>
+      </g>
+      <rect x="-17" y="-56.5" width="34" height="40" fill={c} />
+      <g transform="translate(0 -21.5)">
+        <ellipse className="mraf-glow" cx="0" cy="0" rx="15" ry="6" fill="#f2c230" />
+      </g>
+      <g transform="translate(0 -29)">
+        <g className="mraf-tv">
+          <rect x="-14" y="-20" width="28" height="17" rx="1.2" fill={INK} />
+          <rect className="mraf-screen" x="-12.8" y="-18.8" width="25.6" height="14.6" fill="#2a2f35" />
+        </g>
+      </g>
+      <rect x="-14" y="-24.5" width="28" height="6" fill={INK} />
+      <g transform="translate(0 -19)">
+        <g className="mraf-bk4">
+          <path d="M-10 0 Q-8 -4.5 -6.5 -1.5 Q-5 -5.5 -3 -1 Q-1 -4.8 0.8 -1.2 Q3 -5.5 4.6 -1.2 Q6.5 -4.4 8 -1.5 Q9 -3.4 10 0 Z" fill="#e8742c" />
+        </g>
+      </g>
+      <rect x="-34.5" y="-16" width="69" height="12.5" fill={INSIDE} />
+      <Door x={-34.5} side={1} w={17} top={-16} bottom={-3.5} c={c} pull={[-12, -7.5]} />
+      <Door x={-0.5} side={-1} w={17} top={-16} bottom={-3.5} c={c} pull={[-12, -7.5]} />
+      <Door x={0.5} side={1} w={17} top={-16} bottom={-3.5} c={c} pull={[-12, -7.5]} />
+      <Door x={34.5} side={-1} w={17} top={-16} bottom={-3.5} c={c} pull={[-12, -7.5]} />
+      <rect x="-34" y="-3" width="68" height="3" fill={INK} />
+      <Dim y={-64} w={36} mm={mm} />
+      <Spark x={40} y={-58} />
+      <Spark x={-40} y={-50} />
+    </>
+  );
+}
+
+/* Every piece, by name (the show beside the name uses them too: src/components/MiniRafStage.tsx). */
+export const PIECES = { cupboard: Cupboard, chest: Chest, wardrobe: Wardrobe, bookcase: Bookcase, bedside: Bedside, tv: TvUnit, media: MediaWall };
+
+/* The log he kicks, 36 x 13 about its middle. */
+export function LogShape() {
+  return (
+    <>
+      <rect x="-18" y="-6.5" width="36" height="13" rx="6.5" fill="#b9824e" stroke={INK} strokeWidth="1.3" />
+      <path d="M-8 -2.5 H6 M-3 2.5 H12" stroke="#8a5a2b" strokeWidth="1" strokeLinecap="round" fill="none" />
+      <ellipse cx="-17" cy="0" rx="4.2" ry="6.5" fill="#e7c08a" stroke={INK} strokeWidth="1.3" />
+      <ellipse cx="-17" cy="0" rx="2.1" ry="3.4" fill="none" stroke="#b9824e" strokeWidth="0.9" />
+    </>
+  );
+}
+
 function Log() {
   return (
     <g transform="translate(114 67.5)">
       <g className="mraf-log">
-        <rect x="-18" y="-6.5" width="36" height="13" rx="6.5" fill="#b9824e" stroke={INK} strokeWidth="1.3" />
-        <path d="M-8 -2.5 H6 M-3 2.5 H12" stroke="#8a5a2b" strokeWidth="1" strokeLinecap="round" fill="none" />
-        <ellipse cx="-17" cy="0" rx="4.2" ry="6.5" fill="#e7c08a" stroke={INK} strokeWidth="1.3" />
-        <ellipse cx="-17" cy="0" rx="2.1" ry="3.4" fill="none" stroke="#b9824e" strokeWidth="0.9" />
+        <LogShape />
       </g>
     </g>
   );
@@ -271,7 +355,17 @@ function Raf({ act }: { act: MiniRafAct }) {
   );
 }
 
-const PUFFS: [string, number, string][] = [
+/* A musical note, for the dance. */
+export function NoteShape() {
+  return (
+    <>
+      <ellipse cx="0" cy="0" rx="2.4" ry="1.8" transform="rotate(-20)" fill={BLUE} />
+      <path d="M2 -0.6 V-9 Q5 -7.5 6 -5" stroke={BLUE} strokeWidth="1.1" fill="none" strokeLinecap="round" />
+    </>
+  );
+}
+
+export const PUFFS: [string, number, string][] = [
   ['mraf-p1', 3, '#e7c08a'],
   ['mraf-p2', 2.5, '#d9dbd5'],
   ['mraf-p3', 3, '#e7c08a'],
@@ -282,7 +376,7 @@ const PUFFS: [string, number, string][] = [
 
 export default function MiniRaf({ round, className = '' }: { round: number; className?: string }) {
   const v = miniRafVariant(round);
-  const Unit = { cupboard: Cupboard, chest: Chest, wardrobe: Wardrobe, bookcase: Bookcase, bedside: Bedside, tv: TvUnit }[v.unit];
+  const Unit = PIECES[v.unit];
   return (
     <svg viewBox="0 0 240 80" className={`mraf ${className}`} aria-hidden="true" focusable="false" data-mini-raf={v.unit} data-mini-raf-act={v.act}>
       <g className="mraf-scene">
