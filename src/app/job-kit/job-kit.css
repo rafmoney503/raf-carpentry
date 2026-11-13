@@ -1,6 +1,9 @@
 /* Job Kit: Raf's phone app (src/app/job-kit). Colours are the site tokens from globals.css. */
 
 .jk { -webkit-tap-highlight-color: transparent; }
+/* Nothing can make the page wider than the screen, so a finger scrolling down never takes it sideways too (13 Nov
+   2026). clip, not hidden: hidden would make a scroll box and stop the sticky bars sticking. */
+@supports (overflow: clip) { .jk { overflow-x: clip; } }
 .jk input, .jk textarea, .jk button { touch-action: manipulation; }
 
 /* The column every screen sits in: a phone's width, centred (wider on a computer, below). */

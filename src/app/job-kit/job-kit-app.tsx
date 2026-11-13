@@ -2286,7 +2286,7 @@ function Home({
       <p className="kicker">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
       <h1 className="mt-1 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">Today</h1>
       {/* a phone: a row of chips to every box below, sticking under the top bar (a computer has the sidebar) */}
-      {!wide ? <ChipMenu attr="tsec" defs={TODAY_SECS} first="Today" label="Boxes on Today" className="mt-3" /> : null}
+      {!wide ? <ChipMenu attr="tsec" defs={TODAY_SECS} first="Today" label="Boxes on Today" className="mt-3" still /> : null}
 
       {!standalone && !wide ? (
         <div className="mt-5 rounded-sm border border-accent bg-accent-soft px-4 py-3.5 text-[15px] leading-relaxed">

@@ -69,7 +69,10 @@ export function JobMenu({ first }: { first: string }) {
 }
 
 /* The row itself: chips for every box below it carrying data-<attr>="<key>" (with data-<attr>-note and -alert). */
-export function ChipMenu({ attr, defs, first, label, className = 'mt-5' }: { attr: 'jsec' | 'tsec'; defs: Record<string, Def>; first: string; label: string; className?: string }) {
+/* `still` (Today, 13 Nov 2026, Raf: the page seemed to slide sideways as he scrolled down): the row never moves by
+   itself. It doesn't slide to keep the box being read in view, and no '↑ Today' chip is put in front when it sticks
+   (that pushed every chip across); the chip being read is still lit, and a finger slides the row. */
+export function ChipMenu({ attr, defs, first, label, className = 'mt-5', still = false }: { attr: 'jsec' | 'tsec'; defs: Record<string, Def>; first: string; label: string; className?: string; still?: boolean }) {
   const nav = useRef<HTMLElement>(null);
   const row = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<Item[]>([]);
@@ -158,14 +161,14 @@ export function ChipMenu({ attr, defs, first, label, className = 'mt-5' }: { att
   // the chip being read stays in view in the row; the row's ends fade when there's more to slide to
   useEffect(() => {
     const r = row.current;
-    if (!r) return;
+    if (!r || still) return;
     const chip = r.querySelector<HTMLElement>(`[data-${attr}-chip="${active}"]`);
     if (chip) {
       const pad = 44; // clear of the faded end
       if (chip.offsetLeft - pad < r.scrollLeft) r.scrollTo({ left: chip.offsetLeft - pad, behavior: calm() ? 'auto' : 'smooth' });
       else if (chip.offsetLeft + chip.offsetWidth + pad > r.scrollLeft + r.clientWidth) r.scrollTo({ left: chip.offsetLeft + chip.offsetWidth + pad - r.clientWidth, behavior: calm() ? 'auto' : 'smooth' });
     }
-  }, [active, stuck, items, attr]);
+  }, [active, stuck, items, attr, still]);
   useEffect(() => {
     const r = row.current;
     if (!r) return;
@@ -211,7 +214,7 @@ export function ChipMenu({ attr, defs, first, label, className = 'mt-5' }: { att
     <nav ref={nav} hidden={items.length < 2} aria-label={label} data-job-menu={attr === 'jsec' ? '' : undefined} data-today-menu={attr === 'tsec' ? '' : undefined} data-stuck={stuck ? '1' : undefined} className={`jk-jobnav sticky z-20 -mx-4 ${className}`} style={{ top }}>
       <div className="relative">
         <div ref={row} onWheel={wheel} className="jk-jobnav-row flex gap-1.5 overflow-x-auto px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {stuck ? (
+          {stuck && !still ? (
             <button type="button" {...{ [`data-${attr}-chip`]: 'top' }} onClick={() => go('top')} className={`${chip} border-line-strong bg-mount font-semibold text-ink`} aria-label={`Back to the top: ${first}`}>
               <span aria-hidden>↑</span>
               <span className="max-w-[9ch] truncate">{first}</span>
