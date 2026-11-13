@@ -99,6 +99,7 @@ import { PersonalToday, PersonalView, usePersonalToday } from './personal';
 import { startChores } from './chores-store';
 import { startCosts, useCosts, useCostSync } from './costs-store';
 import { AssistantToday, AssistantView, assistantHomeRight, useAssistantPoll, type Go as AssistantGo } from './assistant';
+import { ReviewToday, ReviewView, reviewHomeRight, useReviewPoll } from './review';
 import { holdSnap, keepSnaps, MadeBox, madeHomeLine, madeRows, madeTodayLines, MadeView, MailReceiptBox, ReceiptView, SnapButton, snapLine } from './job-money';
 import { Sm8Link } from './kit-link';
 import { CworkshopView } from './cworkshop';
@@ -128,6 +129,7 @@ type Screen =
   | { name: 'concept'; id: string; mail?: string; job?: string } // Design with Claude (concepts.tsx); mail: started from that email; job: from that ServiceM8 job's screen
   | { name: 'claude' } // Claude credit: what's left and what used it (claude-credit.tsx)
   | { name: 'assistant' } // what the assistant found and did, every 30 minutes (assistant.tsx)
+  | { name: 'review'; day?: string } // the daily review of yesterday across every app (review.tsx)
   | { name: 'receipt'; id?: string; job?: string; mail?: string; typed?: boolean; snap?: boolean } // a receipt or a cost for a job (job-money.tsx): id changes one put in; mail: a supplier's email
   | { name: 'made' } // What jobs made: every finished job's price, costs and days (job-money.tsx), the timeline's third tab
   | { name: 'sm8'; id: string; from?: 'diary' | 'home' | 'customer' | 'timeline' | 'board' | 'wa' | 'design' | 'made' | 'kit'; client?: string; chat?: string; design?: string; kit?: string }
@@ -268,7 +270,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'personal', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-blog', 'stats-page', 'kit', 'social', 'quotes', 'quote', 'quote-prices', 'cworkshop', 'concept', 'claude', 'assistant', 'receipt', 'made'].includes(s.name)) return s;
+    if (s && ['home', 'personal', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-blog', 'stats-page', 'kit', 'social', 'quotes', 'quote', 'quote-prices', 'cworkshop', 'concept', 'claude', 'assistant', 'review', 'receipt', 'made'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -813,6 +815,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   );
   // what the assistant found and did (assistant.tsx), kept fresh while the app is open
   const assistant = useAssistantPoll(pin);
+  // the daily review (review.tsx), written each morning for yesterday
+  const review = useReviewPoll(pin);
   const cur = screen.name === 'sm8' ? findJob(screen.id) : undefined;
   // a snapshot of each finished job, so What jobs made still counts it after ServiceM8's 30 days (job-money.tsx)
   const costSync = useCostSync();
@@ -1157,6 +1161,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               <Home
                 assistant={<AssistantToday a={assistant} go={assistantGo} onOpen={() => go({ name: 'assistant' })} />}
                 assistantRight={assistantHomeRight(assistant)}
+                review={<ReviewToday r={review} onOpen={() => go({ name: 'review' })} />}
+                reviewRight={reviewHomeRight(review)}
                 jobs={jobs.filter((j) => j.kind !== 'design')}
                 items={items}
                 done={done}
@@ -1321,6 +1327,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               <ClaudeCreditView />
             ) : screen.name === 'assistant' ? (
               <AssistantView go={assistantGo} pin={pin} />
+            ) : screen.name === 'review' ? (
+              <ReviewView pin={pin} day={screen.day} />
             ) : screen.name === 'receipt' ? (
               <ReceiptView
                 key={`${screen.id ?? ''}${screen.job ?? ''}${screen.mail ?? ''}${screen.typed ? 't' : ''}`}
@@ -1919,6 +1927,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         social: newComments(social).length,
         personal: personalNow.due.length,
         assistant: assistant ? assistant.items.filter((r) => r.at > assistant.seen).length : 0,
+        review: (review?.days.find((d) => d.data?.review?.headline)?.data.review?.apps ?? []).flatMap((a) => a.ideas).filter((i) => !review?.marks?.[i.id]).length,
       }
     : {};
   return (
@@ -2118,6 +2127,8 @@ function useStandalone() {
 function Home({
   assistant,
   assistantRight,
+  review,
+  reviewRight,
   jobs,
   items,
   done,
@@ -2162,6 +2173,8 @@ function Home({
 }: {
   assistant: React.ReactNode; // what the assistant found since Raf last looked (assistant.tsx)
   assistantRight?: string;
+  review: React.ReactNode; // yesterday's daily review (review.tsx)
+  reviewRight?: string;
   jobs: Job[];
   items: Item[];
   done: Done;
@@ -2279,6 +2292,15 @@ function Home({
           {assistantRight ? <span className="truncate font-mono text-[12.5px] text-muted">{assistantRight}</span> : null}
         </div>
         {assistant}
+      </section>
+
+      <section data-review-box className={`jk-band ${secClass('todo')} mt-5 rounded-sm border border-line-strong bg-mount`}>
+        <div className="jk-band-head flex h-11 items-center gap-2.5 px-4">
+          <Icon name="idea" className="h-5 w-5 shrink-0 jk-sec-ink" />
+          <h2 className="flex-1 font-mono text-[13px] font-semibold uppercase tracking-[0.08em] jk-sec-ink">Daily review</h2>
+          {reviewRight ? <span className="truncate font-mono text-[12.5px] text-muted">{reviewRight}</span> : null}
+        </div>
+        {review}
       </section>
 
       <div className="jk-home-bands">

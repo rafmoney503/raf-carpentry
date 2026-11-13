@@ -1,9 +1,16 @@
 /* Small line icons for the Job Kit's sections, drawn like the site's sketches (round ends, one weight), so each
    card on the Today screen and each line in the Today list shows where it goes. Decorative: the text says it. */
 
-export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note' | 'home' | 'quote' | 'steps' | 'history' | 'tablet' | 'house' | 'more' | 'swatch' | 'made' | 'receipt' | 'assistant';
+export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note' | 'home' | 'quote' | 'steps' | 'history' | 'tablet' | 'house' | 'more' | 'swatch' | 'made' | 'receipt' | 'assistant' | 'idea';
 
 const PATHS: Record<IconName, React.ReactNode> = {
+  // a light bulb: the daily review's ideas
+  idea: (
+    <>
+      <path d="M9 18h6M10 21h4" />
+      <path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1.1 1.3 1.1 2.2h5c0-.9.5-1.7 1.1-2.2A6 6 0 0 0 12 3z" />
+    </>
+  ),
   // a clock going round with a tick at its top: the assistant, checking every 30 minutes
   assistant: (
     <>
