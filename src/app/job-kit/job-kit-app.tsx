@@ -87,8 +87,9 @@ import { methodsFrom, sendPayment, type NewPayment } from './payments';
 import { emailPhotosToJob, flushNotes } from './job-notes';
 import { boardLine, buildBoard } from '@/lib/client-board';
 import { withoutGreeting } from '@/lib/whatsapp-chat';
-import { addSend, enquiryFromChat, WaChatView, waHomeLine, WaJobBox, WaList, waTodayLines } from './whatsapp';
-import { getWaFile as getWaFileBlob, pickedOf, pickedText, sendToJob, updateChat, useWaChats, waChat, type WaChat } from './wa-store';
+import { addSend, enquiryFromChat, needsYou, WaChatView, waHomeLine, WaJobBox, WaList, waTodayLines } from './whatsapp';
+import { getWaFile as getWaFileBlob, pickedOf, pickedText, pullLive, readWaiting, sendToJob, updateChat, useWaChats, waChat, type WaChat } from './wa-store';
+import { DESIGN_KINDS } from '@/lib/design-kinds';
 import type { Change } from '@/lib/job-timeline';
 import { ColourKey, KeyDots, secClass, secOfLine, secOfScreen, TintSwitch, useColourKey, useTint, type SecId } from './sections';
 import { ChipMenu, TODAY_SECS, type TodayKey } from './job-menu';
@@ -997,6 +998,32 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   // Customer designs not built yet: a built one is counted (and listed) as its finished job.
   const libraryOwn = library.filter((d) => !(d.job && models.some((m) => m.slug === d.job!.slug))).length;
   const waChats = useWaChats();
+  /* Live WhatsApp: what came in since the last pull, on open, when the app comes back, and every minute while it's
+     open; then the chats still waiting for Claude (wa-store.ts). */
+  useEffect(() => {
+    if (!pin) return;
+    const tick = () => void pullLive().then(() => readWaiting());
+    tick();
+    const t = setInterval(() => {
+      if (document.visibilityState === 'visible') tick();
+    }, 60000);
+    const vis = () => {
+      if (document.visibilityState === 'visible') tick();
+    };
+    document.addEventListener('visibilitychange', vis);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener('visibilitychange', vis);
+    };
+  }, [pin]);
+  /* Links for a live chat's reply: the 3D design made for them, then the 3D library. */
+  const waLinks = useCallback(
+    (c: WaChat) => {
+      const own = c.design && designs[c.design]?.code ? [{ label: 'Their 3D design', href: `https://www.rafcarpentry.com/d/${designs[c.design].code}` }] : [];
+      return [...own, { label: 'All 3D designs', href: 'https://www.rafcarpentry.com/designs' }, ...DESIGN_KINDS.slice(0, 5).map((k) => ({ label: k.short, href: `https://www.rafcarpentry.com/designs/${k.slug}` }))];
+    },
+    [designs],
+  );
 
   /* Off this phone and the computer (sync.ts; a device still sending a job's photos keeps it): the inbox and the website keep everything. */
   const removeJobs = useCallback(
@@ -1641,6 +1668,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                     go({ name: 'customer', id });
                   }}
                   onGone={() => go({ name: 'whatsapp' }, false)}
+                  links={waLinks(waChat(screen.id)!)}
                 />
               ) : (
                 <p className="pt-16 text-center font-mono text-[14px] text-faint">{waChats.length ? 'That chat isn’t on this phone any more.' : 'Opening the chat…'}</p>
@@ -1924,7 +1952,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
           madeTodayLines({ mails: inbox.mails, jobs: sm8.jobs, bookings: sm8.bookings ?? null, rate: pricesOf(quotes).dayRate }).length,
         inbox: freshUnread(inbox).length,
         quotes: readyCount(quotes, sm8, marks),
-        whatsapp: waChats.filter((c) => !c.sends.length).length,
+        whatsapp: waChats.filter((c) => (c.live ? needsYou(c) : !c.sends.length)).length,
         social: newComments(social).length,
         personal: personalNow.due.length,
         assistant: assistant ? assistant.items.filter((r) => r.at > assistant.seen).length : 0,

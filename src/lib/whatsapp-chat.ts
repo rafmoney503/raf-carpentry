@@ -20,6 +20,7 @@ export type WaMsg = {
   kind?: WaKind;
   omitted?: boolean; // a photo or file that wasn't in the export (exported without media, or too old)
   system?: boolean; // "Messages and calls are end-to-end encrypted", "This message was deleted"
+  ts?: number; // live chats: the exact time (ms), so messages in the same minute keep their order
 };
 
 const MARKS = /[‎‏‪-‮⁦-⁩﻿]/g; // direction marks WhatsApp puts round names and files
@@ -185,7 +186,7 @@ export function lastStretch(msgs: WaMsg[], gapDays = 7): number {
 export function mergeMsgs(old: WaMsg[], fresh: WaMsg[]): { msgs: WaMsg[]; added: number } {
   const have = new Set(old.map((m) => m.id));
   const add = fresh.filter((m) => !have.has(m.id));
-  const msgs = [...old, ...add].sort((a, b) => a.at.localeCompare(b.at));
+  const msgs = [...old, ...add].sort((a, b) => a.at.localeCompare(b.at) || (a.ts ?? 0) - (b.ts ?? 0));
   return { msgs, added: add.length };
 }
 
