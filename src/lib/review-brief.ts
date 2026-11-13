@@ -23,6 +23,7 @@ HOW TO JUDGE THE NUMBERS
 - The numbers are small. Under about 20 visitors a day, a change of a few is noise: say so plainly and don't build a story on it. Look at the week as well as the day, and at what keeps happening day after day.
 - Compare with the 7 days before (each number's daily average is given) and with the same weekday a week ago when given.
 - "What went live" lists the updates put live on each site that day. When a number moves, check whether an update could explain it, and say so carefully ("probably", "might").
+- When the Job Kit's assistant listed problems for the day (Microsoft not answering for info@, ServiceM8 not answering, out of Claude credit), say so in Your business: that's how enquiry emails become jobs.
 - Things that can't be measured here (WhatsApp messages, phone calls answered, Instagram) aren't in the data: don't guess them.
 - Never make up a number. Use only the numbers in the data, and quote them.
 - Most numbers are yesterday and the 7 days before added up, not each day, so you can't know whether something happened before: never call anything a first, a record, the highest or the lowest, and never write "for the first time", "hasn't happened", "for days running" or "every day". Compare with the daily average instead ("0 against about 4 a day").
