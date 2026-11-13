@@ -24,6 +24,7 @@ export type ReviewSite = {
   extras: { key: string; label: string; visitors: number; before: number | null }[];
   deploys: { at: number; message: string; state: string }[];
   up: { ok: boolean; status: number; ms: number } | null;
+  why?: string; // what Vercel said when it couldn't be read
 };
 export type ReviewDayData = { day: string; vercel: boolean; sites: ReviewSite[] };
 
@@ -67,10 +68,16 @@ async function siteDay(s: Site, day: string, vercel: boolean): Promise<ReviewSit
   const deploysP = v(() => deploysBetween(s.project, t0, t1)).catch(() => []);
 
   let dayRows: Row[];
+  const days = () => v(() => aggregate(s.project, 'day', utc(addDays(day, -7)), utc(addDays(day, 1)), { limit: 20 }));
   try {
-    dayRows = await v(() => aggregate(s.project, 'day', utc(addDays(day, -7)), utc(addDays(day, 1)), { limit: 20 }));
+    dayRows = await days().catch(async (e) => {
+      if (e instanceof NotCounting) throw e;
+      await new Promise((r) => setTimeout(r, 2000)); // once more, a little later
+      return days();
+    });
   } catch (e) {
     const out = empty(s, e instanceof NotCounting ? 'not-counting' : 'error');
+    if (!(e instanceof NotCounting)) out.why = String((e as Error)?.message ?? e).slice(0, 160);
     out.deploys = (await deploysP).map((d) => ({ at: d.at, message: d.message, state: d.state }));
     out.up = await upP;
     return out;

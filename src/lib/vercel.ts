@@ -22,11 +22,19 @@ async function get(path: string, q: Record<string, string | number | undefined>)
   for (const [k, v] of Object.entries({ ...q, teamId: TEAM_ID })) if (v !== undefined) url.searchParams.set(k, String(v));
   let last: unknown;
   for (let i = 0; i < 3; i++) {
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${process.env.VERCEL_ACCESS_TOKEN ?? ''}` },
-      cache: 'no-store',
-      signal: AbortSignal.timeout(12000),
-    });
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        headers: { Authorization: `Bearer ${process.env.VERCEL_ACCESS_TOKEN ?? ''}` },
+        cache: 'no-store',
+        signal: AbortSignal.timeout(12000),
+      });
+    } catch (e) {
+      // a timeout or a dropped connection: try again like a busy answer
+      last = new VercelError(0, 'network', (e as Error)?.name === 'TimeoutError' ? 'Vercel didn’t answer in time' : 'Vercel couldn’t be reached');
+      await new Promise((r) => setTimeout(r, 600 * (i + 1)));
+      continue;
+    }
     if (res.ok) return res.json();
     let body: { error?: { code?: string; message?: string } } = {};
     try {
