@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
 import { BUILD_IT_IN_3D_URL, PHONE_DISPLAY, PHONE_HREF, QUOTE_HREF } from '@/lib/site';
 import type { MenuPanel } from '@/lib/menu-panels';
@@ -13,6 +13,8 @@ import SiteSearch from './SiteSearch';
 import PullSearch from './PullSearch';
 import { MiniLevel } from './ScrollLevel';
 import { getDock, getUndocked, subscribeDock } from '@/lib/scroll-level';
+import MiniRaf from './MiniRaf';
+import { MINI_RAF_MS, MINI_RAF_NAME_BACK_MS, nextMiniRafRound } from '@/lib/mini-raf';
 
 /* Phone menu lines with a mini icon, under the wardrobe planner's picture */
 const MINI: Record<string, MiniIconKind> = { '/drawings': 'drawings', '/tools/calculator': 'calculator', [BUILD_IT_IN_3D_URL]: 'builditin3d' };
@@ -59,6 +61,35 @@ export default function Navbar({ menu = {}, barQuote = false }: { menu?: Record<
     return () => io.disconnect();
   }, []);
   const docked = level.present ? level.docked : scrolled;
+  // Mini Raf (src/components/MiniRaf.tsx): one round in the name's place each time a page opens, the next piece each
+  // page; tapping the R on the home page plays the next one. While it plays it keeps the name's place, even when the
+  // spirit level would dock there; the level comes in after it. Not for anyone who asked for less motion, not while
+  // the tab is hidden (it waits until it shows), and not where the name itself makes way (under 350 px wide).
+  const [raf, setRaf] = useState<{ round: number; ending: boolean } | null>(null);
+  const barQuoteNow = useRef(barQuote);
+  useEffect(() => {
+    barQuoteNow.current = barQuote;
+  }, [barQuote]);
+  const playRaf = useCallback(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!barQuoteNow.current && window.matchMedia('(max-width: 349px)').matches) return;
+    setRaf({ round: nextMiniRafRound(), ending: false });
+  }, []);
+  useEffect(() => {
+    // The next frame: the page has drawn, and a tab opened in the background waits until it is looked at.
+    const id = requestAnimationFrame(playRaf);
+    return () => cancelAnimationFrame(id);
+  }, [pathname, playRaf]);
+  const rafRound = raf?.round;
+  useEffect(() => {
+    if (rafRound === undefined) return;
+    const back = window.setTimeout(() => setRaf((r) => (r && r.round === rafRound ? { ...r, ending: true } : r)), MINI_RAF_NAME_BACK_MS);
+    const done = window.setTimeout(() => setRaf((r) => (r && r.round === rafRound ? null : r)), MINI_RAF_MS);
+    return () => {
+      window.clearTimeout(back);
+      window.clearTimeout(done);
+    };
+  }, [rafRound]);
   const openTimer = useRef(0);
   const closeTimer = useRef(0);
   const show = (href: string, now = false) => {
@@ -131,15 +162,37 @@ export default function Navbar({ menu = {}, barQuote = false }: { menu?: Record<
       }}
     >
       <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-3 px-5 max-[379px]:gap-2 md:h-[72px] md:gap-8 md:px-10 lg:gap-4 xl:gap-8">
-        <Link href="/" className="flex items-center gap-3 whitespace-nowrap text-[17px] font-semibold tracking-tight max-[379px]:gap-2 max-[379px]:text-[16px]">
+        <Link
+          href="/"
+          className="flex items-center gap-3 whitespace-nowrap text-[17px] font-semibold tracking-tight max-[379px]:gap-2 max-[379px]:text-[16px]"
+          onClick={() => {
+            // Already home: the R plays the next piece (anywhere else the new page plays one anyway).
+            if (pathname === '/') playRaf();
+          }}
+        >
           <span className="h-9 w-9 flex-none overflow-hidden rounded-full bg-[#f4f1ea] ring-1 ring-line-strong">
             <Image src="/images/r-logo-final.png" alt="" width={36} height={36} className="h-full w-full object-cover" />
           </span>
           {/* Very narrow phones (under 350 px) show the R only, so the header never runs off the side. While the small
-              spirit level is docked the name makes way for it at every width (the menu bar is full from 1024 px). */}
-          <span className={docked ? 'sr-only' : barQuote ? '' : 'max-[349px]:sr-only'}>Raf Carpentry</span>
+              spirit level is docked the name makes way for it at every width (the menu bar is full from 1024 px).
+              While Mini Raf plays, the name keeps its place, see-through, and the scene sits over it. */}
+          <span className={raf ? 'relative' : docked ? 'sr-only' : barQuote ? '' : 'max-[349px]:sr-only'}>
+            <span
+              data-name
+              className={raf ? `transition-opacity duration-300 ${raf.ending && !docked ? 'opacity-100' : 'opacity-0'}` : undefined}
+            >
+              Raf Carpentry
+            </span>
+            {raf ? (
+              <MiniRaf
+                key={raf.round}
+                round={raf.round}
+                className="absolute left-0 top-1/2 h-10 w-[120px] -translate-y-1/2 md:h-11 md:w-[132px] lg:max-xl:h-10 lg:max-xl:w-[120px]"
+              />
+            ) : null}
+          </span>
         </Link>
-        {docked ? <MiniLevel /> : null}
+        {docked && !raf ? <MiniLevel /> : null}
 
         <nav aria-label="Main" className="ml-auto hidden gap-1 lg:flex">
           {links.map((l) => (
