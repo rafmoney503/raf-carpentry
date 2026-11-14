@@ -20,14 +20,16 @@ export type Pack = {
   video: { src: string; secs: number; bytes: number; w: number; h: number };
   poster: string;
   carousel: { src: string; w: number; h: number }[];
-  captions: { instagram: string; tiktok: string; youtube: { title: string; description: string } };
+  captions: { instagram: string; tiktok: string; youtube: { title: string; description: string }; threads?: string };
   sound?: string;
 };
 
-type Where = 'reel' | 'carousel' | 'tiktok' | 'youtube';
+type Where = 'reel' | 'carousel' | 'tiktok' | 'youtube' | 'threads';
 type Posted = Record<string, Partial<Record<Where, string>>>;
-const WHERE: Where[] = ['reel', 'carousel', 'tiktok', 'youtube'];
-const SHORT: Record<Where, string> = { reel: 'Reel', carousel: 'Photos', tiktok: 'TikTok', youtube: 'YouTube' };
+const WHERE: Where[] = ['reel', 'carousel', 'tiktok', 'youtube', 'threads'];
+const SHORT: Record<Where, string> = { reel: 'Reel', carousel: 'Photos', tiktok: 'TikTok', youtube: 'YouTube', threads: 'Threads' };
+/* Threads only for packs that have a Threads post (since 14 Nov 2026). */
+const whereOf = (p: Pack) => WHERE.filter((w) => w !== 'threads' || Boolean(p.captions.threads));
 
 function readPosted(): Posted {
   try {
@@ -40,7 +42,7 @@ function readPosted(): Posted {
 /* How many packs are posted on all four, for the home screen's Posts card. */
 export const postedEverywhere = (packs: Pack[]) => {
   const posted = readPosted();
-  return packs.filter((p) => WHERE.every((w) => posted[p.slug]?.[w])).length;
+  return packs.filter((p) => whereOf(p).every((w) => posted[p.slug]?.[w])).length;
 };
 
 function usePosted() {
@@ -91,7 +93,7 @@ export function PostsList({ packs, onOpen }: { packs: Pack[]; onOpen: (slug: str
   const { posted } = usePosted();
   // Still to post first; the ones posted everywhere fold away into "Posted" at the bottom.
   const [todo, all] = useMemo(() => {
-    const left = (p: Pack) => WHERE.filter((w) => !posted[p.slug]?.[w]).length;
+    const left = (p: Pack) => whereOf(p).filter((w) => !posted[p.slug]?.[w]).length;
     return [packs.filter((p) => left(p) > 0), packs.filter((p) => left(p) === 0)];
   }, [packs, posted]);
   const [showPosted, setShowPosted] = useState(false);
@@ -104,7 +106,7 @@ export function PostsList({ packs, onOpen }: { packs: Pack[]; onOpen: (slug: str
           <span className="block truncate text-[16.5px] font-semibold leading-snug">{p.title}</span>
           <span className="block truncate text-[14.5px] text-muted">{p.place}</span>
           <span className="mt-2 flex flex-wrap gap-x-3 gap-y-1 font-mono text-[12px] text-faint">
-            {WHERE.map((w) => (
+            {whereOf(p).map((w) => (
               <span key={w} className="inline-flex items-center gap-1">
                 <Mark state={posted[p.slug]?.[w] ? 'sent' : 'waiting'} />
                 {SHORT[w]}
@@ -300,6 +302,19 @@ export function PostView({ pack }: { pack: Pack }) {
           steps={['Pick YouTube. Not in the list? Tap Save Video, then in YouTube tap +, then Short, pick it, and delete it from Photos after.', 'Tap Add sound and pick one from the list.', 'Paste the title in the title box and the rest in the description.']}
           tick="Short posted"
         />
+        {pack.captions.threads ? (
+          <Platform
+            title="Threads"
+            done={posted[pack.slug]?.threads}
+            onDone={() => toggle(pack.slug, 'threads')}
+            button={`Share ${Math.min(pack.carousel.length, 10)} photos`}
+            disabled={!got.photos}
+            onShare={() => share(got.photos?.slice(0, 10), pack.captions.threads ?? '', 'threads')}
+            caption={pack.captions.threads}
+            steps={['Pick Threads.', 'Paste the post. Links work on Threads, so the guide’s link goes in as it is.', 'Post it.']}
+            tick="Threads posted"
+          />
+        ) : null}
       </div>
 
       <a href={pack.job} className="link-more mt-8 text-[15px]">

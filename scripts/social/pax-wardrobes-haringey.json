@@ -1,0 +1,69 @@
+{
+  "slug": "pax-wardrobes-haringey",
+  "title": "IKEA PAX, built in",
+  "place": "Haringey, London",
+  "reel": [
+    {
+      "photo": "cover.jpg",
+      "secs": 2.6,
+      "move": "in",
+      "title": true
+    },
+    {
+      "photo": "s1.jpg",
+      "secs": 0.9,
+      "label": "Frames up, boxes on top"
+    },
+    {
+      "photo": "s2.jpg",
+      "secs": 0.9,
+      "label": "End panel to the ceiling"
+    },
+    {
+      "photo": "s4.jpg",
+      "secs": 0.9,
+      "label": "Painted as one, hinge plates on"
+    },
+    {
+      "photo": "g1.jpg",
+      "secs": 1.6,
+      "label": "Doors on, every joint in line"
+    },
+    {
+      "mounted": "src:guide-page.jpg",
+      "secs": 2.6,
+      "label": "My guide: link in bio"
+    },
+    {
+      "end": true,
+      "secs": 2.4
+    }
+  ],
+  "carousel": [
+    "cover.jpg",
+    {
+      "photo": "s1.jpg",
+      "label": "Frames up, boxes on top"
+    },
+    {
+      "photo": "s2.jpg",
+      "label": "End panel to the ceiling"
+    },
+    {
+      "photo": "s4.jpg",
+      "label": "Hinge plates on"
+    },
+    "g1.jpg",
+    "g2.jpg",
+    "src:guide-slide.jpg"
+  ],
+  "captions": {
+    "instagram": "A full wall of IKEA PAX in Haringey, made to look built in.\n\nThree PAX frames, an MDF box on top of each up to the ceiling, an end panel from the floor to the ceiling and twelve panelled doors. The joints in the top doors line up with the joints below, so the lines run straight up the wall.\n\nWant to do yours yourself? My 22-page guide, IKEA PAX, built in, has the sums, the cut list and every step. Link in bio.\n\n#ikeapax #paxhack #ikeahack #builtinwardrobe #fittedwardrobes #wardrobe #carpentry #londoncarpenter #haringey",
+    "tiktok": "IKEA PAX made to look built in: boxes to the ceiling, an end panel and doors that line up top and bottom. Haringey, London. My guide is in my bio.\n\n#ikeapax #paxhack #ikeahack #builtinwardrobe #carpentry",
+    "youtube": {
+      "title": "IKEA PAX made to look built in | Haringey, London",
+      "description": "Three IKEA PAX frames, MDF boxes up to the ceiling, an end panel and twelve doors that line up top and bottom.\n\nThe guide to doing it yourself: https://www.rafcarpentry.com/pax-guide\nThis job: https://www.rafcarpentry.com/portfolio/pax-wardrobes-haringey\n\n#shorts #ikeapax #ikeahack"
+    },
+    "threads": "Three IKEA PAX frames, an MDF box on each up to the ceiling, an end panel and twelve doors that line up top and bottom. That's what makes flat-pack read as built in.\n\nI wrote down exactly how I do it, the sums and a cut list included: https://www.rafcarpentry.com/pax-guide"
+  }
+}

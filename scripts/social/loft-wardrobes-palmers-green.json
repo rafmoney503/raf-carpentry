@@ -1,0 +1,69 @@
+{
+  "slug": "loft-wardrobes-palmers-green",
+  "title": "PAX in a loft",
+  "place": "Palmers Green, London",
+  "reel": [
+    {
+      "photo": "cover.jpg",
+      "secs": 2.6,
+      "move": "in",
+      "title": true
+    },
+    {
+      "photo": "s1.jpg",
+      "secs": 0.9,
+      "label": "PAX frames in"
+    },
+    {
+      "photo": "s3.jpg",
+      "secs": 0.9,
+      "label": "Both sides"
+    },
+    {
+      "photo": "s4.jpg",
+      "secs": 1.0,
+      "label": "Boxed in with MDF"
+    },
+    {
+      "photo": "g5.jpg",
+      "secs": 1.3,
+      "label": "Inside: all IKEA"
+    },
+    {
+      "mounted": "src:guide-page.jpg",
+      "secs": 2.6,
+      "label": "My guide: link in bio"
+    },
+    {
+      "end": true,
+      "secs": 2.4
+    }
+  ],
+  "carousel": [
+    "cover.jpg",
+    {
+      "photo": "s1.jpg",
+      "label": "PAX frames in"
+    },
+    {
+      "photo": "s3.jpg",
+      "label": "Both sides"
+    },
+    {
+      "photo": "s4.jpg",
+      "label": "Boxed in with MDF"
+    },
+    "g5.jpg",
+    "g6.jpg",
+    "src:guide-slide.jpg"
+  ],
+  "captions": {
+    "instagram": "Two wardrobes in a loft in Palmers Green: IKEA PAX inside, MDF outside.\n\nThe frames went in first, then MDF panels closed the gaps to the ceiling and the walls, sloping wall included, with full-height doors across the front. Open them and it's all IKEA: easy to get parts for and easy to change later.\n\nMy 22-page guide, IKEA PAX, built in, has the sums, the cut list and every step. Link in bio.\n\n#ikeapax #paxhack #ikeahack #builtinwardrobe #fittedwardrobes #wardrobe #carpentry #londoncarpenter #loft #palmersgreen",
+    "tiktok": "IKEA PAX inside, MDF outside: two built-in wardrobes in a loft. Palmers Green, London. My guide is in my bio.\n\n#ikeapax #paxhack #ikeahack #builtinwardrobe #carpentry #loft",
+    "youtube": {
+      "title": "Built-in loft wardrobes from IKEA PAX | Palmers Green, London",
+      "description": "IKEA PAX frames inside, MDF panels and full-height doors outside.\n\nThe guide to doing it yourself: https://www.rafcarpentry.com/pax-guide\nThis job: https://www.rafcarpentry.com/portfolio/loft-wardrobes-palmers-green\n\n#shorts #ikeapax #ikeahack"
+    },
+    "threads": "Doing IKEA PAX in a loft? Measure the ceiling at the front and at the back, and leave room for the boxing in: the frames aren't the finished size.\n\nEverything I check before PAX goes in, in one guide: https://www.rafcarpentry.com/pax-guide"
+  }
+}

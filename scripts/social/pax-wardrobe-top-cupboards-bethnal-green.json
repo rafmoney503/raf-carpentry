@@ -1,0 +1,74 @@
+{
+  "slug": "pax-wardrobe-top-cupboards-bethnal-green",
+  "title": "PAX to a 3.4 m ceiling",
+  "place": "Bethnal Green, London",
+  "reel": [
+    {
+      "wipe": [
+        "before-b2bb5c5e.jpg",
+        "cover-2d990af7.jpg"
+      ],
+      "secs": 3.4,
+      "title": true
+    },
+    {
+      "photo": "step-0f204141.jpg",
+      "secs": 0.9,
+      "label": "A level base first"
+    },
+    {
+      "photo": "step-6086b190.jpg",
+      "secs": 0.9,
+      "label": "PAX frames on the base"
+    },
+    {
+      "photo": "step-72188025.jpg",
+      "secs": 1.0,
+      "label": "MDF cupboards above"
+    },
+    {
+      "photo": "g-a135ded2.jpg",
+      "secs": 1.2,
+      "label": "Rails, baskets, cupboards"
+    },
+    {
+      "mounted": "src:guide-page.jpg",
+      "secs": 2.6,
+      "label": "My guide: link in bio"
+    },
+    {
+      "end": true,
+      "secs": 2.4
+    }
+  ],
+  "carousel": [
+    {
+      "photo": "before-b2bb5c5e.jpg",
+      "label": "Before"
+    },
+    {
+      "photo": "step-0f204141.jpg",
+      "label": "A level base first"
+    },
+    {
+      "photo": "step-6086b190.jpg",
+      "label": "PAX frames on the base"
+    },
+    {
+      "photo": "step-72188025.jpg",
+      "label": "MDF cupboards above"
+    },
+    "cover-2d990af7.jpg",
+    "g-a135ded2.jpg",
+    "src:guide-slide.jpg"
+  ],
+  "captions": {
+    "instagram": "A 3.4 metre ceiling in Bethnal Green. IKEA PAX with mirror doors below, MDF cupboards across the whole wall above, even over the door.\n\nA level timber base went in first, then a 100 and a 50 cm PAX frame on it, then the cupboards, the same widths as the frames so every joint lines up.\n\nMy 22-page guide, IKEA PAX, built in, has the sums, the cut list and every step. Link in bio.\n\n#ikeapax #paxhack #ikeahack #builtinwardrobe #fittedwardrobes #wardrobe #carpentry #londoncarpenter #mirrorwardrobe #bethnalgreen",
+    "tiktok": "IKEA PAX with mirror doors, MDF cupboards above up to a 3.4 m ceiling. Bethnal Green, London. My guide is in my bio.\n\n#ikeapax #paxhack #ikeahack #builtinwardrobe #carpentry",
+    "youtube": {
+      "title": "IKEA PAX with cupboards to a 3.4 m ceiling | Bethnal Green, London",
+      "description": "A level base, PAX frames with mirror doors, and MDF cupboards across the wall above.\n\nThe guide to doing it yourself: https://www.rafcarpentry.com/pax-guide\nThis job: https://www.rafcarpentry.com/portfolio/pax-wardrobe-top-cupboards-bethnal-green\n\n#shorts #ikeapax #ikeahack"
+    },
+    "threads": "High ceiling over an IKEA PAX? Don't leave a metre of empty wall. Cupboards above, the same widths as the frames below, so every joint lines up floor to ceiling.\n\nThe sums for any ceiling are in my guide: https://www.rafcarpentry.com/pax-guide"
+  }
+}

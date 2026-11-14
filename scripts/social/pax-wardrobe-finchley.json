@@ -1,0 +1,69 @@
+{
+  "slug": "pax-wardrobe-finchley",
+  "title": "Same PAX, built in",
+  "place": "Finchley, London",
+  "reel": [
+    {
+      "wipe": [
+        "s3.jpg",
+        "s4.jpg"
+      ],
+      "secs": 3.4,
+      "title": true
+    },
+    {
+      "photo": "s1.jpg",
+      "secs": 1.0,
+      "label": "Filler held in place"
+    },
+    {
+      "photo": "s2.jpg",
+      "secs": 1.0,
+      "label": "Scribed to the wall"
+    },
+    {
+      "photo": "g3.jpg",
+      "secs": 1.3,
+      "label": "Inside, it's still PAX"
+    },
+    {
+      "mounted": "src:guide-page.jpg",
+      "secs": 2.6,
+      "label": "My guide: link in bio"
+    },
+    {
+      "end": true,
+      "secs": 2.4
+    }
+  ],
+  "carousel": [
+    {
+      "photo": "s3.jpg",
+      "label": "Before the fillers"
+    },
+    {
+      "photo": "s4.jpg",
+      "label": "After"
+    },
+    {
+      "photo": "s1.jpg",
+      "label": "Filler held in place"
+    },
+    {
+      "photo": "s2.jpg",
+      "label": "Scribed to the wall"
+    },
+    "g3.jpg",
+    "cover.jpg",
+    "src:guide-slide.jpg"
+  ],
+  "captions": {
+    "instagram": "Same frames. Same doors. The only difference is the fillers.\n\nIKEA PAX comes in set sizes and rooms don't, so there's always a gap to the ceiling and a strip of wall at the end. Close them with strips scribed to the wall and ceiling, and it reads as built in. Finchley, London.\n\nMy 22-page guide, IKEA PAX, built in, has the sums, the cut list and every step. Link in bio.\n\n#ikeapax #paxhack #ikeahack #builtinwardrobe #fittedwardrobes #wardrobe #carpentry #londoncarpenter #finchley",
+    "tiktok": "Before and after the fillers on an IKEA PAX wardrobe. Same frames, same doors. Finchley, London. My guide is in my bio.\n\n#ikeapax #paxhack #ikeahack #builtinwardrobe #carpentry",
+    "youtube": {
+      "title": "IKEA PAX before and after the fillers | Finchley, London",
+      "description": "Same frames, same doors. Fillers scribed to the wall and ceiling are what make IKEA PAX look built in.\n\nThe guide to doing it yourself: https://www.rafcarpentry.com/pax-guide\nThis job: https://www.rafcarpentry.com/portfolio/pax-wardrobe-finchley\n\n#shorts #ikeapax #ikeahack"
+    },
+    "threads": "Same IKEA PAX frames, same doors, before and after. The only thing that changed is two strips: one to the ceiling, one at the wall, both scribed with a school compass.\n\nThe whole job written down, sums and cut list included: https://www.rafcarpentry.com/pax-guide"
+  }
+}
