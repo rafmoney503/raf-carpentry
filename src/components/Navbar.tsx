@@ -57,7 +57,7 @@ export default function Navbar({ menu = {}, barQuote = false }: { menu?: Record<
   useEffect(() => {
     const el = topMark.current;
     if (!el) return;
-    const io = new IntersectionObserver(([entry]) => setScrolled(!entry.isIntersecting));
+    const io = new IntersectionObserver((es) => setScrolled(!es[es.length - 1].isIntersecting));
     io.observe(el);
     return () => io.disconnect();
   }, []);

@@ -116,7 +116,8 @@ export default function JobsNear({ jobs, areaLinks = {}, heading = 'h3', bars = 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let first = true;
     const io = new IntersectionObserver(
-      ([e]) => {
+      (es) => {
+        const e = es[es.length - 1]; // the newest: several can come together on a fast scroll
         if (first) {
           first = false;
           if (e.intersectionRatio < 0.3) setGrow('no');

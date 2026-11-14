@@ -37,7 +37,7 @@
 .home .hero-link:hover .hero-cap > span:first-child { color: var(--color-ink); }
 
 /* Latest jobs: the four newest job pages */
-.home .latest { padding-top: 0; }
+.home .sec.latest { padding-top: 72px; padding-bottom: 0; } /* straight after the facts since 14 Nov 2026 */
 .home .latest-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px 32px; margin-bottom: 40px; padding-top: 56px; border-top: 1px solid var(--color-line); }
 .home .latest-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap); }
 .home .latest-card { display: block; }
@@ -56,6 +56,10 @@
 .home .fact-v { font-family: var(--font-display); font-weight: 620; font-size: 50px; line-height: 1; letter-spacing: -0.03em; }
 .home .fact-v small { font-family: var(--font-mono); font-size: 18px; font-weight: 500; letter-spacing: 0; margin-left: 6px; color: var(--color-muted); }
 .home .fact-l { margin-top: 12px; font-size: 15px; line-height: 1.5; color: var(--color-muted); max-width: 24ch; }
+
+/* Jobs near you: its own section after the reviews (14 Nov 2026) */
+.home .sec.near-sec { padding-top: 0; padding-bottom: 0; }
+.home .near-in { border-top: 1px solid var(--color-line); padding-top: 56px; }
 
 /* Sections */
 .home .sec { padding-block: 120px; }
@@ -85,7 +89,7 @@
 /* Process: src/components/build-story.css */
 
 /* CabinetOS */
-.home .app { overflow: hidden; }
+.home .app { overflow: hidden; border-top: 1px solid var(--color-line); } /* after the quote panel since 14 Nov 2026 */
 .home .app .grid12 { align-items: center; row-gap: 48px; }
 .home .app-copy { grid-column: 1 / span 5; }
 .home .app-copy .kicker { margin-bottom: 20px; }
@@ -198,7 +202,10 @@
   .home .tile-a .photo { min-height: 0; aspect-ratio: 4 / 5; }
   .home .tile h3 { font-size: 23px; margin-top: 16px; }
   .home .build-foot { margin-top: 36px; }
-  .home .latest-head { padding-top: 52px; margin-bottom: 28px; }
+  .home .sec.latest { padding-top: 48px; padding-bottom: 0; }
+  .home .latest-head { padding-top: 44px; margin-bottom: 28px; }
+  .home .sec.near-sec { padding-top: 0; padding-bottom: 0; }
+  .home .near-in { padding-top: 48px; }
   .home .latest-row { grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 68%; overflow-x: auto; scroll-snap-type: x mandatory; margin-inline: -20px; padding-inline: 20px; scroll-padding-inline: 20px; padding-bottom: 8px; scrollbar-width: none; }
   .home .latest-row > li { scroll-snap-align: start; }
   .home .latest-card h3 { font-size: 18px; }

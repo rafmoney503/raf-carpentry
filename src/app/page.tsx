@@ -198,26 +198,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="sec" id="work">
-        <div className="wrap">
-          <div className="sec-head reveal">
-            <h2 className="h2">{d.buildHeading}</h2>
-            <p className="lede">{d.buildIntro}</p>
-          </div>
-          {/* On a computer the three cards stack under the menu bar as the page scrolls (ServiceStack). */}
-          <ServiceStack items={d.services.slice(0, 3)} />
-          <div className="build-foot">
-            <Link className="link-more" href="/services">
-              Everything I build <span aria-hidden="true">→</span>
-            </Link>
-            <Link className="link-more" href="/portfolio">
-              {d.secondaryCtaLabel} <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* The newest jobs, straight from the job pages: changes by itself when a job goes up */}
+      {/* The newest jobs, straight from the job pages: changes by itself when a job goes up.
+          Straight after the facts since 14 Nov 2026: real visitors on phones read this part most
+          (the What I build cards used to come first and pushed it 2 screens down). */}
       {latest.length ? (
         <section className="sec latest" id="latest">
           <div className="wrap">
@@ -240,18 +223,50 @@ export default function HomePage() {
                 </li>
               ))}
             </ul>
-            {/* Jobs near you: a postcode shows the nearest jobs with rough miles */}
-            <div className="mt-16 border-t border-line pt-12 md:mt-20 md:pt-14">
-              <JobsNear jobs={getNearJobs()} areaLinks={areaPageLinks()} bars />
-              <p className="mt-8">
-                <Link href="/areas" className="link-more text-[15px]">
-                  Everywhere I&apos;ve worked <span aria-hidden="true">→</span>
-                </Link>
-              </p>
-            </div>
           </div>
         </section>
       ) : null}
+
+      {/* What customers say, straight after the jobs (it was 12 screens down a phone, under the build story,
+          and no visitor on a phone had reached it in 30 days). */}
+      <section className={`sec reviews${hasReviews ? '' : ' sec-tight'}`} id="reviews">
+        <div className="wrap">
+          <Reviews max={6} homeHeading ticker />
+        </div>
+      </section>
+
+      {/* Jobs near you: a postcode shows the nearest jobs with rough miles */}
+      <section className="sec near-sec">
+        <div className="wrap">
+          <div className="near-in">
+            <JobsNear jobs={getNearJobs()} areaLinks={areaPageLinks()} bars />
+            <p className="mt-8">
+              <Link href="/areas" className="link-more text-[15px]">
+                Everywhere I&apos;ve worked <span aria-hidden="true">→</span>
+              </Link>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="sec" id="work">
+        <div className="wrap">
+          <div className="sec-head reveal">
+            <h2 className="h2">{d.buildHeading}</h2>
+            <p className="lede">{d.buildIntro}</p>
+          </div>
+          {/* On a computer the three cards stack under the menu bar as the page scrolls (ServiceStack). */}
+          <ServiceStack items={d.services.slice(0, 3)} />
+          <div className="build-foot">
+            <Link className="link-more" href="/services">
+              Everything I build <span aria-hidden="true">→</span>
+            </Link>
+            <Link className="link-more" href="/portfolio">
+              {d.secondaryCtaLabel} <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* How I work: one wardrobe goes through the four steps in 3D while the page scrolls */}
       <BuildStory
@@ -272,9 +287,40 @@ export default function HomePage() {
         </Link>
       </BuildStory>
 
-      <section className={`sec reviews${hasReviews ? '' : ' sec-tight'}`} id="reviews">
-        <div className="wrap">
-          <Reviews max={6} homeHeading ticker />
+      {/* The quote panel straight after how I work; the CabinetOS band and the blog (more for carpenters) come after it. */}
+      <section className="sec quote" id="quote">
+        <div className="wrap grid12">
+          <div className="quote-copy reveal">
+            <h2 className="h2">{d.quoteHeading}</h2>
+            <p className="lede">{d.quoteBody}</p>
+            <div className="direct">
+              <div>
+                <p className="direct-l">Call or text</p>
+                <a className="direct-v" href={phoneHref}>{d.phone}</a>
+              </div>
+              <div>
+                <p className="direct-l">WhatsApp</p>
+                <a className="direct-v direct-wa" href={whatsappUrl(whatsappText('/'))} target="_blank" rel="noopener">
+                  <SocialIcon network="whatsapp" size={24} className="text-whatsapp" />
+                  Message me
+                </a>
+              </div>
+              <div>
+                <p className="direct-l">Email</p>
+                <a className="direct-v" href={`mailto:${d.email}`}>{d.email}</a>
+              </div>
+            </div>
+          </div>
+          <div className="quote-form reveal">
+            <QuoteCta
+              heading={d.quotePanelHeading}
+              body={d.quotePanelBody}
+              steps={d.quoteNextSteps}
+              buttonLabel={d.primaryCtaLabel}
+              note={d.quoteNote}
+              quoteOnly
+            />
+          </div>
         </div>
       </section>
 
@@ -323,42 +369,6 @@ export default function HomePage() {
           </div>
         </section>
       )}
-
-      <section className="sec quote" id="quote">
-        <div className="wrap grid12">
-          <div className="quote-copy reveal">
-            <h2 className="h2">{d.quoteHeading}</h2>
-            <p className="lede">{d.quoteBody}</p>
-            <div className="direct">
-              <div>
-                <p className="direct-l">Call or text</p>
-                <a className="direct-v" href={phoneHref}>{d.phone}</a>
-              </div>
-              <div>
-                <p className="direct-l">WhatsApp</p>
-                <a className="direct-v direct-wa" href={whatsappUrl(whatsappText('/'))} target="_blank" rel="noopener">
-                  <SocialIcon network="whatsapp" size={24} className="text-whatsapp" />
-                  Message me
-                </a>
-              </div>
-              <div>
-                <p className="direct-l">Email</p>
-                <a className="direct-v" href={`mailto:${d.email}`}>{d.email}</a>
-              </div>
-            </div>
-          </div>
-          <div className="quote-form reveal">
-            <QuoteCta
-              heading={d.quotePanelHeading}
-              body={d.quotePanelBody}
-              steps={d.quoteNextSteps}
-              buttonLabel={d.primaryCtaLabel}
-              note={d.quoteNote}
-              quoteOnly
-            />
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

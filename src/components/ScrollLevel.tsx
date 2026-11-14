@@ -44,7 +44,7 @@ export function HeroLevel({ className = '' }: { className?: string }) {
     if (!el) return;
     setDock({ present: true });
     const io = new IntersectionObserver(
-      ([entry]) => setDock({ docked: !entry.isIntersecting && entry.boundingClientRect.top < 80 }),
+      (es) => { const entry = es[es.length - 1]; setDock({ docked: !entry.isIntersecting && entry.boundingClientRect.top < 80 }); },
       { rootMargin: '-72px 0px 0px 0px' },
     );
     io.observe(el);

@@ -15,7 +15,8 @@ export default function ProjectVideo({ src, poster, label }: { src: string; post
     setReduce(rm);
     if (rm) return;
     const io = new IntersectionObserver(
-      ([entry]) => {
+      (es) => {
+        const entry = es[es.length - 1]; // the newest: several can come together on a fast scroll
         if (entry.isIntersecting) v.play().catch(() => {});
         else v.pause();
       },

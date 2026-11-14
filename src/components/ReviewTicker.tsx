@@ -63,7 +63,8 @@ export default function ReviewTicker({ items }: { items: TickerReview[] }) {
     const w = wrap.current;
     if (!w) return;
     const io = new IntersectionObserver(
-      ([e]) => {
+      (es) => {
+        const e = es[es.length - 1]; // the newest: several can come together on a fast scroll
         setLive(true); // the observer answers straight away: from then on the ticker runs
         onScreen.current = e.isIntersecting;
         if (e.isIntersecting && e.intersectionRatio >= 0.25) setSeen(true);

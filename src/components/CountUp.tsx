@@ -33,7 +33,8 @@ export default function CountUp({ value }: { value: string }) {
       raf = requestAnimationFrame(step);
     };
     const io = new IntersectionObserver(
-      ([e]) => {
+      (es) => {
+        const e = es[es.length - 1]; // the newest: several can come together on a fast scroll
         if (first) {
           first = false;
           if (e.intersectionRatio < 0.6) show(0);

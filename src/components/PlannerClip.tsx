@@ -17,7 +17,8 @@ export default function PlannerClip({ mp4, webm, className = '' }: { mp4: string
     v.muted = true;
     let loaded = false;
     const io = new IntersectionObserver(
-      ([e]) => {
+      (es) => {
+        const e = es[es.length - 1]; // the newest: several can come together on a fast scroll
         if (e.isIntersecting) {
           if (!loaded) {
             loaded = true;

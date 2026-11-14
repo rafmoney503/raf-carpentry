@@ -25,7 +25,8 @@ export default function HeroDoors() {
       setState(s);
     };
     const io = new IntersectionObserver(
-      ([e]) => {
+      (es) => {
+        const e = es[es.length - 1]; // the newest: several can come together on a fast scroll
         if (first) {
           first = false;
           if (e.intersectionRatio < 0.3) set('shut');
