@@ -9,6 +9,6 @@ export default function Image() {
     kicker: 'A fitter’s guide · PDF',
     title: 'IKEA PAX, built in.',
     sub: 'Make flat-pack PAX look made to measure. The sums done.',
-    photo: '/images/pax-guide/og-cover-e693a25e.jpg',
+    photo: '/images/pax-guide/og-cover-f22e90db.jpg',
   });
 }

@@ -23,7 +23,7 @@ export const metadata: Metadata = pageMeta({
 });
 
 const PREVIEW = [
-  { src: '/images/pax-guide/page-01-60ed4875.webp', alt: 'The guide cover: a wall of built-in PAX wardrobes' },
+  { src: '/images/pax-guide/page-01-7f0e833a.webp', alt: 'The guide cover: PAX frames drawn with the made-to-measure fillers and top boxes in blue' },
   { src: '/images/pax-guide/page-04-589aa262.webp', alt: 'Page 4: a drawing of the example wall with every part marked' },
   { src: '/images/pax-guide/page-08-5a2c73de.webp', alt: 'Page 8: the two PAX heights and what goes above each' },
   { src: '/images/pax-guide/page-17-a8290f0e.webp', alt: 'Page 17: scribing fillers with a school compass, and the end panels' },
@@ -99,7 +99,7 @@ export default function PaxGuidePage() {
     '@type': 'Product',
     name: 'IKEA PAX, built in: the fitting guide',
     description: `A ${PAGES}-page PDF guide to making IKEA PAX wardrobes look built in.`,
-    image: `${SITE_URL}/images/pax-guide/page-01-60ed4875.webp`,
+    image: `${SITE_URL}/images/pax-guide/page-01-7f0e833a.webp`,
     brand: { '@type': 'Brand', name: 'Raf Carpentry' },
     ...(BUY ? { offers: { '@type': 'Offer', price: PRICE.replace(/[^0-9.]/g, ''), priceCurrency: 'GBP', availability: 'https://schema.org/InStock', url: `${SITE_URL}/pax-guide` } } : {}),
   };
