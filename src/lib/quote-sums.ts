@@ -220,6 +220,7 @@ export type QuoteEdits = {
   text?: string; // the message as he changed it by hand
   sentAt?: number;
   sentHow?: 'email' | 'whatsapp' | 'copy' | 'box';
+  wa?: { id: string; at: number; to: string; hash: string }; // sent on WhatsApp from the Job Kit: the message, when, to which number, and which words
   note?: string; // his instructions for this quote only (saved even before it's read again; '' = cleared)
 };
 

@@ -783,6 +783,22 @@ export async function sendLive(id: string, body: { text: string } | { template: 
   return null;
 }
 
+/* Words to a number straight from the Job Kit (a quote from its screen), not from an open chat: the chat on this
+   device gets the message too. */
+export async function sendLiveTo(wa: string, text: string): Promise<{ msg: LiveRow } | { error: string; detail?: string }> {
+  const r = await ask<{ ok: true; msg: LiveRow }>({ action: 'send', wa, text });
+  if (!r.ok) return { error: r.error, detail: r.detail };
+  await mergeLive([{ wa }], [r.data.msg]).catch(() => undefined);
+  return { msg: r.data.msg };
+}
+
+/* Can words go to this number now, and how a message sent to it went (sent / delivered / read / failed). */
+export type WaCheck = { linked: boolean; chat: { name: string; liveInAt: number | null; lastInAt: number | null } | null; msg: { status: string | null; at: number } | null; now: number };
+export async function checkWa(wa: string, id?: string): Promise<WaCheck | { error: string; detail?: string }> {
+  const r = await ask<WaCheck>({ action: 'check', wa, id });
+  return r.ok ? r.data : { error: r.error, detail: r.detail };
+}
+
 export async function hideLive(id: string, hidden: boolean) {
   await updateChat(id, (c) => ({ ...c, hidden }));
 }

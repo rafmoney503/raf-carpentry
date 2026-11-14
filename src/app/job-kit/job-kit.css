@@ -219,6 +219,12 @@
   background: var(--color-mount); border: 1px solid var(--color-line); box-shadow: 0 1px 1px rgb(22 25 28 / 0.04);
 }
 .jk-wa-bubble.is-mine { background: color-mix(in srgb, var(--color-whatsapp) 14%, var(--color-mount)); }
+/* A quote sent on WhatsApp from the Job Kit (quote-wa.tsx, 14 Nov 2026): WhatsApp's own ticks, blue once read */
+.jk-wa-sent { border-color: color-mix(in srgb, var(--color-whatsapp) 45%, var(--color-line-strong)); background: color-mix(in srgb, var(--color-whatsapp) 11%, var(--color-mount)); }
+.jk-wa-sent.is-bad { border-color: var(--color-ink); background: var(--color-paper); }
+.jk-wa-ticks { color: #0f7b3e; letter-spacing: -0.12em; }
+.jk-wa-ticks.is-read { color: #2a8bf2; }
+.jk-wa-ticks.is-bad { color: var(--color-ink); letter-spacing: 0; }
 .jk-wa-bubble.is-on { border-color: var(--sec); box-shadow: 0 0 0 1px var(--sec); }
 .jk-wa-bar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; padding: 10px 0 max(10px, env(safe-area-inset-bottom));

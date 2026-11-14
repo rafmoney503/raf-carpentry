@@ -180,6 +180,18 @@ export function showNumber(wa: string) {
   return d ? `+${d}` : '';
 }
 
+/* A phone number as ServiceM8 or a brief has it ("07700 900123", "+44 7700 900123", "0044...") -> WhatsApp's
+   "447700900123"; '' when it isn't one. */
+export function waOf(raw: unknown) {
+  let d = str(raw).replace(/[^\d+]/g, '');
+  if (d.startsWith('+')) d = d.slice(1);
+  else if (d.startsWith('00')) d = d.slice(2);
+  else if (d.startsWith('0')) d = `44${d.slice(1)}`;
+  else if (/^7\d{9}$/.test(d)) d = `44${d}`;
+  d = d.replace(/\D/g, '');
+  return /^[1-9]\d{7,14}$/.test(d) ? d : '';
+}
+
 /* WhatsApp lets a business write freely only for 24 hours after the customer's last message (one that came after
    the link: past chats from the history don't count). After that only an approved template can start it again. */
 export const WINDOW_MS = 24 * 3600 * 1000;

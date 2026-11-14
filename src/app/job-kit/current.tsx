@@ -1107,6 +1107,7 @@ export function CurrentView({
   onKit,
   onTimeline,
   extra,
+  sentNote,
   onOpenKit,
   bookings,
   staff,
@@ -1140,6 +1141,7 @@ export function CurrentView({
   onKit: () => void;
   onTimeline?: () => void; // the Job timeline, this job's sheet open
   extra?: React.ReactNode; // after Where it's up to: the WhatsApp chat it came from (whatsapp.tsx WaJobBox)
+  sentNote?: React.ReactNode; // under 'Quote sent': the rough quote sent on WhatsApp from the Job Kit, with WhatsApp's ticks (quote-wa.tsx)
   onOpenKit: (k: Job) => void;
   bookings: Booking[];
   staff: Staff[];
@@ -1277,6 +1279,7 @@ export function CurrentView({
           })()
         ) : null}
 
+        {(st === 'sent' || st === 'follow') && sentNote ? sentNote : null}
         <div className="mt-4 grid gap-2">
           {st === 'new' ? (
             <button type="button" className="btn btn-primary btn-sm w-full" onClick={() => onMark({ quoteSentAt: Date.now() })}>

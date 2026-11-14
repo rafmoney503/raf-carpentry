@@ -87,6 +87,8 @@ import { methodsFrom, sendPayment, type NewPayment } from './payments';
 import { emailPhotosToJob, flushNotes } from './job-notes';
 import { boardLine, buildBoard } from '@/lib/client-board';
 import { withoutGreeting } from '@/lib/whatsapp-chat';
+import { waOf } from '@/lib/wa-live';
+import { WaSentNote } from './quote-wa';
 import { addSend, enquiryFromChat, needsYou, WaChatView, waHomeLine, WaJobBox, WaList, waTodayLines } from './whatsapp';
 import { getWaFile as getWaFileBlob, pickedOf, pickedText, pullLive, readWaiting, sendToJob, updateChat, useWaChats, waChat, type WaChat } from './wa-store';
 import { DESIGN_KINDS } from '@/lib/design-kinds';
@@ -1531,11 +1533,23 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 const qjob = findJob(screen.id);
                 const row = rowOf(quotes, screen.id);
                 const sent = Boolean((row?.edits as QuoteEdits | null)?.sentAt) || (qjob ? qjob.status !== 'Quote' || ['sent', 'follow'].includes(stage(qjob, marks)) : false);
+                // their WhatsApp: the live chat the job was made from, else the job's mobile
+                const linked = qjob ? waChats.find((c) => c.live && c.wa && c.sends.some((x) => x.job === qjob.uuid)) : undefined;
+                const waTo = linked?.wa || waOf(qjob?.mobile);
+                const waHere = linked || (waTo ? waChats.find((c) => c.live && c.wa === waTo) : undefined);
                 return (
                   <QuoteView
                     key={screen.id}
                     job={qjob}
                     row={row}
+                    waTo={waTo}
+                    waLiveInAt={waHere?.liveInAt}
+                    onWaSent={(rec) => {
+                      const e = ((row?.edits ?? {}) as QuoteEdits);
+                      changeQuote(screen.id, { ...e, sentAt: e.sentAt || rec.at, sentHow: 'whatsapp', wa: rec } as Record<string, unknown>);
+                      mark(screen.id, { quoteSentAt: marks[screen.id]?.quoteSentAt || rec.at });
+                      void flushQuoteEdits();
+                    }}
                     prices={pricesOf(quotes)}
                     rules={rulesOf(quotes)}
                     sent={sent}
@@ -1744,6 +1758,10 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                     checkSm8();
                     go({ name: 'timeline', job: cur.uuid });
                   }}
+                  sentNote={(() => {
+                    const w = (rowOf(quotes, cur.uuid)?.edits as QuoteEdits | null)?.wa;
+                    return w ? <WaSentNote sent={w} first={cur.first} compact /> : undefined;
+                  })()}
                   extra={
                     <>
                       <QuoteJobBox job={cur} row={rowOf(quotes, cur.uuid)} prices={pricesOf(quotes)} onOpen={() => go({ name: 'quote', id: cur.uuid, from: 'job' })} onMake={() => void startQuote(cur.uuid, true, ownNote(rowOf(quotes, cur.uuid)))} />

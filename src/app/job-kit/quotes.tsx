@@ -39,6 +39,7 @@ import { SecIcon } from './job-menu';
 import { fileBlob, Thumb } from './job-notes';
 import { shown, stage, wa, type Marks, type Sm8 } from './current';
 import Mark from './mark';
+import { QuoteWaSend, sentWhen, useWaWindow, type WaSent } from './quote-wa';
 
 /* Quotes in the Job Kit (2 Nov 2026, Raf: 'if new job come through from email to service m8 with pictures I'd like
    you to be in jobkit analyse it and create answer with proposed quote price ... various options to copy and paste
@@ -614,7 +615,7 @@ export function QuoteJobBox({ job, row, prices, onOpen, onMake }: { job: Current
     <section
       id="quote"
       data-jsec="quote"
-      data-jsec-note={working ? '…' : r ? (edits.sentAt ? 'sent' : 'ready') : ''}
+      data-jsec-note={working ? '…' : r ? (edits.wa ? 'sent ✓' : edits.sentAt ? 'sent' : 'ready') : ''}
       data-jsec-alert={r && !edits.sentAt ? '1' : undefined}
       className="mt-6 rounded-sm border border-line-strong bg-mount p-4"
       aria-label="Rough quote"
@@ -630,9 +631,10 @@ export function QuoteJobBox({ job, row, prices, onOpen, onMake }: { job: Current
       ) : r ? (
         <>
           <p className="mt-1.5 text-[15px] leading-relaxed text-muted">
-            {r.title}: {n} option{n === 1 ? '' : 's'}, from {money(fromPrice(options, edits))} + VAT. {edits.sentAt ? 'Sent.' : 'Ready for you to check.'}
+            {r.title}: {n} option{n === 1 ? '' : 's'}, from {money(fromPrice(options, edits))} + VAT.{' '}
+            {edits.wa ? <span data-wa-sent-line>Sent on WhatsApp {sentWhen(edits.wa.at)} ✓</span> : edits.sentAt ? 'Sent.' : 'Ready for you to check.'}
           </p>
-          <button type="button" onClick={onOpen} className="btn btn-primary btn-sm mt-3">
+          <button type="button" onClick={onOpen} className={`btn btn-sm mt-3 ${edits.sentAt ? 'btn-ghost' : 'btn-primary'}`}>
             Open the quote
           </button>
         </>
@@ -814,12 +816,18 @@ export function QuoteView({
   onOpenJob,
   onRules,
   onCworkshop,
+  waTo = '',
+  waLiveInAt,
+  onWaSent,
 }: {
   job?: CurrentJob;
   row?: QuoteRow;
   prices: Prices;
   rules: { text: string; at: number };
   sent: boolean;
+  waTo?: string; // their WhatsApp number (the chat that made the job, else the job's mobile)
+  waLiveInAt?: number | null; // their last live WhatsApp message, as this device has it
+  onWaSent?: (rec: WaSent) => void;
   onEdit: (edits: QuoteEdits) => void;
   onMake: (force: boolean, note: string) => void;
   onSent: (sent: boolean, how?: QuoteEdits['sentHow']) => void;
@@ -837,6 +845,7 @@ export function QuoteView({
   const set = (patch: Partial<QuoteEdits>) => onEdit({ ...edits, ...patch });
   const first = job?.first || data?.job?.first || '';
   const name = job?.name || first || 'Enquiry';
+  const win = useWaWindow(onWaSent ? waTo : '', waLiveInAt);
   const old = Boolean(rules.at && r && (data?.rulesAt ?? 0) < rules.at);
   const withRules = Boolean(r && rules.text && data?.rulesAt && !old);
   const own = ownNote(row);
@@ -1119,13 +1128,20 @@ export function QuoteView({
             Use the written-out words again
           </button>
         ) : null}
+        {onWaSent ? <QuoteWaSend wa={waTo} win={win} first={first} message={message} sent={edits.wa} onSent={onWaSent} /> : null}
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
           <button type="button" onClick={() => void copy()} className="btn btn-ghost">
             Copy
           </button>
           {job?.mobile ? (
-            <a href={wa(job.mobile, message)} target="_blank" rel="noreferrer" className="btn btn-whatsapp" onClick={() => setCopied('Opened WhatsApp with the message typed in.')}>
-              WhatsApp {first || 'them'}
+            <a
+              href={wa(job.mobile, message)}
+              target="_blank"
+              rel="noreferrer"
+              className={`btn ${win.state === 'open' || edits.wa ? 'btn-ghost' : 'btn-whatsapp'}`}
+              onClick={() => setCopied('Opened WhatsApp with the message typed in.')}
+            >
+              {win.state === 'open' ? 'Open in WhatsApp' : `WhatsApp ${first || 'them'}`}
             </a>
           ) : (
             <span className="btn btn-ghost pointer-events-none opacity-50">No mobile</span>

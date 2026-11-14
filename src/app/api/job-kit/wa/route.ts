@@ -1,7 +1,7 @@
 import { pinGuard } from '@/lib/job-kit-server';
 import { createTemplate, d360SetUp, D360Error, getWebhook, listTemplates, sendTemplate, sendText, setWebhook } from '@/lib/d360';
 import { hookUrl, keepFile, runRead, waRpc, waStoreSetUp } from '@/lib/wa-server';
-import { digits, fillTemplate, TEMPLATES, type LiveMsg } from '@/lib/wa-live';
+import { digits, fillTemplate, TEMPLATES, windowLeft, type LiveMsg } from '@/lib/wa-live';
 import { SyncError } from '@/lib/job-kit-sync-server';
 
 /* Live WhatsApp for the Job Kit, behind the PIN (src/lib/wa-live.ts says what it is):
@@ -12,7 +12,9 @@ import { SyncError } from '@/lib/job-kit-sync-server';
      file {id}       a photo or PDF (fetched from WhatsApp now if it wasn't copied yet)
      state {wa, state, at}   Raf's ticks, customer and trips to ServiceM8 for a chat, shared with the computer
      read {wa}       Claude reads the chat now; pending: the chats waiting for it
-     send {wa, text}         words, within 24 hours of their last message
+     send {wa, text}         words, within 24 hours of their last message (refused here first when it's past them:
+                             WhatsApp would take it and then fail it)
+     check {wa, id?}         can words go to this number now (their last message), and how a message sent went
      template {wa, name, values}  an approved template, any time
      templates / templates-make   the Job Kit's templates and their state in Meta's review
    Nothing here deletes anything. */
@@ -94,10 +96,28 @@ export async function POST(req: Request) {
       return Response.json(await runRead(String(b.wa), b.force === true));
     }
     if (action === 'pending') return Response.json({ list: await waRpc('read-pending') });
+    if (action === 'check') {
+      const wa = digits(b.wa);
+      if (!isWa(wa)) return Response.json({ error: 'bad' }, { status: 400 });
+      const id = typeof b.id === 'string' ? b.id.slice(0, 200) : '';
+      const t = (await waRpc('thread', { wa, limit: id ? 200 : 1, thumbs: false }, 20000)) as { msgs?: { id: string; at: number; status?: string | null }[]; chat?: { name?: string | null; profile?: string | null; liveInAt?: number | null; lastInAt?: number | null } | null };
+      const c = t?.chat;
+      const m = id ? (t?.msgs ?? []).find((x) => x.id === id) : undefined;
+      return Response.json({
+        linked,
+        chat: c ? { name: c.name || c.profile || '', liveInAt: c.liveInAt ?? null, lastInAt: c.lastInAt ?? null } : null,
+        msg: m ? { status: m.status ?? null, at: m.at } : null,
+        now: Date.now(),
+      });
+    }
     if (action === 'send') {
       const wa = digits(b.wa);
       const text = String(b.text ?? '').trim().slice(0, 4000);
       if (!isWa(wa) || !text) return Response.json({ error: 'bad' }, { status: 400 });
+      if (!linked) return Response.json({ error: 'wa-not-set-up' }, { status: 503 });
+      // past the 24 hours WhatsApp takes the words and fails them a moment later, so it's said here instead
+      const t = (await waRpc('thread', { wa, limit: 1, thumbs: false }, 15000)) as { chat?: { liveInAt?: number | null } | null };
+      if (windowLeft(t?.chat?.liveInAt) < 60_000) return Response.json({ error: 'wa-window', detail: t?.chat?.liveInAt ? String(t.chat.liveInAt) : '' }, { status: 409 });
       const id = await sendText(wa, text);
       const msg = { id: id || `api-${Date.now()}`, wa, dir: 'out', src: 'api', at: Date.now(), type: 'text', body: text };
       await waRpc('put', { msgs: [msg] }).catch(() => null);
