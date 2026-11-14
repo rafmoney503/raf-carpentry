@@ -280,7 +280,7 @@ export function PaxSteps({
         </div>
         <p className="mt-2 text-[13px] leading-snug text-faint" data-pax="door-note">
           {g.top === 'box' ? 'The top boxes always get made-to-measure MDF doors. ' : ''}
-          {now.doors === 'ikea' && has75 ? 'IKEA makes no hinged doors for the 75 frame, so that one gets MDF doors too.' : ''}
+          {now.doors === 'ikea' && has75 ? 'IKEA closes the 75 frame with an odd pair (a 50 and a 25 cm door, in some styles only), so I make an equal pair in MDF for it.' : ''}
         </p>
       </Step>
 

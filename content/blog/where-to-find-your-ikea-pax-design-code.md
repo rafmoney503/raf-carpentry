@@ -45,7 +45,7 @@ These are the things that catch people out, so I look at them before anything el
 
 - **The width.** PAX frames are sold as 100, 75 and 50 cm wide but measure 998, 748 and 498 mm. At least 20 mm has to be left at each end, so the fillers can be scribed to the walls. ([The sums for common walls](/blog/fitting-ikea-pax-wall-to-wall).)
 - **The height.** Frames are 201 or 236 cm high. If 300 mm or more is left above the frame, it gets an MDF top box with its own doors. Less than that gets an infill strip scribed to the ceiling. A ceiling lower than about 2030 mm won't take a PAX frame at all. ([Which height fits your ceiling](/blog/ikea-pax-height-for-your-ceiling).)
-- **Any 75 cm frame.** IKEA makes no hinged doors for it, so in a run of hinged doors it gets a pair of MDF doors made to measure.
+- **Any 75 cm frame.** IKEA closes it with a 50 and a 25 cm door, and the 25 only comes in some styles. If yours has none, or you want an equal pair, it gets a pair of MDF doors made to measure.
 - **The depth, in an alcove.** A frame is 58 cm deep before the doors go on.
 
 ## What I make round it
@@ -71,3 +71,5 @@ Then a free visit to measure up, and your quote, free as well. Rough sizes are f
 ## Not designed it yet?
 
 Start with [which PAX height fits your ceiling](/blog/ikea-pax-height-for-your-ceiling) and [fitting PAX wall to wall](/blog/fitting-ikea-pax-wall-to-wall). Still deciding? [PAX or a made-to-measure wardrobe](/blog/ikea-pax-or-made-to-measure-wardrobe). Want to see one finished? [A five-door PAX wardrobe in Finchley](/blog/pax-wardrobe-finchley).
+
+**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 22-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.

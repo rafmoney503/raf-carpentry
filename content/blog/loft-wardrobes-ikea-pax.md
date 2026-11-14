@@ -46,3 +46,5 @@ Open the doors and it is all IKEA inside: easy to get parts for, and easy to cha
 There is also a [3D model of it](/portfolio/loft-wardrobes-palmers-green#in-3d) on the job page, drawn in SketchUp. Turn it round, open it up or take it apart.
 
 Designed yours in IKEA's planner too? [Where to find the design code](/blog/where-to-find-your-ikea-pax-design-code), and how to send it to me.
+
+**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 22-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.

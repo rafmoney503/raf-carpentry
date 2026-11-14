@@ -59,6 +59,7 @@ const PAGES: { title: string; href: string; sub: string; words: string }[] = [
   { title: 'Decking calculator', href: '/tools/decking-calculator', sub: 'Boards, joists, clips and screws for your deck', words: 'decking deck decks calculator boards board joist joists spacing centres composite softwood timber garden patio screws clips fascia membrane pads posts how many how much materials list planning permission' },
   { title: 'Workshop calculator', href: '/calculator', sub: 'Sums in mm, how many fit on a board', words: 'calculator calc mm sums maths board sheet 2440 1220 inches' },
   { title: 'Workshop tips', href: '/tips', sub: 'For carpenters and DIYers', words: 'tips tricks diy how to advice' },
+  { title: 'IKEA PAX, built in: the fitting guide', href: '/pax-guide', sub: 'A PDF guide to making PAX look made to measure', words: 'ikea pax guide built in fitted wardrobe fillers filler top box end panel scribe ceiling hack diy pdf ebook buy cut list frames' },
   { title: 'Learn to fix it yourself', href: '/learn', sub: 'Step-by-step guides with moving drawings', words: 'learn guide guides how to diy fix fixing yourself step by step tutorial beginner homeowner' },
   { title: 'Tools I use', href: '/tools', sub: 'My kit, with links', words: 'tools kit amazon dewalt festool makita buy' },
   { title: 'Wardrobe planner', href: '/wardrobe-planner', sub: 'Design your fitted wardrobe in 3D', words: 'wardrobe planner design configurator 3d sizes units doors sliding hinged plinth' },

@@ -12,6 +12,7 @@ const explore = [
   { href: '/areas', label: 'Where I work' },
   COST_LINK,
   { href: '/drawings', label: 'Drawings and cut lists' },
+  { href: '/pax-guide', label: 'IKEA PAX guide' },
   { href: '/sketchup', label: 'SketchUp' },
   { href: '/cabinetos', label: 'CabinetOS' },
   { href: '/tools', label: 'Tools' },

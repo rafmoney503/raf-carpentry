@@ -38,7 +38,7 @@ Your wall will not be one of these exactly. That is fine: the fillers take up th
 
 ## The 75 cm frame
 
-IKEA makes no hinged doors for the 75 frame. It is meant for sliding doors. In a run of hinged doors it gets a pair of MDF doors made to measure, ready for your decorator, and the rest of the run can keep IKEA's doors.
+IKEA closes a 75 frame with one 50 cm door and one 25 cm door, and the 25 only comes in some door styles. So check your style has a 25 before you buy a 75. If it doesn't, or you would rather have an equal pair, the 75 gets a pair of MDF doors made to measure, ready for your decorator, and the rest of the run can keep IKEA's doors.
 
 It is often worth it. On a 2400 wall, 100 + 75 + 50 leaves 78 mm at each end. Without the 75, the best fit is two 100s, which leaves 202 mm at each end: a lot of filler.
 
@@ -59,3 +59,5 @@ A PAX frame is 58 cm deep before the doors. Measure the alcove's depth to the wa
 The wardrobe planner in the brief on [Plan your project](/how-it-works) has a Fill my wall button that does exactly this. Pick IKEA PAX built in, type your wall width, and it picks the frames, shows the fillers at each end and draws it all to scale. You can add, remove or swap frames and watch the fillers change. Rough sizes are fine: I measure properly on the free visit.
 
 Already designed it in IKEA's PAX planner? Send me the design code instead: [where to find it](/blog/where-to-find-your-ikea-pax-design-code). Want to see one finished? [A five-door PAX wardrobe in Finchley](/blog/pax-wardrobe-finchley).
+
+**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 22-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.

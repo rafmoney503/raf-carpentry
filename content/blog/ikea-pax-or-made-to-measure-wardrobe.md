@@ -31,7 +31,7 @@ So the choice is less about the look. It is about the space, the inside and the 
 - **Awkward spaces.** PAX comes in three widths (sold as 50, 75 and 100 cm), two heights (201 and 236 cm) and one depth (58 cm before the doors). Whatever the room does not match has to be made up with fillers. An alcove shallower than a frame, a sloping ceiling or a beam is where made to measure simply fits. [The Hatfield loft wardrobe](/blog/wardrobe-loft-beams-hatfield) is one PAX could never have done.
 - **Every width to suit the wall.** Each unit can be any width from 150 to 1200 mm, so a run fills the wall with small fillers instead of big ones. A narrow room can have shallower units, like 450 deep.
 - **A heavier build.** PAX frames have thin backs. I build in 18 mm board, backs included.
-- **The doors.** One door up to 600 wide, a pair above that, flat or shaker, in MDF ready for your decorator. With PAX you work with IKEA's door sizes, and IKEA makes no hinged doors for the 75 cm frame, so that one gets made-to-measure doors anyway.
+- **The doors.** One door up to 600 wide, a pair above that, flat or shaker, in MDF ready for your decorator. With PAX you work with IKEA's door sizes, and IKEA closes the 75 cm frame with a 50 and a 25 cm door, in some styles only, so that one often gets made-to-measure doors anyway.
 
 ## You do not have to pick one
 
@@ -50,3 +50,5 @@ The wall at the top of this post is both. IKEA PAX frames stand either side of a
 The brief on [Plan your project](/how-it-works) has a wardrobe planner with a switch at the top: Made to measure or IKEA PAX built in. Type your wall width and ceiling height and it draws either one to scale, fillers and all, so you can flick between them. Rough sizes are fine. I measure properly on the free visit, and nothing is cut until you have signed off the drawing.
 
 Going the PAX way? Read [which PAX height fits your ceiling](/blog/ikea-pax-height-for-your-ceiling) next. Already designed it in IKEA's planner? [Where to find your design code](/blog/where-to-find-your-ikea-pax-design-code), and how to send it to me.
+
+**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 22-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.

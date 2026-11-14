@@ -83,7 +83,7 @@ export function upOf(path: string): Up {
   if (p.startsWith('/cost/')) return { href: '/services/fitted-wardrobes', name: 'Fitted wardrobes' };
   if (p.startsWith('/drawings/')) return to('/drawings');
   if (p.startsWith('/learn/')) return to('/learn');
-  if (['/tips', '/learn', '/calculator', '/drawings', '/wardrobe-planner'].includes(p)) return to('/tools');
+  if (['/tips', '/learn', '/calculator', '/drawings', '/wardrobe-planner', '/pax-guide'].includes(p)) return to('/tools');
   return to('/');
 }
 

@@ -19,6 +19,13 @@
       "highlight": false
     },
     {
+      "label": "IKEA PAX, built in",
+      "subtitle": "My guide to making PAX wardrobes look made to measure. £9.99 PDF.",
+      "url": "/pax-guide",
+      "icon": "",
+      "highlight": true
+    },
+    {
       "label": "Plan Your Project",
       "subtitle": "What I need from you, materials explained, and a 2-minute brief.",
       "url": "/how-it-works",

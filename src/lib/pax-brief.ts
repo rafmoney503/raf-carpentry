@@ -2,8 +2,8 @@
    No imports, so the sums can be tested on their own. Same PAX rules as the Job Kit's wardrobe planner
    (src/lib/wardrobe.ts): frames sold as 100, 75 and 50 cm are really 998, 748 and 498 wide; 2010 high with an
    MDF top box above, or 2364 high; under 300 mm above the frames is an infill strip; what's left of the wall
-   is filler, split between the two ends (at least 20 a side for scribing). IKEA sells no hinged doors for the
-   75 frame (it's meant for sliding doors), so a 75 unit always gets MDF doors. The insides and their suggestion from
+   is filler, split between the two ends (at least 20 a side for scribing). IKEA closes the 75 frame with a 50 and a
+   25 cm door, in a few styles only, so here a 75 unit always gets an equal pair of MDF doors. The insides and their suggestion from
    "What is it for?" are shared with made to measure (./wardrobe-brief.ts). */
 import { INSIDE_CHOICES, insideWords, suggestInsides, type InsideKey } from './wardrobe-brief';
 
@@ -55,8 +55,8 @@ export function spaceProblem(wall: number, ceiling: number): string {
   return '';
 }
 
-/* The frames that leave the least filler (at least 20 an end). Ties go to fewer 75s (IKEA has no hinged doors
-   for them), then fewer units. 100s on the left, then the 75, then the 50s. A 2400 wall: 100 + 75 + 50, 78 a side. */
+/* The frames that leave the least filler (at least 20 an end). Ties go to fewer 75s (their IKEA doors are an
+   odd 50 + 25 pair), then fewer units. 100s on the left, then the 75, then the 50s. A 2400 wall: 100 + 75 + 50, 78 a side. */
 export function fillWall(wall: number): Frame[] {
   const avail = wall - 2 * PAX.minFiller;
   let best: { a: number; b: number; c: number; left: number } | null = null;

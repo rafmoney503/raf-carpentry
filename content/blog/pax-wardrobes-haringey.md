@@ -40,3 +40,5 @@ The panelled doors were painted too. There are six tall doors on the frames and 
 The job page has a short video with the doors open, and [every photo of the build](/portfolio/pax-wardrobes-haringey).
 
 The [3D model](/portfolio/pax-wardrobes-haringey#in-3d) on that page is drawn in SketchUp at standard PAX sizes, not measured. Open the doors, or take it apart to see the frames, the boxes and the end panels.
+
+**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 22-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.

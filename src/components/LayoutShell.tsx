@@ -32,7 +32,7 @@ export default function LayoutShell({ children, menu }: { children: React.ReactN
       ? 'none'
       : p === '/how-it-works'
         ? 'brief'
-        : p.startsWith('/cost/') || p.startsWith('/drawings') || p === '/tools/decking-calculator'
+        : p.startsWith('/cost/') || p.startsWith('/drawings') || p.startsWith('/pax-guide') || p === '/tools/decking-calculator'
           ? 'wa'
           : 'all';
 
