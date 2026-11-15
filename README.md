@@ -75,7 +75,7 @@ it): `create_deployment` with gitSource github rafmoney503/raf-carpentry, ref `r
   after 7 days without new numbers it's marked and asks for them. Claude can also put them in (source 'browser')
   when it has the profile open. The first row (15 Nov 2026) is from the profile: 0 followers, 0 profile views,
   1 search appearance, 0 post impressions.
-- **Cabinet OS on Facebook** (15 Nov 2026, Raf: 'add separate section in hq for this page and its progress'): the
+- **Cabinet OS on Facebook** (15 Nov 2026, Raf: 'add separate section in hq for this page and its progress'; live since 15 Nov 2026, Raf: 'merge', PR #17, deployed by hand as 0b44cb7): the
   Facebook section at `/facebook` (sidebar: On social media; on the phone through Today's card and the CabinetOS page).
   HQ asks rafcarpentry.com, which holds the Page tokens from the Job Kit's Social screen: `GET
   https://www.rafcarpentry.com/api/hq/facebook?name=Cabinet OS` with `Bearer HQ_NOTIFY_SECRET` (`src/lib/fbpage.ts`,
