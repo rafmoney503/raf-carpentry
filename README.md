@@ -51,7 +51,7 @@ it): `create_deployment` with gitSource github rafmoney503/raf-carpentry, ref `r
   through `public.hq_review` (HQ_DB_SECRET); the review types are a copy of raf-carpentry's `src/lib/review-types.ts`.
 
 - **Agents** (15 Nov 2026, Raf: one standing agent for each job instead of new chats; mockup on the 'HQ, agenci' design
-  canvas): Money, Day report, Growth and Sales, kept in Supabase (`supabase/hq-agents.sql`, migration `hq_agents`:
+  canvas; live since 15 Nov 2026, Raf: 'Merge'): Money, Day report, Growth and Sales, kept in Supabase (`supabase/hq-agents.sql`, migration `hq_agents`:
   hq.agents, agent_reports, agent_jobs, agent_needs, agent_notes, agent_runs) and read and changed through
   `public.hq_agents` (HQ_DB_SECRET). The Agents tab (in place of Review on the phone; the sidebar keeps Review): a card
   each (latest report, what needs Rafal, jobs waiting), Give a job (who for, what, once / every day / every week / on a
@@ -59,7 +59,7 @@ it): `create_deployment` with gitSource github rafmoney503/raf-carpentry, ref `r
   Bring it back; a Do it with `action.open` opens that https link, e.g. WhatsApp with a message written and no number,
   after copying `action.copy`), Give it a job, its jobs (cancel with two taps), what it remembers (change, forget, add),
   what it can use, what it may do (only tell / act after Do it), standing instructions, pause. A card on Today and the
-  count on the tab (kept a minute). The agents themselves are the scheduled Claude task 'HQ agents' (hourly 7:00 to
+  count on the tab (kept a minute). The agents themselves are the scheduled Claude task 'HQ agents' (trig_01MCiK8vNpGjLxYYr9PvzFMn, 6 minutes past each hour, 7:00 to
   21:00 London), which follows raf-carpentry's `scripts/agents/RUNBOOK.md` with the Supabase connector and the
   `hq.agent_*` helpers; rafcarpentry.com keeps a ServiceM8 snapshot for them in `jobkit.context`. Tested against the
   function on a throwaway Postgres (scratchpad agui/: supa.mjs, real.sql, test.cjs 79 checks as an iPhone 13, at 320,
