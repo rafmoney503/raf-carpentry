@@ -3,6 +3,8 @@ import { dbReady, hqApi, type PushSub } from '@/lib/db';
 import { morningNotes } from '@/lib/morning';
 import { pushReady, sendTo } from '@/lib/push';
 import { getReport } from '@/lib/report';
+import { getFbPage } from '@/lib/fbpage';
+import { fbMorningLine } from '@/lib/fbprogress';
 import { londonDay, londonHour } from '@/lib/time';
 
 /* The morning summary. Vercel calls this at 06:43 and 07:43 UTC (vercel.json); it sends only in the run that is
@@ -28,9 +30,12 @@ export async function GET(req: Request) {
     const claim = await hqApi<{ claimed: boolean }>('claim_day', { day, body: { at: now.toISOString() } });
     if (!claim.claimed) return Response.json({ skipped: 'already-sent' });
   }
-  const r = await getReport(true);
+  const [r, fb] = await Promise.all([getReport(true), getFbPage(true).catch(() => null)]);
   const since = last?.at ? new Date(last.at).getTime() : now.getTime() - 24 * 3600 * 1000;
   const notes = morningNotes(r, since);
+  // the Cabinet OS Facebook Page, a line under yesterday's numbers
+  const fbLine = fbMorningLine(fb?.ok ? fb.report : null, r.today);
+  if (fbLine && notes[0]) notes[0] = { ...notes[0], body: [notes[0].body, fbLine].filter(Boolean).join('\n').slice(0, 300) };
   const subs = await hqApi<PushSub[]>('push_list');
   const out = subs.length ? await sendTo(subs, notes) : { sent: 0, failed: 0 };
   return Response.json({ day, notes: notes.length, ...out });

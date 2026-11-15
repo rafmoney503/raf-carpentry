@@ -8,7 +8,8 @@
   "git": {
     "deploymentEnabled": {
       "rafal-hq": false,
-      "hq-assistant": false
+      "hq-assistant": false,
+      "hq-facebook": false
     }
   }
 }
