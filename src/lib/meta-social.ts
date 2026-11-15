@@ -1,6 +1,7 @@
 import { createHmac } from 'crypto';
 import { syncSetUp } from './job-kit-sync-server';
-import { forget, keep, kept, newState, seal, stateOk, StoreError, unseal } from './social-store';
+import { counts, forget, keep, kept, newState, seal, stateOk, StoreError, unseal } from './social-store';
+import type { PageComment, PagePost, PageReport } from './page-report-types';
 import { answeredOf, clip, ms, type MetaAccount, type Platform, type SocialComment, type SocialPart, type SocialPost, type SocialProblem, type SocialProfile } from './social-types';
 
 /* The Job Kit's Social screen, part 1: Raf's Instagram and Facebook (20 Oct 2026, Raf: 'is there a way to see in job kit
@@ -556,4 +557,107 @@ export async function replyMeta(platform: Platform, commentId: string, text: str
   // Instagram: a reply under the comment; Facebook: a comment on the comment, as the Page
   const r = await graph<{ id?: string }>(platform === 'ig' ? `/${commentId}/replies` : `/${commentId}/comments`, token, { message: text }, 'POST');
   return { id: r.id || '' };
+}
+
+/* ---------- one Page's progress, for Rafal Solutions HQ (src/app/api/hq/facebook/route.ts) ---------- */
+
+/* 15 Nov 2026, Raf: 'add separate section in hq for this page and its progress' (the Cabinet OS Page). The Page is
+   found by name among the Pages the login shares (letters and digits only, so 'cabinetos' finds 'Cabinet OS'); when
+   it isn't there the list is asked again (at most every 15 minutes), so a Page made after connecting shows up without
+   logging in again when the login shared every Page. Each call keeps the day's followers in jobkit.social_counts, as
+   the Job Kit's Social screen does, so the history grows whichever of the two is opened. Only reads: never posts,
+   never replies. */
+const nameKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '');
+const LOOK_AGAIN = 15 * 60_000;
+
+export async function pageReport(name: string): Promise<PageReport> {
+  const base: PageReport = { v: 1, at: Date.now(), state: 'ok', history: [], posts: [], comments: [] };
+  if (!metaSetUp()) return { ...base, state: 'not-set-up', detail: metaMissing().join(', ') };
+  let k: Kept | null;
+  try {
+    k = await load();
+  } catch {
+    return { ...base, state: 'error', detail: 'store' };
+  }
+  if (!k) return { ...base, state: 'not-connected' };
+  const userToken = (() => {
+    try {
+      return open(k.userToken);
+    } catch {
+      return '';
+    }
+  })();
+  const want = nameKey(name);
+  const find = (x: Kept) => x.pages.find((p) => nameKey(p.name).includes(want));
+  k = await refreshPages(k, userToken).catch(() => k!);
+  if (!find(k) && userToken && Date.now() - (k.pagesAt ?? 0) > LOOK_AGAIN) k = await refreshPages(k, userToken, true).catch(() => k!);
+  const pg = find(k);
+  if (!pg) return { ...base, state: 'not-shared', pages: k.pages.map((p) => p.name) };
+  let token: string;
+  try {
+    token = open(pg.token);
+  } catch {
+    return { ...base, state: 'expired' };
+  }
+  type Post = FbPost & { shares?: { count?: number } };
+  let info: { id: string; name?: string; link?: string; username?: string; followers_count?: number; fan_count?: number; picture?: { data?: { url?: string } } };
+  let feed: { data?: Post[] };
+  try {
+    [info, feed] = await Promise.all([
+      graph<typeof info>(`/${pg.id}`, token, { fields: 'id,name,link,username,followers_count,fan_count,picture.type(large){url}' }),
+      graph<typeof feed>(`/${pg.id}/published_posts`, token, {
+        fields:
+          'id,message,story,created_time,permalink_url,full_picture,status_type,shares,reactions.summary(total_count).limit(0),' +
+          'comments.order(reverse_chronological).limit(25).summary(true){id,message,created_time,from{id,name},permalink_url,comments.limit(10){created_time,from{id}}}',
+        limit: '25',
+      }),
+    ]);
+  } catch (e) {
+    if (e instanceof MetaError && e.code === 'meta-expired') return { ...base, state: 'expired', detail: e.detail || undefined };
+    return { ...base, state: 'error', detail: e instanceof MetaError ? e.code : e instanceof Error ? e.message.slice(0, 200) : undefined };
+  }
+  const followers = typeof info.followers_count === 'number' ? info.followers_count : typeof info.fan_count === 'number' ? info.fan_count : null;
+  const page: PageReport['page'] = {
+    id: pg.id,
+    name: info.name || pg.name,
+    link: info.link || `https://www.facebook.com/${info.username || pg.id}`,
+    handle: info.username,
+    picture: info.picture?.data?.url,
+    followers,
+    likes: typeof info.fan_count === 'number' ? info.fan_count : null,
+  };
+  const posts: PagePost[] = [];
+  const comments: PageComment[] = [];
+  for (const p of feed.data ?? []) {
+    const link = p.permalink_url || `https://www.facebook.com/${p.id}`;
+    posts.push({
+      id: p.id,
+      text: clip(p.message || p.story, 300),
+      at: ms(p.created_time),
+      link,
+      thumb: p.full_picture,
+      kind: /video/.test(p.status_type ?? '') ? 'video' : p.full_picture ? 'photo' : 'post',
+      reactions: p.reactions?.summary?.total_count ?? 0,
+      comments: p.comments?.summary?.total_count ?? p.comments?.data?.length ?? 0,
+      shares: p.shares?.count ?? 0,
+    });
+    for (const c of p.comments?.data ?? []) {
+      if (c.from?.id === pg.id) continue; // the Page's own comment
+      const replies = (c.comments?.data ?? []).map((r) => ({ id: '', who: '', text: '', at: ms(r.created_time), mine: r.from?.id === pg.id }));
+      const at = ms(c.created_time);
+      const { answered, activeAt } = answeredOf(replies, at);
+      comments.push({ id: c.id, post: p.id, who: c.from?.name || 'Someone on Facebook', text: clip(c.message, 600), at: activeAt ?? at, link: c.permalink_url || link, answered });
+    }
+  }
+  // today's followers, then the days before (a store that's down leaves the history empty, not the report)
+  const history = await counts([{ platform: 'fb', account: pg.id, followers, posts: null }])
+    .then((h) => h.filter((d) => d.platform === 'fb' && d.account === pg.id).map((d) => ({ day: d.day, followers: d.followers })))
+    .catch(() => []);
+  return {
+    ...base,
+    page,
+    history,
+    posts: posts.sort((a, b) => b.at - a.at),
+    comments: comments.sort((a, b) => b.at - a.at).slice(0, 40),
+  };
 }
