@@ -5,6 +5,8 @@ import { SiteDays } from '@/components/sitedays';
 import { Icon, InsightCard, Pill, appStyle } from '@/components/ui';
 import { countryName, deviceName, diff, median, num, pageName, pctChange, plural } from '@/lib/format';
 import { getReport } from '@/lib/report';
+import { fbShown } from '@/lib/fbshown';
+import { FbShortCard } from '@/components/fbpage';
 import { siteByKey } from '@/lib/sites';
 import { addDays, rangeText, when } from '@/lib/time';
 
@@ -16,7 +18,7 @@ export default async function AppPage({ params, searchParams }: { params: Promis
   const { key } = await params;
   const { day } = await searchParams;
   if (!siteByKey(key)) notFound();
-  const r = await getReport();
+  const [r, fb] = await Promise.all([getReport(), key === 'cabinetos' ? fbShown() : Promise.resolve(null)]);
   const s = r.sites.find((x) => x.key === key);
   if (!s) notFound();
 
@@ -265,6 +267,8 @@ export default async function AppPage({ params, searchParams }: { params: Promis
           </div>
         </>
       )}
+
+      {fb ? <FbShortCard fb={fb} /> : null}
 
       <section aria-label="Up and updates" className="card">
         <div className="health-row">

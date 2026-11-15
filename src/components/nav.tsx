@@ -60,6 +60,14 @@ export function Sidebar({ sites, unread = 0, needs = 0 }: { sites: SideSite[]; u
           </Link>
         ))}
       </section>
+      <section aria-label="On social media" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <span className="side-head">On social media</span>
+        <Link href="/facebook" className="side-site appc" style={appStyle({ color: '#1877f2', light: '#6ea8ff', ink: '#ffffff' })} aria-current={path === '/facebook' ? 'page' : undefined}>
+          <span className="sq" aria-hidden="true" />
+          <span>Cabinet OS</span>
+          <em style={{ color: 'var(--muted)' }}>Facebook</em>
+        </Link>
+      </section>
       <p className="side-foot">Visits from Vercel Web Analytics. Taps and sign-ups from Supabase.</p>
     </aside>
   );

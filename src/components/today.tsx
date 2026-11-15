@@ -14,10 +14,23 @@ import { Health } from './health';
 import { LinkedInCard } from './linkedin';
 import type { LiList } from '@/lib/linkedin-types';
 import { Icon, InsightCard, Mark } from './ui';
+import { FbShortCard, type FbShown } from './fbpage';
 
 type Range = 'today' | 'week';
 
-export function Today({ r, now, agents = null, linkedin = null }: { r: Report; now: number; agents?: AgentList | null; linkedin?: LiList | null }) {
+export function Today({
+  r,
+  now,
+  agents = null,
+  linkedin = null,
+  fb = null,
+}: {
+  r: Report;
+  now: number;
+  agents?: AgentList | null;
+  linkedin?: LiList | null;
+  fb?: FbShown | null;
+}) {
   const [range, setRange] = useState<Range>('week');
   const wk = range === 'week';
   const counted = r.sites.filter((s) => s.status === 'ok');
@@ -177,6 +190,18 @@ export function Today({ r, now, agents = null, linkedin = null }: { r: Report; n
         ))}
       </div>
       {off.length ? <OffCard sites={off} /> : null}
+
+      {fb ? (
+        <>
+          <div className="section">
+            <h2>On social media</h2>
+            <span>{fb.ok && fb.p.toAnswer.length ? `${fb.p.toAnswer.length} to answer` : 'Facebook'}</span>
+          </div>
+          <div className="apps-grid">
+            <FbShortCard fb={fb} />
+          </div>
+        </>
+      ) : null}
 
       <div className="phone-only">
         <Health r={r} />

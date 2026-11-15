@@ -75,6 +75,25 @@ it): `create_deployment` with gitSource github rafmoney503/raf-carpentry, ref `r
   after 7 days without new numbers it's marked and asks for them. Claude can also put them in (source 'browser')
   when it has the profile open. The first row (15 Nov 2026) is from the profile: 0 followers, 0 profile views,
   1 search appearance, 0 post impressions.
+- **Cabinet OS on Facebook** (15 Nov 2026, Raf: 'add separate section in hq for this page and its progress'): the
+  Facebook section at `/facebook` (sidebar: On social media; on the phone through Today's card and the CabinetOS page).
+  HQ asks rafcarpentry.com, which holds the Page tokens from the Job Kit's Social screen: `GET
+  https://www.rafcarpentry.com/api/hq/facebook?name=Cabinet OS` with `Bearer HQ_NOTIFY_SECRET` (`src/lib/fbpage.ts`,
+  kept 5 minutes, a minute when it couldn't be read; `FB_REPORT_URL` points at a stand-in in tests). The answer
+  (`src/lib/fbpage-types.ts`, a copy of raf-carpentry's `src/lib/page-report-types.ts`: change both) has the Page,
+  its followers a day (`jobkit.social_counts`, one count a day, kept whenever HQ or the Job Kit opens it), its latest
+  25 posts with reactions, comments and shares, and people's comments with whether the Page has answered. Sums in
+  `src/lib/fbprogress.ts` (checked by `npm run check`): followers and the change on a week ago (or since the first
+  count), the next round number (10, 25, 50, 100, 250 ...) and the days to it at the last 14 days' pace, posts in the
+  last 7 days and the week before, the last post, reactions a post, the best post, the comments to answer. The page:
+  followers, the bar to the next round number, four facts, a note after 3 days with no post, followers a day (tap a
+  day), comments to answer (Answer on Facebook, or from the Job Kit), the best post, every post. A card on Today (On
+  social media) and on the CabinetOS page (waits at most 4 s for rafcarpentry.com, else it shows next time), and a
+  line in the morning summary ('Cabinet OS on Facebook: 23 followers (+3 yesterday) · 1 comment to answer'). When it
+  can't be read it says what to do (connect Facebook in the Job Kit, Connect again and tick Cabinet OS, ...). Only
+  reads. Reach and views would need Facebook's Page insights permission, which the Job Kit's login doesn't ask for.
+  Tested against the real rafcarpentry.com route on a pretend Facebook and store (scratchpad hqfb/: mock.mjs,
+  start.sh, ui.cjs 48 checks as an iPhone 13, at 320 and 1440 on a production build).
 
 The sites and what counts as their home page and key pages are in `src/lib/sites.ts`. The "worth knowing" rules are
 `src/lib/insights.ts` (checked by `npm run check`).
