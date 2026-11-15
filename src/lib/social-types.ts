@@ -58,7 +58,7 @@ export type SocialAccount = {
 };
 /* pages: every Page the login shared (shown: on the Social screen beside the picked one); page: the picked one,
    Raf Carpentry's, whose Instagram is the main one. */
-export type MetaAccount = SocialAccount & { pages?: { id: string; name: string; ig?: string; shown?: boolean }[]; page?: { id: string; name: string } };
+export type MetaAccount = SocialAccount & { pages?: { id: string; name: string; ig?: string; shown?: boolean }[]; page?: { id: string; name: string }; ads?: boolean /* the login lets HQ read the ads */ };
 export type SocialPart = { profiles: SocialProfile[]; posts: SocialPost[]; comments: SocialComment[]; problems: SocialProblem[] };
 export type SocialOverview = {
   v: 2;
