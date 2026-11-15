@@ -4,9 +4,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Icon, Mark, appStyle } from './ui';
 
+/* The phone's tabs: six fit. The daily review is reached from Today and from the Day report agent; on a computer the
+   sidebar lists it too. */
 const LINKS = [
   { href: '/', label: 'Today', icon: 'today' },
-  { href: '/review', label: 'Review', icon: 'review' },
+  { href: '/agents', label: 'Agents', icon: 'agents' },
   { href: '/apps', label: 'Apps', icon: 'apps' },
   { href: '/leads', label: 'Leads', icon: 'leads' },
   { href: '/messages', label: 'Messages', icon: 'messages' },
@@ -19,8 +21,16 @@ function current(path: string, href: string) {
 
 export type SideSite = { key: string; name: string; color: string; light: string; ink: string; state: string; good: boolean };
 
-/* `unread`: messages not read yet, shown on Messages. */
-export function Sidebar({ sites, unread = 0 }: { sites: SideSite[]; unread?: number }) {
+const SIDE_LINKS = [LINKS[0], LINKS[1], { href: '/review', label: 'Review', icon: 'review' }, ...LINKS.slice(2)];
+
+function Badge({ href, unread, needs }: { href: string; unread: number; needs: number }) {
+  if (href === '/messages' && unread > 0) return <span className="count" aria-label={`${unread} new`}>{unread}</span>;
+  if (href === '/agents' && needs > 0) return <span className="count" aria-label={`${needs} need you`}>{needs}</span>;
+  return null;
+}
+
+/* `unread`: messages not read yet, shown on Messages. `needs`: what the agents are waiting on Rafal for. */
+export function Sidebar({ sites, unread = 0, needs = 0 }: { sites: SideSite[]; unread?: number; needs?: number }) {
   const path = usePathname();
   return (
     <aside className="side">
@@ -32,11 +42,11 @@ export function Sidebar({ sites, unread = 0 }: { sites: SideSite[]; unread?: num
         </span>
       </Link>
       <nav aria-label="HQ">
-        {LINKS.map((l) => (
+        {SIDE_LINKS.map((l) => (
           <Link key={l.href} href={l.href} className="side-link" aria-current={current(path, l.href) ? 'page' : undefined}>
             <span className="dot" aria-hidden="true" />
             {l.label}
-            {l.href === '/messages' && unread > 0 ? <span className="count" aria-label={`${unread} new`}>{unread}</span> : null}
+            <Badge href={l.href} unread={unread} needs={needs} />
           </Link>
         ))}
       </nav>
@@ -55,7 +65,7 @@ export function Sidebar({ sites, unread = 0 }: { sites: SideSite[]; unread?: num
   );
 }
 
-export function Tabs({ unread = 0 }: { unread?: number }) {
+export function Tabs({ unread = 0, needs = 0 }: { unread?: number; needs?: number }) {
   const path = usePathname();
   return (
     <nav className="tabs" aria-label="HQ">
@@ -63,7 +73,7 @@ export function Tabs({ unread = 0 }: { unread?: number }) {
         <Link key={l.href} href={l.href} className="tab" aria-current={current(path, l.href) ? 'page' : undefined}>
           <span className="tab-ic">
             <Icon name={l.icon} />
-            {l.href === '/messages' && unread > 0 ? <span className="count" aria-label={`${unread} new`}>{unread}</span> : null}
+            <Badge href={l.href} unread={unread} needs={needs} />
           </span>
           {l.label}
         </Link>

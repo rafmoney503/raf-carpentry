@@ -8,12 +8,14 @@ import type { Report, SiteStats } from '@/lib/types';
 import { AppCard, OffCard } from './apps';
 import { AssistantCard, SupportCard } from './assistant';
 import { ReviewCard } from './review';
+import { AgentsToday } from './agents';
+import type { AgentList } from '@/lib/agents-types';
 import { Health } from './health';
 import { Icon, InsightCard, Mark } from './ui';
 
 type Range = 'today' | 'week';
 
-export function Today({ r, now }: { r: Report; now: number }) {
+export function Today({ r, now, agents = null }: { r: Report; now: number; agents?: AgentList | null }) {
   const [range, setRange] = useState<Range>('week');
   const wk = range === 'week';
   const counted = r.sites.filter((s) => s.status === 'ok');
@@ -79,6 +81,7 @@ export function Today({ r, now }: { r: Report; now: number }) {
         </p>
       ))}
 
+      {agents ? <AgentsToday list={agents} /> : null}
       {r.review ? <ReviewCard list={r.review} /> : null}
       {r.assistant ? <AssistantCard a={r.assistant} now={now} /> : null}
       {r.assistant ? <SupportCard a={r.assistant} now={now} /> : null}
