@@ -1,5 +1,6 @@
 import { randomInt } from 'node:crypto';
 import { jobkitRpc, syncSetUp } from './job-kit-sync-server';
+import { saveBusinessContext } from './agent-context';
 import { addJobNote, allClients, createEnquiry, currentJobs, sm8SetUp, Sm8Error, type CurrentJob } from './servicem8';
 import { inbox, message, outlookSetUp, OutlookError, type FullMail, type InboxMail } from './outlook';
 import { addEmailPhotos } from './email-photos';
@@ -460,7 +461,10 @@ export async function runAssistant(why: RunInfo['why']): Promise<RunInfo | { bus
     let jobs: CurrentJob[] = [];
     let sm8Ok = true;
     try {
-      jobs = (await currentJobs()).jobs;
+      const cur = await currentJobs();
+      jobs = cur.jobs;
+      // the snapshot HQ's agents read (they have no ServiceM8 key); waited on so it lands before the run ends
+      await saveBusinessContext(cur.jobs, cur.bookings);
     } catch (e) {
       sm8Ok = false;
       problem(c, sm8Problem(e));
