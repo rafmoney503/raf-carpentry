@@ -3,6 +3,7 @@ import { cleanNotes, morningLine, summarise, type AsRaw } from '../src/lib/assis
 import { buildInsights, morningSummary } from '../src/lib/insights';
 import { addDays, londonDay, londonMidnight, rangeText } from '../src/lib/time';
 import type { DayPoint, Leads, SiteStats } from '../src/lib/types';
+import { ageWords, cleanList as cleanLi, readBox, summarise as liSummary } from '../src/lib/linkedin-types';
 
 let pass = 0;
 let fail = 0;
@@ -136,6 +137,33 @@ ok(tm.body.includes('1 message on Build It in 3D'), 'morning line for messages: 
   ok(JSON.stringify(cleanNotes({ notes: [{ title: 'New enquiry: Sarah', body: 'x', tag: 'assistant-1' }] })) === JSON.stringify([{ title: 'New enquiry: Sarah', body: 'x', tag: 'assistant-1' }]), 'a buzz');
   ok(cleanNotes({ notes: [] }) === null && cleanNotes({}) === null && cleanNotes({ notes: [{ title: '' }] }) === null && cleanNotes({ notes: [{ title: 'x'.repeat(200) }] }) === null, 'bad buzzes refused');
   ok(cleanNotes({ notes: [{ title: 'a', tag: '<script>' }] })![0].tag === 'assistant', 'odd tag replaced');
+}
+
+// LinkedIn numbers
+{
+  ok(cleanLi(null) === null && cleanLi({ rows: [] }) === null, 'linkedin: bad lists refused');
+  const li = cleanLi({
+    today: '2026-11-15',
+    rows: [
+      { day: '2026-11-15', followers: 14, connections: 120, profileViews: 9, searchAppearances: 3, postImpressions: null, source: 'typed', at: 1 },
+      { day: '2026-11-01', followers: 2, connections: 100, profileViews: 1, searchAppearances: 1, postImpressions: 0, source: 'browser', at: 1 },
+      { day: '2026-11-09', followers: 10, connections: 'x', profileViews: -1, searchAppearances: 2, postImpressions: 5, source: 'typed', at: 1 },
+      { day: 'nope', followers: 1 },
+    ],
+  })!;
+  ok(li.rows.length === 3 && li.rows[0].day === '2026-11-01', 'linkedin: sorted, bad row dropped');
+  ok(li.rows[1].connections === null && li.rows[1].profileViews === null, 'linkedin: bad numbers become empty');
+  const ls = liSummary(li)!;
+  ok(ls.before?.day === '2026-11-09' && ls.since === 'Mon 9 Nov', 'linkedin: compared with a week before: ' + ls.since);
+  ok(ls.values.find((v) => v.key === 'followers')!.change === 4, 'linkedin: followers +4');
+  ok(ls.values.find((v) => v.key === 'connections')!.change === null, 'linkedin: no change without the old number');
+  ok(ls.values.find((v) => v.key === 'searchAppearances')!.change === null, 'linkedin: rolling counts show no change');
+  ok(ls.headline === '14 followers · 3 search appearances this week · 9 profile views in 90 days', 'linkedin headline: ' + ls.headline);
+  ok(ls.age === 0 && ageWords(0) === 'today' && ageWords(1) === 'yesterday' && ageWords(9) === '9 days ago', 'linkedin: age');
+  const one = liSummary(cleanLi({ today: '2026-11-15', rows: [{ day: '2026-11-15', followers: 0, profileViews: 0, searchAppearances: 1, postImpressions: 0, source: 'browser', at: 1 }] }))!;
+  ok(one.before === null && one.headline === '0 followers · 1 search appearance this week · 0 profile views in 90 days', 'linkedin first day: ' + one.headline);
+  ok(liSummary(cleanLi({ today: '2026-11-15', rows: [] })) === null, 'linkedin: nothing yet');
+  ok(readBox('1,530') === 1530 && readBox(' ') === '' && readBox('12a') === null && readBox('-3') === null && readBox('99999999') === null, 'linkedin: boxes read');
 }
 
 console.log(`${pass} passed, ${fail} failed`);

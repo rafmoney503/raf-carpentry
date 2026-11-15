@@ -65,6 +65,17 @@ it): `create_deployment` with gitSource github rafmoney503/raf-carpentry, ref `r
   function on a throwaway Postgres (scratchpad agui/: supa.mjs, real.sql, test.cjs 79 checks as an iPhone 13, at 320,
   1024 and 1440).
 
+- **LinkedIn** (15 Nov 2026, Raf: 'add stats to hq' after his profile was filled in): LinkedIn has no way for an app
+  to read a personal profile's numbers, so they are kept a row a day in `hq.linkedin` (`supabase/hq-linkedin.sql`,
+  migration `hq_linkedin`, applied 15 Nov 2026) through `public.hq_linkedin` (HQ_DB_SECRET): followers, connections,
+  profile views (past 90 days), search appearances and post impressions (past 7 days), as LinkedIn's own Analytics box
+  shows them. A card on Today (`src/components/linkedin.tsx`; sums in `src/lib/linkedin-types.ts`, checked by
+  `npm run check`): the numbers, followers and connections against the numbers about a week before, Update the
+  numbers (typed in, `POST /api/linkedin`, boxes left empty keep what was put in that day), Open LinkedIn analytics;
+  after 7 days without new numbers it's marked and asks for them. Claude can also put them in (source 'browser')
+  when it has the profile open. The first row (15 Nov 2026) is from the profile: 0 followers, 0 profile views,
+  1 search appearance, 0 post impressions.
+
 The sites and what counts as their home page and key pages are in `src/lib/sites.ts`. The "worth knowing" rules are
 `src/lib/insights.ts` (checked by `npm run check`).
 

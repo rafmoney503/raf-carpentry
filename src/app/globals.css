@@ -660,3 +660,28 @@ h1, h2, h3, .display { font-family: var(--display); letter-spacing: -0.015em; }
 .ag-radios input, .ag-pause input { width: 20px; height: 20px; accent-color: var(--ink); flex: none; }
 .ag-today { text-decoration: none; color: var(--ink); }
 .ag-today-list { margin: 0; padding: 0 0 0 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.45; color: var(--text); }
+
+/* LinkedIn card on Today (15 Nov 2026) */
+.mark.li-mark { background: #0a66c2; color: #fff; letter-spacing: -0.02em; }
+.where a { color: inherit; }
+.li-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.li-grid li { background: var(--soft); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.li-grid b { font-family: var(--display); font-size: 22px; line-height: 1.1; color: var(--ink); }
+.li-grid span { font-size: 13px; font-weight: 600; color: var(--text); }
+.li-grid small { font-size: 12px; color: var(--muted); }
+.li-grid em { font-style: normal; font-weight: 600; }
+.li-grid em.up { color: #17603a; }
+.li-grid em.down { color: #a3220f; }
+@media (min-width: 1024px) {
+  .li-grid em.up { color: #8fe0b0; }
+  .li-grid em.down { color: #ffb4a6; }
+}
+.li-grid li:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.li-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.li-acts .act { flex: 1 1 200px; }
+.li-form { display: flex; flex-direction: column; gap: 10px; }
+.li-boxes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.li-boxes label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; min-width: 0; }
+.li-boxes small { font-weight: 400; color: var(--muted); }
+.li-boxes input { margin-top: auto; min-height: 44px; padding: 0 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--ink); font: inherit; font-size: 16px; width: 100%; box-sizing: border-box; }
+.card .li-err { color: #a3220f; }

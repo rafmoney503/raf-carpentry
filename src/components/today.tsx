@@ -11,11 +11,13 @@ import { ReviewCard } from './review';
 import { AgentsToday } from './agents';
 import type { AgentList } from '@/lib/agents-types';
 import { Health } from './health';
+import { LinkedInCard } from './linkedin';
+import type { LiList } from '@/lib/linkedin-types';
 import { Icon, InsightCard, Mark } from './ui';
 
 type Range = 'today' | 'week';
 
-export function Today({ r, now, agents = null }: { r: Report; now: number; agents?: AgentList | null }) {
+export function Today({ r, now, agents = null, linkedin = null }: { r: Report; now: number; agents?: AgentList | null; linkedin?: LiList | null }) {
   const [range, setRange] = useState<Range>('week');
   const wk = range === 'week';
   const counted = r.sites.filter((s) => s.status === 'ok');
@@ -161,6 +163,7 @@ export function Today({ r, now, agents = null }: { r: Report; now: number; agent
           ) : (
             <p className="empty">Nothing stands out today. HQ looks every few minutes.</p>
           )}
+          {linkedin ? <LinkedInCard list={linkedin} /> : null}
         </div>
       </div>
 
