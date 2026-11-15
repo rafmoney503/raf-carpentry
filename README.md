@@ -65,7 +65,7 @@ it): `create_deployment` with gitSource github rafmoney503/raf-carpentry, ref `r
   function on a throwaway Postgres (scratchpad agui/: supa.mjs, real.sql, test.cjs 79 checks as an iPhone 13, at 320,
   1024 and 1440).
 
-- **LinkedIn** (15 Nov 2026, Raf: 'add stats to hq' after his profile was filled in): LinkedIn has no way for an app
+- **LinkedIn** (15 Nov 2026, Raf: 'add stats to hq' after his profile was filled in; live since 15 Nov 2026, Raf: 'Merge'): LinkedIn has no way for an app
   to read a personal profile's numbers, so they are kept a row a day in `hq.linkedin` (`supabase/hq-linkedin.sql`,
   migration `hq_linkedin`, applied 15 Nov 2026) through `public.hq_linkedin` (HQ_DB_SECRET): followers, connections,
   profile views (past 90 days), search appearances and post impressions (past 7 days), as LinkedIn's own Analytics box
