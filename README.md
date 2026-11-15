@@ -94,6 +94,32 @@ it): `create_deployment` with gitSource github rafmoney503/raf-carpentry, ref `r
   reads. Reach and views would need Facebook's Page insights permission, which the Job Kit's login doesn't ask for.
   Tested against the real rafcarpentry.com route on a pretend Facebook and store (scratchpad hqfb/: mock.mjs,
   start.sh, ui.cjs 48 checks as an iPhone 13, at 320 and 1440 on a production build).
+- **Facebook and Instagram ads** (15 Nov 2026, Raf: 'create another section for ads for facebook and instagram as i
+  need to push hard', then 'Both' and 'Results + ready ads'): `/ads` (sidebar: On social media, Ads; on the phone
+  through Today's card). HQ asks rafcarpentry.com, which holds the Facebook login and the Claude key: `GET
+  /api/hq/ads?days=7|30|90` and `POST /api/hq/ads` with `Bearer HQ_NOTIFY_SECRET` (`src/lib/ads.ts`, kept 5 minutes per
+  period, a minute when it couldn't be read, asked again after a write or a mark; `ADS_URL` points at a stand-in in
+  tests). The answer (`src/lib/ads-types.ts`, a copy of raf-carpentry's: change both) has Meta's numbers (ad
+  accounts, totals and the period before, Facebook against Instagram, each ad a day, each ad and campaign), what the
+  website counters saw from the ads' URL parameters (rafcarpentry.com enquiries: Send to Raf, WhatsApp, call or email;
+  CabinetOS sign-ups) and the ads Claude wrote. Sums in `src/lib/adsums.ts` (checked by `npm run check`): for Both,
+  Raf Carpentry or CabinetOS, spend, clicks and cost a click, people reached (the account's for Both, added up for
+  one business, said "up to"), enquiries and sign-ups with their cost each, what Meta itself counts, spend a day,
+  the best ad (the cheapest lead / message / sign-up Meta counted, else the cheapest click, at least £1 spent).
+  The page: Both / Raf Carpentry / CabinetOS and 7 / 30 / 90 days, the spend and four facts, spent a day (tap a day),
+  the best ad, where they showed, every ad, On your websites (from ads, and from posts and links), then Ready ads:
+  Write 3 ads (`/api/ads` behind the sign-in, about a minute; a business and an optional note), and each ad as it
+  would show in a feed (the Page, the words, the picture at its own shape between 4:5 and 1.91:1, the link, headline,
+  description and button), why it should work, who to show it to, and what to paste where in Ads Manager (Copy on
+  each field, the URL parameters under Tracking, start with £5 a day for 7 days), with Approve / Not for me / Undo
+  approve; an ad made from one shows its numbers once it runs (found by its `utm_content`). Not for me folds away.
+  When the ads can't be read it says what to do (an ad account, Connect ads in the Job Kit at
+  `https://www.rafcarpentry.com/job-kit?social=open`, the Marketing API on the Meta app), and the ready ads and the
+  website counts still show. A card on Today (On social media, beside Facebook): the week's spend, clicks,
+  enquiries and sign-ups and the cost of one, or the ads waiting. Only reads and drafts: making, pausing or paying for
+  an ad happens in Ads Manager. Tested against the real rafcarpentry.com route on `next dev` with a pretend Meta,
+  store and Claude (scratchpad ads/: mock.mjs, start.sh, ui.cjs 76 checks as an iPhone 13, at 320 and 1440 on a
+  production build).
 
 The sites and what counts as their home page and key pages are in `src/lib/sites.ts`. The "worth knowing" rules are
 `src/lib/insights.ts` (checked by `npm run check`).

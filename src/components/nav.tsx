@@ -67,6 +67,11 @@ export function Sidebar({ sites, unread = 0, needs = 0 }: { sites: SideSite[]; u
           <span>Cabinet OS</span>
           <em style={{ color: 'var(--muted)' }}>Facebook</em>
         </Link>
+        <Link href="/ads" className="side-site appc" style={appStyle({ color: '#0866ff', light: '#5c9dff', ink: '#ffffff' })} aria-current={path === '/ads' ? 'page' : undefined}>
+          <span className="sq" aria-hidden="true" />
+          <span>Ads</span>
+          <em style={{ color: 'var(--muted)' }}>Facebook and Instagram</em>
+        </Link>
       </section>
       <p className="side-foot">Visits from Vercel Web Analytics. Taps and sign-ups from Supabase.</p>
     </aside>
