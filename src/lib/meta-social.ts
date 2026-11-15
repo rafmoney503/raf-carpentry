@@ -14,6 +14,13 @@ import { answeredOf, clip, ms, type MetaAccount, type Platform, type SocialComme
    Kept (src/lib/social-store.ts): jobkit.social 'meta' = who connected, the Pages with their tokens sealed, which
    Page and the permissions given. The overview of all the platforms is put together in src/lib/social.ts.
 
+   More Pages (15 Nov 2026, Raf, the day he made the Cabinet OS Page: 'add also stats from facebook to jobkit'): beside
+   the picked Page, any other Page the login shared can be shown too (kept as `show`; until Raf chooses, a Page called
+   Cabinet OS is shown by itself), each with its own followers, posts and comments, and its own Instagram if one is
+   linked to it. The list of Pages is asked again with the long-lived user token at most every 6 hours (pagesAt), so a
+   Page made after connecting shows up without logging in again when the login shared all Pages; otherwise Connect
+   again and tick it.
+
    Vercel: META_APP_ID, META_APP_SECRET (sensitive). Optional: META_LOGIN_CONFIG_ID (a Facebook Login for Business
    configuration; without it the login asks for SCOPES), META_SCOPES (comma list, replaces SCOPES), META_API_VERSION
    (default v25.0), META_REDIRECT_URI (default <site>/api/job-kit/social/meta/callback); META_GRAPH_API and
@@ -104,6 +111,8 @@ type Kept = {
   userUntil?: number;
   pages: Page[]; // tokens sealed
   pick?: string;
+  show?: string[]; // Pages shown beside the picked one (unset: a Page called Cabinet OS)
+  pagesAt?: number; // when the list of Pages was last asked of Facebook
   perms: string[];
   declined: string[];
   connectedAt: number;
@@ -136,6 +145,77 @@ const open = (s: string) => {
 
 /* ---------- connecting (the callback) ---------- */
 
+/* The Pages a user token can see, each with its own token (sealed) and linked Instagram. */
+async function pagesOf(token: string): Promise<Page[]> {
+  const accounts = await graph<{ data?: { id: string; name: string; access_token?: string; instagram_business_account?: { id: string; username?: string } }[] }>('/me/accounts', token, {
+    fields: 'id,name,access_token,instagram_business_account{id,username}',
+    limit: '100',
+  });
+  const pages: Page[] = [];
+  for (const p of accounts.data ?? []) {
+    if (!p.access_token) continue;
+    let ig = p.instagram_business_account;
+    if (!ig) {
+      // asked of the Page itself, in case the list left it out
+      ig = await graph<{ instagram_business_account?: { id: string; username?: string } }>(`/${p.id}`, p.access_token, { fields: 'instagram_business_account{id,username}' })
+        .then((r) => r.instagram_business_account)
+        .catch(() => undefined);
+    }
+    pages.push({ id: p.id, name: p.name, token: seal(p.access_token), ig: ig ? { id: ig.id, username: ig.username } : undefined });
+  }
+  return pages;
+}
+
+/* The Pages shown on the Social screen: the picked one first, then the others Raf chose (until he chooses: a Page
+   called Cabinet OS). Only Pages still in the list. */
+const CABINET = /cabinet\s*os/i;
+export function shownIds(k: { pages: { id: string; name: string }[]; pick?: string; show?: string[] }) {
+  const more = k.show ?? k.pages.filter((p) => CABINET.test(p.name)).map((p) => p.id);
+  return [...new Set([k.pick, ...more].filter((x): x is string => Boolean(x)))].filter((id) => k.pages.some((p) => p.id === id));
+}
+
+const PAGES_EVERY = 6 * 3600_000;
+
+/* The list of Pages asked again with the long-lived user token: a Page made since connecting shows up (when the login
+   shared every Page), a renamed one gets its new name, and fresh Page tokens. A Page no longer in the answer is kept,
+   with its old token, so a hiccup never loses one. Quietly does nothing when the user token has run out or Facebook
+   says no. */
+async function refreshPages(k: Kept, userToken: string, force = false): Promise<Kept> {
+  if (!userToken) return k;
+  if (!force && Date.now() - (k.pagesAt ?? k.connectedAt) < PAGES_EVERY) return k;
+  let fresh: Page[];
+  try {
+    fresh = await pagesOf(userToken);
+  } catch (e) {
+    if (force) throw e;
+    const next = { ...k, pagesAt: Date.now() }; // not again for 6 hours
+    await save(next).catch(() => undefined);
+    return next;
+  }
+  const next: Kept = { ...k, pages: [...fresh, ...k.pages.filter((p) => !fresh.some((f) => f.id === p.id))], pagesAt: Date.now() };
+  await save(next).catch(() => undefined);
+  return next;
+}
+
+/* Look for Pages now (Raf tapped Look for new Pages): answers how many there are. */
+export async function lookForPages(): Promise<{ pages: number; added: string[] }> {
+  const k = await load();
+  if (!k) throw new MetaError('meta-not-connected');
+  const userToken = open(k.userToken);
+  const next = await refreshPages(k, userToken, true);
+  return { pages: next.pages.length, added: next.pages.filter((p) => !k.pages.some((o) => o.id === p.id)).map((p) => p.name) };
+}
+
+/* Show a Page on the Social screen, or stop showing it (never the picked one). */
+export async function showPage(id: string, on: boolean) {
+  const k = await load();
+  if (!k) throw new MetaError('meta-not-connected');
+  if (!k.pages.some((p) => p.id === id)) throw new MetaError('meta-gone', 'That Page');
+  if (id === k.pick) return;
+  const now = shownIds(k).filter((x) => x !== k.pick);
+  await save({ ...k, show: on ? [...new Set([...now, id])] : now.filter((x) => x !== id) });
+}
+
 /* The code from Facebook's login -> a long-lived user token -> the Pages with their own tokens and linked Instagram.
    Answers whether a Page is picked (several Pages and no clear one: Raf picks in the app). */
 export async function connectMeta(code: string, origin: string): Promise<{ picked: boolean }> {
@@ -152,26 +232,11 @@ export async function connectMeta(code: string, origin: string): Promise<{ picke
     fb_exchange_token: short.access_token,
   });
   const token = long.access_token;
-  const [me, perms, accounts] = await Promise.all([
+  const [me, perms, pages] = await Promise.all([
     graph<{ id: string; name?: string }>('/me', token, { fields: 'id,name' }),
     graph<{ data?: { permission: string; status: string }[] }>('/me/permissions', token).catch(() => ({ data: [] })),
-    graph<{ data?: { id: string; name: string; access_token?: string; instagram_business_account?: { id: string; username?: string } }[] }>('/me/accounts', token, {
-      fields: 'id,name,access_token,instagram_business_account{id,username}',
-      limit: '100',
-    }),
+    pagesOf(token),
   ]);
-  const pages: Page[] = [];
-  for (const p of accounts.data ?? []) {
-    if (!p.access_token) continue;
-    let ig = p.instagram_business_account;
-    if (!ig) {
-      // asked of the Page itself, in case the list left it out
-      ig = await graph<{ instagram_business_account?: { id: string; username?: string } }>(`/${p.id}`, p.access_token, { fields: 'instagram_business_account{id,username}' })
-        .then((r) => r.instagram_business_account)
-        .catch(() => undefined);
-    }
-    pages.push({ id: p.id, name: p.name, token: seal(p.access_token), ig: ig ? { id: ig.id, username: ig.username } : undefined });
-  }
   if (!pages.length) throw new MetaError('meta-no-page');
   const before = await load().catch(() => null);
   const withIg = pages.filter((p) => p.ig);
@@ -193,6 +258,8 @@ export async function connectMeta(code: string, origin: string): Promise<{ picke
     userUntil: long.expires_in ? Date.now() + long.expires_in * 1000 : undefined,
     pages,
     pick,
+    show: before?.show,
+    pagesAt: Date.now(),
     perms: list.filter((p) => p.status === 'granted').map((p) => p.permission),
     declined: list.filter((p) => p.status !== 'granted').map((p) => p.permission),
     connectedAt: Date.now(),
@@ -267,6 +334,7 @@ async function facebook(page: Page, token: string) {
     followers: typeof info.followers_count === 'number' ? info.followers_count : typeof info.fan_count === 'number' ? info.fan_count : null,
     history: [],
   };
+  const owned = { owner: page.id, ownerName: profile.name, page: page.id };
   const posts: SocialPost[] = [];
   const comments: SocialComment[] = [];
   for (const p of feed.data ?? []) {
@@ -274,6 +342,7 @@ async function facebook(page: Page, token: string) {
     posts.push({
       id: p.id,
       platform: 'fb',
+      ...owned,
       text: clip(p.message || p.story, 300),
       at: ms(p.created_time),
       link,
@@ -295,6 +364,7 @@ async function facebook(page: Page, token: string) {
       comments.push({
         id: c.id,
         platform: 'fb',
+        ...owned,
         post: p.id,
         who: c.from?.name || 'Someone on Facebook',
         text: clip(c.message, 2000),
@@ -309,7 +379,7 @@ async function facebook(page: Page, token: string) {
   return { profile, posts, comments };
 }
 
-async function instagram(ig: { id: string; username?: string }, token: string) {
+async function instagram(ig: { id: string; username?: string }, token: string, pageId: string) {
   const [info, media] = await Promise.all([
     graph<{ id: string; username?: string; name?: string; profile_picture_url?: string; followers_count?: number; follows_count?: number; media_count?: number }>(`/${ig.id}`, token, {
       fields: 'id,username,name,profile_picture_url,followers_count,follows_count,media_count',
@@ -334,6 +404,7 @@ async function instagram(ig: { id: string; username?: string }, token: string) {
     posts: info.media_count ?? null,
     history: [],
   };
+  const owned = { owner: ig.id, ownerName: profile.handle ? `@${profile.handle}` : profile.name, page: pageId };
   const posts: SocialPost[] = [];
   const comments: SocialComment[] = [];
   for (const m of media.data ?? []) {
@@ -342,6 +413,7 @@ async function instagram(ig: { id: string; username?: string }, token: string) {
     posts.push({
       id: m.id,
       platform: 'ig',
+      ...owned,
       text: clip(m.caption, 300),
       at: ms(m.timestamp),
       link,
@@ -363,6 +435,7 @@ async function instagram(ig: { id: string; username?: string }, token: string) {
       comments.push({
         id: c.id,
         platform: 'ig',
+        ...owned,
         post: m.id,
         who: c.username ? `@${c.username}` : 'Someone on Instagram',
         text: clip(c.text, 2000),
@@ -398,26 +471,6 @@ export async function metaPart(): Promise<{ account: MetaAccount; part: SocialPa
     return { account: { setUp: true, missing: [], connected: false, error: p.error, detail: p.detail }, part: EMPTY };
   }
   if (!k) return { account: { setUp: true, missing: [], connected: false }, part: EMPTY };
-  const page = k.pages.find((p) => p.id === k.pick);
-  const asked = process.env.META_LOGIN_CONFIG_ID ? [] : scopes();
-  const account: MetaAccount = {
-    setUp: true,
-    missing: [],
-    connected: true,
-    who: k.user.name,
-    connectedAt: k.connectedAt,
-    pages: k.pages.map((p) => ({ id: p.id, name: p.name, ig: p.ig?.username })),
-    page: page ? { id: page.id, name: page.name } : undefined,
-    notGranted: asked.filter((s) => !k.perms.includes(s)),
-  };
-  if (!page) return { account, part: EMPTY };
-  let token: string;
-  try {
-    token = open(page.token);
-  } catch (e) {
-    const p = problemOf('fb', e);
-    return { account: { ...account, error: p.error, detail: p.detail }, part: EMPTY };
-  }
   const userToken = (() => {
     try {
       return open(k.userToken);
@@ -425,22 +478,64 @@ export async function metaPart(): Promise<{ account: MetaAccount; part: SocialPa
       return '';
     }
   })();
-  const [fb, ig] = await Promise.allSettled([
-    facebook(page, token),
-    page.ig
-      ? instagram(page.ig, token).catch((e) => {
-          // the Page's token normally reads its Instagram; if Meta says no, the user token may still
-          if (userToken && e instanceof MetaError && (e.code === 'meta-permission' || e.code === 'meta-expired')) return instagram(page.ig!, userToken);
-          throw e;
-        })
-      : Promise.reject(new MetaError('meta-no-ig')),
-  ]);
+  k = await refreshPages(k, userToken).catch(() => k!);
+  const page = k.pages.find((p) => p.id === k!.pick);
+  const asked = process.env.META_LOGIN_CONFIG_ID ? [] : scopes();
+  const ids = shownIds(k);
+  const account: MetaAccount = {
+    setUp: true,
+    missing: [],
+    connected: true,
+    who: k.user.name,
+    connectedAt: k.connectedAt,
+    pages: k.pages.map((p) => ({ id: p.id, name: p.name, ig: p.ig?.username, shown: ids.includes(p.id) })),
+    page: page ? { id: page.id, name: page.name } : undefined,
+    notGranted: asked.filter((s) => !k!.perms.includes(s)),
+  };
+  if (!page) return { account, part: EMPTY };
+  try {
+    open(page.token);
+  } catch (e) {
+    const p = problemOf('fb', e);
+    return { account: { ...account, error: p.error, detail: p.detail }, part: EMPTY };
+  }
+  type One = { profile: SocialProfile; posts: SocialPost[]; comments: SocialComment[] };
   const problems: SocialProblem[] = [];
-  const parts: { profile: SocialProfile; posts: SocialPost[]; comments: SocialComment[] }[] = [];
-  if (ig.status === 'fulfilled') parts.push(ig.value);
-  else problems.push(problemOf('ig', ig.reason));
-  if (fb.status === 'fulfilled') parts.push(fb.value);
-  else problems.push(problemOf('fb', fb.reason));
+  const parts: One[] = [];
+  // each shown Page (the picked one first): its Facebook, and its Instagram when one is linked
+  const results = await Promise.all(
+    ids.map(async (id) => {
+      const pg = k!.pages.find((p) => p.id === id)!;
+      const main = id === k!.pick;
+      let token: string;
+      try {
+        token = open(pg.token);
+      } catch (e) {
+        return { pg, main, fb: { status: 'rejected', reason: e } as PromiseSettledResult<One>, ig: null };
+      }
+      const [fb, ig] = await Promise.allSettled([
+        facebook(pg, token),
+        pg.ig
+          ? instagram(pg.ig, token, pg.id).catch((e) => {
+              // the Page's token normally reads its Instagram; if Meta says no, the user token may still
+              if (userToken && e instanceof MetaError && (e.code === 'meta-permission' || e.code === 'meta-expired')) return instagram(pg.ig!, userToken, pg.id);
+              throw e;
+            })
+          : Promise.reject(new MetaError('meta-no-ig')),
+      ]);
+      return { pg, main, fb, ig: pg.ig || main ? ig : null };
+    })
+  );
+  for (const r of results) {
+    const named = (p: SocialProblem): SocialProblem => (r.main ? p : { ...p, account: r.pg.name });
+    if (r.ig?.status === 'fulfilled') parts.push(r.ig.value);
+    else if (r.ig) problems.push(named(problemOf('ig', r.ig.reason)));
+  }
+  for (const r of results) {
+    const named = (p: SocialProblem): SocialProblem => (r.main ? p : { ...p, account: r.pg.name });
+    if (r.fb.status === 'fulfilled') parts.push(r.fb.value);
+    else problems.push(named(problemOf('fb', r.fb.reason)));
+  }
   // the login stopped working everywhere: connect again (the device keeps its last numbers)
   if (!parts.length && problems.every((p) => p.error === 'meta-expired')) return { account: { ...account, error: 'meta-expired', detail: problems[0]?.detail }, part: EMPTY };
   return {
@@ -451,10 +546,11 @@ export async function metaPart(): Promise<{ account: MetaAccount; part: SocialPa
 
 /* ---------- replying (only ever because Raf pressed Send reply) ---------- */
 
-export async function replyMeta(platform: Platform, commentId: string, text: string): Promise<{ id: string }> {
+export async function replyMeta(platform: Platform, commentId: string, text: string, pageId?: string): Promise<{ id: string }> {
   const k = await load();
   if (!k) throw new MetaError('meta-not-connected');
-  const page = k.pages.find((p) => p.id === k.pick);
+  // the Page the comment came through (a comment on the Cabinet OS Page is answered as Cabinet OS); else the picked one
+  const page = k.pages.find((p) => p.id === (pageId || k.pick));
   if (!page) throw new MetaError('meta-no-page');
   const token = open(page.token);
   // Instagram: a reply under the comment; Facebook: a comment on the comment, as the Page

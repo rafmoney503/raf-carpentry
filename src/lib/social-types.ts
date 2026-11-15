@@ -16,7 +16,11 @@ export type SocialProfile = {
   history: SocialDay[];
 };
 export type SocialReply = { id: string; who: string; text: string; at: number; mine: boolean };
-export type SocialComment = {
+/* Whose a post or comment is, when Raf runs more than one account on a platform (15 Nov 2026: the Cabinet OS Page
+   beside Rafal Carpentry Services): owner = the profile's id, ownerName = its name or @handle, page = the Facebook
+   Page whose token reads and replies to it. Missing on overviews from before. */
+type Owned = { owner?: string; ownerName?: string; page?: string };
+export type SocialComment = Owned & {
   id: string;
   platform: Platform;
   post: string; // the post's id
@@ -29,7 +33,7 @@ export type SocialComment = {
   replies: SocialReply[];
   answered: boolean; // Raf has replied, and they haven't written again since
 };
-export type SocialPost = {
+export type SocialPost = Owned & {
   id: string;
   platform: Platform;
   text: string;
@@ -40,7 +44,7 @@ export type SocialPost = {
   likes: number | null;
   comments: number;
 };
-export type SocialProblem = { platform: Platform; error: string; detail?: string };
+export type SocialProblem = { platform: Platform; error: string; detail?: string; account?: string };
 /* One account's state: set up (the settings are in Vercel), connected, and what went wrong this time. */
 export type SocialAccount = {
   setUp: boolean;
@@ -52,7 +56,9 @@ export type SocialAccount = {
   error?: string; // the whole account didn't load (e.g. meta-expired): the device keeps its last numbers
   detail?: string;
 };
-export type MetaAccount = SocialAccount & { pages?: { id: string; name: string; ig?: string }[]; page?: { id: string; name: string } };
+/* pages: every Page the login shared (shown: on the Social screen beside the picked one); page: the picked one,
+   Raf Carpentry's, whose Instagram is the main one. */
+export type MetaAccount = SocialAccount & { pages?: { id: string; name: string; ig?: string; shown?: boolean }[]; page?: { id: string; name: string } };
 export type SocialPart = { profiles: SocialProfile[]; posts: SocialPost[]; comments: SocialComment[]; problems: SocialProblem[] };
 export type SocialOverview = {
   v: 2;

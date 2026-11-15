@@ -1,6 +1,6 @@
 import { guard } from '@/lib/job-kit-server';
 import { connectOrigin } from '@/lib/meta-origin';
-import { disconnectMeta, metaLoginUrl, MetaError, metaMissing, metaSetUp, pickPage, replyMeta } from '@/lib/meta-social';
+import { disconnectMeta, lookForPages, metaLoginUrl, MetaError, metaMissing, metaSetUp, pickPage, replyMeta, showPage } from '@/lib/meta-social';
 import { markSeen, overview } from '@/lib/social';
 import { StoreError } from '@/lib/social-store';
 import { disconnectThreads, replyThreads, ThreadsError, threadsLoginUrl, threadsMissing, threadsSetUp } from '@/lib/threads-social';
@@ -11,8 +11,11 @@ import { disconnectThreads, replyThreads, ThreadsError, threadsLoginUrl, threads
    { action: 'start', platform?, again? }        the login address to open: Facebook (meta, the default; again: ask for
                                                  what was turned down) or Threads
    { action: 'pick', page }                      which Facebook Page (when Raf runs more than one)
+   { action: 'show', page, on }                  show another Page beside it (e.g. Cabinet OS), or stop showing it
+   { action: 'pages' }                           ask Facebook for the list of Pages now (a Page made since connecting)
    { action: 'seen', at }                        the newest comment Raf has had in front of him
-   { action: 'reply', platform, id, text }       a reply under a comment, only because Raf pressed Send reply
+   { action: 'reply', platform, id, text, page? } a reply under a comment, only because Raf pressed Send reply (page:
+                                                 the Facebook Page the comment came through; else the picked one)
    { action: 'disconnect', platform? }           forget the tokens (meta or threads; the platform keeps the app until
                                                  removed there) */
 export const maxDuration = 30;
@@ -69,13 +72,21 @@ export async function POST(req: Request) {
       await pickPage(page);
       return Response.json({ ok: true }, { headers: noStore });
     }
+    if (body.action === 'show') {
+      const page = str(body.page, 80);
+      if (!idOk(page)) return Response.json({ error: 'bad' }, { status: 400 });
+      await showPage(page, body.on !== false);
+      return Response.json({ ok: true }, { headers: noStore });
+    }
+    if (body.action === 'pages') return Response.json(await lookForPages(), { headers: noStore });
     if (body.action === 'reply') {
       const platform = body.platform === 'ig' || body.platform === 'fb' ? body.platform : null;
       const id = str(body.id, 80);
       const text = str(body.text, 2000);
-      if (!platform || !idOk(id)) return Response.json({ error: 'bad' }, { status: 400 });
+      const page = str(body.page, 80);
+      if (!platform || !idOk(id) || (page && !idOk(page))) return Response.json({ error: 'bad' }, { status: 400 });
       if (!text) return Response.json({ error: 'missing-text' }, { status: 400 });
-      return Response.json(await replyMeta(platform, id, text), { headers: noStore });
+      return Response.json(await replyMeta(platform, id, text, page || undefined), { headers: noStore });
     }
     if (body.action === 'disconnect') {
       await disconnectMeta();

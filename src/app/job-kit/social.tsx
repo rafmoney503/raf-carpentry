@@ -15,7 +15,10 @@ import type { Platform, SocialAccount, SocialComment, SocialDay, SocialOverview,
    them (on Threads, the replies people left) with what was said back, newest first; a reply goes from here only when
    Raf presses Send reply. The last overview is kept on this device (raf_jobkit_social) so Today can say what's new,
    and so a platform that doesn't answer this time still shows its last numbers; which comments he has seen is kept on
-   the server (and on the device at once), so the phone and the computer agree. YouTube and TikTok come later. */
+   the server (and on the device at once), so the phone and the computer agree. YouTube and TikTok come later.
+   More Pages (15 Nov 2026, Raf: 'add also stats from facebook to jobkit', the day he made the Cabinet OS Page): any
+   other Facebook Page the login shared can sit beside Raf Carpentry's (Show / Hide under Pages here), each with its
+   followers, its latest posts' reactions and comments, and its comments to answer as that Page. */
 
 const API = '/api/job-kit/social';
 const KEY = 'raf_jobkit_social';
@@ -184,6 +187,10 @@ export function newComments(s: Social): SocialComment[] {
 }
 const asks = (t: string) => /\?|how much|price|cost|quote|available|do you (do|cover|work)|interested|contact/i.test(t);
 export const platformName = (p: Platform) => (p === 'ig' ? 'Instagram' : p === 'fb' ? 'Facebook' : 'Threads');
+/* More than one account on a platform (Rafal Carpentry Services and Cabinet OS): then each is called by its name. */
+const several = (d: SocialOverview | null, p: Platform) => (d?.profiles.filter((x) => x.platform === p).length ?? 0) > 1;
+const whereOf = (d: SocialOverview | null, c: { platform: Platform; ownerName?: string }) => (several(d, c.platform) && c.ownerName ? c.ownerName : platformName(c.platform));
+const profileName = (d: SocialOverview | null, p: SocialProfile) => (several(d, p.platform) ? (p.platform === 'fb' ? p.name : `Instagram @${p.handle ?? ''}`) : platformName(p.platform));
 
 export function socialTodayLine(s: Social): TodayLine | null {
   const list = newComments(s);
@@ -192,7 +199,7 @@ export function socialTodayLine(s: Social): TodayLine | null {
     const c = list[0];
     const q = asks(c.text) || Boolean(c.activeAt && c.replies.length && asks(c.replies[c.replies.length - 1].text));
     return {
-      text: `${c.activeAt ? `${c.who} wrote again` : `${asks(c.text) ? 'Question' : 'Comment'} from ${c.who}`} on ${platformName(c.platform)}`,
+      text: `${c.activeAt ? `${c.who} wrote again` : `${asks(c.text) ? 'Question' : 'Comment'} from ${c.who}`} on ${whereOf(s.data, c)}`,
       go: 'social',
       urgent: q,
       icon: 'social',
@@ -216,7 +223,7 @@ export function socialLine(s: Social) {
   if (!d.meta.connected && !d.threads.connected) return d.meta.setUp || d.threads.setUp ? 'Connect Instagram, Facebook and Threads' : 'Social media: not set up yet';
   const parts = d.profiles.map((p) => {
     const w = change(p.history, 7);
-    return `${platformName(p.platform)} ${n(p.followers)}${w && w.n ? ` (${w.n > 0 ? '+' : '−'}${Math.abs(w.n)})` : ''}`;
+    return `${profileName(d, p)} ${n(p.followers)}${w && w.n ? ` (${w.n > 0 ? '+' : '−'}${Math.abs(w.n)})` : ''}`;
   });
   if (d.meta.connected && !d.meta.page) parts.unshift('Pick which Facebook Page');
   const fresh = newComments(s).length;
@@ -291,7 +298,18 @@ const onDay = (t?: number) => (t ? new Date(t).toLocaleDateString('en-GB', { day
 
 const KIND: Record<SocialPost['kind'], string> = { reel: 'Reel', video: 'Video', photo: 'Photo', carousel: 'Photos', post: 'Post', thread: 'Thread' };
 
-function ProfileCard({ p }: { p: SocialProfile }) {
+/* What the latest posts of this account got (only what came this time: up to 12 on Instagram, 10 on a Facebook Page). */
+function postStats(p: SocialProfile, posts: SocialPost[]) {
+  const mine = posts.filter((x) => x.platform === p.platform && (!x.owner || x.owner === p.id));
+  if (!mine.length) return '';
+  const likes = mine.reduce((t, x) => t + (x.likes ?? 0), 0);
+  const comments = mine.reduce((t, x) => t + x.comments, 0);
+  const likeWord = p.platform === 'fb' ? 'reaction' : 'like';
+  return `Latest ${mine.length} post${mine.length === 1 ? '' : 's'}: ${n(likes)} ${likeWord}${likes === 1 ? '' : 's'} · ${n(comments)} ${p.platform === 'th' ? 'repl' + (comments === 1 ? 'y' : 'ies') : `comment${comments === 1 ? '' : 's'}`}`;
+}
+
+function ProfileCard({ p, posts }: { p: SocialProfile; posts: SocialPost[] }) {
+  const stats = postStats(p, posts);
   const week = moved(change(p.history, 7), 'this week');
   const month = change(p.history, 30);
   const monthWords = month && !month.since ? moved(month, 'in 30 days') : null;
@@ -319,6 +337,7 @@ function ProfileCard({ p }: { p: SocialProfile }) {
           {n(p.posts)} posts · following {n(p.following)}
         </p>
       ) : null}
+      {stats ? <p className={`${p.platform === 'ig' ? 'mt-0.5' : 'mt-2'} font-mono text-[12.5px] text-faint`}>{stats}</p> : null}
     </div>
   );
 }
@@ -364,12 +383,14 @@ function CommentCard({
   postOf,
   isNew,
   from,
+  where,
   onReply,
 }: {
   c: SocialComment;
   postOf: (id: string) => SocialPost | undefined;
   isNew: boolean;
   from: string; // who the reply goes from
+  where?: string; // whose post it's on, when Raf runs more than one account on the platform
   onReply: (c: SocialComment, text: string) => Promise<string>;
 }) {
   const p = postOf(c.post);
@@ -408,7 +429,7 @@ function CommentCard({
         <a href={p.link} target="_blank" rel="noopener noreferrer" className="mt-2.5 flex items-center gap-2.5 rounded-sm border border-line bg-paper p-1.5 pr-2.5">
           {p.thumb ? <Pic src={p.thumb} className="h-10 w-10 shrink-0" /> : null}
           <span className={`min-w-0 flex-1 truncate text-[13.5px] text-muted ${p.thumb ? '' : 'py-1 pl-1'}`}>
-            On your {KIND[p.kind].toLowerCase()}
+            On {where ? `${where}’s` : 'your'} {KIND[p.kind].toLowerCase()}
             {p.text ? `: ${p.text}` : ''}
           </span>
         </a>
@@ -496,6 +517,8 @@ export function SocialView({
   const [more, setMore] = useState(false);
   const [morePosts, setMorePosts] = useState(false);
   const [sure, setSure] = useState<'meta' | 'threads' | null>(null);
+  const [pagesNote, setPagesNote] = useState('');
+  const [looking, setLooking] = useState(false);
   const disarm = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // What was new when the screen opened stays marked New while it's open; the server then hears it's been seen.
@@ -532,6 +555,43 @@ export function SocialView({
     else onRefresh();
   };
 
+  /* Another Page beside Raf Carpentry's (e.g. Cabinet OS), or not: shown at once, then fetched. */
+  const showPage = async (page: string, on: boolean) => {
+    setProblem('');
+    if (d?.meta.pages) {
+      const pages = d.meta.pages.map((x) => (x.id === page ? { ...x, shown: on } : x));
+      const drop = (x: { platform: Platform; owner?: string; page?: string }) => !on && metaOf(x.platform) && x.page === page && page !== d.meta.page?.id;
+      onChange({
+        ...social,
+        data: {
+          ...d,
+          meta: { ...d.meta, pages },
+          profiles: d.profiles.filter((x) => !(x.platform === 'fb' && x.id === page && !on)),
+          posts: d.posts.filter((x) => !drop(x)),
+          comments: d.comments.filter((x) => !drop(x)),
+        },
+      });
+    }
+    const r = await post(readPin(), { action: 'show', page, on }, API);
+    if (!r.ok) setProblem(socialProblem(r.error, r.detail));
+    else onRefresh();
+  };
+
+  /* Ask Facebook for the list of Pages now (a Page made since connecting, like Cabinet OS on 15 Nov 2026). */
+  const lookForPages = async () => {
+    setLooking(true);
+    setPagesNote('');
+    const r = await post<{ pages: number; added: string[] }>(readPin(), { action: 'pages' }, API);
+    setLooking(false);
+    if (!r.ok) return setPagesNote(socialProblem(r.error, r.detail));
+    setPagesNote(
+      r.data.added.length
+        ? `Found ${r.data.added.join(', ')}. ${r.data.added.some((x) => /cabinet\s*os/i.test(x)) ? 'Shown here now.' : 'Tap Show to see it here.'}`
+        : 'No new Pages. A Page made after you connected only comes when Facebook shares every Page: tap Connect again and tick it.'
+    );
+    onRefresh();
+  };
+
   const disconnect = async (platform: 'meta' | 'threads') => {
     if (disarm.current) clearTimeout(disarm.current);
     if (sure !== platform) {
@@ -565,7 +625,7 @@ export function SocialView({
   const reply = async (cm: SocialComment, text: string) => {
     // on Threads the reply goes under their newest word in the thread (a follow-up to Raf's answer), so it reads in order
     const to = cm.platform === 'th' ? [...cm.replies].reverse().find((x) => !x.mine)?.id ?? cm.id : cm.id;
-    const r = await post<{ id: string }>(readPin(), { action: 'reply', platform: cm.platform, id: to, text }, API);
+    const r = await post<{ id: string }>(readPin(), { action: 'reply', platform: cm.platform, id: to, text, ...(cm.page ? { page: cm.page } : {}) }, API);
     if (!r.ok) return socialProblem(r.error, r.detail);
     setJustAnswered((s) => new Set(s).add(cm.id));
     if (d) {
@@ -625,9 +685,10 @@ export function SocialView({
   const needsPage = meta.connected && !meta.page && !meta.error;
   const replyMissing = (meta.notGranted ?? []).filter((s) => s === 'instagram_manage_comments' || s === 'pages_manage_engagement' || s === 'pages_read_user_content');
   const thHandle = d.profiles.find((p) => p.platform === 'th')?.handle;
-  const fromOf = (p: Platform) => (p === 'ig' ? 'your Instagram' : p === 'fb' ? 'the Page' : thHandle ? `@${thHandle}` : 'your Threads');
+  const fromOf = (c: SocialComment) =>
+    c.platform === 'th' ? (thHandle ? `@${thHandle}` : 'your Threads') : several(d, c.platform) && c.ownerName ? c.ownerName : c.platform === 'ig' ? 'your Instagram' : 'the Page';
   const cards = [
-    ...d.profiles.map((p) => <ProfileCard key={p.platform} p={p} />),
+    ...d.profiles.map((p) => <ProfileCard key={`${p.platform}-${p.id}`} p={p} posts={posts} />),
     ...(!meta.connected ? [<ConnectCard key="meta" platform="meta" acc={meta} starting={starting === 'meta'} pinned={pinned} onConnect={() => void connect('meta')} />] : []),
     ...(!th.connected ? [<ConnectCard key="threads" platform="threads" acc={th} starting={starting === 'threads'} pinned={pinned} onConnect={() => void connect('threads')} />] : []),
   ];
@@ -674,7 +735,15 @@ export function SocialView({
       {list.length ? (
         <ul className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-3">
           {list.map((x) => (
-            <CommentCard key={`${x.platform}-${x.id}`} c={x} postOf={postOf} isNew={newIds.has(x.id)} from={fromOf(x.platform)} onReply={reply} />
+            <CommentCard
+              key={`${x.platform}-${x.id}`}
+              c={x}
+              postOf={postOf}
+              isNew={newIds.has(x.id)}
+              from={fromOf(x)}
+              where={several(d, x.platform) ? x.ownerName : undefined}
+              onReply={reply}
+            />
           ))}
         </ul>
       ) : (
@@ -720,6 +789,7 @@ export function SocialView({
               <span className="block font-mono text-[11px] text-faint">
                 {KIND[p.kind]} · {ago(p.at)}
               </span>
+              {several(d, p.platform) && p.ownerName ? <span className="block truncate font-mono text-[11px] text-faint">{p.ownerName}</span> : null}
             </a>
           </li>
         ))}
@@ -785,7 +855,8 @@ export function SocialView({
       {ORDER.flatMap((p) =>
         problemsFor(p).map((x, i) => (
           <p key={`${p}-${i}`} className="mt-3 rounded-sm border border-line-strong bg-mount px-3.5 py-3 text-[14.5px] leading-relaxed">
-            {platformName(p)}: {socialProblem(x.error, x.detail)}
+            {platformName(p)}
+            {x.account ? ` (${x.account})` : ''}: {socialProblem(x.error, x.detail)}
           </p>
         ))
       )}
@@ -808,14 +879,40 @@ export function SocialView({
               <p>
                 Instagram and Facebook: connected by {meta.who || 'you'}
                 {meta.connectedAt ? ` on ${onDay(meta.connectedAt)}` : ''}
-                {meta.page ? `, Page ${meta.page.name}` : ''}. Comments from the latest 12 Instagram posts and 10 Facebook posts.
+                {meta.page ? `, Page ${meta.page.name}` : ''}. Comments from the latest 12 Instagram posts and 10 posts on each Facebook Page.
               </p>
+              {meta.page && (meta.pages?.length ?? 0) > 1 ? (
+                <div className="mt-2">
+                  <p>Facebook Pages here:</p>
+                  <ul className="mt-0.5 grid grid-cols-[minmax(0,1fr)]">
+                    {(meta.pages ?? []).map((pg) => (
+                      <li key={pg.id} className="flex min-h-9 items-center gap-3">
+                        <span className={`min-w-0 flex-1 truncate ${pg.shown || pg.id === meta.page?.id ? 'text-ink' : ''}`}>
+                          {pg.name}
+                          {pg.ig ? ` · @${pg.ig}` : ''}
+                        </span>
+                        {pg.id === meta.page?.id ? (
+                          <span className="shrink-0">Main Page</span>
+                        ) : (
+                          <button type="button" onClick={() => void showPage(pg.id, !pg.shown)} className={`h-9 shrink-0 underline ${pg.shown ? '' : 'font-semibold jk-sec-ink'}`}>
+                            {pg.shown ? 'Hide' : 'Show'}
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {pagesNote ? <p className="mt-1 text-ink">{pagesNote}</p> : null}
               <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1">
                 {(meta.pages?.length ?? 0) > 1 && meta.page ? (
                   <button type="button" onClick={() => onChange({ ...social, data: { ...d, meta: { ...meta, page: undefined } } })} className="h-9 underline">
                     Change Page
                   </button>
                 ) : null}
+                <button type="button" onClick={() => void lookForPages()} disabled={looking} className="h-9 underline disabled:opacity-50">
+                  {looking ? 'Looking…' : 'Look for new Pages'}
+                </button>
                 <button type="button" onClick={() => void connect('meta', true)} className="h-9 underline">
                   Connect again
                 </button>
