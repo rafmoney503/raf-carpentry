@@ -3,7 +3,7 @@
    The Barnet wall is worked out by hand first; then every answer is compared with the Workshop Tools app's own
    panelCalc (the generated app, src/lib/workshop-tools/app.generated.js), so the page and the app can't drift
    apart; then the cutting: every piece is cut, no length holds more than it can, rails join over an upright. */
-import { GRID, GRID_START, appStateFor, grid, gridAppHref, gridBriefHref, gridText, layOut, readMm } from '../../src/lib/panelling-calc.ts';
+import { GRID, GRID_START, appStateFor, grid, gridAppHref, gridBriefHref, gridText, layOut, mm1, readMm } from '../../src/lib/panelling-calc.ts';
 import { defineComponent } from '../../src/lib/workshop-tools/app.generated.js';
 
 let checks = 0;
@@ -25,7 +25,7 @@ const near = (a, b, what, tol = 1e-6) => ok(Math.abs(a - b) <= tol, `${what}: ${
   eq(g.ups.length, 7, 'barnet: 7 uprights');
   eq(g.ups.map((x) => Math.round(x * 10) / 10).join(' '), '0 672.7 1345.3 2018 2690.7 3363.3 4036', 'barnet: the app’s upright marks');
   eq(g.autoN, 7, 'barnet: Auto would give 7 panels (4036 / 569)');
-  eq(g.lengthsByMetre, 7, 'barnet: the app’s 7 lengths (14244 + 10% over 2440)');
+  eq(g.lengthsByMetre, 7, 'barnet: by the metre, 7 lengths (14244 + 10% over 2440)');
   eq(g.total, 2 * 4105 + 7 * 862, 'barnet: 14,244 mm of batten');
   eq(g.joins.length, 1, 'barnet: each rail joined once');
   near(g.joins[0], 2018 + 34.5, 'barnet: over the middle of upright 4');
@@ -77,14 +77,9 @@ for (const w of widths)
             const g = grid(inp);
             const a = appGrid(inp);
             const tag = `${w}×${h} b${batten} n${panels} r${rows} ${from}${skirting}+${gap}`;
-            const appTooLong = !a.error && a.openH > GRID.stock;
-            if (appTooLong) {
-              ok(!!g.error, `${tag}: uprights over a length should be an error here`);
-              continue;
-            }
             eq(!!g.error, !!a.error, `${tag}: an error in one and not the other (${g.error} / ${a.error})`);
             if (g.error || a.error) {
-              if (g.error && a.error) eq(g.error, a.error.replace(/^Wall 1: /, '').replace('too many panels, the openings come out under 20 mm', 'Too many panels: the openings come out under 20 mm').replace('the width needs', 'The wall needs'), `${tag}: same words`);
+              if (g.error && a.error) eq(g.error.replace(/(\d),(\d{3})/g, '$1$2'), a.error.replace(/^Wall 1: /, '').replace('too many panels, the openings come out under 20 mm', 'Too many panels: the openings come out under 20 mm').replace('the width needs', 'The wall needs'), `${tag}: same words`);
               continue;
             }
             compared++;
@@ -98,7 +93,8 @@ for (const w of widths)
             eq(g.ups.length, wl.ups.length, `${tag}: uprights`);
             g.ups.forEach((x, i) => near(x, wl.ups[i], `${tag}: upright ${i}`));
             near(g.total, a.total, `${tag}: total`);
-            eq(g.lengthsByMetre, a.lengths, `${tag}: lengths by the metre`);
+            eq(g.lengths.length, a.lengths, `${tag}: lengths to buy, cut by cut, the same in the app`);
+            eq(g.joins.map(mm1).join(' '), wl.joins.map(mm1).join(' '), `${tag}: the app joins the rails in the same places`);
             eq(g.uprights, a.uprights, `${tag}: upright count`);
             eq(g.n * g.rows, a.panels, `${tag}: panel count`);
 

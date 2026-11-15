@@ -1435,6 +1435,15 @@ button:focus-visible{outline:2px solid #2547D0;outline-offset:2px}
 </sc-for>
 <p style="margin: 0; padding: 9px 12px 11px; border-top: 1px solid #E3E4E0; font-size: 12px; line-height: 1.45; color: #4F555B">{{ pnNote }}</p>
 </section>
+<section style="display: flex; flex-direction: column; background: #FBFBF9; border: 1px solid #D5D7D3; border-radius: 2px; overflow: hidden">
+<div style="display: flex; align-items: baseline; justify-content: space-between; padding: 10px 12px 6px"><h2 style="margin: 0; font-size: 15px; font-weight: 700">{{ pnPlanTitle }}</h2><span class="mono" style="font-size: 11px; letter-spacing: 0.04em; color: #4F555B">PER LENGTH</span></div>
+<sc-for list="{{ pnPlan }}" as="c" hint-placeholder-count="3">
+<div style="display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 0 10px; align-items: center; min-height: 44px; padding: 6px 12px; border-top: 1px solid #E3E4E0">
+<span class="mono" style="font-size: 16px; font-weight: 700; color: #2547D0">{{ c.qty }}</span>
+<span style="display: flex; flex-direction: column; line-height: 1.25"><span class="mono" style="font-size: 13px; font-weight: 700">{{ c.txt }}</span><span style="font-size: 11px; color: #4F555B">{{ c.off }}</span></span>
+</div>
+</sc-for>
+</section>
 </sc-if>
 <sc-if value="{{ pfOk }}" hint-placeholder-val="{{ false }}">
 <section style="display: flex; flex-direction: column; background: #FBFBF9; border: 1px solid #D5D7D3; border-radius: 2px; overflow: hidden">
@@ -2523,10 +2532,29 @@ class Component extends DCLogic {
     this.setState({ pgWalls: list, pgSel: sel });
   }
 
+  // a rail longer than a batten is cut in pieces joined over the middle of an upright: from the left, each join
+  // as far along as a length reaches (the fewest joins); an opening wider than a length leaves no upright in reach,
+  // so that join goes between uprights
+  railJoins(W, centres, ST) {
+    const joins = [];
+    let off = false, start = 0;
+    while (W - start > ST + 1e-6) {
+      const reach = start + ST + 1e-6;
+      const over = centres.filter((c) => c > start + 1e-6 && c <= reach && c < W - 1e-6);
+      let j;
+      if (over.length) j = over[over.length - 1];
+      else { j = start + ST; off = true; }
+      joins.push(j);
+      start = j;
+    }
+    return { joins: joins, off: off };
+  }
+
   panelCalc(s) {
     // H = the top of the panelling from the floor. The grid starts on the floor, or above the skirting
     // (skirting height plus a gap; a gap of 0 sits the bottom rail right on the skirting).
-    const H = this.num(s.pH), B = this.num(s.pBat), TGT = this.num(s.pTarget), ST = this.num(s.pStock), WS = this.num(s.pWaste);
+    // The battens to buy are counted cut by cut: every rail piece and upright fitted into the lengths, 3 mm a saw cut.
+    const H = this.num(s.pH), B = this.num(s.pBat), TGT = this.num(s.pTarget), ST = this.num(s.pStock);
     const rows = s.pRows;
     const fromSk = s.pgFrom === 'skirting';
     const SK = fromSk ? this.num(s.pfSkirt) : 0;
@@ -2534,7 +2562,7 @@ class Component extends DCLogic {
     const base = SK + GP;
     const G = H - base;
     let shareErr = '';
-    if ([H, B, TGT, ST, WS, SK, GP].some((x) => isNaN(x)) || B < 10 || TGT < 50 || ST < 500) shareErr = 'Check the numbers: one of the boxes is empty or not a number.';
+    if ([H, B, TGT, ST, SK, GP].some((x) => isNaN(x)) || B < 10 || TGT < 50 || ST < 500) shareErr = 'Check the numbers: one of the boxes is empty or not a number.';
     else if (SK < 0 || GP < 0) shareErr = 'The skirting and the gap can’t be below 0.';
     else if (G < 150) shareErr = fromSk
       ? 'Only ' + this.fmt(Math.max(0, G)) + ' mm from the bottom rail to the top. The grid needs at least 150: raise the top, or lower the skirting or the gap.'
@@ -2544,7 +2572,7 @@ class Component extends DCLogic {
     // each wall: its own width and panels across; height, batten and rows are shared
     const walls = this.pgWallList(s).map((wl, i) => {
       const W = this.num(wl.w);
-      const r = { i: i, W: W, n: 0, autoN: 0, gapW: NaN, ups: [], total: 0, error: '' };
+      const r = { i: i, W: W, n: 0, autoN: 0, gapW: NaN, ups: [], total: 0, joins: [], joinOff: false, railPieces: [], error: '' };
       if (isNaN(W) || W < 300) { r.error = 'Wall ' + (i + 1) + ': the width needs to be at least 300 mm.'; return r; }
       if (!okShared) return r;
       r.autoN = Math.max(1, Math.round((W - B) / (TGT + B)));
@@ -2553,17 +2581,30 @@ class Component extends DCLogic {
       if (r.gapW < 20) { r.error = 'Wall ' + (i + 1) + ': too many panels, the openings come out under 20 mm. Use fewer panels.'; return r; }
       for (let k = 0; k <= r.n; k++) r.ups.push(k * (r.gapW + B));
       r.total = (rows + 1) * W + (r.n + 1) * rows * openH;
+      const rj = this.railJoins(W, r.ups.map((x) => x + B / 2), ST);
+      r.joins = rj.joins;
+      r.joinOff = rj.off;
+      const edges = [0].concat(rj.joins, [W]);
+      r.railPieces = edges.slice(1).map((x, k) => x - edges[k]);
       return r;
     });
     if (!okShared) return { error: shareErr, walls: walls };
     if (openH < 20) return { error: 'Too many rows for this height. Use fewer rows.', walls: walls };
     const bad = walls.find((r) => r.error);
     if (bad) return { error: bad.error, walls: walls };
+    if (openH > ST) return { error: 'Each upright comes out longer than a ' + this.fmt(ST) + ' length. Use two rows.', walls: walls };
     const total = walls.reduce((a, r) => a + r.total, 0);
-    const lengths = Math.ceil((total * (1 + WS / 100)) / ST);
+    // every piece, then fitted into the lengths longest first (the stud wall's packStock)
+    const pieces = [];
+    walls.forEach((r) => {
+      for (let k = 0; k <= rows; k++) r.railPieces.forEach((len) => pieces.push({ len: len, kind: 'rail', wall: r.i }));
+      for (let k = 0; k < (r.n + 1) * rows; k++) pieces.push({ len: openH, kind: 'upright', wall: r.i });
+    });
+    const plan = this.packStock(pieces, ST);
+    const lengths = plan.length;
     const panels = walls.reduce((a, r) => a + r.n * rows, 0);
     const uprights = walls.reduce((a, r) => a + (r.n + 1) * rows, 0);
-    return { H: H, G: G, base: base, SK: SK, GP: GP, fromSk: fromSk, B: B, rows: rows, openH: openH, walls: walls, total: total, lengths: lengths, panels: panels, uprights: uprights, ST: ST, WS: WS };
+    return { H: H, G: G, base: base, SK: SK, GP: GP, fromSk: fromSk, B: B, rows: rows, openH: openH, walls: walls, total: total, lengths: lengths, plan: plan, panels: panels, uprights: uprights, ST: ST };
   }
 
   pfWallList(s) {
@@ -3928,7 +3969,8 @@ class Component extends DCLogic {
     ] : [this.field(s, 'pH', 'PANELLING HEIGHT', 'pn-h')]).concat([
       this.field(s, 'pBat', 'BATTEN WIDTH', 'pn-b'), this.field(s, 'pTarget', 'AIM FOR PANELS OF', 'pn-t')
     ]);
-    v.pnStockFields = [this.field(s, 'pStock', 'BATTEN LENGTH', 'pn-st'), this.field(s, 'pWaste', 'WASTE', 'pn-ws', '%')];
+    // counted cut by cut, so the grid has no waste box (picture frames and stairs keep theirs)
+    v.pnStockFields = [this.field(s, 'pStock', 'BATTEN LENGTH', 'pn-st')];
     const pgList = this.pgWallList(s);
     const pgMulti = pgList.length > 1;
     const pgSel = Math.min(Math.max(0, s.pgSel || 0), pgList.length - 1);
@@ -3977,8 +4019,8 @@ class Component extends DCLogic {
       v.pnLine1 = (pgMulti ? 'Wall ' + (pgSel + 1) + ' openings ' : 'Openings ') + f1(cw.gapW) + ' × ' + f1(pc.openH);
       v.pnLine2 = pc.rows + (pc.rows === 1 ? ' row' : ' rows') + ' · ' + pc.lengths + ' battens of ' + f1(pc.ST) + (pgMulti ? ' · ' + pgList.length + ' walls' : '');
       const buy = [
-        { v: (pc.total / 1000).toFixed(1) + ' m', k: 'batten, before waste' },
-        { v: pc.lengths + ' × ' + f1(pc.ST), k: 'lengths to buy (+' + f1(pc.WS) + '%)' }
+        { v: (pc.total / 1000).toFixed(1) + ' m', k: 'batten in the cuts' },
+        { v: pc.lengths + ' × ' + f1(pc.ST), k: 'lengths to buy, cut by cut' }
       ];
       v.pnStats = (pgMulti ? [
         { v: String(pc.panels), k: 'panels on ' + pgList.length + ' walls' },
@@ -4027,33 +4069,75 @@ class Component extends DCLogic {
       }
       v.pnMarksY = ys;
       v.pnMarksYNote = pc.rows > 2 ? 'Middle rails are counted from the bottom.' : '';
-      // cut list: rails per wall (grouped when the same), uprights all the same length
+      // cut list: rails per wall (grouped when cut the same way), uprights all the same length
       const cut = [];
       const rg = [];
       pc.walls.forEach((r) => {
-        const key = f1(r.W);
+        const key = r.railPieces.map((x) => f1(x)).join('+');
         let g = rg.find((x) => x.key === key);
-        if (!g) { g = { key: key, W: r.W, walls: [] }; rg.push(g); }
+        if (!g) { g = { key: key, r: r, walls: [] }; rg.push(g); }
         g.walls.push(r.i + 1);
       });
+      const joinWords = (r) => r.joins.map((j) => {
+        const k = r.ups.findIndex((x) => Math.abs(x + pc.B / 2 - j) < 1e-6);
+        return k >= 0 ? 'upright ' + (k + 1) : f1(j) + ' from the left';
+      }).join(' and ');
       rg.forEach((g) => {
         const nm = !pgMulti ? '' : (g.walls.length === pgList.length ? ', all walls' : (g.walls.length === 1 ? ', wall ' + g.walls[0] : ', walls ' + g.walls.slice(0, -1).join(', ') + ' & ' + g.walls[g.walls.length - 1]));
-        cut.push({ part: 'Rails' + nm, note: (pc.rows + 1) + ' a wall, full width' + (g.W > pc.ST ? ', joined over an upright' : ''), qty: String((pc.rows + 1) * g.walls.length), size: f1(g.W), bg: '#F0F3FD' });
+        const nRails = (pc.rows + 1) * g.walls.length;
+        const r = g.r;
+        if (r.railPieces.length === 1) {
+          cut.push({ part: 'Rails' + nm, note: (pc.rows + 1) + ' a wall, full width, one piece each', qty: String(nRails), size: f1(r.W), bg: '#F0F3FD' });
+          return;
+        }
+        // a rail in pieces: one line per length of piece
+        const lines = [];
+        r.railPieces.forEach((len) => {
+          const at = lines.find((l) => Math.abs(l.len - len) < 0.05);
+          if (at) at.n++; else lines.push({ len: len, n: 1 });
+        });
+        const how = (pc.rows + 1) + ' a wall, each in ' + r.railPieces.length + ' pieces joined over ' + joinWords(r) + (r.joinOff ? ' (the openings are wider than a length, so that join sits between uprights)' : '');
+        lines.forEach((l, k) => cut.push({ part: 'Rail pieces' + nm, note: k === 0 ? how : 'the rest of each rail', qty: String(l.n * nRails), size: f1(l.len), bg: '#F0F3FD' }));
       });
       cut.push({ part: 'Uprights' + (pgMulti ? ', all walls' : ''), note: 'fit between the rails', qty: String(pc.uprights), size: f1(pc.openH), bg: '#F0F3FD' });
-      cut.push({ part: 'Battens to buy', note: '+' + f1(pc.WS) + '% waste', qty: String(pc.lengths), size: '× ' + f1(pc.ST), bg: 'transparent' });
+      cut.push({ part: 'Battens to buy', note: 'every cut fitted in, 3 mm a saw cut', qty: String(pc.lengths), size: '× ' + f1(pc.ST), bg: 'transparent' });
+      // cutting plan: what comes out of each length, like the stud wall's
+      const pats = [];
+      pc.plan.forEach((bin) => {
+        const items = bin.items.slice().sort((a, b) => b.len - a.len);
+        const parts = [];
+        items.forEach((it) => {
+          const lab = f1(it.len) + ' ' + (it.kind === 'rail' ? 'rail' : 'upright') + (pgMulti && it.kind === 'rail' ? ' (wall ' + (it.wall + 1) + ')' : '');
+          const q = parts.find((x) => x.lab === lab);
+          if (q) q.n++; else parts.push({ lab: lab, n: 1 });
+        });
+        const txt = parts.map((q) => (q.n > 1 ? q.n + ' × ' : '') + q.lab).join(' + ');
+        let g = pats.find((x) => x.txt === txt);
+        if (!g) { g = { txt: txt, n: 0, off: Math.max(0, bin.cap), first: items[0].len }; pats.push(g); }
+        g.n++;
+      });
+      pats.sort((a, b) => b.first - a.first || b.n - a.n);
+      v.pnPlan = pats.map((g) => ({ qty: '× ' + g.n, txt: g.txt, off: g.off >= 1 ? 'offcut ' + f1(g.off) : 'no offcut' }));
+      v.pnPlanTitle = 'Cutting plan, ' + pc.lengths + ' × ' + f1(pc.ST);
       v.pnCut = cut;
-      v.pnNote = 'Rails run the full wall width (top, bottom' + (pc.rows > 1 ? ' and ' + (pc.rows - 1) + ' between rows' : '') + '). Uprights are cut to ' + f1(pc.openH) + ' and fit between the rails, so both end panels come out the same width.' +
+      const anyJoin = pc.walls.some((r) => r.joins.length);
+      const byMetre = Math.ceil((pc.total * 1.1) / pc.ST - 1e-9);
+      v.pnNote = 'Rails run the full wall width (top, bottom' + (pc.rows > 1 ? ' and ' + (pc.rows - 1) + ' between rows' : '') + ')' +
+        (anyJoin ? '; one longer than a ' + f1(pc.ST) + ' length is cut in pieces joined over the middle of an upright' : '') +
+        '. Uprights are cut to ' + f1(pc.openH) + ' and fit between the rails, so both end panels come out the same width.' +
         (pc.fromSk
           ? (pc.GP > 0 ? ' The bottom rail’s underside is ' + f1(pc.base) + ' from the floor, ' + f1(pc.GP) + ' above the ' + f1(pc.SK) + ' skirting.' : ' The bottom rail sits right on the ' + f1(pc.SK) + ' skirting.')
           : ' The bottom rail sits on the floor.') +
-        (pgMulti ? ' Heights match on every wall; panel widths are worked out for each wall.' : '');
+        (pgMulti ? ' Heights match on every wall; panel widths are worked out for each wall.' : '') +
+        ' The lengths to buy are worked out by fitting every cut into them, with a 3 mm saw cut each' +
+        (pc.lengths > byMetre ? ' (by the metre plus 10% it looks like ' + byMetre + ', but the cuts take ' + pc.lengths + ')' : '') +
+        '. Add a spare for mistakes.';
       v.pnDrawLabel = (pgMulti ? 'Wall ' + (pgSel + 1) + ', ' : 'Wall ') + f1(cw.W) + ' wide, ' +
         (pc.fromSk ? 'skirting ' + f1(pc.SK) + ', grid from ' + f1(pc.base) + ' to ' + f1(pc.H) : 'grid from the floor to ' + f1(pc.H)) +
         ', with ' + cw.n + ' equal panels across and ' + pc.rows + ' rows';
     } else {
       v.pnBig = '–';
-      v.pnLine1 = 'Fix the inputs'; v.pnLine2 = ''; v.pnStats = []; v.pnDrawW = 0; v.pnDrawH = 0; v.pnRects = []; v.pnMarks = []; v.pnNote = ''; v.pnDrawLabel = ''; v.pnCut = []; v.pnMarksTitle = ''; v.pnMarksY = []; v.pnMarksYNote = '';
+      v.pnLine1 = 'Fix the inputs'; v.pnLine2 = ''; v.pnStats = []; v.pnDrawW = 0; v.pnDrawH = 0; v.pnRects = []; v.pnMarks = []; v.pnNote = ''; v.pnDrawLabel = ''; v.pnCut = []; v.pnMarksTitle = ''; v.pnMarksY = []; v.pnMarksYNote = ''; v.pnPlan = []; v.pnPlanTitle = '';
     }
 
     // ----- picture-frame panelling (second style of the same tool) -----
