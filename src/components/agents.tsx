@@ -87,11 +87,20 @@ function useAgents(list: AgentList) {
   const [error, setError] = useState('');
   async function act(body: Body): Promise<boolean> {
     setError('');
+    const before = agents;
+    // a switch shows its new state at once; the server's answer follows
+    if (body.action === 'settings') {
+      const patch: Partial<Agent> = {};
+      if (body.may === 'tell' || body.may === 'act') patch.may = body.may;
+      if (typeof body.paused === 'boolean') patch.paused = body.paused;
+      setAgents((xs) => xs.map((x) => (x.id === body.agent ? { ...x, ...patch } : x)));
+    }
     try {
       const a = await post(body);
       setAgents((xs) => xs.map((x) => (x.id === a.id ? a : x)));
       return true;
     } catch {
+      setAgents(before);
       setError('That didn’t save. Check your signal and try again.');
       return false;
     }
