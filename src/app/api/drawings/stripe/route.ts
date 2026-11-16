@@ -1,9 +1,12 @@
 import { after } from 'next/server';
 import { confirmPaid } from '@/lib/drawings-order';
+import { isGuide, paidGuide } from '@/lib/guide-sales';
 import { webhookOk, type Session } from '@/lib/stripe-checkout';
 
-/* Stripe's webhook for the drawings service (checkout.session.completed), for a customer who paid and closed the tab
-   before the thank-you page loaded. It waits 25 s first, so the thank-you page normally records the payment and this
+/* Stripe's webhook (checkout.session.completed) for what the website sells.
+   Guides (metadata kind 'pax-guide', from the Payment Link): the sale is recorded and the buyer emailed their
+   download link before it answers; a 500 makes Stripe try again later (src/lib/guide-sales.ts).
+   The drawings service: for a customer who paid and closed the tab before the thank-you page loaded. It waits 25 s first, so the thank-you page normally records the payment and this
    finds it there and does nothing. Needs STRIPE_WEBHOOK_SECRET (the endpoint's signing secret in Stripe). Answers 200
    to anything signed, so Stripe doesn't keep retrying events that aren't ours. */
 export const maxDuration = 60;
@@ -20,6 +23,15 @@ export async function POST(req: Request) {
     return Response.json({ error: 'bad' }, { status: 400 });
   }
   const s = event.data?.object;
+  if (event.type === 'checkout.session.completed' && s && isGuide(s.metadata?.kind)) {
+    try {
+      const done = await paidGuide(s, new URL(req.url).origin);
+      return done ? Response.json({ received: true }) : Response.json({ error: 'email' }, { status: 500 });
+    } catch (e) {
+      console.error('[guide] webhook', e);
+      return Response.json({ error: 'record' }, { status: 500 });
+    }
+  }
   if (event.type === 'checkout.session.completed' && s?.metadata?.kind === 'drawings' && s.payment_status === 'paid') {
     after(async () => {
       await new Promise((r) => setTimeout(r, Number(process.env.DRAWINGS_WEBHOOK_WAIT_MS ?? 25_000)));

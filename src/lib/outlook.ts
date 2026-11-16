@@ -437,5 +437,12 @@ export async function reply(id: string, text: string, signOff: string, send: boo
   return { to, subject, draft: false, at: new Date().toISOString() };
 }
 
+/* A new email from info@, not a reply: the guide's download link after a Stripe payment (src/lib/guide-sales.ts).
+   It lands in Sent Items like any other. */
+export async function sendNew(m: { to: Who; subject: string; html: string }): Promise<void> {
+  const to = { emailAddress: { address: m.to.email, ...(m.to.name ? { name: m.to.name } : {}) } };
+  await graph('/sendMail', { method: 'POST', body: { message: { subject: m.subject, body: { contentType: 'HTML', content: m.html }, toRecipients: [to] }, saveToSentItems: true } }, 'send');
+}
+
 /* The mailbox's OneDrive (Goodnotes' auto-backup, src/lib/goodnotes.ts): app-only with Files.Read.All. */
 export const driveGraph = <T>(path: string, raw = false) => graph<T>(`/drive${path}`, { raw }, 'files');

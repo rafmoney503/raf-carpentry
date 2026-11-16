@@ -10,7 +10,7 @@ export const metadata = pageMeta({
   path: '/privacy',
 });
 
-const UPDATED = '13 November 2026';
+const UPDATED = '16 November 2026';
 
 function H({ id, children }: { id?: string; children: React.ReactNode }) {
   return (
@@ -80,6 +80,14 @@ export default function Privacy() {
             files you send go into <b>ServiceM8</b> as an order, the same way a quote request does, and I email you about it through ServiceM8. You pay on a
             page run by <b>Stripe</b>: your card details go to Stripe, never to me or this website, and Stripe tells me only that you paid, the amount and your
             email. I keep the order and its payment as long as the law requires for accounts (six years).
+          </p>
+
+          <H>When you buy a guide</H>
+          <p>
+            If you buy my <Link href="/pax-guide">IKEA PAX guide</Link>, you pay on a page run by <b>Stripe</b>: your card details go to Stripe, never to me or
+            this website. Stripe tells this website your name, your email and that you paid, which are kept (in <b>Supabase</b>, Frankfurt) with how many times
+            the download has been used, so the link keeps working for you. I email you the link from info@rafcarpentry.com through <b>Microsoft 365</b>. I keep
+            the sale as long as the law requires for accounts (six years).
           </p>
 
           <H>Things kept on your own phone or computer</H>

@@ -8,8 +8,9 @@ import guide from '../../../content/pages/pax-guide.json';
 
 /* "IKEA PAX, built in", Raf's £9.99 PDF guide (Raf, 14 Nov 2026: "What digital products can we create and push for
    sale on Instagram and Threads", then "Go" to the PAX guide). The PDF is made outside this repo (it's sold, and this
-   repo is public) and sold through Payhip, which takes the card and emails the download. content/pages/pax-guide.json
-   holds the Payhip link: empty, the button asks on WhatsApp instead. */
+   repo is public). The button is a Stripe Payment Link (content/pages/pax-guide.json buyUrl; empty, it asks on
+   WhatsApp instead); after paying, /pax-guide/thanks gives the download and the link comes by email
+   (src/lib/guide-sales.ts). */
 
 const PRICE = guide.price;
 const BUY = guide.buyUrl.trim();
@@ -51,7 +52,7 @@ const FAQ = [
   },
   {
     q: 'How do I get it?',
-    a: 'Pay by card, Apple Pay or Google Pay, and the download link comes by email straight away.',
+    a: 'Pay by card, Apple Pay or Google Pay. The download opens straight after paying, and the link comes by email too, so you can get it again.',
   },
   {
     q: 'Do I need a workshop?',
@@ -67,7 +68,7 @@ const FAQ = [
   },
   {
     q: 'Can I return it?',
-    a: "It's a download, so once you've downloaded it you can't return it. If something in it is wrong or unclear, email me and I'll put it right.",
+    a: "It's a download you get straight away, so once you've paid it can't be returned. If something in it is wrong or unclear, email me and I'll put it right.",
   },
   {
     q: 'Can you fit it for me?',
@@ -129,7 +130,7 @@ export default function PaxGuidePage() {
               See what&apos;s inside
             </a>
           </div>
-          {BUY ? null : <p className="mt-3 text-[14px] text-faint">Message me and I&apos;ll send it to you today.</p>}
+          <p className="mt-3 text-[14px] text-faint">{BUY ? 'Card, Apple Pay or Google Pay through Stripe. Download straight after paying.' : 'Message me and I\u2019ll send it to you today.'}</p>
           <ul className="mt-8 grid max-w-[34rem] grid-cols-2 gap-x-6 gap-y-3 border-t border-line pt-6 font-mono text-[13.5px] text-muted">
             <li>
               <span className="text-ink">{PAGES} pages</span>, A4 PDF
