@@ -1,6 +1,6 @@
 {
   "_about": "Cworkshop (cworkshop.co.uk): the decors Raf can buy cut and edged, and what their services cost. Read by src/lib/cworkshop-boards.ts for the Job Kit's Cworkshop screen and Quotes. Prices before VAT and before Raf's account discount ('discount', taken off the boards, cutting, edging and drilling in one line on a quote), 18 mm boards (18.5 mm for Feelwood and some woodgrains, 19 mm for Egger's TM boards), 2800 x 2070 sheets. A board's price is the one Cworkshop's own pages showed on its 'checked' day. A service's 'source' says where its price comes from: 'website' (their own pages), 'basket' (a basket or invoice Raf sent), 'raf' (a figure Raf gave) or 'guess' (not seen yet, 'published' false). Raf can type his own on the Cworkshop screen. Updated by the weekly check (scripts/CWORKSHOP.md).",
-  "checked": "2026-11-09",
+  "checked": "2026-11-16",
   "checkedBy": "Claude",
   "discount": {
     "percent": 10,
@@ -118,6 +118,10 @@
     {
       "at": "2026-11-09",
       "text": "No price changes: 71 boards read on their pages and listings, all the same as before (U250 Caramel Beige and H3325 Tobacco Gladstone Oak still on offer to 30 Nov). 7 decors added: Rusty Red, Rusty Flow (Kronospan), Fossil Evoke Oak (Kronospan), Sage Green and Monument Grey woodgrains (18.5 mm), Natural Nebraska Oak and Anthracite Fineline Metallic, 187 in all. Not read this week: boards whose page shows the 8 mm price first, and the rest once the site started refusing fetches. U899 TM Soft Black shows out of stock in both thicknesses."
+    },
+    {
+      "at": "2026-11-16",
+      "text": "H3787 Brown Bolivar Wood £101.86 to £107.25. Everything else the same: 81 boards read on their pages and listings (72 of this week's 80, plus 9 more from the listings), U250 and H3325 not read this week so their offers to 30 Nov stand. 1 decor added: H1316 ST17 Bookmatch Oak £101.30, 188 in all. Not read: W1000 ST9, W1100 ST9 and H3368 ST9 (their pages show the 8 mm price first), U999 ST19, W1000 ST40, H3303 ST10 and some new decors (the site refused them), K682 PD and new F637 ST10 White Chromix (their cutting figure didn't match the 18 mm rule), K516 SU (no link found). Not added: Kronospan decors their pages mark hidden, out of stock or discontinued, and Egger U765, U775 and U201 (8 mm price first)."
     }
   ],
   "boards": [
@@ -155,7 +159,7 @@
       "thick": 19,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3041-tm12-natural-eucalyptus-chipboard-2800-x-2070mm/19mm/",
       "hex": "#b48a5e",
-      "checked": "2026-11-09"
+      "checked": "2026-11-16"
     },
     {
       "code": "U201 TM",
@@ -385,7 +389,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/u502-st9-misty-blue-chipboard-2800-x-2070mm/",
       "hex": "#a7b6c0",
-      "checked": "2026-11-09"
+      "checked": "2026-11-16"
     },
     {
       "code": "U504 ST9",
@@ -517,7 +521,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/u702-st9-cashmere-grey-chipboard-2800-x-2070mm/18mm/",
       "hex": "#cdc6bb",
-      "checked": "2026-11-09"
+      "checked": "2026-11-16"
     },
     {
       "code": "U705 ST9",
@@ -661,7 +665,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/u999-st20-black-chipboard-2800-x-2070mm/18mm/",
       "hex": "#1f1f1f",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "W1000 ST9",
@@ -745,7 +749,7 @@
       "thick": 18.5,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h1180-st37-natural-halifax-oak-chipboard-2800-x-2070mm/18.5mm/",
       "hex": "#ab8358",
-      "checked": "2026-11-09"
+      "checked": "2026-11-16"
     },
     {
       "code": "H1181 ST37",
@@ -757,7 +761,7 @@
       "thick": 18.5,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h1181-st37-tobacco-halifax-oak-chipboard-2800-x-2070mm/18.5mm/",
       "hex": "#5d4330",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H1250 ST36",
@@ -877,7 +881,7 @@
       "thick": 18.5,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3176-st37-pewter-halifax-oak-chipboard-2800-x-2070mm/18.5mm/",
       "hex": "#8b8478",
-      "checked": "2026-11-09"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3309 ST28",
@@ -1023,7 +1027,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h1318-st10-natural-wild-oak-chipboard-2800-x-2070mm/",
       "hex": "#b48a5e",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H1330 ST10",
@@ -1035,7 +1039,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h1330-st10-vintage-santa-fe-oak-chipboard-2800-x-2070mm/18mm/",
       "hex": "#8f8273",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H1357 ST10",
@@ -1047,7 +1051,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h1357-st10-grey-beige-spree-oak-chipboard-2800-x-2070mm/",
       "hex": "#a99d8b",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H1362 ST12",
@@ -1059,7 +1063,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h1362-st12-light-baronia-oak-chipboard-2800-x-2070mm/",
       "hex": "#cfae82",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H1715 ST12",
@@ -1071,7 +1075,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h1715-st12-parona-walnut-chipboard-2800-x-2070mm/",
       "hex": "#7a5a40",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H2033 ST10",
@@ -1083,7 +1087,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h2033-st10-dark-hunton-oak-chipboard-2800-x-2070mm/18mm/",
       "hex": "#4f3a2c",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3003 ST19",
@@ -1095,7 +1099,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3003-st19-norwich-oak-chipboard-2800-x-2070mm/18mm/",
       "hex": "#b48a5e",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3043 ST12",
@@ -1107,7 +1111,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3043-st12-dark-brown-eucalyptus-chipboard-2800-x-2070mm/18mm/",
       "hex": "#4e3a2c",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H309 ST12",
@@ -1119,7 +1123,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h309-st12-brown-tonsberg-oak-chipboard-2800-x-2070mm/",
       "hex": "#6e5038",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3131 ST12",
@@ -1131,7 +1135,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3131-st12-natural-davos-oak-chipboard-2800-x-2070mm/18mm/",
       "hex": "#b48a5e",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3133 ST12",
@@ -1143,7 +1147,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3133-st12-truffle-brown-davos-oak-chipboard-2800-x-2070mm/18mm/",
       "hex": "#5a4535",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3146 ST19",
@@ -1155,7 +1159,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3146-st19-beige-grey-lorenzo-oak-chipboard-2800-x-2070mm/18mm/",
       "hex": "#8f877c",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3157 ST12",
@@ -1167,7 +1171,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3157-st12-vicenza-oak-chipboard-2800-x-2070mm/18mm/",
       "hex": "#b48a5e",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3158 ST19",
@@ -1179,7 +1183,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3158-st19-grey-vicenza-oak-chipboard-2800-x-2070mm/",
       "hex": "#8f877c",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3170 ST12",
@@ -1191,7 +1195,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3170-st12-natural-kendal-oak-chipboard-2800-x-2070mm/18mm/",
       "hex": "#b8915e",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3171 ST12",
@@ -1203,7 +1207,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3171-st12-oiled-kendal-oak-chipboard-2800-x-2070mm/18mm/",
       "hex": "#b07e47",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3195 ST19",
@@ -1215,7 +1219,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3195-st19-white-fineline-chipboard-2800-x-2070mm/",
       "hex": "#e2d6c4",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3198 ST19",
@@ -1227,7 +1231,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3198-st19-dark-grey-fineline-chipboard-2800-x-2070mm/18mm/",
       "hex": "#5a5753",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3303 ST10",
@@ -1263,7 +1267,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3700-st10-natural-pacific-walnut-chipboard-2800-x-2070mm/18mm/",
       "hex": "#7c593d",
-      "checked": "2026-11-02"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3702 ST10",
@@ -1275,7 +1279,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3702-st10-tobacco-pacific-walnut-chipboard-2800-x-2070mm/18mm/",
       "hex": "#5a3f2f",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3710 ST12",
@@ -1287,7 +1291,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3710-st12-natural-carini-walnut-chipboard-2800-x-2070mm/18mm/",
       "hex": "#795438",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3730 ST10",
@@ -1299,7 +1303,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3730-st10-natural-hickory-chipboard-2800-x-2070mm/18mm/",
       "hex": "#b48a5e",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H3787 ST19",
@@ -1307,11 +1311,11 @@
       "brand": "Egger",
       "family": "dark oak",
       "describe": "brown wood, matt",
-      "exVat": 101.86,
+      "exVat": 107.25,
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3787-st19-brown-bolivar-wood-chipboard-2800-x-2070mm/18mm/",
       "hex": "#6e5038",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F037 ST76",
@@ -1323,7 +1327,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f037-st76-taormina-travertine-chipboard-2800-x-2070mm/18mm/",
       "hex": "#d8cbb3",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F186 ST9",
@@ -1335,7 +1339,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f186-st9-light-grey-chicago-concrete-chipboard-2800-x-2070mm/18mm/",
       "hex": "#b6b4b0",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F187 ST9",
@@ -1347,7 +1351,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f187-st9-dark-grey-chicago-concrete-chipboard-2800-x-2070mm/18mm/",
       "hex": "#5f5f5d",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F206 ST9",
@@ -1359,7 +1363,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f206-st9-black-pietra-grigia-chipboard-2800-x-2070mm/18mm/",
       "hex": "#2f2f30",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F235 ST76",
@@ -1371,7 +1375,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f235-st76-scivaro-slate-chipboard-2800-x-2070mm/18mm/",
       "hex": "#6b6e70",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F237 ST76",
@@ -1383,7 +1387,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f237-st76-cupria-slate-chipboard-2800-x-2070mm/",
       "hex": "#6a5d55",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F243 ST76",
@@ -1395,7 +1399,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f243-st76-light-grey-candela-marble-chipboard-2800-x-2070mm/18mm/",
       "hex": "#b6b4b0",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F244 ST76",
@@ -1407,7 +1411,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f244-st76-anthracite-candela-marble-chipboard-2800-x-2070mm/",
       "hex": "#45474a",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F323 ST20",
@@ -1419,7 +1423,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f323-st20-cobra-bronze-chipboard-2800-x-2070mm/",
       "hex": "#8a6d4c",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F422 ST10",
@@ -1431,7 +1435,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f422-st10-white-linen-chipboard-2800-x-2070mm/",
       "hex": "#ebe8e1",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F424 ST10",
@@ -1443,7 +1447,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f424-st10-brown-linen-chipboard-2800-x-2070mm/",
       "hex": "#7d6a58",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F433 ST10",
@@ -1455,7 +1459,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f433-st10-anthracite-linen-chipboard-2800-x-2070mm/18mm/",
       "hex": "#4b4b4b",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F434 ST20",
@@ -1467,7 +1471,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f434-st20-cubanite-steelbrush-chipboard-2800-x-2070mm/",
       "hex": "#6a6763",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F500 ST20",
@@ -1479,7 +1483,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f500-st20-metallic-inox-chipboard-2800-x-2070mm/",
       "hex": "#b9bbbc",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F527 ST20",
@@ -1491,7 +1495,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f527-st20-golden-brushed-metal-chipboard-2800-x-2070mm/",
       "hex": "#b59a62",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F528 ST20",
@@ -1503,7 +1507,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f528-st20-bronze-brushed-metal-chipboard-2800-x-2070mm/18mm/",
       "hex": "#8a6d4c",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F634 ST76",
@@ -1515,7 +1519,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f634-st76-grey-canvas-chipboard-2800-x-2070mm/",
       "hex": "#a3a19c",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F638 ST10",
@@ -1527,7 +1531,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f638-st10-chromix-silver-chipboard-2800-x-2070mm/18mm/",
       "hex": "#a4a6a7",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F661 ST76",
@@ -1539,7 +1543,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f661-st76-sand-beige-calcit-stone-chipboard-2800-x-2070mm/18mm/",
       "hex": "#cdbfa6",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F662 ST76",
@@ -1551,7 +1555,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f662-st76-pebble-grey-calcit-stone-chipboard-2800-x-2070mm/",
       "hex": "#a9a49b",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "F800 ST9",
@@ -1563,7 +1567,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/f800-st9-crystal-marble-chipboard-2800-x-2070mm/18mm/",
       "hex": "#e9e8e4",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H1186 ST37",
@@ -1575,7 +1579,7 @@
       "thick": 18.5,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h1186-st37-dark-brown-garrone-oak-chipboard-2800-x-2070mm/18.5mm/",
       "hex": "#4e3a2c",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H1336 ST37",
@@ -1587,7 +1591,7 @@
       "thick": 18.5,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h1336-st37-sand-grey-glazed-halifax-oak-chipboard-2800-x-2070mm/18.5mm/",
       "hex": "#8f877c",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "H1582 ST15",
@@ -1599,7 +1603,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h1582-st15-ellmau-beech-chipboard-2800-x-2070mm/18mm/",
       "hex": "#c99a6c",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "U604 ST40",
@@ -1611,7 +1615,7 @@
       "thick": 18.5,
       "url": "https://cworkshop.co.uk/sheet-materials/egger/u604-st40-reed-green-woodgrain-chipboard-2800-x-2070mm/18.5mm/",
       "hex": "#8c9478",
-      "checked": "2026-11-09"
+      "checked": "2026-11-16"
     },
     {
       "code": "0134 BS",
@@ -1623,7 +1627,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/0134-bs-sunshine-chipboard-2800-x-2070mm/",
       "hex": "#e8b63a",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "0166 BS",
@@ -1635,7 +1639,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/0166-bs-basalt-chipboard-2800-x-2070mm/",
       "hex": "#57585a",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "0191 SU",
@@ -1647,7 +1651,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/0191-su-cool-grey-chipboard-2800-x-2070mm/",
       "hex": "#9a9c9c",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "0244 SU",
@@ -1659,7 +1663,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/0244-su-petrol-chipboard-2800-x-2070mm/18mm/",
       "hex": "#2f5560",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "0514 PE",
@@ -1671,7 +1675,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/0514-pe-ivory-chipboard-2800-x-2070mm/",
       "hex": "#ece4d2",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "1700 PE",
@@ -1683,7 +1687,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/1700-pe-steel-grey-chipboard-2800-x-2070mm/",
       "hex": "#808487",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "5994 SU",
@@ -1695,7 +1699,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/5994-su-alby-blue-chipboard-2800-x-2070mm/",
       "hex": "#8fa3b3",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "7045 SU",
@@ -1707,7 +1711,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/7045-su-satin-chipboard-2800-x-2070mm/",
       "hex": "#d9d3c7",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "7113 BS",
@@ -1719,7 +1723,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/7113-bs-chilli-red-chipboard-2800-x-2070mm/",
       "hex": "#a63a32",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "7181 BS",
@@ -1731,7 +1735,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/7181-bs-dark-chocolate-chipboard-2800-x-2070mm/18mm/",
       "hex": "#3d2e26",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "8100 SM",
@@ -1743,7 +1747,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/8100-sm-pearl-white-chipboard-2800-x-2070mm/18mm/",
       "hex": "#f1efe8",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "K098 SU",
@@ -1755,7 +1759,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/k098-su-ceramic-red-chipboard-2800-x-2070mm/",
       "hex": "#a5543f",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "K512 SU",
@@ -1767,7 +1771,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/k512-su-native-pink-chipboard-2800-x-2070mm/",
       "hex": "#d9a8a0",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "K513 SU",
@@ -1779,7 +1783,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/k513-su-marshmallow-chipboard-2800-x-2070mm/",
       "hex": "#ead2cf",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "K514 SU",
@@ -1791,7 +1795,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/k514-su-deep-sahara-chipboard-2800-x-2070mm/18mm/",
       "hex": "#c49a6c",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "K516 SU",
@@ -1815,7 +1819,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/k520-su-dark-emerald-chipboard-2800-x-2070mm/18mm/",
       "hex": "#24463c",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "K521 SU",
@@ -1827,7 +1831,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/k521-su-smoke-green-chipboard-2800-x-2070mm/18mm/",
       "hex": "#7d877b",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "K523 PE",
@@ -1839,7 +1843,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/k523-pe-platinium-disk-chipboard-2800-x-2070mm/",
       "hex": "#b5b3ae",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "K682 PD",
@@ -1863,7 +1867,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/0381-bs-bavaria-beech-chipboard-2800-x-2070mm/",
       "hex": "#c99a6c",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "0481 BS",
@@ -1875,7 +1879,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/0481-bs-opera-walnut-chipboard-2800-x-2070mm/",
       "hex": "#7d5b41",
-      "checked": "2026-11-09"
+      "checked": "2026-11-16"
     },
     {
       "code": "K004 PW",
@@ -1899,7 +1903,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/k005-pw-oyster-urban-oak-chipboard-2800-x-2070mm/",
       "hex": "#b2a898",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "K016 PW",
@@ -1911,7 +1915,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/k016-pw-carbon-marine-wood-chipboard-2800-x-2070mm/18mm/",
       "hex": "#a07a55",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "K017 PW",
@@ -1923,7 +1927,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/k017-pw-blonde-liberty-elm-chipboard-2800-x-2070mm/18mm/",
       "hex": "#d8c29e",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "K019 PW",
@@ -1935,7 +1939,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/k019-pw-silver-liberty-elm-chipboard-2800-x-2070mm/18mm/",
       "hex": "#a9a39a",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "K527 HU",
@@ -2055,7 +2059,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/4298-su-light-atelier-chipboard-2800-x-2070mm/",
       "hex": "#c9c6bf",
-      "checked": "2026-11-05"
+      "checked": "2026-11-16"
     },
     {
       "code": "4299 SU",
@@ -2295,7 +2299,7 @@
       "thick": 18,
       "url": "https://cworkshop.co.uk/sheet-materials/kronospan/k351-rt-rusty-flow-chipboard-2800-x-2070mm/18mm/",
       "hex": "#8a5a3c",
-      "checked": "2026-11-09"
+      "checked": "2026-11-16"
     },
     {
       "code": "U335 ST9",
@@ -2368,6 +2372,18 @@
       "url": "https://cworkshop.co.uk/sheet-materials/egger/h3190-st19-anthracite-fineline-metallic-chipboard-2800-x-2070mm/",
       "hex": "#4a4a4c",
       "checked": "2026-11-09"
+    },
+    {
+      "code": "H1316 ST17",
+      "name": "Bookmatch Oak",
+      "brand": "Egger",
+      "family": "warm oak",
+      "describe": "mid oak with a mirrored grain, oiled pore finish",
+      "exVat": 101.3,
+      "thick": 18,
+      "url": "https://cworkshop.co.uk/sheet-materials/egger/h1316-st17-bookmatch-oak-chipboard-2800-x-2070mm/18mm/",
+      "hex": "#a98057",
+      "checked": "2026-11-16"
     }
   ],
   "basket": {
