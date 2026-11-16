@@ -5,7 +5,9 @@ import { createHmac, timingSafeEqual } from 'crypto';
    Settings in Vercel: STRIPE_SECRET_KEY (a restricted key with Checkout Sessions write is enough), optionally
    STRIPE_VAT_TAX_RATE_ID (an inclusive 20% VAT tax rate, so Stripe's receipt shows the VAT) and STRIPE_WEBHOOK_SECRET
    (the endpoint /api/drawings/stripe, event checkout.session.completed). The same Stripe account as CabinetOS
-   (Rafal Solutions Ltd) is fine: its webhook leaves payments it doesn't know alone. STRIPE_API overrides the address
+   (Rafal Solutions Ltd) is fine: its webhook leaves payments it doesn't know alone. The payment page says Raf Carpentry
+   with the R and the site's blue (BRANDING; Stripe takes branding_settings from API version BRANDING_VERSION, so only
+   that request names it), and the card statement reads CABINETOS* RAF DRAWINGS. STRIPE_API overrides the address
    for tests. */
 
 export const stripeSetUp = () => Boolean(process.env.STRIPE_SECRET_KEY?.trim());
@@ -32,7 +34,10 @@ function form(obj: Record<string, unknown>, prefix = '', out = new URLSearchPara
   return out;
 }
 
-async function stripe<T>(path: string, init: { method?: 'GET' | 'POST'; body?: Record<string, unknown>; idempotency?: string } = {}): Promise<T> {
+async function stripe<T>(
+  path: string,
+  init: { method?: 'GET' | 'POST'; body?: Record<string, unknown>; idempotency?: string; version?: string } = {},
+): Promise<T> {
   const base = (process.env.STRIPE_API || 'https://api.stripe.com').replace(/\/$/, '');
   let res: Response;
   try {
@@ -42,6 +47,7 @@ async function stripe<T>(path: string, init: { method?: 'GET' | 'POST'; body?: R
         Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY?.trim() ?? ''}`,
         ...(init.body ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}),
         ...(init.idempotency ? { 'Idempotency-Key': init.idempotency } : {}),
+        ...(init.version ? { 'Stripe-Version': init.version } : {}),
       },
       body: init.body ? form(init.body).toString() : undefined,
       cache: 'no-store',
@@ -71,6 +77,22 @@ export type Session = {
   created?: number;
 };
 
+/* What the customer sees at the top of Stripe's page: the account is Rafal Solutions Ltd's (CabinetOS), so its own name,
+   logo and green would show otherwise. The icon is public/images/stripe/raf-icon-<hash>.png (512 square, Raf's R from
+   src/lib/r-logo.ts on white): a new file name if it's redrawn, as Stripe fetches it from the live site. */
+export const BRANDING_VERSION = '2025-09-30.clover';
+export const BRANDING = {
+  display_name: 'Raf Carpentry',
+  icon: { type: 'url', url: 'https://www.rafcarpentry.com/images/stripe/raf-icon-a5d2b301.png' },
+  button_color: '#2547d0',
+  background_color: '#f1f2ef',
+  border_style: 'rectangular',
+};
+
+/* Stripe turning the branding down (an image it can't fetch, an API version it won't take) never stops a payment:
+   the same session is made again without it, under its own idempotency key. */
+const brandingRefused = (e: unknown) => e instanceof StripeError && e.code === 'stripe-error' && /branding|api version|unknown parameter/i.test(e.detail);
+
 export async function createCheckout(c: {
   amount: number; // pence, VAT included
   name: string;
@@ -82,26 +104,29 @@ export async function createCheckout(c: {
   idempotency?: string;
 }): Promise<Session> {
   const vat = process.env.STRIPE_VAT_TAX_RATE_ID?.trim();
-  return stripe<Session>('checkout/sessions', {
-    method: 'POST',
-    idempotency: c.idempotency,
-    body: {
-      mode: 'payment',
-      locale: 'en-GB',
-      customer_email: c.email || undefined,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: { currency: 'gbp', unit_amount: c.amount, product_data: { name: c.name, description: c.description } },
-          ...(vat ? { tax_rates: [vat] } : {}),
-        },
-      ],
-      metadata: c.metadata,
-      payment_intent_data: { metadata: c.metadata, description: `${c.name}: ${c.description}`.slice(0, 500), statement_descriptor_suffix: 'RAF DRAWINGS' },
-      success_url: c.successUrl,
-      cancel_url: c.cancelUrl,
-    },
-  });
+  const body = {
+    mode: 'payment',
+    locale: 'en-GB',
+    customer_email: c.email || undefined,
+    line_items: [
+      {
+        quantity: 1,
+        price_data: { currency: 'gbp', unit_amount: c.amount, product_data: { name: c.name, description: c.description } },
+        ...(vat ? { tax_rates: [vat] } : {}),
+      },
+    ],
+    metadata: c.metadata,
+    payment_intent_data: { metadata: c.metadata, description: `${c.name}: ${c.description}`.slice(0, 500), statement_descriptor_suffix: 'RAF DRAWINGS' },
+    success_url: c.successUrl,
+    cancel_url: c.cancelUrl,
+  };
+  try {
+    return await stripe<Session>('checkout/sessions', { method: 'POST', idempotency: c.idempotency, version: BRANDING_VERSION, body: { ...body, branding_settings: BRANDING } });
+  } catch (e) {
+    if (!brandingRefused(e)) throw e;
+    console.warn('[stripe] branding turned down, made without it:', (e as StripeError).detail);
+    return stripe<Session>('checkout/sessions', { method: 'POST', idempotency: c.idempotency && `${c.idempotency}:plain`, body });
+  }
 }
 
 export const getSession = (id: string) => stripe<Session>(`checkout/sessions/${encodeURIComponent(id)}`);
