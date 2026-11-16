@@ -8,6 +8,8 @@ import { toolsSectionId } from '@/lib/menu-panels';
 import { isAmazonLink } from '@/lib/affiliates';
 import Sketch from '@/app/how-it-works/sketches';
 import PlannerTeaser from '@/components/PlannerTeaser';
+import PaxGuideCard from '@/components/PaxGuideCard';
+import { PAX_GUIDE } from '@/lib/pax-guide';
 import { TradeNudge } from '@/components/AlsoByMe';
 import AppNudge from '@/components/AppNudge';
 import ExtensionTeaser from '@/components/ExtensionTeaser';
@@ -79,8 +81,16 @@ export default function ToolsPage() {
       <Container className="pb-8">
         {/* The free and paid tools in three groups (Raf, 6 Nov 2026: "Is this good order on tools page ... design paid
             free paid", then "Go"): the wardrobe planner, the free tools, then what's paid. */}
-        <ToolGroup id="plan" n="01" kicker="Free" title="Plan your wardrobe" line="Your sizes, units and doors in 3D. Then send it to me for a quote.">
+        <ToolGroup
+          id="plan"
+          n="01"
+          kicker={`Free planner · guide ${PAX_GUIDE.price}`}
+          title="Plan your wardrobe"
+          line="Your sizes, units and doors in 3D, then send it to me for a quote. Or build IKEA PAX in yourself with my guide."
+        >
           <PlannerTeaser variant="feature" className="lg:col-span-2" />
+          {/* the £9.99 PAX guide, straight under the planner (16 Nov 2026) */}
+          <PaxGuideCard className="lg:col-span-2" />
         </ToolGroup>
 
         <ToolGroup id="free" n="02" kicker="Free, no sign-up" title="Free tools" line="For your own jobs: on your phone, in the workshop and in 3D.">

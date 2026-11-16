@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import { Container, SectionHeading } from '@/components/ui';
 import { jsonLd, pageMeta, SITE_URL } from '@/lib/seo';
 import { COMPANY, QUOTE_HREF, whatsappUrl } from '@/lib/site';
-import guide from '../../../content/pages/pax-guide.json';
+import { PAX_GUIDE } from '@/lib/pax-guide';
 
 /* "IKEA PAX, built in", Raf's £9.99 PDF guide (Raf, 14 Nov 2026: "What digital products can we create and push for
    sale on Instagram and Threads", then "Go" to the PAX guide). The PDF is made outside this repo (it's sold, and this
@@ -12,9 +12,9 @@ import guide from '../../../content/pages/pax-guide.json';
    WhatsApp instead); after paying, /pax-guide/thanks gives the download and the link comes by email
    (src/lib/guide-sales.ts). */
 
-const PRICE = guide.price;
-const BUY = guide.buyUrl.trim();
-const PAGES = guide.pages;
+const PRICE = PAX_GUIDE.price;
+const BUY = PAX_GUIDE.buyUrl;
+const PAGES = PAX_GUIDE.pages;
 
 export const metadata: Metadata = pageMeta({
   title: 'IKEA PAX, built in: the fitting guide | Raf Carpentry',
@@ -24,8 +24,8 @@ export const metadata: Metadata = pageMeta({
 });
 
 const PREVIEW = [
-  { src: '/images/pax-guide/page-01-7f0e833a.webp', alt: 'The guide cover: PAX frames drawn with the made-to-measure fillers and top boxes in blue' },
-  { src: '/images/pax-guide/page-04-589aa262.webp', alt: 'Page 4: a drawing of the example wall with every part marked' },
+  { src: PAX_GUIDE.cover, alt: 'The guide cover: PAX frames drawn with the fillers, top boxes and ceiling strip you make in MDF' },
+  { src: PAX_GUIDE.page4, alt: 'Page 4: a drawing of the example wall with every part marked' },
   { src: '/images/pax-guide/page-08-5a2c73de.webp', alt: 'Page 8: the two PAX heights and what goes above each' },
   { src: '/images/pax-guide/page-17-a8290f0e.webp', alt: 'Page 17: scribing fillers with a school compass, and the end panels' },
 ];
@@ -100,7 +100,7 @@ export default function PaxGuidePage() {
     '@type': 'Product',
     name: 'IKEA PAX, built in: the fitting guide',
     description: `A ${PAGES}-page PDF guide to making IKEA PAX wardrobes look built in.`,
-    image: `${SITE_URL}/images/pax-guide/page-01-7f0e833a.webp`,
+    image: `${SITE_URL}${PAX_GUIDE.cover}`,
     brand: { '@type': 'Brand', name: 'Raf Carpentry' },
     ...(BUY ? { offers: { '@type': 'Offer', price: PRICE.replace(/[^0-9.]/g, ''), priceCurrency: 'GBP', availability: 'https://schema.org/InStock', url: `${SITE_URL}/pax-guide` } } : {}),
   };
