@@ -9,7 +9,8 @@
     "deploymentEnabled": {
       "rafal-hq": false,
       "hq-assistant": false,
-      "hq-facebook": false
+      "hq-facebook": false,
+      "hq-ads": false
     }
   }
 }

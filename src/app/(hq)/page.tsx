@@ -4,16 +4,18 @@ import { agentList } from '@/lib/agents';
 import { dbReady } from '@/lib/db';
 import { linkedinList } from '@/lib/linkedin';
 import { fbShown } from '@/lib/fbshown';
+import { adsShown } from '@/lib/adsshown';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ fresh?: string }> }) {
   const { fresh } = await searchParams;
-  const [r, agents, linkedin, fb] = await Promise.all([
+  const [r, agents, linkedin, fb, ads] = await Promise.all([
     getReport(fresh === '1'),
     dbReady() ? agentList() : Promise.resolve(null),
     dbReady() ? linkedinList() : Promise.resolve(null),
     fbShown(),
+    adsShown(),
   ]);
-  return <Today r={r} now={r.at} agents={agents} linkedin={linkedin} fb={fb} />;
+  return <Today r={r} now={r.at} agents={agents} linkedin={linkedin} fb={fb} ads={ads} />;
 }

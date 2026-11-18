@@ -15,6 +15,7 @@ import { LinkedInCard } from './linkedin';
 import type { LiList } from '@/lib/linkedin-types';
 import { Icon, InsightCard, Mark } from './ui';
 import { FbShortCard, type FbShown } from './fbpage';
+import { AdsShortCard, type AdsShown } from './adsparts';
 
 type Range = 'today' | 'week';
 
@@ -24,12 +25,14 @@ export function Today({
   agents = null,
   linkedin = null,
   fb = null,
+  ads = null,
 }: {
   r: Report;
   now: number;
   agents?: AgentList | null;
   linkedin?: LiList | null;
   fb?: FbShown | null;
+  ads?: AdsShown | null;
 }) {
   const [range, setRange] = useState<Range>('week');
   const wk = range === 'week';
@@ -191,14 +194,15 @@ export function Today({
       </div>
       {off.length ? <OffCard sites={off} /> : null}
 
-      {fb ? (
+      {fb || ads ? (
         <>
           <div className="section">
             <h2>On social media</h2>
-            <span>{fb.ok && fb.p.toAnswer.length ? `${fb.p.toAnswer.length} to answer` : 'Facebook'}</span>
+            <span>{fb?.ok && fb.p.toAnswer.length ? `${fb.p.toAnswer.length} to answer` : ads ? 'Facebook and ads' : 'Facebook'}</span>
           </div>
           <div className="apps-grid">
-            <FbShortCard fb={fb} />
+            {fb ? <FbShortCard fb={fb} /> : null}
+            {ads ? <AdsShortCard ads={ads} /> : null}
           </div>
         </>
       ) : null}
