@@ -192,6 +192,11 @@ export function placeName(p: Place, opts: { district?: boolean } = {}) {
 }
 
 export const SOURCE_LABEL: Record<string, string> = {
+  // the ads' URL parameters (utm_source=ads-{{site_source_name}}, HQ's Ads section)
+  'ads-fb': 'Facebook ad',
+  'ads-ig': 'Instagram ad',
+  'ads-msg': 'Messenger ad',
+  'ads-an': 'Ad on another app (Meta)',
   google: 'Google',
   bing: 'Bing',
   duckduckgo: 'DuckDuckGo',

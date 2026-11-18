@@ -8,8 +8,9 @@ import { disconnectThreads, replyThreads, ThreadsError, threadsLoginUrl, threads
 /* The Job Kit's Social screen (src/lib/social.ts), behind the PIN.
    { action: 'overview' }                        Instagram, Facebook and Threads: each account's state, followers (with
                                                  their history), latest posts, comments with their replies
-   { action: 'start', platform?, again? }        the login address to open: Facebook (meta, the default; again: ask for
-                                                 what was turned down) or Threads
+   { action: 'start', platform?, again?, ads? }  the login address to open: Facebook (meta, the default; again: ask for
+                                                 what was turned down; ads: ask for ads_read too, for HQ's Ads section)
+                                                 or Threads
    { action: 'pick', page }                      which Facebook Page (when Raf runs more than one)
    { action: 'show', page, on }                  show another Page beside it (e.g. Cabinet OS), or stop showing it
    { action: 'pages' }                           ask Facebook for the list of Pages now (a Page made since connecting)
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
       return Response.json({ error: 'bad' }, { status: 400 });
     }
     if (!metaSetUp()) return Response.json({ error: 'meta-not-set-up', detail: metaMissing().join(', ') }, { status: 503 });
-    if (body.action === 'start') return Response.json({ url: metaLoginUrl(connectOrigin(req), body.again === true) }, { headers: noStore });
+    if (body.action === 'start') return Response.json({ url: metaLoginUrl(connectOrigin(req), body.again === true, body.ads === true) }, { headers: noStore });
     if (body.action === 'pick') {
       const page = str(body.page, 80);
       if (!idOk(page)) return Response.json({ error: 'bad' }, { status: 400 });

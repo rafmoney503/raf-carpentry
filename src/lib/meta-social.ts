@@ -45,6 +45,16 @@ const scopes = () =>
         .filter(Boolean)
     : SCOPES;
 
+/* Ads (HQ's Ads section, 15 Nov 2026): asked only when Raf taps Connect ads, so a login without the Marketing API on
+   the app still works for the Social screen. META_ADS_SCOPES (comma list) replaces it. */
+export const ADS_SCOPES = ['ads_read'];
+const adsScopes = () =>
+  process.env.META_ADS_SCOPES
+    ? process.env.META_ADS_SCOPES.split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : ADS_SCOPES;
+
 export const metaMissing = () => [!APP_ID() && 'META_APP_ID', !APP_SECRET() && 'META_APP_SECRET', !syncSetUp() && 'JOBKIT_SYNC_SECRET'].filter(Boolean) as string[];
 export const metaSetUp = () => metaMissing().length === 0;
 
@@ -59,10 +69,12 @@ export const metaStateOk = (state: string | null) => stateOk(state, APP_SECRET()
 
 export const redirectUri = (origin: string) => process.env.META_REDIRECT_URI || `${origin.replace(/\/$/, '')}/api/job-kit/social/meta/callback`;
 
-export function metaLoginUrl(origin: string, again = false) {
+export function metaLoginUrl(origin: string, again = false, ads = false) {
   const p = new URLSearchParams({ client_id: APP_ID(), redirect_uri: redirectUri(origin), state: newState(APP_SECRET(), STATE_TAG), response_type: 'code' });
-  if (process.env.META_LOGIN_CONFIG_ID) p.set('config_id', process.env.META_LOGIN_CONFIG_ID);
-  else p.set('scope', scopes().join(','));
+  // with ads the scope list is used, unless there's a Facebook Login for Business configuration made with them
+  const config = ads ? process.env.META_ADS_CONFIG_ID : process.env.META_LOGIN_CONFIG_ID;
+  if (config) p.set('config_id', config);
+  else p.set('scope', [...new Set([...scopes(), ...(ads ? adsScopes() : [])])].join(','));
   if (again) p.set('auth_type', 'rerequest'); // asks again for what was turned down last time
   return `${DIALOG()}/${V()}/dialog/oauth?${p}`;
 }
@@ -72,6 +84,10 @@ export function metaLoginUrl(origin: string, again = false) {
 type GraphError = { error?: { message?: string; code?: number; error_subcode?: number; error_user_msg?: string } };
 
 const proof = (token: string) => createHmac('sha256', APP_SECRET()).update(token).digest('hex');
+
+export async function metaGraph<T>(path: string, token: string | null, params: Record<string, string> = {}): Promise<T> {
+  return graph<T>(path, token, params);
+}
 
 async function graph<T>(path: string, token: string | null, params: Record<string, string> = {}, method: 'GET' | 'POST' = 'GET'): Promise<T> {
   const q = new URLSearchParams(params);
@@ -143,6 +159,16 @@ const open = (s: string) => {
     throw new MetaError('meta-expired', 'sealed with an older secret');
   }
 };
+
+/* For the ads (src/lib/meta-ads.ts): the long-lived user token, if the login gave the ads permission. */
+export async function metaAdsAuth(): Promise<{ state: 'ok'; token: string; who: string } | { state: 'not-connected' | 'no-permission' | 'expired'; who?: string }> {
+  const k = await load();
+  if (!k) return { state: 'not-connected' };
+  const who = k.user.name;
+  if (!k.perms.some((x) => x === 'ads_read' || x === 'ads_management')) return { state: 'no-permission', who };
+  if (k.userUntil && k.userUntil < Date.now()) return { state: 'expired', who };
+  return { state: 'ok', token: open(k.userToken), who };
+}
 
 /* ---------- connecting (the callback) ---------- */
 
@@ -492,6 +518,7 @@ export async function metaPart(): Promise<{ account: MetaAccount; part: SocialPa
     pages: k.pages.map((p) => ({ id: p.id, name: p.name, ig: p.ig?.username, shown: ids.includes(p.id) })),
     page: page ? { id: page.id, name: page.name } : undefined,
     notGranted: asked.filter((s) => !k!.perms.includes(s)),
+    ads: k.perms.some((x) => x === 'ads_read' || x === 'ads_management'),
   };
   if (!page) return { account, part: EMPTY };
   try {

@@ -34,7 +34,7 @@ export type CreditStatus = {
   error?: string;
 };
 
-const NAMES: Record<string, string> = { quotes: 'Quotes (rough prices)', design: 'Design with Claude', draft: 'Draft a reply', pots: 'Money pots, Ask Claude', receipts: 'Receipts read', assistant: 'Assistant: reading new emails', review: 'Daily review', whatsapp: 'WhatsApp chats read' };
+const NAMES: Record<string, string> = { quotes: 'Quotes (rough prices)', design: 'Design with Claude', draft: 'Draft a reply', pots: 'Money pots, Ask Claude', receipts: 'Receipts read', assistant: 'Assistant: reading new emails', review: 'Daily review', whatsapp: 'WhatsApp chats read', ads: 'Ads written for HQ' };
 const nameOf = (f: string) => NAMES[f] ?? f;
 const usd = (v: number) => `$${(Math.round(v * 100) / 100).toFixed(2)}`;
 const day = (t: number) => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });

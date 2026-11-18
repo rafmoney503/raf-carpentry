@@ -536,10 +536,10 @@ export function SocialView({
     void post(readPin(), { action: 'seen', at: seenNewest }, API);
   }, [seenNewest, d?.seenAt]);
 
-  const connect = async (platform: 'meta' | 'threads', again = false) => {
+  const connect = async (platform: 'meta' | 'threads', again = false, ads = false) => {
     setStarting(platform);
     setProblem('');
-    const r = await post<{ url: string }>(readPin(), { action: 'start', platform, again }, API);
+    const r = await post<{ url: string }>(readPin(), { action: 'start', platform, again, ads }, API);
     if (!r.ok) {
       setStarting(null);
       setProblem(socialProblem(r.error, r.detail));
@@ -904,6 +904,18 @@ export function SocialView({
                 </div>
               ) : null}
               {pagesNote ? <p className="mt-1 text-ink">{pagesNote}</p> : null}
+              <p className="mt-2" data-ads-line>
+                {meta.ads ? (
+                  <>Ads: HQ can read your Facebook and Instagram ads (its Ads section). Nothing is ever changed or paid from here.</>
+                ) : (
+                  <>
+                    Ads: not connected. For HQ&apos;s Ads section, Facebook needs to let it read your ads (only read: nothing is changed or paid).{' '}
+                    <button type="button" onClick={() => void connect('meta', true, true)} className="h-9 font-semibold underline jk-sec-ink" data-connect-ads>
+                      Connect ads
+                    </button>
+                  </>
+                )}
+              </p>
               <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1">
                 {(meta.pages?.length ?? 0) > 1 && meta.page ? (
                   <button type="button" onClick={() => onChange({ ...social, data: { ...d, meta: { ...meta, page: undefined } } })} className="h-9 underline">

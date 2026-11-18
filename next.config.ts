@@ -37,6 +37,8 @@ const nextConfig: NextConfig = {
     "/api/recent": ["./content/projects/*.json", "./content/pages/*.json", "./content/designs/*.json"],
     /* Blog stats in the Job Kit name every post and its topic (src/lib/blog.ts and projects.ts read these at run time). */
     "/api/job-kit/stats": ["./content/blog/*.md", "./content/projects/*.json"],
+    /* HQ's Ads section: Claude writes ads from the job photos (src/lib/ad-writer.ts reads the jobs and the Google rating). */
+    "/api/hq/ads": ["./content/projects/*.json", "./content/pages/*.json"],
     /* A shared game score's picture is drawn when it's asked for, with the sharing fonts. */
     "/tools/games/beat/card": ["./src/fonts/og/*.ttf"],
   },

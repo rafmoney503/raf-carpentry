@@ -614,7 +614,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     // Back from connecting Instagram and Facebook or Threads: open Social with how it went, and take the ?social= off the address.
     const fromLogin = new URLSearchParams(window.location.search).get('social');
     const first: Screen = fromLogin ? { name: 'social' } : loadScreen();
-    if (fromLogin) {
+    if (fromLogin === 'open') keepScreen(first); // a link to the Social screen (HQ's Ads section: Connect ads)
+    else if (fromLogin) {
       keepScreen(first);
       setSocialBack(
         fromLogin === 'ok' || fromLogin === 'threads-ok'
