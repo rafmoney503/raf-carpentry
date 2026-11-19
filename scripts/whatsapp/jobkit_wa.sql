@@ -1,6 +1,6 @@
 -- public.jobkit_wa: the Job Kit's live WhatsApp store (Supabase cabinetos project, uzrnnnnfdrqunyrysodz).
 -- A copy of the live function. Migrations: 'jobkit_wa', 'jobkit_wa_grants' (13 Nov 2026), 'jobkit_wa_read_limits'
--- (19 Nov 2026: Claude reads a chat by itself at most once an hour and at most 40 chats a UK day; a tap on
+-- (19 Nov 2026: Claude reads a chat by itself at most once an hour and at most 10 chats a UK day; a tap on
 -- Read it with Claude / Read it again isn't held back or counted). Change it here and apply the whole function.
 CREATE OR REPLACE FUNCTION public.jobkit_wa(p_secret text, p_action text, p jsonb DEFAULT '{}'::jsonb)
  RETURNS jsonb
@@ -22,7 +22,7 @@ declare
   top bigint;
   q jobkit.wa_chats%rowtype;
   -- reads Claude starts by itself: at most read_cap a UK day, and a chat at most once every read_gap
-  read_cap int := 40;
+  read_cap int := 10;
   read_gap interval := interval '1 hour';
   today text := to_char(now() at time zone 'Europe/London', 'YYYY-MM-DD');
   auto_n int;

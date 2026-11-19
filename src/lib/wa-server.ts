@@ -259,7 +259,7 @@ export async function readChat(wa: string): Promise<WaRead> {
 
 /* Claims and reads one chat, and keeps the answer (or the failure). Never throws. */
 /* force = Raf tapped Read it with Claude / Read it again: never held back or counted. Otherwise it's a read Claude
-   starts by itself, which the store allows once an hour a chat and 40 a UK day ('wait' / 'cap' when it doesn't). */
+   starts by itself, which the store allows once an hour a chat and 10 a UK day ('wait' / 'cap' when it doesn't). */
 export async function runRead(wa: string, force = false): Promise<{ ok: boolean; read?: WaRead; error?: string }> {
   const claim = (await waRpc('read-claim', { wa, auto: !force }).catch(() => null)) as { ok?: boolean; cap?: boolean; wait?: boolean } | null;
   if (!claim?.ok && !force) return { ok: false, error: claim?.cap ? 'wa-cap' : claim?.wait ? 'wa-wait' : 'busy' };
@@ -277,7 +277,7 @@ export async function runRead(wa: string, force = false): Promise<{ ok: boolean;
 }
 
 /* Reads the chats waiting for it (something new from them, quiet for 90 s, nothing still coming in for 20 s, not read
-   in the last hour; none once today's 40 are used), up to `max`, within `budgetMs`. */
+   in the last hour; none once today's 10 are used), up to `max`, within `budgetMs`. */
 export async function readPending(max = 1, budgetMs = 40000) {
   if (!process.env.ANTHROPIC_API_KEY) return 0;
   const started = Date.now();

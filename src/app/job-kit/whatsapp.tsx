@@ -304,7 +304,7 @@ type LiveStatus = {
     reads?: { today: number; cap: number; gapMinutes: number; waiting: number };
   };
 };
-/* What Claude reads by itself: a chat at most once an hour, at most 40 a UK day (public.jobkit_wa). A tap on Read it
+/* What Claude reads by itself: a chat at most once an hour, at most 10 a UK day (public.jobkit_wa). A tap on Read it
    with Claude isn't held back or counted. */
 function ReadsLine({ reads }: { reads?: { today: number; cap: number; gapMinutes: number; waiting: number } }) {
   if (!reads) return null;
@@ -936,7 +936,7 @@ function ReadCard({ chat, reading, problem, onAdd, onRead, onHide }: { chat: WaC
         </>
       ) : (
         <>
-          <p className="mt-2 text-[14.5px] leading-snug text-muted">{r?.error ? readWords(r.error) : 'Not read yet: Claude reads a chat a minute or two after it goes quiet, at most once an hour and 40 chats a day.'}</p>
+          <p className="mt-2 text-[14.5px] leading-snug text-muted">{r?.error ? readWords(r.error) : 'Not read yet: Claude reads a chat a minute or two after it goes quiet, at most once an hour and 10 chats a day.'}</p>
           <button type="button" className="btn btn-ghost btn-sm mt-2" onClick={onRead}>
             Read it with Claude
           </button>
