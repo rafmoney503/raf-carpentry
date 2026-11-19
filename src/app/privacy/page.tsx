@@ -10,7 +10,7 @@ export const metadata = pageMeta({
   path: '/privacy',
 });
 
-const UPDATED = '16 November 2026';
+const UPDATED = '19 November 2026';
 
 function H({ id, children }: { id?: string; children: React.ReactNode }) {
   return (
@@ -86,7 +86,8 @@ export default function Privacy() {
           <p>
             If you buy my <Link href="/pax-guide">IKEA PAX guide</Link>, you pay on a page run by <b>Stripe</b>: your card details go to Stripe, never to me or
             this website. Stripe tells this website your name, your email and that you paid, which are kept (in <b>Supabase</b>, Frankfurt) with how many times
-            the download has been used, so the link keeps working for you. I email you the link from info@rafcarpentry.com through <b>Microsoft 365</b>. I keep
+            the download has been used, so the link keeps working for you, and how your visit to this website began (for example from Google, Threads or
+            another of my pages) and its first page, so I know which of my posts lead people to the guide. I email you the link from info@rafcarpentry.com through <b>Microsoft 365</b>. I keep
             the sale as long as the law requires for accounts (six years).
           </p>
 

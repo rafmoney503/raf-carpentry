@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { SOURCE_LABEL } from '@/lib/site-stats';
 import { buyerMoney, countryName, feeOf, guideTitle, incomeOf, isUK, periods, pounds, saleLink, unseen, vatIn, type GuideSale, type Income } from '@/lib/guide-income';
 import type { TodayLine } from './current';
 import { label } from './parts';
@@ -134,6 +135,20 @@ const THE: Record<string, string> = { GB: 'the UK', US: 'the United States', NL:
 const inPlace = (c: string) => THE[c.toUpperCase()] ?? countryName(c);
 
 /* ---------- what it means, for Today ---------- */
+
+/* How they found the page, from the Buy button (sales since 19 Nov 2026; the first one was put in by hand). */
+const firstPage = (p: string) =>
+  p === '/' ? 'the home page' : p === '/pax-guide' ? 'the guide’s own page' : p.startsWith('/blog/') ? `the post “${p.slice(6).replace(/-/g, ' ')}”` : p;
+function fromLine(x: GuideSale) {
+  if (!x.source) return '';
+  const how =
+    x.source === 'direct'
+      ? 'No link trail (typed in, or tapped in an app that hides it, like Instagram or WhatsApp)'
+      : x.source === 'internal'
+        ? 'From another page of the site'
+        : `From ${SOURCE_LABEL[x.source] ?? x.source}`;
+  return x.landing ? `${how} · first page: ${firstPage(x.landing)}` : how;
+}
 
 const place = (s: GuideSale) => (s.country && !isUK(s.country) ? countryName(s.country) : '');
 /* Who bought it: their name as typed at Stripe ('reina biey' reads Reina Biey), else the first name. */
@@ -335,6 +350,7 @@ export function SalesView() {
                   </a>
                 </p>
               ) : null}
+              {fromLine(newest) ? <p className="mt-1.5 text-[14px] text-muted">{fromLine(newest)}</p> : null}
             </section>
           ) : null}
 
@@ -411,6 +427,11 @@ export function SalesView() {
                       {theirs ? `They paid ${theirs} · ` : ''}VAT {pounds(vatIn(x.amount ?? 0))} · Stripe {fee.real ? '' : 'about '}
                       {pounds(fee.pence)} · yours {pounds(kept)}
                     </p>
+                    {fromLine(x) ? (
+                      <p className="mt-0.5 text-[13.5px] text-muted" data-sale-from>
+                        {fromLine(x)}
+                      </p>
+                    ) : null}
                     <p className="mt-0.5 text-[13.5px] text-muted" data-sale-opened>
                       {x.emailed ? `✓ Link emailed${x.emailedAt ? ` ${when(x.emailedAt)}` : ''}` : 'Link not emailed yet'} · {opened(x)}
                     </p>

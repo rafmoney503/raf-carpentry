@@ -6,6 +6,7 @@ import ToolsUsed from '@/components/ToolsUsed';
 import { MountedImage } from '@/components/ui';
 import SocialIcon from '@/components/SocialIcon';
 import AppNudge from '@/components/AppNudge';
+import PaxGuideStrip from '@/components/PaxGuideStrip';
 import type { Metadata } from 'next';
 import { pageMeta } from '@/lib/seo';
 
@@ -17,6 +18,15 @@ export async function generateStaticParams() {
 function imageExists(src?: string) {
   if (!src || !src.startsWith('/')) return false;
   return fs.existsSync(path.join(process.cwd(), 'public', src));
+}
+
+/* A PAX post (one whose words link the guide) gets the guide card straight after its short answer, before the first
+   heading; the rest of the post goes on under it. */
+function splitForGuide(html: string): [string, string] | null {
+  if (!html.includes('href="/pax-guide"')) return null;
+  const at = html.indexOf('<h2');
+  const cut = at > 0 ? at : html.indexOf('</p>') + 4;
+  return cut > 4 ? [html.slice(0, cut), html.slice(cut)] : null;
 }
 
 function formatDate(value: unknown) {
@@ -44,6 +54,7 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const post = await getPostBySlug(slug);
   if (!post) notFound();
+  const guideSplit = splitForGuide(post.content || '');
 
   return (
     <>
@@ -59,7 +70,15 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
           <MountedImage src={post.image as string} alt="" aspect="aspect-video" priority sizes="(max-width: 768px) 100vw, 720px" className="mb-10 mt-10" />
         )}
 
-        <div className={`prose-custom text-[17px] ${imageExists(post.image) ? '' : 'mt-10'}`} dangerouslySetInnerHTML={{ __html: post.content || '' }} />
+        {guideSplit ? (
+          <>
+            <div className={`prose-custom text-[17px] ${imageExists(post.image) ? '' : 'mt-10'}`} dangerouslySetInnerHTML={{ __html: guideSplit[0] }} />
+            <PaxGuideStrip />
+            <div className="prose-custom text-[17px]" dangerouslySetInnerHTML={{ __html: guideSplit[1] }} />
+          </>
+        ) : (
+          <div className={`prose-custom text-[17px] ${imageExists(post.image) ? '' : 'mt-10'}`} dangerouslySetInnerHTML={{ __html: post.content || '' }} />
+        )}
 
         {post.tools && <ToolsUsed tools={post.tools} />}
       </article>

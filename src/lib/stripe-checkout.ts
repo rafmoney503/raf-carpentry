@@ -77,6 +77,7 @@ export type Session = {
   presentment_details?: { presentment_amount?: number | null; presentment_currency?: string | null } | null; // what the buyer paid in their own money (Stripe's Adaptive Pricing)
   payment_intent?: string | null;
   metadata?: Record<string, string> | null;
+  client_reference_id?: string | null; // the PAX guide's Buy button: how the visit began and its first page (SiteStats fromRef)
   created?: number;
 };
 

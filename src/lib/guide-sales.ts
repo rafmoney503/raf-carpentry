@@ -98,6 +98,15 @@ async function buzz(title: string, body: string, tag: string) {
   }).catch(() => null);
 }
 
+/* How the buyer's visit began and the page it began on, from the Buy button's client_reference_id
+   ('threads__blog_ikea-pax-height-for-your-ceiling': the kind, two underscores, the page with its slashes as _;
+   SiteStats' fromRef). Nothing when the link was opened without it. */
+export function cameFrom(ref?: string | null): { source: string; landing: string } {
+  const m = /^([a-z0-9-]{1,40})__([A-Za-z0-9-]+(?:_[A-Za-z0-9-]+)*)$/.exec(ref ?? '');
+  if (!m || m[2].length > 120) return { source: '', landing: '' };
+  return { source: m[1], landing: m[2] === 'home' ? '/' : '/' + m[2].replace(/_/g, '/') };
+}
+
 /* Records the sale and emails the buyer. Answers whether all of it is done: false means try again later (Stripe's
    retry), true when it is, or when there's nothing to do. Throws when the sale itself couldn't be recorded. */
 export async function paidGuide(s: Session, origin: string): Promise<boolean> {
@@ -119,6 +128,8 @@ export async function paidGuide(s: Session, origin: string): Promise<boolean> {
       country: s.customer_details?.address?.country ?? '',
       buyerAmount: s.presentment_details?.presentment_amount ?? '',
       buyerCurrency: s.presentment_details?.presentment_currency ?? '',
+      // how they found the page (the Buy button's client_reference_id)
+      ...cameFrom(s.client_reference_id),
     },
   });
   if (added.new) await buzz(`Sold: ${GUIDES[id].title}`, `£${((s.amount_total ?? 0) / 100).toFixed(2)}${name ? ` · ${name}` : ''}${email ? ` · ${email}` : ''}`.slice(0, 220), `guide-${s.id.slice(-12)}`);

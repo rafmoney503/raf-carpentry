@@ -9,6 +9,8 @@
 -- Since 19 Nov 2026 (migration 'rafsite_guide_sales_links'): 'sales' also gives the session (so the Job Kit can send
 -- the buyer their link again), when it was last emailed and when each download was; a download within 10 minutes of
 -- the last one (a PDF left open in a phone's browser reloading, a second tap) is served but not counted again.
+-- Since 19 Nov 2026 (migration 'rafsite_guide_sales_source'): how the buyer's visit began (the visit counter's own word:
+-- google, chatgpt, threads, direct...) and the page it began on, from the Buy button's client_reference_id.
 create table if not exists rafsite.guide_sales (
   session text primary key,
   product text not null default 'pax-guide',
@@ -30,6 +32,8 @@ alter table rafsite.guide_sales add column if not exists buyer_currency text;
 alter table rafsite.guide_sales add column if not exists fee int;
 alter table rafsite.guide_sales add column if not exists seen_at timestamptz;
 alter table rafsite.guide_sales add column if not exists download_times timestamptz[] not null default '{}';
+alter table rafsite.guide_sales add column if not exists source text;
+alter table rafsite.guide_sales add column if not exists landing text;
 
 create or replace function public.rafsite_guide(p_secret text, p_action text, p jsonb default '{}'::jsonb)
 returns jsonb
@@ -47,10 +51,11 @@ begin
     raise exception 'not allowed';
   end if;
   if p_action = 'add' then
-    insert into rafsite.guide_sales (session, product, email, name, amount, currency, link, country, buyer_amount, buyer_currency)
+    insert into rafsite.guide_sales (session, product, email, name, amount, currency, link, country, buyer_amount, buyer_currency, source, landing)
     values (left(p->>'session', 200), coalesce(left(p->>'product', 40), 'pax-guide'), left(lower(p->>'email'), 254),
             left(p->>'name', 120), nullif(p->>'amount', '')::int, left(p->>'currency', 8), left(p->>'link', 80),
-            nullif(upper(left(p->>'country', 2)), ''), nullif(p->>'buyerAmount', '')::int, nullif(lower(left(p->>'buyerCurrency', 8)), ''))
+            nullif(upper(left(p->>'country', 2)), ''), nullif(p->>'buyerAmount', '')::int, nullif(lower(left(p->>'buyerCurrency', 8)), ''),
+            nullif(left(lower(p->>'source'), 40), ''), nullif(left(p->>'landing', 130), ''))
     on conflict (session) do nothing;
     get diagnostics n = row_count;
     select * into hit from rafsite.guide_sales s where s.session = p->>'session';
@@ -104,7 +109,8 @@ begin
                  s.country, s.amount, s.currency, s.buyer_amount as "buyerAmount", s.buyer_currency as "buyerCurrency",
                  s.fee, s.downloads, s.emailed_at is not null as emailed, s.seen_at as seen,
                  right(s.session, 10) as key, s.session, s.emailed_at as "emailedAt",
-                 s.last_download_at as "lastDownload", to_jsonb(s.download_times) as "downloadTimes"
+                 s.last_download_at as "lastDownload", to_jsonb(s.download_times) as "downloadTimes",
+                 s.source, s.landing
           from rafsite.guide_sales s order by s.created_at desc limit 500) x), '[]'::jsonb)
     ) into r;
     return r;

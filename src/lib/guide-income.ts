@@ -25,6 +25,8 @@ export type GuideSale = {
   emailedAt?: string | null; // when their link was last emailed
   lastDownload?: string | null;
   downloadTimes?: string[]; // when each counted download was (since 19 Nov 2026; up to 30)
+  source?: string | null; // how their visit began, the visit counter's word (google, threads, direct...); since 19 Nov 2026
+  landing?: string | null; // the page that visit began on
 };
 
 /* The buyer's own page with their download, as emailed to them: works for 30 downloads. */

@@ -205,6 +205,8 @@ export const SOURCE_LABEL: Record<string, string> = {
   chatgpt: 'ChatGPT',
   ai: 'AI assistants',
   instagram: 'Instagram',
+  threads: 'Threads',
+  etsy: 'Etsy',
   facebook: 'Facebook',
   tiktok: 'TikTok',
   youtube: 'YouTube',

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { goalOf, statPath, statsOff, type Tap } from '@/lib/site-stats';
+import { sourceOf } from '@/lib/site-source';
 
 /* The website's own visitor counter, for the Job Kit's Website stats screen. For each page view it notes how long the
    page was actually in use (on screen, touched in the last 15 seconds), how far down it was scrolled, where on the
@@ -84,6 +85,32 @@ function selector(el: Element): string {
     e = e.parentElement;
   }
   return ['body', ...parts].join('>');
+}
+
+/* How this visit began (the first page's referrer or ?utm_source=, read with the counter's own sourceOf) and the page
+   it began on, kept for the tab only. A Stripe Payment Link tapped later (the PAX guide's Buy button) carries it as
+   client_reference_id, so the sale says how its buyer found the page; the webhook keeps it with the sale. */
+const FROM_KEY = 'raf_from';
+const keepFrom = (kind: string, path: string) => {
+  try {
+    if (!sessionStorage.getItem(FROM_KEY)) sessionStorage.setItem(FROM_KEY, JSON.stringify({ k: kind, p: path }));
+  } catch {
+    /* storage blocked: the sale just won't say */
+  }
+};
+function fromRef(): string {
+  let k = 'direct';
+  let p = location.pathname;
+  try {
+    const f = JSON.parse(sessionStorage.getItem(FROM_KEY) || 'null') as { k?: string; p?: string } | null;
+    if (f?.k) k = f.k;
+    if (f?.p) p = f.p;
+  } catch {
+    /* none */
+  }
+  // the page with its slashes as _ (Stripe takes letters, digits, - and _ only)
+  const page = p.replace(/^\/+|\/+$/g, '').replace(/\/+/g, '_').replace(/[^A-Za-z0-9_-]+/g, '-').slice(0, 120) || 'home';
+  return `${k.replace(/[^a-z0-9-]/g, '').slice(0, 40) || 'direct'}__${page}`;
 }
 
 const clean = (s: string | null | undefined, max = 40) => (s ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
@@ -206,6 +233,19 @@ export default function SiteStats() {
       if (goalOf(href, text)) send.current(); // a way to get in touch: don't risk losing it if the page changes
     };
 
+    // a Stripe Payment Link (the PAX guide's Buy buttons) gets how this visit began, just before the browser follows it
+    const onBuy = (e: MouseEvent) => {
+      const a = (e.target as Element | null)?.closest?.('a[href^="https://buy.stripe.com/"]') as HTMLAnchorElement | null;
+      if (!a) return;
+      try {
+        const u = new URL(a.href);
+        u.searchParams.set('client_reference_id', fromRef());
+        a.href = u.toString();
+      } catch {
+        /* leave it as it was */
+      }
+    };
+
     const onHide = () => {
       if (document.visibilityState === 'hidden') send.current(true);
     };
@@ -214,6 +254,7 @@ export default function SiteStats() {
     window.addEventListener('scroll', onScroll, { passive: true });
     for (const t of ['pointerdown', 'keydown', 'mousemove', 'touchstart', 'wheel'] as const) window.addEventListener(t, act, { passive: true });
     document.addEventListener('click', onTap, { capture: true, passive: true });
+    document.addEventListener('click', onBuy, { capture: true });
     document.addEventListener('visibilitychange', onHide);
     window.addEventListener('pagehide', onPageHide);
     return () => {
@@ -221,6 +262,7 @@ export default function SiteStats() {
       window.removeEventListener('scroll', onScroll);
       for (const t of ['pointerdown', 'keydown', 'mousemove', 'touchstart', 'wheel'] as const) window.removeEventListener(t, act);
       document.removeEventListener('click', onTap, { capture: true });
+      document.removeEventListener('click', onBuy, { capture: true });
       document.removeEventListener('visibilitychange', onHide);
       window.removeEventListener('pagehide', onPageHide);
       send.current = () => {};
@@ -256,6 +298,7 @@ export default function SiteStats() {
       /* none */
     }
     if (first) utm = homeTag(path, utm);
+    if (first) keepFrom(ref || utm ? sourceOf(ref, utm).kind : prev ? 'internal' : 'direct', path);
     view.current = { id: uid(), path, title: '', prev, ref, utm, engaged: 0, dwell: Array(BANDS).fill(0), scroll: 0, docH: docHeight(), taps: [], sentAt: 0 };
     // after the title has changed for the new page (a timer of its own: a hash change that isn't a new view, like a jump
     // to #brief, re-runs this without clearing it)
