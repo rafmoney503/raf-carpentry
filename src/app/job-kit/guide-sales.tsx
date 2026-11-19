@@ -11,8 +11,9 @@ import { readPin } from './uploader';
    src/lib/guide-sales.ts) with what it brought in: what the buyer paid, the VAT in it, Stripe's fee, what's left and
    what Stripe pays into the bank (sums in src/lib/guide-income.ts). A To do line for each sale until Raf opens the
    screen; seen is kept in the store, so the phone and the computer agree. On this device: the last answer
-   (raf_jobkit_sales), so Today shows it with no signal. Server: /api/job-kit/sales (behind the PIN; first names only,
-   never the buyer's email). */
+   (raf_jobkit_sales), so Today shows it with no signal. Server: /api/job-kit/sales (behind the PIN).
+   Who bought it (Raf, 19 Nov 2026 afternoon: 'Can I be notified about this in jobkit and amount paid and who'): the
+   buyer's name and email as they gave them at Stripe, on the To do line, the New sale box and each sale. */
 
 const KEY = 'raf_jobkit_sales';
 const EVENT = 'jk-sales';
@@ -132,6 +133,10 @@ const inPlace = (c: string) => THE[c.toUpperCase()] ?? countryName(c);
 /* ---------- what it means, for Today ---------- */
 
 const place = (s: GuideSale) => (s.country && !isUK(s.country) ? countryName(s.country) : '');
+/* Who bought it: their name as typed at Stripe ('reina biey' reads Reina Biey), else the first name. */
+const tidyName = (n: string) => n.trim().replace(/\s+/g, ' ').replace(/(^|[\s'-])(\p{Ll})/gu, (_, a: string, b: string) => a + b.toUpperCase());
+export const whoOf = (s: GuideSale) => (s.name?.trim() ? (s.name === s.name.toLowerCase() || s.name === s.name.toUpperCase() ? tidyName(s.name.toLowerCase()) : s.name.trim().replace(/\s+/g, ' ')) : cap(s.first));
+const who = (s: GuideSale) => [whoOf(s), place(s)].filter(Boolean).join(', ');
 
 export function salesTodayLines(s: SalesState | null): TodayLine[] {
   const fresh = unseen(s?.sales ?? []);
@@ -140,7 +145,7 @@ export function salesTodayLines(s: SalesState | null): TodayLine[] {
     const inc = incomeOf(fresh);
     return [{ text: `${fresh.length} guide sales: ${pounds(inc.paid)} in`, go: 'sales', icon: 'money', urgent: true }];
   }
-  return fresh.map((x) => ({ text: `Sold: ${shortTitle(x.product)} · ${pounds(x.amount ?? 0)}${place(x) ? ` · ${place(x)}` : ''}`, go: 'sales', id: x.key, icon: 'money', urgent: true }));
+  return fresh.map((x) => ({ text: `Sold: ${shortTitle(x.product)} · ${pounds(x.amount ?? 0)}${who(x) ? ` · ${who(x)}` : ''}`, go: 'sales', id: x.key, icon: 'money', urgent: true }));
 }
 
 export function salesLine(s: SalesState | null): string {
@@ -229,9 +234,16 @@ export function SalesView() {
               </p>
               <p className="mt-1.5 text-[15px] leading-relaxed">
                 {when(newest.at)}
-                {newest.first ? ` · ${cap(newest.first)}` : ''}
+                {whoOf(newest) ? ` · ${whoOf(newest)}` : ''}
                 {newest.country ? ` in ${inPlace(newest.country)}` : ''}. {newest.emailed ? 'The download link was emailed to them.' : 'The download link hasn’t been emailed yet.'}
               </p>
+              {newest.email ? (
+                <p className="mt-1.5 text-[15px]">
+                  <a href={`mailto:${newest.email}`} data-sale-email className="break-all underline">
+                    {newest.email}
+                  </a>
+                </p>
+              ) : null}
             </section>
           ) : null}
 
@@ -294,9 +306,16 @@ export function SalesView() {
                         </span>
                       ) : null}
                       {when(x.at)}
-                      {x.first ? ` · ${cap(x.first)}` : ''}
+                      {whoOf(x) ? ` · ${whoOf(x)}` : ''}
                       {x.country ? ` · ${countryName(x.country)}` : ''}
                     </p>
+                    {x.email ? (
+                      <p className="mt-0.5 text-[14px]">
+                        <a href={`mailto:${x.email}`} className="break-all text-muted underline">
+                          {x.email}
+                        </a>
+                      </p>
+                    ) : null}
                     <p className="mt-0.5 font-mono text-[13px] leading-relaxed text-muted">
                       {theirs ? `They paid ${theirs} · ` : ''}VAT {pounds(vatIn(x.amount ?? 0))} · Stripe {fee.real ? '' : 'about '}
                       {pounds(fee.pence)} · yours {pounds(kept)}
