@@ -1,6 +1,6 @@
 'use client';
-import { useEffect, useState, useSyncExternalStore } from 'react';
-import { buyerMoney, countryName, feeOf, guideTitle, incomeOf, isUK, periods, pounds, unseen, vatIn, type GuideSale, type Income } from '@/lib/guide-income';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { buyerMoney, countryName, feeOf, guideTitle, incomeOf, isUK, periods, pounds, saleLink, unseen, vatIn, type GuideSale, type Income } from '@/lib/guide-income';
 import type { TodayLine } from './current';
 import { label } from './parts';
 import { post } from './sm8-post';
@@ -13,7 +13,10 @@ import { readPin } from './uploader';
    screen; seen is kept in the store, so the phone and the computer agree. On this device: the last answer
    (raf_jobkit_sales), so Today shows it with no signal. Server: /api/job-kit/sales (behind the PIN).
    Who bought it (Raf, 19 Nov 2026 afternoon: 'Can I be notified about this in jobkit and amount paid and who'): the
-   buyer's name and email as they gave them at Stripe, on the To do line, the New sale box and each sale. */
+   buyer's name and email as they gave them at Stripe, on the To do line, the New sale box and each sale.
+   Each sale has the buyer's own download link (Raf, 19 Nov 2026: 'can we have a link for download in jobkit for
+   each sale in case someone missed the download so we can share a link'): Copy it, send it on WhatsApp, or email it
+   to them again from info@. */
 
 const KEY = 'raf_jobkit_sales';
 const EVENT = 'jk-sales';
@@ -158,6 +161,94 @@ export function salesLine(s: SalesState | null): string {
 }
 
 export const salesNewCount = (s: SalesState | null) => unseen(s?.sales ?? []).length;
+
+/* ---------- one sale's download link: copy, WhatsApp, or email it again ---------- */
+
+const resendProblem = (e?: string) =>
+  e === 'too-soon' ? 'Just sent: wait a minute before sending it again.' : e === 'no-email' ? 'Stripe gave no email for this one: copy the link or send it on WhatsApp.' : e === 'sale-gone' ? 'That sale isn’t in the list any more.' : e === 'outlook-not-set-up' ? 'Email from info@ isn’t set up here.' : e === 'offline' ? 'No signal just now.' : 'The email didn’t go: try again in a minute.';
+
+function opened(x: GuideSale): string {
+  if (!x.downloads) return 'Not downloaded yet';
+  const times = (x.downloadTimes ?? []).slice(-4).map(when);
+  const n = `Downloaded ${x.downloads} time${x.downloads === 1 ? '' : 's'}`;
+  if (times.length > 1) return `${n}: ${times.join(' · ')}`;
+  return x.lastDownload ? `${n} · last ${when(x.lastDownload)}` : n;
+}
+
+function SaleLink({ x }: { x: GuideSale }) {
+  const [copied, setCopied] = useState(false);
+  const [arm, setArm] = useState(false);
+  const [send, setSend] = useState<{ state: 'sending' | 'done' | 'failed'; at?: string; error?: string } | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+  if (!x.session) return null;
+  const link = saleLink(typeof window === 'undefined' ? 'https://www.rafcarpentry.com' : window.location.origin, x);
+  const first = (whoOf(x) || '').split(' ')[0];
+  const msg = `${first ? `Hi ${first}, h` : 'H'}ere's your ${guideTitle(x.product)} guide again: ${link}\nTap "Download the guide (PDF)" on that page. On a phone, open the PDF and save it to Files or Books so it's always there.\nRaf`;
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      const t = document.createElement('textarea');
+      t.value = link;
+      document.body.appendChild(t);
+      t.select();
+      document.execCommand('copy');
+      t.remove();
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+  const resend = async () => {
+    if (!arm) {
+      setArm(true);
+      timer.current = setTimeout(() => setArm(false), 5000);
+      return;
+    }
+    if (timer.current) clearTimeout(timer.current);
+    setArm(false);
+    setSend({ state: 'sending' });
+    const r = await post<{ ok?: boolean; at?: string }>(readPin(), { action: 'resend', session: x.session }, API);
+    if (r.ok && r.data.ok) {
+      setSend({ state: 'done', at: r.data.at ?? new Date().toISOString() });
+      const cur = snapshot();
+      if (cur) keep({ ...cur, sales: cur.sales.map((s) => (s.key === x.key ? { ...s, emailed: true, emailedAt: r.data.at ?? new Date().toISOString() } : s)) });
+    } else setSend({ state: 'failed', error: r.ok ? 'error' : r.error });
+  };
+  const btn = 'inline-flex h-10 items-center rounded-sm border border-line-strong bg-paper px-3 text-[14px] font-semibold';
+  return (
+    <div data-sale-link className="mt-2">
+      <p className="text-[13.5px] text-muted">
+        Their download link{x.downloads >= 30 ? ' (all 30 downloads used)' : `, ${30 - x.downloads} downloads left`}:
+      </p>
+      <div className="mt-1.5 flex flex-wrap gap-2">
+        <button type="button" onClick={copy} className={btn} data-sale-copy>
+          {copied ? '✓ Copied' : 'Copy link'}
+        </button>
+        <a href={`https://wa.me/?text=${encodeURIComponent(msg)}`} target="_blank" rel="noopener noreferrer" className={btn} data-sale-wa>
+          Send on WhatsApp
+        </a>
+        <button type="button" onClick={resend} disabled={send?.state === 'sending'} className={`${btn} ${arm ? 'border-ink bg-ink text-paper' : ''}`} data-sale-resend>
+          {send?.state === 'sending' ? 'Sending…' : arm ? `Tap again to email ${first || 'them'}` : 'Email it again'}
+        </button>
+      </div>
+      {send?.state === 'done' ? (
+        <p role="status" className="mt-1.5 text-[13.5px]" data-sale-resent>
+          ✓ Emailed again from info@ at {clock(Date.parse(send.at ?? ''))}{x.email ? ` to ${x.email}` : ', to the address they paid with'}.
+        </p>
+      ) : send?.state === 'failed' ? (
+        <p role="status" className="mt-1.5 text-[13.5px] text-muted">
+          {resendProblem(send.error)}
+        </p>
+      ) : null}
+      <a href={link} target="_blank" rel="noopener noreferrer" className="mt-1.5 inline-block text-[13px] text-muted underline">
+        See their page
+      </a>
+    </div>
+  );
+}
 
 /* ---------- the screen ---------- */
 
@@ -320,9 +411,10 @@ export function SalesView() {
                       {theirs ? `They paid ${theirs} · ` : ''}VAT {pounds(vatIn(x.amount ?? 0))} · Stripe {fee.real ? '' : 'about '}
                       {pounds(fee.pence)} · yours {pounds(kept)}
                     </p>
-                    <p className="mt-0.5 text-[13.5px] text-muted">
-                      {x.emailed ? '✓ Link emailed' : 'Link not emailed yet'} · {x.downloads ? `downloaded ${x.downloads} time${x.downloads === 1 ? '' : 's'}` : 'not downloaded yet'}
+                    <p className="mt-0.5 text-[13.5px] text-muted" data-sale-opened>
+                      {x.emailed ? `✓ Link emailed${x.emailedAt ? ` ${when(x.emailedAt)}` : ''}` : 'Link not emailed yet'} · {opened(x)}
                     </p>
+                    <SaleLink x={x} />
                   </li>
                 );
               })}
@@ -339,6 +431,9 @@ export function SalesView() {
           ) : null}
 
           <p className="mt-4 text-[12.5px] leading-relaxed text-muted">
+            A download counts each time their link to the PDF opens. A PDF left open in a phone’s browser opens again by itself when the phone reloads it, so one person can count several times; since 19 Nov, opening it again within 10 minutes counts once. Their link works for 30.
+          </p>
+          <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
             Prices include 20% VAT. Stripe’s fee is the real one where it’s been read from Stripe, else worked out from its rates: 1.5% + 20p for UK cards, 2.5% + 20p for European, 3.25% + 20p for the rest. Stripe pays out a few days after each sale.{' '}
             <a href={STRIPE_PAYMENTS} target="_blank" rel="noreferrer" className="underline">
               Payments in Stripe

@@ -6,6 +6,9 @@
 -- Stripe's fee when it's known, and seen_at, for the Job Kit's Guide sales screen (actions 'sales' and 'seen').
 -- Since 19 Nov 2026 afternoon (migration 'rafsite_guide_sales_who', Raf: "amount paid and who"): 'sales' also gives the
 -- buyer's full name and email (the Job Kit is behind the PIN; he may want to reply to them).
+-- Since 19 Nov 2026 (migration 'rafsite_guide_sales_links'): 'sales' also gives the session (so the Job Kit can send
+-- the buyer their link again), when it was last emailed and when each download was; a download within 10 minutes of
+-- the last one (a PDF left open in a phone's browser reloading, a second tap) is served but not counted again.
 create table if not exists rafsite.guide_sales (
   session text primary key,
   product text not null default 'pax-guide',
@@ -26,6 +29,7 @@ alter table rafsite.guide_sales add column if not exists buyer_amount int;
 alter table rafsite.guide_sales add column if not exists buyer_currency text;
 alter table rafsite.guide_sales add column if not exists fee int;
 alter table rafsite.guide_sales add column if not exists seen_at timestamptz;
+alter table rafsite.guide_sales add column if not exists download_times timestamptz[] not null default '{}';
 
 create or replace function public.rafsite_guide(p_secret text, p_action text, p jsonb default '{}'::jsonb)
 returns jsonb
@@ -62,7 +66,14 @@ begin
     return jsonb_build_object('found', true, 'product', hit.product, 'email', hit.email, 'name', hit.name,
                               'emailed', hit.emailed_at is not null, 'downloads', hit.downloads);
   elsif p_action = 'download' then
-    update rafsite.guide_sales s set downloads = s.downloads + 1, last_download_at = now()
+    -- the same link opened again within 10 minutes (a reload, a second tap) is served but not counted
+    select * into hit from rafsite.guide_sales s where s.session = p->>'session' and s.last_download_at > now() - interval '10 minutes';
+    if found then
+      update rafsite.guide_sales s set last_download_at = now() where s.session = hit.session;
+      return jsonb_build_object('ok', true, 'product', hit.product, 'downloads', hit.downloads);
+    end if;
+    update rafsite.guide_sales s set downloads = s.downloads + 1, last_download_at = now(),
+           download_times = (s.download_times || now())[greatest(1, cardinality(s.download_times) - 28):]
      where s.session = p->>'session' and s.downloads < 30
      returning * into hit;
     if found then
@@ -82,7 +93,8 @@ begin
     ) into r;
     return r;
   elsif p_action = 'sales' then
-    -- the Job Kit's Guide sales: every sale (newest 500) with who bought it (name and email)
+    -- the Job Kit's Guide sales: every sale (newest 500) with who bought it (name and email) and the session, so Raf
+    -- can send their link again
     select jsonb_build_object(
       'all', (select count(*) from rafsite.guide_sales),
       'pence', (select coalesce(sum(s.amount), 0) from rafsite.guide_sales s),
@@ -91,7 +103,8 @@ begin
                  nullif(btrim(coalesce(s.name, '')), '') as name, s.email,
                  s.country, s.amount, s.currency, s.buyer_amount as "buyerAmount", s.buyer_currency as "buyerCurrency",
                  s.fee, s.downloads, s.emailed_at is not null as emailed, s.seen_at as seen,
-                 right(s.session, 10) as key
+                 right(s.session, 10) as key, s.session, s.emailed_at as "emailedAt",
+                 s.last_download_at as "lastDownload", to_jsonb(s.download_times) as "downloadTimes"
           from rafsite.guide_sales s order by s.created_at desc limit 500) x), '[]'::jsonb)
     ) into r;
     return r;

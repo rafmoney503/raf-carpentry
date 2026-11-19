@@ -21,7 +21,16 @@ export type GuideSale = {
   emailed: boolean;
   seen: string | null; // when Raf first saw it in the Job Kit
   key: string;
+  session?: string; // the Checkout Session id: the buyer's key to their download (lists kept before 19 Nov 2026 have none)
+  emailedAt?: string | null; // when their link was last emailed
+  lastDownload?: string | null;
+  downloadTimes?: string[]; // when each counted download was (since 19 Nov 2026; up to 30)
 };
+
+/* The buyer's own page with their download, as emailed to them: works for 30 downloads. */
+const GUIDE_PAGES: Record<string, string> = { 'pax-guide': '/pax-guide' }; // as GUIDES in src/lib/guide-sales.ts
+export const saleLink = (origin: string, s: { session?: string; product: string }) =>
+  s.session ? `${origin}${GUIDE_PAGES[s.product] ?? '/pax-guide'}/thanks?session_id=${encodeURIComponent(s.session)}` : '';
 
 export const GUIDE_TITLES: Record<string, string> = { 'pax-guide': 'IKEA PAX, built in' };
 export const guideTitle = (p: string) => GUIDE_TITLES[p] ?? p;
