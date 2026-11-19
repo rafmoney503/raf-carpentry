@@ -8,7 +8,9 @@
 export type GuideSale = {
   at: string; // when it was paid (ISO)
   product: string;
-  first: string | null; // the buyer's first name only
+  first: string | null; // the buyer's first name
+  name?: string | null; // their name as they typed it at Stripe (since 19 Nov 2026 afternoon)
+  email?: string | null; // their email, for a reply
   country: string | null; // two letters, from their billing address
   amount: number | null; // pence, with VAT
   currency: string | null;

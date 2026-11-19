@@ -2,7 +2,7 @@ import { pinGuard } from '@/lib/job-kit-server';
 import { StatsError, statsRpc, statsSetUp } from '@/lib/site-stats-server';
 
 /* Guide sales in the Job Kit, behind the PIN (src/app/job-kit/guide-sales.tsx). From rafsite.guide_sales through
-   public.rafsite_guide (the visit counter's secret); the buyer's first name only, never their email.
+   public.rafsite_guide (the visit counter's secret), with who bought it (name and email).
    { action: 'list' }        every sale, newest first (500 at most), and the totals
    { action: 'seen', upto }  Raf has seen the sales up to that time (ISO), so the To do line goes on every device */
 const noStore = { 'Cache-Control': 'no-store' };

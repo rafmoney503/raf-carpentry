@@ -4,6 +4,8 @@
 -- each download is counted (30 at most). Only through public.rafsite_guide with the visit counter's secret.
 -- Since 19 Nov 2026 (migration 'rafsite_guide_sales_jobkit'): the buyer's country, what they paid in their own money,
 -- Stripe's fee when it's known, and seen_at, for the Job Kit's Guide sales screen (actions 'sales' and 'seen').
+-- Since 19 Nov 2026 afternoon (migration 'rafsite_guide_sales_who', Raf: "amount paid and who"): 'sales' also gives the
+-- buyer's full name and email (the Job Kit is behind the PIN; he may want to reply to them).
 create table if not exists rafsite.guide_sales (
   session text primary key,
   product text not null default 'pax-guide',
@@ -80,12 +82,13 @@ begin
     ) into r;
     return r;
   elsif p_action = 'sales' then
-    -- the Job Kit's Guide sales: every sale (newest 500) with the buyer's first name only, never their email
+    -- the Job Kit's Guide sales: every sale (newest 500) with who bought it (name and email)
     select jsonb_build_object(
       'all', (select count(*) from rafsite.guide_sales),
       'pence', (select coalesce(sum(s.amount), 0) from rafsite.guide_sales s),
       'sales', coalesce((select jsonb_agg(x order by x.at desc) from (
           select s.created_at as at, s.product, nullif(split_part(btrim(coalesce(s.name, '')), ' ', 1), '') as first,
+                 nullif(btrim(coalesce(s.name, '')), '') as name, s.email,
                  s.country, s.amount, s.currency, s.buyer_amount as "buyerAmount", s.buyer_currency as "buyerCurrency",
                  s.fee, s.downloads, s.emailed_at is not null as emailed, s.seen_at as seen,
                  right(s.session, 10) as key
