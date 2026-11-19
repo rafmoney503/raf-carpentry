@@ -191,8 +191,13 @@ const clip = (s: unknown, n: number) => {
 export async function readChat(wa: string): Promise<WaRead> {
   if (!process.env.ANTHROPIC_API_KEY) throw new ReadError('ai-not-set-up');
   const t = (await waRpc('thread', { wa, limit: 120, thumbs: false })) as { msgs?: Row[]; chat?: { name?: string; profile?: string } | null };
-  const rows = (t.msgs ?? []).filter((m) => m.type !== 'reaction');
+  const all = t.msgs ?? [];
+  const rows = all.filter((m) => m.type !== 'reaction');
   const theirs = rows.filter((m) => m.dir === 'in');
+  /* The newest thing from them, a reaction too: 'read-pending' compares it with last_in_at, which counts reactions.
+     Leaving reactions out of `upto` made a chat whose last word from them was a thumbs-up read again on every webhook
+     event, about 1,200 Claude reads a day (17 to 19 Nov 2026, two chats). */
+  const lastIn = all.reduce((a, m) => (m.dir === 'in' && m.at > a ? m.at : a), 0);
   if (!theirs.length) throw new ReadError('nothing');
   const name = t.chat?.name || t.chat?.profile || '';
   const part = stretchOf(rows);
@@ -245,7 +250,7 @@ export async function readChat(wa: string): Promise<WaRead> {
     photos: clip(x.photos, 240) || undefined,
     waiting,
     next: clip(x.next, 140) || undefined,
-    upto: theirs[theirs.length - 1].at,
+    upto: Math.max(theirs[theirs.length - 1].at, lastIn),
     at: Date.now(),
     model,
     photosSent: sent,
