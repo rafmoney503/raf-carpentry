@@ -759,8 +759,9 @@ export async function readLive(id: string, force = true): Promise<string> {
 }
 
 let lastQueue = 0;
-/* The chats waiting for Claude (something new from them, quiet for 90 s): read one at a time, at most every 2 min.
-   The webhook reads them too; this catches the ones it didn't get to. */
+/* The chats waiting for Claude (something new from them, quiet for 90 s, not read in the last hour): read one at a
+   time, at most every 2 min, and none once today's 40 are used. The webhook reads them too; this catches the ones it
+   didn't get to. */
 export async function readWaiting() {
   if (!readPin() || Date.now() - lastQueue < 120000 || info.reading) return;
   lastQueue = Date.now();
@@ -768,7 +769,7 @@ export async function readWaiting() {
   if (!r.ok || !r.data.list?.length) return;
   for (const wa of r.data.list.slice(0, 3)) {
     if (!waChat(liveId(wa))) continue;
-    await readLive(liveId(wa), false);
+    if ((await readLive(liveId(wa), false)) === 'wa-cap') break;
   }
 }
 

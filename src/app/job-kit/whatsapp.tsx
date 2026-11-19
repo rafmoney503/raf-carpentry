@@ -293,8 +293,32 @@ type LiveStatus = {
   linked: boolean;
   webhook: 'ok' | 'other' | 'none' | 'unknown';
   templates: { name: string; label: string; status: string; category: string; reason?: string }[] | null;
-  store: { chats: number; msgs: number; inbound: number; files: number; history: number; lastAt: number | null; meta: Record<string, { value: unknown; at: number }> };
+  store: {
+    chats: number;
+    msgs: number;
+    inbound: number;
+    files: number;
+    history: number;
+    lastAt: number | null;
+    meta: Record<string, { value: unknown; at: number }>;
+    reads?: { today: number; cap: number; gapMinutes: number; waiting: number };
+  };
 };
+/* What Claude reads by itself: a chat at most once an hour, at most 40 a UK day (public.jobkit_wa). A tap on Read it
+   with Claude isn't held back or counted. */
+function ReadsLine({ reads }: { reads?: { today: number; cap: number; gapMinutes: number; waiting: number } }) {
+  if (!reads) return null;
+  const full = reads.today >= reads.cap;
+  const gap = reads.gapMinutes === 60 ? 'once an hour' : `once every ${reads.gapMinutes} minutes`;
+  return (
+    <p className={`mt-2 text-[14px] leading-snug ${full ? 'rounded-sm border border-ink p-2.5 font-semibold' : 'text-muted'}`} data-wa-reads={full ? 'full' : 'ok'}>
+      {full
+        ? `Claude has read ${reads.cap} chats today, the most it does by itself. ${reads.waiting ? `${count(reads.waiting, 'chat waits', 'chats wait')} until tomorrow morning; open one and tap Read it with Claude to read it now.` : 'New messages wait until tomorrow morning.'}`
+        : `Claude read ${reads.today} of ${reads.cap} chats by itself today (each chat ${gap} at most)${reads.waiting ? ` · ${count(reads.waiting, 'chat')} with new messages` : ''}.`}
+    </p>
+  );
+}
+
 function LiveCard() {
   const [st, setSt] = useState<LiveStatus | null>(null);
   const [problem, setProblem] = useState('');
@@ -350,6 +374,7 @@ function LiveCard() {
         {st.store.lastAt ? `Last message ${ago(st.store.lastAt)}` : 'Nothing in yet'} · {count(st.store.chats, 'chat')} · {count(st.store.files, 'photo or PDF', 'photos and PDFs')} kept
         {history?.off ? ' · past chats weren’t shared' : st.store.history ? ` · ${count(st.store.history, 'past message')}${history?.progress && history.progress < 100 ? ` (${history.progress}% in)` : ''}` : ''}
       </p>
+      <ReadsLine reads={st.store.reads} />
       {st.webhook !== 'ok' ? (
         <div className="mt-3 rounded-sm border border-ink p-3">
           <p className="text-[14.5px] font-semibold leading-snug">{st.webhook === 'unknown' ? 'Couldn’t check where WhatsApp sends your messages.' : 'WhatsApp isn’t sending your messages here yet.'}</p>
@@ -911,7 +936,7 @@ function ReadCard({ chat, reading, problem, onAdd, onRead, onHide }: { chat: WaC
         </>
       ) : (
         <>
-          <p className="mt-2 text-[14.5px] leading-snug text-muted">{r?.error ? readWords(r.error) : 'Not read yet: Claude reads a chat a minute or two after it goes quiet.'}</p>
+          <p className="mt-2 text-[14.5px] leading-snug text-muted">{r?.error ? readWords(r.error) : 'Not read yet: Claude reads a chat a minute or two after it goes quiet, at most once an hour and 40 chats a day.'}</p>
           <button type="button" className="btn btn-ghost btn-sm mt-2" onClick={onRead}>
             Read it with Claude
           </button>
