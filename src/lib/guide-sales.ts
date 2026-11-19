@@ -16,7 +16,9 @@ import type { Session } from '@/lib/stripe-checkout';
      /api/pax-guide/download?s=<session id> counts it (30 at most) and sends the PDF.
    - The PDF isn't in this repo (it's public): it's in the private rafmoney503/raf-job-inbox at
      products/ikea-pax-built-in.pdf, read with JOBKIT_GITHUB_TOKEN (production only).
-   The session id is the buyer's key: a long random string Stripe makes. No Stripe API key is needed for any of it. */
+   The session id is the buyer's key: a long random string Stripe makes. No Stripe API key is needed for any of it.
+   The Job Kit's Guide sales screen (src/app/job-kit/guide-sales.tsx, /api/job-kit/sales) shows each sale and the
+   income, and a To do line until Raf has seen it. */
 
 export const MAX_DOWNLOADS = 30;
 
@@ -105,7 +107,19 @@ export async function paidGuide(s: Session, origin: string): Promise<boolean> {
   const name = (s.customer_details?.name ?? '').trim();
   const added = await statsRpc<{ ok: boolean; new: boolean; emailed: boolean }>('rafsite_guide', {
     p_action: 'add',
-    p: { session: s.id, product: id, email, name, amount: s.amount_total ?? null, currency: (s as { currency?: string }).currency ?? 'gbp', link: (s as { payment_link?: string }).payment_link ?? '' },
+    p: {
+      session: s.id,
+      product: id,
+      email,
+      name,
+      amount: s.amount_total ?? null,
+      currency: s.currency ?? 'gbp',
+      link: s.payment_link ?? '',
+      // for the Job Kit's Guide sales (where they were, and what they paid in their own money)
+      country: s.customer_details?.address?.country ?? '',
+      buyerAmount: s.presentment_details?.presentment_amount ?? '',
+      buyerCurrency: s.presentment_details?.presentment_currency ?? '',
+    },
   });
   if (added.new) await buzz(`Sold: ${GUIDES[id].title}`, `£${((s.amount_total ?? 0) / 100).toFixed(2)}${name ? ` · ${name}` : ''}${email ? ` · ${email}` : ''}`.slice(0, 220), `guide-${s.id.slice(-12)}`);
   if (added.emailed || !email) return true;

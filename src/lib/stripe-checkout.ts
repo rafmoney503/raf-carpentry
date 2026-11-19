@@ -71,7 +71,10 @@ export type Session = {
   status?: string;
   amount_total?: number | null;
   customer_email?: string | null;
-  customer_details?: { email?: string | null; name?: string | null } | null;
+  customer_details?: { email?: string | null; name?: string | null; address?: { country?: string | null } | null } | null;
+  currency?: string | null;
+  payment_link?: string | null;
+  presentment_details?: { presentment_amount?: number | null; presentment_currency?: string | null } | null; // what the buyer paid in their own money (Stripe's Adaptive Pricing)
   payment_intent?: string | null;
   metadata?: Record<string, string> | null;
   created?: number;

@@ -25,7 +25,7 @@ export const SECTIONS: { id: SecId; name: string; what: string }[] = [
   { id: 'whatsapp', name: 'WhatsApp', what: 'Chats brought in, sent to ServiceM8 with their photos.' },
   { id: 'timeline', name: 'Job timeline', what: 'Gantt chart and the clients board.' },
   { id: 'designs', name: 'Designs in 3D', what: 'Designs for customers and the Design library.' },
-  { id: 'website', name: 'Website', what: 'Website stats and page heatmaps.' },
+  { id: 'website', name: 'Website', what: 'Website stats, heatmaps and guide sales.' },
   { id: 'photos', name: 'Photos and posts', what: 'Job Kit jobs, posts and social media.' },
 ];
 
@@ -37,14 +37,14 @@ export function secOfScreen(name: string): SecId | undefined {
   if (['designs', 'design', 'new-design', 'library', 'concept'].includes(name)) return 'designs';
   if (name === 'timeline' || name === 'board' || name === 'made') return 'timeline';
   if (name === 'whatsapp' || name === 'wa-chat') return 'whatsapp';
-  if (['stats', 'stats-blog', 'stats-page'].includes(name)) return 'website';
+  if (['stats', 'stats-blog', 'stats-page', 'sales'].includes(name)) return 'website';
   if (['posts', 'post', 'job', 'new', 'kit', 'social'].includes(name)) return 'photos';
   return undefined;
 }
 
 /* Which section a Today line opens. */
 export const secOfLine = (go: string): SecId =>
-  go === 'claude' ? 'todo' : go === 'designs' ? 'designs' : go === 'posts' || go === 'jobs' || go === 'social' ? 'photos' : go === 'timeline' || go === 'made' ? 'timeline' : go === 'whatsapp' ? 'whatsapp' : 'customers';
+  go === 'claude' ? 'todo' : go === 'sales' ? 'website' : go === 'designs' ? 'designs' : go === 'posts' || go === 'jobs' || go === 'social' ? 'photos' : go === 'timeline' || go === 'made' ? 'timeline' : go === 'whatsapp' ? 'whatsapp' : 'customers';
 
 export const secClass = (s?: SecId) => (s ? `jk-sec-${s}` : '');
 

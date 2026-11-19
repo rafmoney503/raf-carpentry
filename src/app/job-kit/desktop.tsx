@@ -25,7 +25,7 @@ export const useWide = () =>
   );
 
 /* The places in the sidebar, in their sections. */
-export type SideId = 'home' | 'assistant' | 'review' | 'personal' | 'diary' | 'current' | 'receipt' | 'quotes' | 'cworkshop' | 'inbox' | 'whatsapp' | 'timeline' | 'board' | 'made' | 'designs' | 'library' | 'stats' | 'kit' | 'posts' | 'social' | 'settings';
+export type SideId = 'home' | 'assistant' | 'review' | 'personal' | 'diary' | 'current' | 'receipt' | 'quotes' | 'cworkshop' | 'inbox' | 'whatsapp' | 'timeline' | 'board' | 'made' | 'designs' | 'library' | 'stats' | 'sales' | 'kit' | 'posts' | 'social' | 'settings';
 /* Rafal Solutions HQ: every app's visitors, leads and whether the sites are up (its own Vercel project, rafal-hq,
    from the rafal-hq branch; signed in with the Job Kit PIN). Opened from Today's Website box and the sidebar. */
 export const HQ_URL = 'https://rafal-hq.vercel.app';
@@ -63,7 +63,7 @@ const GROUPS: { sec?: SecId; label?: string; items: { id: SideId; title: string;
       { id: 'library', title: 'Design library', icon: 'library' },
     ],
   },
-  { sec: 'website', label: 'Website', items: [{ id: 'stats', title: 'Website stats', icon: 'stats' }], links: [{ title: 'All apps in HQ', href: HQ_URL, icon: 'board' }] },
+  { sec: 'website', label: 'Website', items: [{ id: 'stats', title: 'Website stats', icon: 'stats' }, { id: 'sales', title: 'Guide sales', icon: 'money' }], links: [{ title: 'All apps in HQ', href: HQ_URL, icon: 'board' }] },
   {
     sec: 'photos',
     label: 'Photos and posts',
@@ -95,6 +95,7 @@ export function sideOf(name: string, from?: string): SideId | undefined {
   if (['designs', 'design', 'new-design'].includes(name)) return 'designs';
   if (name === 'library') return 'library';
   if (name === 'stats' || name === 'stats-blog' || name === 'stats-page') return 'stats';
+  if (name === 'sales') return 'sales';
   if (['kit', 'job', 'new'].includes(name)) return 'kit';
   if (name === 'posts' || name === 'post') return 'posts';
   if (name === 'social') return 'social';

@@ -76,6 +76,7 @@ import { CustomerView } from './customer-view';
 import type { InboxMail } from '@/lib/outlook';
 import { ConceptsBox, ConceptView, startConcept, type JobSource } from './concepts';
 import { ClaudeCreditView, creditLine, creditTodayLine, fetchCredit, useCredit } from './claude-credit';
+import { SalesView, salesLine, salesNewCount, salesTodayLines, useSales, useSalesRefresh } from './guide-sales';
 import { binOnServer, conceptBriefFromMail, customerEmails, dropHere, EmailView, enquiryFromMail, putReplyDraft, fetchInbox, firstOf, freshUnread, INBOX_FRESH, InboxList, inboxLine, inboxTodayLine, lastWith, markReadHere, openedMail, putBackHere, savedInbox, unbinOnServer, whenSaid, type Inbox } from './inbox';
 import type { CurrentJob } from '@/lib/servicem8';
 import { StatsPageView, StatsView, statsLine } from './stats';
@@ -132,6 +133,7 @@ type Screen =
   | { name: 'cworkshop' } // Cworkshop's decors and service prices the finished-board quotes use (cworkshop.tsx)
   | { name: 'concept'; id: string; mail?: string; job?: string } // Design with Claude (concepts.tsx); mail: started from that email; job: from that ServiceM8 job's screen
   | { name: 'claude' } // Claude credit: what's left and what used it (claude-credit.tsx)
+  | { name: 'sales' } // Guide sales: each guide sold on the website and what it brought in (guide-sales.tsx)
   | { name: 'assistant' } // what the assistant found and did, every 30 minutes (assistant.tsx)
   | { name: 'review'; day?: string } // the daily review of yesterday across every app (review.tsx)
   | { name: 'receipt'; id?: string; job?: string; mail?: string; typed?: boolean; snap?: boolean } // a receipt or a cost for a job (job-money.tsx): id changes one put in; mail: a supplier's email
@@ -274,7 +276,7 @@ const SCREEN_KEY = 'raf_jobkit_screen';
 function loadScreen(): Screen {
   try {
     const s = JSON.parse(sessionStorage.getItem(SCREEN_KEY) || localStorage.getItem(SCREEN_KEY) || 'null') as Screen | null;
-    if (s && ['home', 'personal', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-blog', 'stats-page', 'kit', 'social', 'quotes', 'quote', 'quote-prices', 'cworkshop', 'concept', 'claude', 'assistant', 'review', 'receipt', 'made'].includes(s.name)) return s;
+    if (s && ['home', 'personal', 'job', 'settings', 'posts', 'post', 'designs', 'design', 'current', 'sm8', 'diary', 'timeline', 'board', 'whatsapp', 'wa-chat', 'library', 'customer', 'inbox', 'email', 'stats', 'stats-blog', 'stats-page', 'kit', 'social', 'quotes', 'quote', 'quote-prices', 'cworkshop', 'concept', 'claude', 'sales', 'assistant', 'review', 'receipt', 'made'].includes(s.name)) return s;
   } catch {
     /* no storage */
   }
@@ -308,6 +310,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   const [ready, setReady] = useState(false);
   const wide = useWide(); // a computer: the desktop layout (desktop.tsx)
   const personalNow = usePersonalToday(); // the personal to do's count in the computer's sidebar
+  const salesNow = useSales(); // guide sales not seen yet, for the sidebar's counts (guide-sales.tsx)
   const colourKey = useColourKey(ready);
   const [tint, setTint] = useTint();
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -1273,6 +1276,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                   }
                   else if (l.go === 'quotes') go(l.id ? { name: 'quote', id: l.id, from: 'home' } : { name: 'quotes' });
                   else if (l.go === 'claude') go({ name: 'claude' });
+                  else if (l.go === 'sales') go({ name: 'sales' });
                   else if (l.go === 'receipt') go(l.id ? { name: 'receipt', mail: l.id } : { name: 'receipt' });
                   else if (l.go === 'made') {
                     checkSm8();
@@ -1307,6 +1311,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                 onStats={() => go({ name: 'stats' })}
                 onPersonal={() => go({ name: 'personal' })}
                 onClaude={() => go({ name: 'claude' })}
+                onSales={() => go({ name: 'sales' })}
                 onMade={() => {
                   checkSm8();
                   go({ name: 'made' });
@@ -1356,6 +1361,8 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
               </DesignsList>
             ) : screen.name === 'claude' ? (
               <ClaudeCreditView />
+            ) : screen.name === 'sales' ? (
+              <SalesView />
             ) : screen.name === 'assistant' ? (
               <AssistantView go={assistantGo} pin={pin} />
             ) : screen.name === 'review' ? (
@@ -1963,6 +1970,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   const sideCounts: Partial<Record<SideId, number>> = wide
     ? {
         home:
+          salesTodayLines(salesNow).length +
           (inboxTodayLine(inbox, customers) ? 1 : 0) +
           quoteTodayLines(quotes, diarySm8, marks).length +
           (socialTodayLine(social) ? 1 : 0) +
@@ -1974,6 +1982,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         whatsapp: waChats.filter((c) => (c.live ? needsYou(c) : !c.sends.length)).length,
         social: newComments(social).length,
         personal: personalNow.due.length,
+        sales: salesNewCount(salesNow),
         assistant: assistant ? assistant.items.filter((r) => r.at > assistant.seen).length : 0,
         review: (review?.days.find((d) => d.data?.review?.headline)?.data.review?.apps ?? []).flatMap((a) => a.ideas).filter((i) => !review?.marks?.[i.id]).length,
       }
@@ -2216,6 +2225,7 @@ function Home({
   onStats,
   onPersonal,
   onClaude,
+  onSales,
   onMade,
   onSnap,
 }: {
@@ -2262,6 +2272,7 @@ function Home({
   onStats: () => void;
   onPersonal: () => void;
   onClaude: () => void;
+  onSales: () => void;
   onMade: () => void;
   onSnap: (f: File | null) => void; // Snap a receipt: the photo just taken, or null for the receipt screen's other ways
 }) {
@@ -2276,6 +2287,11 @@ function Home({
   const quoteLines: TodayLine[] = quoteTodayLines(quotes, sm8, marks).map((l) => ({ text: l.text, go: 'quotes', id: l.id, urgent: true, icon: 'quote' }));
   const credit = useCredit();
   const creditToday = creditTodayLine(credit);
+  // guide sales: a line for each one sold until Raf has seen it (guide-sales.tsx)
+  const sales = useSales();
+  useSalesRefresh(pin);
+  const salesLines = salesTodayLines(sales);
+  const salesNew = salesNewCount(sales);
   useEffect(() => {
     if (pin) void fetchCredit();
   }, [pin]);
@@ -2283,7 +2299,7 @@ function Home({
   const rate = pricesOf(quotes).dayRate;
   const madeLines = madeTodayLines({ mails: inbox.mails, jobs: sm8.jobs, bookings: sm8.bookings ?? null, rate });
   const madeLine = sm8.at || Object.keys(costs.snaps).length ? madeHomeLine(madeRows(costs, sm8.jobs, sm8.bookings ?? null, rate), rate) : 'Price, costs and days on site of each finished job';
-  const lines = [...(creditToday ? [creditToday] : []), ...(mailLine ? [mailLine] : []), ...madeLines.filter((l) => l.go === 'receipt'), ...quoteLines, ...waLines, ...(socialNew ? [socialNew] : []), ...todayLines({ sm8, marks, kit: [...jobs, ...designJobs], designs, done, postsLeft: posts.length - postedEverywhere(posts) }), ...madeLines.filter((l) => l.go !== 'receipt')];
+  const lines = [...salesLines, ...(creditToday ? [creditToday] : []), ...(mailLine ? [mailLine] : []), ...madeLines.filter((l) => l.go === 'receipt'), ...quoteLines, ...waLines, ...(socialNew ? [socialNew] : []), ...todayLines({ sm8, marks, kit: [...jobs, ...designJobs], designs, done, postsLeft: posts.length - postedEverywhere(posts) }), ...madeLines.filter((l) => l.go !== 'receipt')];
   const goingAhead = sm8.jobs.filter((j) => j.status === 'Work Order').length;
   // the chips at the top (ChipMenu): a word on each box and which want Raf
   const assistantNew = /^\d+ new$/.test(assistantRight ?? '');
@@ -2427,9 +2443,10 @@ function Home({
         </div>
       </HomeBand>
 
-      <HomeBand sec="website" menu={tsec('website')} icon="stats" label="Website" right="rafcarpentry.com">
+      <HomeBand sec="website" menu={tsec('website', salesNew ? `${salesNew} sold` : '', salesNew > 0)} icon="stats" label="Website" right="rafcarpentry.com">
         <div className="px-4">
           <HomeRow onClick={onStats} title="Website stats" line={webLine} />
+          <HomeRow onClick={onSales} title="Guide sales" line={salesLine(sales)} truncate />
           <a href={HQ_URL} target="_blank" rel="noopener" data-hq-link className="flex min-h-[60px] w-full items-center gap-3 py-2.5 text-left">
             <span className="min-w-0 flex-1">
               <span className="block font-semibold">All apps in HQ</span>
@@ -2576,7 +2593,7 @@ function currentLine(sm8: Sm8, marks: Marks) {
 }
 
 /* Each line on the Today list shows the icon of the section it opens. */
-const LINE_ICON: Record<TodayLine['go'], IconName> = { receipt: 'receipt', made: 'made', claude: 'money', quotes: 'quote', current: 'jobs', designs: 'designs', posts: 'posts', jobs: 'kit', diary: 'diary', sm8: 'diary', inbox: 'mail', timeline: 'gantt', whatsapp: 'chat', social: 'social' };
+const LINE_ICON: Record<TodayLine['go'], IconName> = { sales: 'money', receipt: 'receipt', made: 'made', claude: 'money', quotes: 'quote', current: 'jobs', designs: 'designs', posts: 'posts', jobs: 'kit', diary: 'diary', sm8: 'diary', inbox: 'mail', timeline: 'gantt', whatsapp: 'chat', social: 'social' };
 
 function diaryLine(sm8: Sm8) {
   if (!sm8.at || sm8.bookings === undefined) return 'Visits and work booked in ServiceM8';

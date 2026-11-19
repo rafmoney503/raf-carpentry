@@ -2,6 +2,8 @@
 -- local Postgres. Guides sold on rafcarpentry.com (the £9.99 IKEA PAX guide first): Stripe's webhook adds a paid
 -- Checkout Session, the thank-you page and the emailed link look it up by its session id (a long random secret), and
 -- each download is counted (30 at most). Only through public.rafsite_guide with the visit counter's secret.
+-- Since 19 Nov 2026 (migration 'rafsite_guide_sales_jobkit'): the buyer's country, what they paid in their own money,
+-- Stripe's fee when it's known, and seen_at, for the Job Kit's Guide sales screen (actions 'sales' and 'seen').
 create table if not exists rafsite.guide_sales (
   session text primary key,
   product text not null default 'pax-guide',
@@ -16,6 +18,12 @@ create table if not exists rafsite.guide_sales (
   last_download_at timestamptz
 );
 alter table rafsite.guide_sales enable row level security;
+
+alter table rafsite.guide_sales add column if not exists country text;
+alter table rafsite.guide_sales add column if not exists buyer_amount int;
+alter table rafsite.guide_sales add column if not exists buyer_currency text;
+alter table rafsite.guide_sales add column if not exists fee int;
+alter table rafsite.guide_sales add column if not exists seen_at timestamptz;
 
 create or replace function public.rafsite_guide(p_secret text, p_action text, p jsonb default '{}'::jsonb)
 returns jsonb
@@ -33,9 +41,10 @@ begin
     raise exception 'not allowed';
   end if;
   if p_action = 'add' then
-    insert into rafsite.guide_sales (session, product, email, name, amount, currency, link)
+    insert into rafsite.guide_sales (session, product, email, name, amount, currency, link, country, buyer_amount, buyer_currency)
     values (left(p->>'session', 200), coalesce(left(p->>'product', 40), 'pax-guide'), left(lower(p->>'email'), 254),
-            left(p->>'name', 120), nullif(p->>'amount', '')::int, left(p->>'currency', 8), left(p->>'link', 80))
+            left(p->>'name', 120), nullif(p->>'amount', '')::int, left(p->>'currency', 8), left(p->>'link', 80),
+            nullif(upper(left(p->>'country', 2)), ''), nullif(p->>'buyerAmount', '')::int, nullif(lower(left(p->>'buyerCurrency', 8)), ''))
     on conflict (session) do nothing;
     get diagnostics n = row_count;
     select * into hit from rafsite.guide_sales s where s.session = p->>'session';
@@ -70,6 +79,24 @@ begin
           from rafsite.guide_sales s order by s.created_at desc limit 50) x), '[]'::jsonb)
     ) into r;
     return r;
+  elsif p_action = 'sales' then
+    -- the Job Kit's Guide sales: every sale (newest 500) with the buyer's first name only, never their email
+    select jsonb_build_object(
+      'all', (select count(*) from rafsite.guide_sales),
+      'pence', (select coalesce(sum(s.amount), 0) from rafsite.guide_sales s),
+      'sales', coalesce((select jsonb_agg(x order by x.at desc) from (
+          select s.created_at as at, s.product, nullif(split_part(btrim(coalesce(s.name, '')), ' ', 1), '') as first,
+                 s.country, s.amount, s.currency, s.buyer_amount as "buyerAmount", s.buyer_currency as "buyerCurrency",
+                 s.fee, s.downloads, s.emailed_at is not null as emailed, s.seen_at as seen,
+                 right(s.session, 10) as key
+          from rafsite.guide_sales s order by s.created_at desc limit 500) x), '[]'::jsonb)
+    ) into r;
+    return r;
+  elsif p_action = 'seen' then
+    update rafsite.guide_sales s set seen_at = now()
+     where s.seen_at is null and s.created_at <= coalesce(nullif(p->>'upto', '')::timestamptz, now());
+    get diagnostics n = row_count;
+    return jsonb_build_object('ok', true, 'seen', n);
   end if;
   raise exception 'bad action';
 end $function$;
