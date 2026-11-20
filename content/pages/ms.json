@@ -47,9 +47,9 @@
       "highlight": false
     },
     {
-      "label": "CabinetOS App Waitlist",
-      "subtitle": "Cutlists. Boards. Done. A carpenter built this — join free.",
-      "url": "/cabinetos",
+      "label": "CabinetOS",
+      "subtitle": "My cut list app for cabinet makers. Free plan, no card needed.",
+      "url": "https://www.cabinetos.co.uk/?utm_source=rafcarpentry-ms",
       "icon": "⚡",
       "highlight": true
     },
