@@ -1,0 +1,29 @@
+/* The Instagram page's square tiles (Raf, 20 Nov 2026: "can we make those tiles be more interesting", then "A" on
+   the "Instagram page with mini pictures" canvas): real photos with the sizes drawn on in blue. They follow
+   motion.css: each picture has `data-motion`, so it only moves while on screen; every loop is 8 s and 0% / 100% of
+   each keyframe is the finished picture, which is what shows paused or with less motion. The general moves
+   (mv-drop for the sum, mv-grow-x and mv-show for the skirting line) come from motion.css. */
+
+/* The finished state, with or without motion: the photo of the wardrobe built, its 3D drawing out of sight */
+.mv-ms-wipe { clip-path: inset(0 0 0 100%); }
+.mv-ms-line { left: 100%; opacity: 0; }
+.mv-ms-drawn { opacity: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .mv-ms-strip { animation: mv-ms-strip 8s ease-out infinite both; }
+  .mv-ms-glow { animation: mv-ms-glow 8s ease-in-out infinite both; }
+  .mv-ms-wipe { animation: mv-ms-wipe 8s ease-in-out infinite both; }
+  .mv-ms-line { animation: mv-ms-line 8s ease-in-out infinite both; }
+  .mv-ms-drawn { animation: mv-ms-drawn 8s ease-in-out infinite both; }
+  .mv-ms-built { animation: mv-ms-built 8s ease-in-out infinite both; }
+}
+
+/* Workshop Tools: the app's answer drops away and slides back up; the opening it's about glows twice */
+@keyframes mv-ms-strip { 0% { transform: translateY(0); } 3%, 9% { transform: translateY(101%); } 18%, 100% { transform: translateY(0); } }
+@keyframes mv-ms-glow { 0% { fill-opacity: 0.22; } 20% { fill-opacity: 0.5; } 28% { fill-opacity: 0.22; } 36% { fill-opacity: 0.5; } 44%, 100% { fill-opacity: 0.22; } }
+
+/* SketchUp: the 3D drawing comes across the photo from the right behind a blue line, stays, then goes back */
+@keyframes mv-ms-wipe { 0%, 4% { clip-path: inset(0 0 0 100%); } 14%, 40% { clip-path: inset(0 0 0 0); } 52%, 100% { clip-path: inset(0 0 0 100%); } }
+@keyframes mv-ms-line { 0% { left: 100%; opacity: 0; } 4% { left: 100%; opacity: 1; } 14%, 40% { left: 0%; opacity: 1; } 52% { left: 100%; opacity: 1; } 55%, 100% { left: 100%; opacity: 0; } }
+@keyframes mv-ms-drawn { 0%, 8% { opacity: 0; } 12%, 44% { opacity: 1; } 48%, 100% { opacity: 0; } }
+@keyframes mv-ms-built { 0%, 6% { opacity: 1; } 10%, 46% { opacity: 0; } 52%, 100% { opacity: 1; } }
