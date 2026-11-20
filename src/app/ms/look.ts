@@ -21,7 +21,8 @@ export type Kind =
   | 'collage' // My Work: three job photos and the number of jobs
   | 'model' // Designs in 3D: a 3D model on graph paper
   | 'guide' // the PAX guide, blue, with its cover
-  | 'app' // CabinetOS, dark, with the app on a phone
+  | 'app' // CabinetOS, dark, with the app on a phone flipping through its screens
+  | 'extension' // my SketchUp extension: its clip of units building themselves
   | 'tile' // a square photo tile, two to a row
   | 'tools' // My Carpentry Tools: three tool photos
   | 'row'; // a row with a small picture
@@ -49,6 +50,15 @@ export type Look = {
   drawing?: string;
 };
 
+/* The CabinetOS card's phone flips through the demo job ('Main bedroom': two 900 wardrobes, an 800 chest and a 500
+   night stand, 3100 wide) as the app shows it: drawn, its cut list, its boards. The numbers are the ones on those
+   screens (public/images/cabinetos/screens, the same shots as the CabinetOS page). */
+export const APP_STEPS = [
+  { name: 'Draw it', fact: '4 units', screen: '/images/cabinetos/screens/build-phone.webp' },
+  { name: 'Cut list', fact: '85 parts', screen: '/images/cabinetos/screens/cutlist-phone.webp' },
+  { name: 'Boards', fact: '10 sheets', screen: '/images/cabinetos/screens/optimise-phone.webp' },
+];
+
 /* The Barnet wall in the Workshop Tools app's batten grid: 4105 wide, 1000 high, 69 mm battens, 6 panels
    (content/projects/wall-panelling-barnet.json, calculator). */
 export const PANELS_ANSWER = '6 panels · 603.7 × 862';
@@ -61,6 +71,7 @@ const LOOKS: Record<string, Look> = {
   '/designs': { group: 'work', kind: 'model', image: '/images/projects/chimney-breast-wardrobes-palmers-green/model-3d.jpg', tag: '3D' },
   '/pax-guide': { group: 'trade', kind: 'guide' },
   'cabinetos.co.uk': { group: 'trade', kind: 'app', tag: 'Free plan · no card' },
+  'cabinetos.co.uk/sketchup-extension': { group: 'trade', kind: 'extension', tag: 'New · for SketchUp' },
   '/tools/workshop': { group: 'trade', kind: 'tile', image: '/images/ms/tile-panelling-da5ac4ab.jpg', tag: 'Free app', art: 'panels' },
   '/tools/calculator': { group: 'trade', kind: 'tile', image: '/images/ms/tile-shelves-a9301429.jpg', tag: 'Free', art: 'sum' },
   '/tips': { group: 'trade', kind: 'tile', image: '/images/ms/tile-alcove-d581ccf3.jpg', art: 'skirting' },
@@ -80,13 +91,16 @@ export const TOOL_PHOTOS = ['/images/tools/festool-track-saw.jpg', '/images/tool
 export const BANNER_JOBS = ['pax-wardrobe-finchley', 'kitchen-panelling-crouch-end', 'reception-desk-brentwood'];
 export const COLLAGE_JOBS = ['floating-walnut-desk-highbury', 'bookcase-radiator-cover-east-finchley', 'tv-unit-and-bookcase-haringey'];
 
-/* The key a link is looked up by: "whatsapp" for a WhatsApp link, the site for another website, else the page. */
+/* The key a link is looked up by: "whatsapp" for a WhatsApp link, the site for another website (with its page when
+   it isn't the home page, e.g. cabinetos.co.uk/sketchup-extension), else the page. */
 export function keyOf(url: string): string {
   const u = url.trim();
   if (/wa\.me\/|whatsapp\.com/i.test(u)) return 'whatsapp';
   if (/^https?:\/\//i.test(u)) {
     try {
-      return new URL(u).hostname.replace(/^www\./, '');
+      const a = new URL(u);
+      const page = a.pathname.replace(/\/+$/, '');
+      return a.hostname.replace(/^www\./, '') + page;
     } catch {
       return u;
     }
