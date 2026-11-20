@@ -109,7 +109,9 @@ import { holdSnap, keepSnaps, MadeBox, madeHomeLine, madeRows, madeTodayLines, M
 import { Sm8Link } from './kit-link';
 import { CworkshopView } from './cworkshop';
 import { askQuote, checkedQuotes, fetchQuotes, flushQuoteEdits, isWorking, keepRedo, ownNote, pricesOf, putInEmailBox, QUOTES_FRESH, QuoteJobBox, QuotePrices, QuotesList, quotesLine, quoteTodayLines, QuoteView, readyCount, rowOf, rulesOf, rulesWaiting, savedQuotes, savedRedo, toRead, workingHere, changeHere, type Quotes } from './quotes';
-import type { QuoteEdits } from '@/lib/quote-sums';
+import type { QuoteEdits, QuoteRead } from '@/lib/quote-sums';
+import { AgreedBox } from './agreed';
+import { agreedView, type Agreed } from '@/lib/job-agreed';
 import { dropboxBack } from './goodnotes';
 import './job-kit.css';
 
@@ -1766,6 +1768,38 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
                     checkSm8();
                     go({ name: 'timeline', job: cur.uuid });
                   }}
+                  {...(() => {
+                    /* What's agreed (agreed.tsx): the list on the job, and what the question before Work Order needs. */
+                    const row = rowOf(quotes, cur.uuid);
+                    const read = (row?.data as { read?: QuoteRead } | null | undefined)?.read;
+                    const view = agreedView(marks[cur.uuid]?.agree, cur, { first: cur.first, what: cur.description ? whatOf(cur.description) : '', quote: read ? { runs: read.runs, edits: (row?.edits ?? {}) as QuoteEdits } : null });
+                    const linkedChat = waChats.find((c) => c.live && c.wa && c.sends.some((x) => x.job === cur.uuid));
+                    const waTo = linkedChat?.wa || waOf(cur.mobile);
+                    const chat = linkedChat || (waTo ? waChats.find((c) => c.live && c.wa === waTo) : undefined);
+                    const sentAt = marks[cur.uuid]?.agree?.sent?.at ?? 0;
+                    const theirs = chat && sentAt ? chat.msgs.filter((m) => !m.system && m.from !== chat.me && m.text.trim() && (m.ts ?? Date.parse(m.at)) > sentAt) : [];
+                    const last = theirs[theirs.length - 1];
+                    return {
+                      agreeInfo: { ok: view.state === 'ok', sentAt: marks[cur.uuid]?.agree?.sent?.at, missing: view.missing.length, first: cur.first || cur.name },
+                      agreed: (
+                        <AgreedBox
+                          job={cur}
+                          agree={marks[cur.uuid]?.agree}
+                          view={view}
+                          first={cur.first}
+                          waTo={waTo}
+                          waLiveInAt={chat?.liveInAt}
+                          reply={last ? { at: last.ts ?? Date.parse(last.at), text: last.text } : null}
+                          onPatch={(fn) => mark(cur.uuid, { agree: fn((readMarks()[cur.uuid]?.agree ?? {}) as Agreed) })}
+                          onEmail={(subject, text) => {
+                            putInEmailBox(cur.uuid, { mode: 'email', to: cur.email, subject, text });
+                            setTimeout(() => document.getElementById('emails')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+                          }}
+                          onWorkOrder={cur.status === 'Quote' ? () => changeStatus(cur.uuid, 'Work Order') : undefined}
+                        />
+                      ),
+                    };
+                  })()}
                   sentNote={(() => {
                     const w = (rowOf(quotes, cur.uuid)?.edits as QuoteEdits | null)?.wa;
                     return w ? <WaSentNote sent={w} first={cur.first} compact /> : undefined;

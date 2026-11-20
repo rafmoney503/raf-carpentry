@@ -15,10 +15,11 @@ import { secClass, type SecId } from './sections';
    main page of jobkit'): ChipMenu with its own attribute (data-tsec on Today's boxes, TODAY_SECS), each chip in its
    section's colour. */
 
-export type SecKey = 'status' | 'quote' | 'whatsapp' | 'photos' | 'notes' | 'diary' | 'goodnotes' | 'property' | 'bookings' | 'emails' | 'money' | 'made' | 'more';
+export type SecKey = 'status' | 'agree' | 'quote' | 'whatsapp' | 'photos' | 'notes' | 'diary' | 'goodnotes' | 'property' | 'bookings' | 'emails' | 'money' | 'made' | 'more';
 
 export const JOB_SECS: Record<SecKey, { label: string; icon: IconName }> = {
   status: { label: 'Status', icon: 'steps' },
+  agree: { label: 'Agreed', icon: 'agree' },
   quote: { label: 'Quote', icon: 'quote' },
   whatsapp: { label: 'WhatsApp', icon: 'chat' },
   photos: { label: 'Photos', icon: 'kit' },
@@ -63,6 +64,17 @@ type Item = { k: string; note: string; alert: boolean };
 const same = (a: Item[], b: Item[]) => a.length === b.length && a.every((x, i) => x.k === b[i].k && x.note === b[i].note && x.alert === b[i].alert);
 const sectionIn = (nav: HTMLElement | null, attr: string, k: string) => nav?.parentElement?.querySelector<HTMLElement>(`[data-${attr}="${k}"]`) ?? null;
 const calm = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* A jump to a box on the job screen from a button inside it (What's agreed, the question before Work Order): as the
+   menu's own chips do, just under the stuck menu. scrollIntoView adds the page's scroll padding to the box's scroll
+   margin and lands too far down. */
+export function jumpToBox(id: string, extra = 10) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const nav = document.querySelector<HTMLElement>('[data-job-menu]');
+  const off = nav && !nav.hidden ? (parseFloat(nav.style.top) || 0) + nav.getBoundingClientRect().height + extra : 80;
+  window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - off), behavior: calm() ? 'auto' : 'smooth' });
+}
 
 export function JobMenu({ first }: { first: string }) {
   return <ChipMenu attr="jsec" defs={JOB_SECS} first={first} label="Sections of this job" />;

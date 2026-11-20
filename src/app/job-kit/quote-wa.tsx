@@ -158,7 +158,7 @@ function statusLine(status: string | null, first: string) {
 }
 
 /* The confirmation: on the quote and on the job */
-export function WaSentNote({ sent, first, compact = false }: { sent: WaSent; first: string; compact?: boolean }) {
+export function WaSentNote({ sent, first, compact = false, title = 'Quote sent on WhatsApp' }: { sent: WaSent; first: string; compact?: boolean; title?: string }) {
   const status = useWaStatus(sent);
   const s = statusLine(status, first);
   return (
@@ -170,7 +170,7 @@ export function WaSentNote({ sent, first, compact = false }: { sent: WaSent; fir
         <span aria-hidden className={`jk-wa-ticks font-mono text-[14px] ${s.tone === 'read' ? 'is-read' : s.tone === 'bad' ? 'is-bad' : ''}`}>
           {s.ticks}
         </span>
-        Quote sent on WhatsApp
+        {title}
       </p>
       <p className="mt-0.5 font-mono text-[12.5px] leading-snug text-muted">
         To {first || 'them'}, {showNumber(sent.to)} · {when(sent.at)}
@@ -191,6 +191,9 @@ export function QuoteWaSend({
   message,
   sent,
   onSent,
+  what = 'the quote',
+  title,
+  below,
 }: {
   wa: string;
   win: WaWindow;
@@ -198,15 +201,19 @@ export function QuoteWaSend({
   message: string;
   sent?: WaSent;
   onSent: (rec: WaSent) => void;
+  what?: string; // 'the quote', 'the list': what's typed in when it opens in his WhatsApp app instead
+  title?: string; // the confirmation's heading (WaSentNote)
+  below?: string; // the button under it that opens his WhatsApp app
 }) {
   const [armed, setArmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState('');
   const arm = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(arm.current), []);
-  if (!wa || win.state === 'none' || win.state === 'off') return sent ? <WaSentNote sent={sent} first={first} /> : null;
+  if (!wa || win.state === 'none' || win.state === 'off') return sent ? <WaSentNote sent={sent} first={first} title={title} /> : null;
   const same = sent && sent.to === wa && sent.hash === hashOf(message.trim());
   const who = first || 'them';
+  const app = below ?? `WhatsApp ${first || 'them'}`;
 
   const go = async () => {
     if (!armed) {
@@ -226,7 +233,7 @@ export function QuoteWaSend({
     if ('error' in r) {
       setProblem(
         r.error === 'wa-window'
-          ? `It’s more than 24 hours since ${who} last wrote on WhatsApp, so WhatsApp won’t take it from here. Use WhatsApp ${first || 'them'} below: it opens your WhatsApp with the quote typed in.`
+          ? `It’s more than 24 hours since ${who} last wrote on WhatsApp, so WhatsApp won’t take it from here. Use ${app} below: it opens your WhatsApp with ${what} typed in.`
           : problemText(r.error, r.detail),
       );
       return;
@@ -236,7 +243,7 @@ export function QuoteWaSend({
 
   return (
     <div className="mt-3" data-wa-send={win.state}>
-      {sent ? <WaSentNote sent={sent} first={first} /> : null}
+      {sent ? <WaSentNote sent={sent} first={first} title={title} /> : null}
       {same ? null : win.state === 'open' ? (
         <>
           <button
@@ -259,10 +266,10 @@ export function QuoteWaSend({
           {win.lastInAt || win.liveInAt
             ? `${cap(who)} last wrote on WhatsApp ${when(win.liveInAt || win.lastInAt || 0)}. That’s more than 24 hours ago, so WhatsApp won’t let the Job Kit send words to them.`
             : `${cap(who)} hasn’t written to your WhatsApp since it was linked to the Job Kit, so it can’t go from here.`}{' '}
-          Use WhatsApp {first || 'them'} below: it opens your WhatsApp with the quote typed in.
+          Use {app} below: it opens your WhatsApp with {what} typed in.
         </p>
       ) : (
-        <p className="mt-1 text-[14px] leading-snug text-muted">Couldn’t check WhatsApp just now ({problemText(win.error)}). Use WhatsApp {first || 'them'} below.</p>
+        <p className="mt-1 text-[14px] leading-snug text-muted">Couldn’t check WhatsApp just now ({problemText(win.error)}). Use {app} below.</p>
       )}
       {problem ? (
         <p role="alert" className="mt-2 text-[14px] font-semibold leading-snug">
