@@ -394,11 +394,7 @@ export default function MiniSite() {
             href={link.url}
             {...outside(link.url)}
             data-motion=""
-            className="group flex min-h-[200px] items-stretch overflow-hidden rounded-[2px] border border-ink bg-ink text-white"
-            style={{
-              backgroundImage: 'linear-gradient(rgb(142 162 255 / 0.09) 1px, transparent 1px), linear-gradient(90deg, rgb(142 162 255 / 0.09) 1px, transparent 1px)',
-              backgroundSize: '12px 12px',
-            }}
+            className="ms-app group flex min-h-[200px] items-stretch overflow-hidden rounded-[2px] border border-ink text-white"
           >
             <div className="flex min-w-0 flex-1 flex-col justify-between gap-2.5 py-3.5 pl-3.5 pr-2">
               <div>

@@ -1,3 +1,12 @@
+/* The CabinetOS card: a slate a step lighter than ink, with a faint blue grid. */
+.ms-app {
+  background-color: #2a3038;
+  background-image:
+    linear-gradient(rgb(142 162 255 / 0.11) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(142 162 255 / 0.11) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
 /* The Instagram page's square tiles (Raf, 20 Nov 2026: "can we make those tiles be more interesting", then "A" on
    the "Instagram page with mini pictures" canvas): real photos with the sizes drawn on in blue. They follow
    motion.css: each picture has `data-motion`, so it only moves while on screen; every loop is 8 s and 0% / 100% of
