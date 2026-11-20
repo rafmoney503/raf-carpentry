@@ -8,7 +8,9 @@ import { RsMark } from '@/components/AlsoByMe';
 import { getAllProjects, type Project } from '@/lib/projects';
 import { getAllPosts } from '@/lib/blog';
 import { PAX_GUIDE } from '@/lib/pax-guide';
-import { BANNER_JOBS, COLLAGE_JOBS, GROUPS, PANELS_ANSWER, TOOL_PHOTOS, lookOf, type Group, type Look } from './look';
+import PlannerClip from '@/components/PlannerClip';
+import { EXTENSION_CLIP_WIDE, EXTENSION_STILL_WIDE } from '@/lib/extension-clip';
+import { APP_STEPS, BANNER_JOBS, COLLAGE_JOBS, GROUPS, PANELS_ANSWER, TOOL_PHOTOS, lookOf, type Group, type Look } from './look';
 import './ms.css';
 
 /* The Instagram link-in-bio page. Since 20 Nov 2026 (Raf: "add some mini miniatures for each button/section to make
@@ -386,9 +388,15 @@ export default function MiniSite() {
           </a>
         );
       case 'app':
+        // The app on a phone flipping through the demo job, with the step it shows lit beside it (ms.css).
         return (
-          <a href={link.url} {...outside(link.url)} className="group flex h-[156px] items-stretch overflow-hidden rounded-[2px] border border-ink bg-ink text-white">
-            <div className="flex min-w-0 flex-1 flex-col justify-between py-3.5 pl-3.5">
+          <a
+            href={link.url}
+            {...outside(link.url)}
+            data-motion=""
+            className="ms-app group flex min-h-[200px] items-stretch overflow-hidden rounded-[2px] border border-ink text-white"
+          >
+            <div className="flex min-w-0 flex-1 flex-col justify-between gap-2.5 py-3.5 pl-3.5 pr-2">
               <div>
                 <Image src="/images/cabinetos/icon.svg" alt="" width={34} height={34} unoptimized className="rounded-[6px]" />
                 <div className="mt-2.5 text-[16px] font-semibold leading-tight">
@@ -396,14 +404,36 @@ export default function MiniSite() {
                 </div>
                 <div className="mt-1 text-[12.5px] leading-snug text-white/80">{link.subtitle}</div>
               </div>
+              <ol aria-hidden="true" className="grid gap-1 font-mono text-[11px] leading-tight">
+                {APP_STEPS.map((st, i) => (
+                  <li key={st.name} className={`mv-ms-lit${i + 1} flex gap-2 whitespace-nowrap`}>
+                    <span className="ms-hi">{String(i + 1).padStart(2, '0')}</span>
+                    <span>
+                      {st.name} <span className="text-white/60">· {st.fact}</span>
+                    </span>
+                  </li>
+                ))}
+              </ol>
               {look.tag ? <div className="self-start rounded-[2px] bg-white/15 px-1.5 py-1 font-mono text-[10.5px] uppercase leading-none tracking-[0.04em]">{look.tag}</div> : null}
             </div>
-            <div className="relative w-[118px] flex-none">
-              <div className="absolute left-2 top-4 h-[150px] w-[104px] overflow-hidden rounded-t-[10px] border-[3px] border-b-0 border-white/25">
-                <Image src="/images/cabinetos/screens/3d-phone.webp" alt="" fill sizes="110px" className="object-cover object-top" />
+            <div className="relative w-[124px] flex-none max-[359px]:w-[100px]">
+              <div className="absolute -bottom-3 left-2 top-4 w-[112px] overflow-hidden max-[359px]:w-[88px] rounded-t-[12px] border-[3px] border-b-0 border-white/25 bg-white">
+                {APP_STEPS.map((st, i) => (
+                  <Image key={st.screen} src={st.screen} alt="" fill sizes="120px" className={`object-cover object-top ${i ? `mv-ms-scr mv-ms-scr${i + 1}` : ''}`} />
+                ))}
               </div>
             </div>
           </a>
+        );
+      case 'extension':
+        return (
+          <Wide href={link.url} words={<Words link={link} />}>
+            <div className="relative h-[220px] bg-white">
+              <Image src={EXTENSION_STILL_WIDE} alt="" fill sizes="(max-width: 512px) 100vw, 512px" className="object-cover object-[50%_70%]" />
+              <PlannerClip {...EXTENSION_CLIP_WIDE} className="object-[50%_70%]" />
+              {look.tag ? <Tag tone="accent">{look.tag}</Tag> : null}
+            </div>
+          </Wide>
         );
       case 'tools':
         return (

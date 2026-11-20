@@ -54,6 +54,13 @@
       "highlight": true
     },
     {
+      "label": "My SketchUp Extension",
+      "subtitle": "Draw a wardrobe in a minute, board by board, at the sizes CabinetOS cuts.",
+      "url": "https://www.cabinetos.co.uk/sketchup-extension?utm_source=rafcarpentry-ms",
+      "icon": "",
+      "highlight": false
+    },
+    {
       "label": "Workshop Tools App",
       "subtitle": "Hinges, runners, stud walls in mm.",
       "url": "/tools/workshop",
