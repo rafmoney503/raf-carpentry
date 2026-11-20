@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { Metadata } from 'next';
 import SocialIcon, { networkOf } from '@/components/SocialIcon';
 import { readPageJson } from '@/lib/pages';
@@ -8,7 +8,8 @@ import { RsMark } from '@/components/AlsoByMe';
 import { getAllProjects, type Project } from '@/lib/projects';
 import { getAllPosts } from '@/lib/blog';
 import { PAX_GUIDE } from '@/lib/pax-guide';
-import { BANNER_JOBS, COLLAGE_JOBS, GROUPS, TOOL_PHOTOS, lookOf, type Group, type Look } from './look';
+import { BANNER_JOBS, COLLAGE_JOBS, GROUPS, PANELS_ANSWER, TOOL_PHOTOS, lookOf, type Group, type Look } from './look';
+import './ms.css';
 
 /* The Instagram link-in-bio page. Since 20 Nov 2026 (Raf: "add some mini miniatures for each button/section to make
    it more interesting", mockup C on the "Instagram page with mini pictures" canvas) the buttons sit in four groups,
@@ -200,13 +201,82 @@ function Half({ item }: { item: Item }) {
   );
 }
 
-function Tile({ item }: { item: Item }) {
+/* A part of a picture that waits before it moves (motion.css adds it to the part's own delay). */
+const after = (s: number) => ({ '--mv-o': `${s}s` }) as CSSProperties;
+
+/* What's drawn over a square tile's photo (look.art). The pictures are square crops made for these tiles, so the
+   drawings are placed on a 170 by 170 grid over them. */
+function TileArt({ look }: { look: Look }) {
+  switch (look.art) {
+    case 'panels':
+      return (
+        <>
+          <svg viewBox="0 0 170 170" className="absolute inset-0 h-full w-full text-accent" aria-hidden="true">
+            <rect className="mv-ms-glow" x="71" y="62" width="24" height="36" fill="currentColor" fillOpacity="0.22" stroke="currentColor" strokeWidth="1.4" />
+            <path d="M71 49H95M71 46V52M95 46V52" stroke="currentColor" strokeWidth="1.3" fill="none" />
+            <rect x="64" y="35" width="38" height="11" rx="1.5" className="fill-mount" />
+            <text x="83" y="43.5" textAnchor="middle" fontSize="8" fontWeight="500" fill="currentColor" className="font-mono">
+              603.7
+            </text>
+            <text transform="translate(86 80) rotate(-90)" textAnchor="middle" fontSize="8" fontWeight="500" fill="currentColor" className="font-mono">
+              862
+            </text>
+          </svg>
+          <div aria-hidden="true" className="mv-ms-strip absolute inset-x-0 bottom-0 bg-ink/90 px-2.5 py-[7px] font-mono text-[9.5px] leading-[1.35] text-white">
+            <span className="uppercase tracking-[0.04em] text-white/65">Worked out in the app</span>
+            <br />
+            {PANELS_ANSWER}
+          </div>
+        </>
+      );
+    case 'sum':
+      return (
+        <div aria-hidden="true" className="absolute inset-x-[9px] bottom-[9px] rounded-[6px] border border-line bg-mount px-2.5 pb-[7px] pt-1.5 text-right shadow-[0_4px_12px_rgb(22_25_28/0.18)]">
+          <div className="font-mono text-[10px] text-muted">600 − 36 =</div>
+          <div className="mv-drop mt-px font-display text-[30px] font-bold leading-none" style={after(0.2)}>
+            564
+          </div>
+          <div className="mt-[5px] h-[1.5px] bg-accent" />
+        </div>
+      );
+    case 'skirting':
+      return (
+        <svg viewBox="0 0 170 170" className="absolute inset-0 h-full w-full text-accent" aria-hidden="true">
+          <g className="mv-grow-x">
+            <path d="M53 125H117M53 120V130M117 120V130" stroke="currentColor" strokeWidth="1.6" fill="none" />
+          </g>
+          <g className="mv-show" style={after(0.4)}>
+            <rect x="38" y="136" width="94" height="14" rx="2" fill="currentColor" />
+            <text x="85" y="145.6" textAnchor="middle" fontSize="7.2" letterSpacing="0.3" className="fill-white font-mono">
+              SKIRTING TO SKIRTING
+            </text>
+          </g>
+        </svg>
+      );
+    case 'wipe':
+      return (
+        <>
+          {/* Loaded straight away: hidden until the wipe, a lazy picture would never start loading. */}
+          {look.drawing ? <Image src={look.drawing} alt="" fill loading="eager" sizes="(max-width: 512px) 50vw, 250px" className="mv-ms-wipe object-cover" /> : null}
+          <span aria-hidden="true" className="mv-ms-line absolute inset-y-0 -ml-px w-0.5 bg-accent" />
+          <Tag className="mv-ms-built">Built</Tag>
+          <Tag tone="accent" className="mv-ms-drawn">3D drawing</Tag>
+        </>
+      );
+    default:
+      return null;
+  }
+}
+
+function Tile({ item, tag }: { item: Item; tag?: string }) {
   const { link, look } = item;
+  const label = tag ?? look.tag;
   return (
     <a href={link.url} {...outside(link.url)} className={`${cardBox} flex flex-col`}>
-      <div className="relative aspect-square bg-raised">
+      <div className="relative aspect-square overflow-hidden bg-raised" data-motion={look.art ? '' : undefined}>
         {look.image ? <Image src={look.image} alt="" fill sizes="(max-width: 512px) 50vw, 250px" className="object-cover" style={{ objectPosition: look.position }} /> : null}
-        {look.tag ? <Tag>{look.tag}</Tag> : null}
+        <TileArt look={look} />
+        {label ? <Tag>{label}</Tag> : null}
       </div>
       <div className="px-3 pb-3 pt-2.5">
         <div className="text-[14px] font-semibold leading-snug transition-colors group-hover:text-accent">{link.label}</div>
@@ -247,6 +317,10 @@ export default function MiniSite() {
   const banner = jobs(BANNER_JOBS);
   const collage = jobs(COLLAGE_JOBS);
   const postCount = getAllPosts().length;
+  /* The Tips tile names the tip its picture shows (measuring an alcove skirting to skirting) and how many there are. */
+  const tips = readPageJson<{ tips?: { sketch?: string }[] }>('tips.json').tips ?? [];
+  const tipAt = tips.findIndex((t) => t.sketch === 'skirting');
+  const tipTag = tips.length ? (tipAt >= 0 ? `Tip ${String(tipAt + 1).padStart(2, '0')} of ${tips.length}` : `${tips.length} tips`) : undefined;
   const socials = [
     { href: d.instagramUrl, label: 'Instagram' },
     { href: d.tiktokUrl, label: 'TikTok' },
@@ -415,7 +489,7 @@ export default function MiniSite() {
                     <div key={bi}>{one(b.item)}</div>
                   ) : (
                     <div key={bi} className="grid grid-cols-2 gap-2.5">
-                      {b.items.map((it, ii) => (b.type === 'pair' ? <Half key={ii} item={it} /> : <Tile key={ii} item={it} />))}
+                      {b.items.map((it, ii) => (b.type === 'pair' ? <Half key={ii} item={it} /> : <Tile key={ii} item={it} tag={it.look.art === 'skirting' ? tipTag : undefined} />))}
                     </div>
                   ),
                 )}
