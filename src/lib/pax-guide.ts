@@ -12,4 +12,6 @@ export const PAX_GUIDE = {
   // The cover (light since 16 Nov 2026, Raf: "i like the lighter picture like the one on the right") and page 4.
   cover: '/images/pax-guide/page-01-ce21b9cc.webp',
   page4: '/images/pax-guide/page-04-589aa262.webp',
+  // The cover as a square (Stripe's product picture, and its card on the Instagram page /ms).
+  square: '/images/pax-guide/square-e6f05958.jpg',
 };
