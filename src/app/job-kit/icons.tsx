@@ -1,9 +1,17 @@
 /* Small line icons for the Job Kit's sections, drawn like the site's sketches (round ends, one weight), so each
    card on the Today screen and each line in the Today list shows where it goes. Decorative: the text says it. */
 
-export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note' | 'home' | 'quote' | 'steps' | 'history' | 'tablet' | 'house' | 'more' | 'swatch' | 'made' | 'receipt' | 'assistant' | 'idea';
+export type IconName = 'diary' | 'jobs' | 'designs' | 'library' | 'posts' | 'kit' | 'money' | 'mail' | 'review' | 'search' | 'person' | 'stats' | 'bin' | 'gantt' | 'chat' | 'social' | 'board' | 'file' | 'note' | 'home' | 'quote' | 'steps' | 'history' | 'tablet' | 'house' | 'more' | 'swatch' | 'made' | 'receipt' | 'assistant' | 'idea' | 'agree';
 
 const PATHS: Record<IconName, React.ReactNode> = {
+  // a clipboard with a tick: what's agreed with the client before saying yes to the job
+  agree: (
+    <>
+      <path d="M9 4.5H7.5A1.5 1.5 0 0 0 6 6v13.5A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H15" />
+      <path d="M9.2 3.2h5.6v2.8H9.2z" />
+      <path d="M9 13.4l2.1 2.1L15.3 11" />
+    </>
+  ),
   // a light bulb: the daily review's ideas
   idea: (
     <>

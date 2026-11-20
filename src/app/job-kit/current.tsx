@@ -13,12 +13,13 @@ import { EmailBox } from './mail';
 import { JobNotes } from './job-notes';
 import { GoodnotesBox } from './goodnotes';
 import { PropertyBox } from './property-box';
-import { JobMenu, SecIcon } from './job-menu';
+import { JobMenu, jumpToBox, SecIcon } from './job-menu';
 import { methodsFrom, PaidNote, PaymentForm, type NewPayment } from './payments';
 import { CustomerSearch, indexClients, personName, SameCustomer, type Client, type Clients } from './customers';
 import { daysBetween, rowOf, rowWords, spanWords, timelineRows, todayKey } from '@/lib/job-timeline';
 import { isDrawingsOrder } from '@/lib/drawings-service';
 import { KitLink } from './kit-link';
+import { AGREE_FROM, type Agreed } from '@/lib/job-agreed';
 
 export { problemText };
 
@@ -50,6 +51,7 @@ export type Marks = Record<
     gn?: string[]; // Goodnotes notebooks linked to the job by hand (their paths from the Clients folder of the Dropbox backup), goodnotes.tsx
     gnSent?: Record<string, string>; // notebook path (or 'path#p14-15' for pages) -> the version (last changed) put on the ServiceM8 job
     gnPages?: Record<string, number[]>; // pages of a notebook on this job: notebook path -> page numbers (4 Nov 2026, a job a page)
+    agree?: Agreed; // What's agreed with the client before saying yes (agreed.tsx, src/lib/job-agreed.ts)
   }
 >;
 
@@ -1127,6 +1129,8 @@ export function CurrentView({
   kitChoices = [],
   kitCounts = {},
   onLinkKit,
+  agreed,
+  agreeInfo,
 }: {
   job: CurrentJob;
   marks: Marks;
@@ -1161,6 +1165,8 @@ export function CurrentView({
   kitChoices?: Job[]; // Job Kit jobs started on their own, not linked to any ServiceM8 job (kit-link.tsx)
   kitCounts?: Record<string, number>; // photos and clips on each Job Kit job
   onLinkKit?: (id: string | null) => Promise<void>; // link a Job Kit job to this job, or unlink the one linked
+  agreed?: React.ReactNode; // after Where it's up to: What's agreed with the client (agreed.tsx)
+  agreeInfo?: { ok: boolean; sentAt?: number; missing: number; first: string }; // for the question before Work Order
 }) {
   const st = stage(job, marks);
   const [text] = stageText(job, marks);
@@ -1168,7 +1174,21 @@ export function CurrentView({
   const [sure, setSure] = useState<Status | null>(null);
   const [busy, setBusy] = useState(false);
   const disarm = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  /* Saying yes to a job before What's agreed has its written OK asks first (Raf, 20 Nov 2026: "everything before I
+     accept with the client, otherwise I am surprised"). Move anyway is always there. */
+  const [askAgree, setAskAgree] = useState(false);
+  const needsAgree = job.status === 'Quote' && Boolean(agreeInfo) && !agreeInfo!.ok;
+  const toWorkOrder = (fromMoney = false) => {
+    if (needsAgree) {
+      setAskAgree(true);
+      setSure(null);
+      if (fromMoney) setTimeout(() => jumpToBox('status'), 30);
+      return true;
+    }
+    return false;
+  };
   const move = (s: Status, confirm = true) => {
+    if (s === 'Work Order' && confirm && !askAgree && toWorkOrder()) return;
     if (disarm.current) clearTimeout(disarm.current);
     if (confirm && sure !== s) {
       setSure(s);
@@ -1331,11 +1351,51 @@ export function CurrentView({
             </>
           ) : null}
         </div>
+        {askAgree && needsAgree ? (
+          <div role="alert" className="mt-3 rounded-sm border border-ink bg-paper p-3" data-agree-ask>
+            <p className="text-[16px] font-[650] leading-snug">{agreeInfo!.first || 'They'} {agreeInfo!.sentAt ? 'hasn’t agreed the details in writing yet' : 'hasn’t had the details to agree yet'}</p>
+            <p className="mt-1 text-[14.5px] leading-snug text-muted">
+              {agreeInfo!.sentAt
+                ? `What’s agreed went ${ago(agreeInfo!.sentAt)} and there’s no yes on it.`
+                : agreeInfo!.missing
+                  ? `${agreeInfo!.missing} ${agreeInfo!.missing === 1 ? 'thing' : 'things'} on What’s agreed still to agree, and it hasn’t gone to ${agreeInfo!.first || 'them'}.`
+                  : `What’s agreed is filled in but hasn’t gone to ${agreeInfo!.first || 'them'}.`}{' '}
+              Get the doors, handles, sizes and price agreed first, so nothing surprises you on the day.
+            </p>
+            <div className="mt-2.5 grid gap-2">
+              <button
+                type="button"
+                className="btn btn-primary btn-sm w-full"
+                onClick={() => {
+                  setAskAgree(false);
+                  // once the question has gone, so the page doesn't move by its height on the way
+                  requestAnimationFrame(() => jumpToBox('agree'));
+                }}
+              >
+                Open What’s agreed
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                className="btn btn-ghost btn-sm w-full"
+                data-agree-anyway
+                onClick={() => {
+                  setAskAgree(false);
+                  move('Work Order', false);
+                }}
+              >
+                Move to Work Order anyway
+              </button>
+            </div>
+          </div>
+        ) : null}
         {job.status === 'Quote' && onRemove && !job.payments?.length ? <RemoveJob job={job} bookings={bookings} otherJobs={otherJobs} onRemove={onRemove} /> : null}
         <p className="mt-3 font-mono text-[12px] leading-relaxed text-faint">
           Moving a job here moves it in ServiceM8 too. Nothing is ever deleted there{job.status === 'Quote' && onRemove ? ': a job removed is only archived' : ''}.
         </p>
       </section>
+
+      {agreed}
 
       <JobNotes job={job} staff={staff} />
 
@@ -1370,7 +1430,7 @@ export function CurrentView({
         info={info}
       />
 
-      <MoneyBox job={job} methods={methods?.length ? methods : methodsFrom([])} onPay={onPay} onWorkOrder={() => move('Work Order', false)} />
+      <MoneyBox job={job} methods={methods?.length ? methods : methodsFrom([])} onPay={onPay} onWorkOrder={() => (toWorkOrder(true) ? undefined : move('Work Order', false))} />
 
       {made}
 
@@ -1836,6 +1896,14 @@ export function todayLines({
     const due = /Due by ([^.\n]+)\./.exec(j.description)?.[1];
     lines.push({ text: `Drawings for ${j.name}${due ? `: due ${due === todayWords ? 'today' : due}` : ''}`, go: 'sm8', id: j.uuid, urgent: due === todayWords });
   }
+  // What's agreed (agreed.tsx): going ahead without the client's written OK (only jobs moved on from the day it came
+  // in), and lists sent two days ago with no yes yet.
+  const unagreed = list.filter((j) => j.status === 'Work Order' && !marks[j.uuid]?.agree?.ok && (j.workOrder ?? '').slice(0, 10) >= AGREE_FROM && !isDrawingsOrder(j.description));
+  if (unagreed.length === 1) lines.push({ text: `${unagreed[0].name}: going ahead without the details agreed in writing`, go: 'sm8', id: unagreed[0].uuid, urgent: true, icon: 'agree' });
+  else if (unagreed.length) lines.push({ text: `${unagreed.length} jobs going ahead without the details agreed in writing`, go: 'current', urgent: true, icon: 'agree' });
+  const waitingOk = list.filter((j) => j.status === 'Quote' && marks[j.uuid]?.agree?.sent && !marks[j.uuid]?.agree?.ok && Date.now() - marks[j.uuid]!.agree!.sent!.at > 2 * DAY);
+  for (const j of waitingOk.slice(0, 2)) lines.push({ text: `Waiting for ${j.first || j.name}’s OK on what’s agreed`, go: 'sm8', id: j.uuid, icon: 'agree' });
+  if (waitingOk.length > 2) lines.push({ text: `${waitingOk.length - 2} more waiting for their OK on what’s agreed`, go: 'current', icon: 'agree' });
   if (going) lines.push({ text: `${n(going, 'job', 'jobs')} on Work Order`, go: 'timeline' });
   const photoJobs = kit.filter((k) => k.kind !== 'design');
   const waitingPage = photoJobs.filter((k) => k.readyAt && !done[k.id]).length;

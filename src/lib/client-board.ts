@@ -21,7 +21,12 @@ export const BOARD_STAGES: { id: BoardStage; name: string; short: string; what: 
 ];
 export const stageIndex = (s: BoardStage) => BOARD_STAGES.findIndex((x) => x.id === s);
 
-type MarkLike = { quoteSentAt?: number; hidden?: boolean; visitsDone?: string[]; progress?: number; progressAt?: number };
+type MarkLike = { quoteSentAt?: number; hidden?: boolean; visitsDone?: string[]; progress?: number; progressAt?: number; agree?: { ok?: unknown } };
+
+/* Going ahead without What's agreed signed off in writing (job-agreed.ts): only jobs that went to Work Order from the
+   day the list came in (20 Nov 2026), so older jobs aren't flagged. */
+const AGREE_FROM = '2026-11-20';
+const unagreed = (j: CurrentJob, m: BoardMarks) => !m[j.uuid]?.agree?.ok && (j.workOrder ?? '').slice(0, 10) >= AGREE_FROM;
 export type BoardMarks = Record<string, MarkLike>;
 
 export const FOLLOW_UP_DAYS = 5; // the same as Current jobs: a quote out this long wants a nudge
@@ -109,13 +114,13 @@ export function cardOf(j: CurrentJob, stage: BoardStage, m: BoardMarks, bookings
   }
   if (stage === 'deposit' && j.status === 'Quote') {
     const line = total === null ? `Paid ${gbp(paid)}` : left === 0 ? `${gbp(total)}, paid in full` : `Paid ${gbp(paid)} · ${gbp(left!)} left`;
-    return { ...base, words: 'Deposit paid · still a Quote in ServiceM8', money: line, flag: 'Move to Work Order' };
+    return { ...base, words: 'Deposit paid · still a Quote in ServiceM8', money: line, flag: m[j.uuid]?.agree?.ok ? 'Move to Work Order' : 'Details not agreed in writing' };
   }
   if (stage === 'accepted' || stage === 'deposit') {
     const row = rowOf(j, bookings, m, today);
     // The chart asks 'how far along?' to be tapped; on a card it's just noise.
     const when = row ? rowWords(row, today).replace(/ · how far along\?$/, '') : 'No dates booked yet';
-    const flag = row?.state === 'late' ? 'Past its finish date' : row?.behind ? 'Behind' : undefined;
+    const flag = row?.state === 'late' ? 'Past its finish date' : row?.behind ? 'Behind' : unagreed(j, m) ? 'Details not agreed in writing' : undefined;
     const t = parse(j.workOrder);
     const since = Number.isFinite(t) ? `Accepted ${shortDay(dayOf(t))}` : 'Accepted';
     let line = '';
