@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { Container, PageHeader, SectionHeading } from '@/components/ui';
+import { Container, SectionHeading } from '@/components/ui';
 import { COST_JOBS, costJob, fromPrice } from '@/lib/cost-calculator';
+import { getProject } from '@/lib/projects';
 import { jsonLd, pageMeta, SITE_URL } from '@/lib/seo';
-import CostCalculator from '../cost-calculator';
+import CostCalculator, { type CostPhoto } from '../cost-calculator';
 
 /* One page per job (Raf, 1 Nov 2026: a cost calculator for his own jobs, his own prices), each made for its own
    search ("fitted wardrobes cost", "loft boarding cost" ...). The sums and the words are in src/lib/cost-calculator.ts. */
@@ -29,6 +30,10 @@ export default async function CostJobPage({ params }: { params: Promise<{ slug: 
   const job = costJob(slug);
   if (!job) notFound();
   const others = COST_JOBS.filter((j) => j.slug !== job.slug);
+  const photos: CostPhoto[] = (job.photos ?? []).flatMap((slug) => {
+    const p = getProject(slug);
+    return p ? [{ slug, title: p.title, area: p.area, src: p.cover.src, alt: p.cover.alt }] : [];
+  });
   const faq = [
     {
       question: 'Is this a quote?',
@@ -51,23 +56,24 @@ export default async function CostJobPage({ params }: { params: Promise<{ slug: 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(faqLd)} />
-      <PageHeader
-        kicker="Cost calculator"
-        title={job.h1}
-        accent="in London"
-        lede={job.lede}
-        top={
-          others.length ? (
-            <Link href="/cost" className="font-mono text-[13.5px] text-faint hover:text-accent">
-              <span aria-hidden="true">← </span>All {COST_JOBS.length} jobs
-            </Link>
-          ) : undefined
-        }
-      />
+      {/* The title is the ad's headline ("Fitted wardrobes from £1,440 a metre") and the price card comes straight
+          after it, so on a phone the first screen shows what was tapped (see cost-calculator.tsx). */}
+      <Container className="pb-5 pt-5 md:pb-8 md:pt-10">
+        {others.length ? (
+          <Link href="/cost" className="mb-5 inline-block font-mono text-[13.5px] text-faint hover:text-accent">
+            <span aria-hidden="true">← </span>All {COST_JOBS.length} jobs
+          </Link>
+        ) : null}
+        <p className="kicker">{job.h1} in London</p>
+        <h1 className="mt-2 max-w-[18em] text-balance font-display text-[31px] font-[680] leading-[1.06] tracking-[-0.03em] sm:text-[40px] md:mt-3 md:text-[54px]" data-cost-title>
+          {job.name} <span className="text-accent">from {fromPrice(job)}</span>
+        </h1>
+        <p className="mt-2.5 max-w-[56ch] text-pretty text-[15.5px] leading-snug text-muted md:mt-4 md:text-[18px] md:leading-relaxed">{job.lede}</p>
+      </Container>
 
       <section>
         <Container className="pb-14 md:pb-20">
-          <CostCalculator slug={job.slug} />
+          <CostCalculator slug={job.slug} photos={photos} />
         </Container>
       </section>
 

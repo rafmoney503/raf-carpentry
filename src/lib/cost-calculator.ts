@@ -36,7 +36,9 @@ export type CostJob = {
   options: CostOption[];
   def: string; // option picked to start
   card: string; // the line on its card on /cost
-  lede: string;
+  lede: string; // the line under the page title: on phones it sits right above the price, so keep it to two lines
+  photos?: string[]; // job slugs whose cover photos show what the price buys (cost/[slug] page, under the price)
+  photosTitle?: string;
   inPrice: string[];
   notInPrice: string[];
   moves: string[]; // what takes it towards the top of the range
@@ -61,7 +63,12 @@ export const ALL_COST_JOBS: CostJob[] = [
     ],
     def: 'flat',
     card: 'Made to measure, priced by the metre.',
-    lede: 'Made to measure in MDF. Set the width and see my price straight away, then send it to me for a written quote.',
+    /* Raf's Facebook and Instagram ad (from 17 Nov 2026) lands here: "Fitted wardrobes from £1,440 a metre / Basic
+       MDF, flat doors, price with VAT". The page's title is that line and this says the rest of the ad, so the
+       first screen on a phone matches what was tapped (daily review of 20 Nov: 85 landings, 9 s, no taps). */
+    lede: 'Basic MDF, flat doors, made to measure, floor to ceiling and scribed to your walls. Price with VAT.',
+    photos: ['chimney-breast-wardrobes-palmers-green', 'loft-wardrobes-palmers-green', 'wardrobe-loft-beams-hatfield'],
+    photosTitle: 'Basic MDF, flat doors, like these',
     inPrice: ['Made to measure in 18 mm board, backs included', 'Doors, shelves and a hanging rail', 'Fitted and scribed to your walls and ceiling', 'Room left clean'],
     /* while shaker is off (COST_LIVE), this says how to get it priced */
     notInPrice: ['Painting: built in MDF, ready for your decorator', "Shaker or mirror doors: say so in your notes and I'll price them"],
