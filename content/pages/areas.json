@@ -115,6 +115,12 @@
       "lat": 51.6524,
       "lng": -0.2003,
       "postcode": "EN5"
+    },
+    {
+      "name": "Potters Bar",
+      "lat": 51.6943,
+      "lng": -0.1803,
+      "postcode": "EN6"
     }
   ]
 }
