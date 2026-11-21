@@ -22,7 +22,7 @@ So the choice is less about the look. It is about the space, the inside and the 
 
 ## Where PAX wins
 
-- **Cost.** In the materials guide on [Plan your project](/how-it-works#materials), built-in PAX is the one marked £: the cheapest way to a big fitted wardrobe. IKEA makes the frames and fittings. I make the parts round them.
+- **Cost.** In the materials guide on [Plan your project](/how-it-works#materials), built-in PAX is the one marked £: the cheapest way to a big fitted wardrobe. IKEA makes the frames and fittings. I make the parts round them. [What it costs, worked out for a 2.4 metre wall](/blog/ikea-pax-built-in-cost-london).
 - **The insides.** IKEA's rails, shelves, drawers and baskets are good value, and you can plan them yourself in IKEA's PAX planner and buy them yourself.
 - **Changing your mind later.** The insides fit rows of holes already drilled in the frame, so you can swap a shelf for a drawer yourself years later.
 
