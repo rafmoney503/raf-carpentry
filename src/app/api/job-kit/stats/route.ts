@@ -3,7 +3,7 @@ import { StatsError, statsRpc, statsSetUp } from '@/lib/site-stats-server';
 import { getAllPosts } from '@/lib/blog';
 import { getAllProjects } from '@/lib/projects';
 import { formatOf, topicOf, type BlogPostMeta } from '@/lib/blog-stats';
-import type { CardTaps } from '@/lib/site-stats';
+import type { CardTaps, ShareStats } from '@/lib/site-stats';
 
 /* Every post with its topic (the job it tells the story of, or its words) and format, for Blog stats. */
 function blogPosts(): BlogPostMeta[] {
@@ -49,7 +49,8 @@ export async function POST(req: Request) {
       // the planner's cut list button: who asked (best effort, the numbers come without it)
       // and the small card bottom left: which suggestions were tapped (rafsite_cards), with the posts' titles
       // and Workshop Games: which games are played, for how long, installs and shares (rafsite_games)
-      const [report, cutlist, cards, games] = await Promise.all([
+      // and a job page's Share button: taps and the visits its links brought (rafsite_shares), with the jobs' titles
+      const [report, cutlist, cards, games, shares] = await Promise.all([
         statsRpc('rafsite_report', { p_days: days }),
         statsRpc('rafsite_cutlist', { p_action: 'list', p: { days } }).catch(() => null),
         statsRpc('rafsite_cards', { p_days: days })
@@ -61,8 +62,20 @@ export async function POST(req: Request) {
           })
           .catch(() => null),
         statsRpc('rafsite_games', { p_days: days }).catch(() => null),
+        statsRpc('rafsite_shares', { p_days: days })
+          .then((x) => {
+            const sh = x as ShareStats | null;
+            if (!sh?.jobs) return sh;
+            const titles = new Map(getAllProjects().map((p) => [p.slug, `${p.title}, ${p.area}`]));
+            return {
+              ...sh,
+              jobs: sh.jobs.map((j) => ({ ...j, title: titles.get(j.slug) })),
+              latest: (sh.latest ?? []).map((l) => ({ ...l, title: titles.get(l.slug) })),
+            };
+          })
+          .catch(() => null),
       ]);
-      return Response.json({ report, cutlist, cards, games, at: Date.now() }, { headers: noStore });
+      return Response.json({ report, cutlist, cards, games, shares, at: Date.now() }, { headers: noStore });
     }
     if (body.action === 'blog') {
       return Response.json({ blog: await statsRpc('rafsite_blog', { p_days: days }), posts: blogPosts(), at: Date.now() }, { headers: noStore });

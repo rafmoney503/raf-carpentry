@@ -5,7 +5,7 @@ import { readPin } from './uploader';
 import { post } from './sm8-post';
 import { Icon } from './icons';
 import { BlogBand } from './blog-stats-view';
-import { type CardTaps, GAME_NAMES, GAMES_APP, GOAL_LABEL, type GamesStats, SOURCE_LABEL, gameScreenName, pageHref, placeName, statsOff, type Device, type Goal, type StatsPage, type StatsReport, type Tap, type Visit } from '@/lib/site-stats';
+import { type CardTaps, type ShareStats, GAME_NAMES, GAMES_APP, GOAL_LABEL, type GamesStats, SOURCE_LABEL, gameScreenName, pageHref, placeName, statsOff, type Device, type Goal, type StatsPage, type StatsReport, type Tap, type Visit } from '@/lib/site-stats';
 
 /* The Job Kit's Website stats screen: the website's own visitor counter (src/components/SiteStats.tsx), read through
    /api/job-kit/stats behind the PIN. The overview (numbers, visits by day, where people come from, the ways to get in
@@ -31,7 +31,7 @@ type CutlistInfo = {
   sent?: number;
   recent: { id: number; at: string; email: string; summary: string; country: string | null; host: string | null; sent_at: string | null; parts?: number | null; boards?: number | null }[];
 };
-type Saved = { days: number; report: StatsReport | null; at: number; cutlist?: CutlistInfo | null; cards?: CardTaps | null; games?: GamesStats | null };
+type Saved = { days: number; report: StatsReport | null; at: number; cutlist?: CutlistInfo | null; cards?: CardTaps | null; games?: GamesStats | null; shares?: ShareStats | null };
 
 export function savedStats(): Saved {
   try {
@@ -156,6 +156,74 @@ function CardBand({ info, days }: { info: CardTaps | null; days: number }) {
       )}
       <p className="mt-2 text-[13px] leading-relaxed text-faint">
         The small card that comes up 20 seconds into a visit: the free app on tools, tips and trade posts, the job&apos;s blog post on a job page, a PAX guide on the wardrobe and area pages, else a job someone looked at lately. Taps only, not how often it showed.
+      </p>
+    </Band>
+  );
+}
+
+/* A job page's Share button (src/components/ShareJob.tsx, 23 Nov 2026): how often it was tapped and how, which jobs, and
+   the visits its links brought (rafsite_shares). Taps, not finished shares: a phone's share list closed without
+   sending still counts. */
+const HOW_WORDS: Record<keyof ShareStats['how'], string> = { sheet: 'phone share list', wa: 'WhatsApp', copy: 'copied', email: 'email' };
+function SharesBand({ info, days, onPage }: { info: ShareStats | null; days: number; onPage: (path: string) => void }) {
+  if (!info) return null;
+  const how = (Object.keys(HOW_WORDS) as (keyof ShareStats['how'])[]).filter((k) => info.how[k] > 0);
+  const top = Math.max(1, ...info.jobs.map((j) => j.shared + j.opened));
+  return (
+    <Band label="Jobs shared" right={`${info.taps} share${info.taps === 1 ? '' : 's'} in ${days} days`}>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 py-1" data-shares-totals>
+        <div>
+          <dt className="font-mono text-[12px] uppercase tracking-[0.06em] text-faint">Shared</dt>
+          <dd className="mt-0.5 font-display text-[26px] font-semibold leading-none">{info.taps}</dd>
+          <dd className="mt-1 text-[13px] text-muted">{how.length ? how.map((k) => `${HOW_WORDS[k]} ${info.how[k]}`).join(' · ') : 'Nobody yet'}</dd>
+        </div>
+        <div>
+          <dt className="font-mono text-[12px] uppercase tracking-[0.06em] text-faint">Opened by friends</dt>
+          <dd className="mt-0.5 font-display text-[26px] font-semibold leading-none">{info.visits}</dd>
+          <dd className="mt-1 text-[13px] text-muted">
+            {info.visits ? `${info.people} ${info.people === 1 ? 'person' : 'people'}${info.touched ? ` · ${info.touched} got in touch` : ''}` : 'No visits from a shared link yet'}
+          </dd>
+        </div>
+      </dl>
+      {info.jobs.length ? (
+        <ul className="mt-2 divide-y divide-line border-t border-line" data-shares-jobs>
+          {info.jobs.map((j) => (
+            <li key={j.slug}>
+              <button type="button" onClick={() => onPage(`/portfolio/${j.slug}`)} className="block w-full py-2 text-left">
+                <span className="flex items-baseline justify-between gap-3">
+                  <span className="min-w-0 truncate text-[15px]">{j.title || j.slug.replace(/-/g, ' ')}</span>
+                  <span className="shrink-0 font-mono text-[13px] text-muted">
+                    shared {j.shared} · opened {j.opened}
+                    <span aria-hidden className="ml-2 text-accent">→</span>
+                  </span>
+                </span>
+                <span aria-hidden className="mt-1.5 flex h-[6px] overflow-hidden rounded-sm bg-raised">
+                  <span className="block h-full bg-accent" style={{ width: `${(j.shared / top) * 100}%` }} />
+                  <span className="block h-full bg-accent/40" style={{ width: `${(j.opened / top) * 100}%` }} />
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {info.latest.length ? (
+        <>
+          <h3 className="mt-4 font-mono text-[12px] uppercase tracking-[0.06em] text-faint">Opened from a shared link</h3>
+          <ul className="mt-1 divide-y divide-line" data-shares-latest>
+            {info.latest.slice(0, 8).map((l, i) => (
+              <li key={`${l.at}-${i}`} className="py-2 text-[14px]">
+                <span className="block truncate">{l.title || l.slug.replace(/-/g, ' ')}</span>
+                <span className="block font-mono text-[12px] text-muted">
+                  {whenWords(l.at)} · {placeName({ city: l.city, region: l.region, district: l.district, country: l.country })} · {sourceName(l.kind)} · {l.pages} page{l.pages === 1 ? '' : 's'}
+                  {l.touched ? ' · got in touch' : ''}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+      <p className="mt-2 text-[13px] leading-relaxed text-faint">
+        The Share button on each job page. Shared counts taps (a phone&apos;s share list closed without sending still counts); opened counts visits that came in on a shared link. Dark bar shared, light bar opened.
       </p>
     </Band>
   );
@@ -527,10 +595,10 @@ export function StatsView({ onPage, onBlog }: { onPage: (path: string) => void; 
   const [mine] = useState(() => statsOff());
 
   const fetchReport = useCallback(async (d: number) => {
-    const r = await post<{ report: StatsReport; at: number; cutlist?: CutlistInfo | null; cards?: CardTaps | null; games?: GamesStats | null }>(readPin(), { action: 'report', days: d }, API);
+    const r = await post<{ report: StatsReport; at: number; cutlist?: CutlistInfo | null; cards?: CardTaps | null; games?: GamesStats | null; shares?: ShareStats | null }>(readPin(), { action: 'report', days: d }, API);
     setLoading(false);
     if (!r.ok) return setError(r.error);
-    const s = { days: d, report: r.data.report, at: r.data.at, cutlist: r.data.cutlist ?? null, cards: r.data.cards ?? null, games: r.data.games ?? null };
+    const s = { days: d, report: r.data.report, at: r.data.at, cutlist: r.data.cutlist ?? null, cards: r.data.cards ?? null, games: r.data.games ?? null, shares: r.data.shares ?? null };
     keep(s);
     setSaved(s);
   }, []);
@@ -698,6 +766,8 @@ export function StatsView({ onPage, onBlog }: { onPage: (path: string) => void; 
           <CutlistBand info={saved.days === days ? (saved.cutlist ?? null) : null} days={days} />
 
           <CardBand info={saved.days === days ? (saved.cards ?? null) : null} days={days} />
+
+          <SharesBand info={saved.days === days ? (saved.shares ?? null) : null} days={days} onPage={onPage} />
 
           {onBlog ? <BlogBand days={days} onOpen={onBlog} onPage={onPage} /> : null}
 

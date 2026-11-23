@@ -19,6 +19,7 @@ import Model3D from '@/components/project/Model3D';
 import { BOOKING_URL, QUOTE_HREF, whatsappText } from '@/lib/site';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import SaveButton from '@/components/SaveButton';
+import ShareJob from '@/components/ShareJob';
 import '../project.css';
 import { pageMeta } from '@/lib/seo';
 import Reviews, { GoogleRating } from '@/components/Reviews';
@@ -101,6 +102,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
               <Link href={`${QUOTE_HREF}?job=${p.slug}`} className="btn btn-primary">Get a quote</Link>
               <WhatsAppButton text={waText} />
               <SaveButton item={{ id: `job:${p.slug}`, title: p.title, area: p.area, href: `/portfolio/${p.slug}`, image: p.cover.src }} />
+              <ShareJob slug={p.slug} title={p.title} area={p.area} />
               <a href="#photos" className="link-more">
                 All {p.gallery.length + 1} photos <span aria-hidden="true">↓</span>
               </a>

@@ -34,7 +34,8 @@ export const GOAL_LABEL: Record<Goal, string> = {
 export function goalOf(href: string, text: string): Goal | '' {
   const h = href.toLowerCase();
   if (h.startsWith('tel:')) return 'call';
-  if (h.startsWith('mailto:')) return 'email';
+  // an email to Raf; mailto:? with no address is the visitor sending something on (a job page's Share, Email it)
+  if (h.startsWith('mailto:') && !h.startsWith('mailto:?')) return 'email';
   // a WhatsApp chat with Raf; wa.me/?text= with no number is the visitor sending something on (a list, readings)
   if (/wa\.me\/\d/.test(h) || h.includes('whatsapp.com')) return 'whatsapp';
   if (/^send to raf\b/i.test(text.trim())) return 'send';
@@ -55,7 +56,19 @@ export function goalOf(href: string, text: string): Goal | '' {
    page (y in px, of a page docH tall), its label and what it was for. s finds the element again in the Job Kit.
    sv: the job it saved with a heart (its slug), for the 'Saved for a brief' line of the recently looked at card.
    cd: a tap on that small card, by what it suggested: 'app' (Workshop Tools), 'post:<slug>' or 'recent' (a job). */
-export type Tap = { s: string; fx: number; fy: number; x: number; y: number; h: number; t: string; g?: Goal | ''; sv?: string; cd?: string };
+export type Tap = { s: string; fx: number; fy: number; x: number; y: number; h: number; t: string; g?: Goal | ''; sv?: string; cd?: string; sh?: string };
+
+/** A job page's Share button (ShareJob.tsx, 23 Nov 2026): taps by how and job, and the visits its links brought (rafsite_shares). */
+export type ShareStats = {
+  days: number;
+  taps: number;
+  how: { sheet: number; wa: number; copy: number; email: number };
+  visits: number;
+  people: number;
+  touched: number;
+  jobs: { slug: string; shared: number; opened: number; title?: string }[];
+  latest: { at: string; slug: string; kind: string; city: string; region: string; district: string; country: string; pages: number; touched: boolean; title?: string }[];
+};
 
 /** Taps on the small card bottom left, by what it suggested (rafsite_cards). */
 export type CardTaps = { days: number; app: number; recent: number; posts: { slug: string; n: number; title?: string }[]; total: number };
@@ -246,4 +259,9 @@ export const SOURCE_LABEL: Record<string, string> = {
   'pwa-calc': 'Simple calculator, opened from the home screen',
   beat: 'A friend’s score link (Workshop Games)',
   'qr-games': 'QR code on the Workshop Games page',
+  // a job page's Share button (23 Nov 2026)
+  share: 'A job link someone shared (phone share list)',
+  'share-wa': 'A job link someone sent on WhatsApp',
+  'share-copy': 'A job link someone copied',
+  'share-email': 'A job link someone emailed',
 };
