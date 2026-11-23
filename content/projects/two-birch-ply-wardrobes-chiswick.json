@@ -389,15 +389,15 @@
   "jobKit": "2026-11-two-wardrobes-birch-ply-chiswick-l45g",
   "design": "ujb9vbc6",
   "model3d": {
-    "src": "/models/two-birch-ply-wardrobes-chiswick-3fdf1730.glb",
+    "src": "/models/two-birch-ply-wardrobes-chiswick-067440d3.glb",
     "poster": {
-      "src": "/images/projects/two-birch-ply-wardrobes-chiswick/model-3d-a8cb7e16.jpg",
+      "src": "/images/projects/two-birch-ply-wardrobes-chiswick/model-3d-038f1dd3.jpg",
       "w": 1600,
       "h": 800,
-      "alt": "3D model of two birch ply wardrobes either side of a chimney breast with shelves, a ledge and two reading lights, finger holes in the doors and drawers"
+      "alt": "3D model of two birch ply wardrobes either side of a chimney breast with shelves on black straps, two reading lights on the wardrobe sides and a lift-out panel, finger holes in the doors and drawers"
     },
     "title": "The wardrobes in 3D, as built",
-    "text": "The 3D design the client chose from, brought up to date with how the job was built: no niches in the sides, a round finger hole in every door and drawer front, a ledge over a lower panel that lifts out, and the two reading lights on. Each wardrobe is 1160 mm wide and 2550 mm to the ceiling; the depth and plinth are standard sizes. Open the doors to see the insides.",
+    "text": "The 3D design the client chose from, brought up to date with how the job was built: no niches in the sides, a round finger hole in every door and drawer front, the two reading lights on the wardrobe sides (they turn and glow), three black straps under each shelf over them, and the shelf at the bottom joined to the lower panel as one piece that lifts out, with a finger slot at the floor. Each wardrobe is 1160 mm wide and 2550 mm to the ceiling; the depth and plinth are standard sizes. Open the doors to see the insides.",
     "shape": "wide",
     "standardSizes": true
   }
