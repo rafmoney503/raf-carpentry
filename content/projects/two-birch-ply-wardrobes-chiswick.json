@@ -389,15 +389,15 @@
   "jobKit": "2026-11-two-wardrobes-birch-ply-chiswick-l45g",
   "design": "ujb9vbc6",
   "model3d": {
-    "src": "/models/two-birch-ply-wardrobes-chiswick.glb",
+    "src": "/models/two-birch-ply-wardrobes-chiswick-built.glb",
     "poster": {
-      "src": "/images/projects/two-birch-ply-wardrobes-chiswick/model-3d.jpg",
+      "src": "/images/projects/two-birch-ply-wardrobes-chiswick/model-3d-a8cb7e16.jpg",
       "w": 1600,
       "h": 800,
-      "alt": "3D model of two birch ply wardrobes either side of a panelled chimney breast, each with four drawers on the outer side"
+      "alt": "3D model of two birch ply wardrobes either side of a chimney breast with shelves, a ledge and two reading lights, finger holes in the doors and drawers"
     },
-    "title": "The 3D design before the build",
-    "text": "This is the 3D design the client chose from before anything was cut: each wardrobe 1160 mm wide and 2550 mm to the ceiling, with four drawers in the outer column. The depth and the plinth were standard sizes until the room was measured, and the niches in the sides were left out of the real job. Open the doors to see the insides.",
+    "title": "The wardrobes in 3D, as built",
+    "text": "The 3D design the client chose from, brought up to date with how the job was built: no niches in the sides, a round finger hole in every door and drawer front, a ledge over a lower panel that lifts out, and the two reading lights on. Each wardrobe is 1160 mm wide and 2550 mm to the ceiling; the depth and plinth are standard sizes. Open the doors to see the insides.",
     "shape": "wide",
     "standardSizes": true
   }

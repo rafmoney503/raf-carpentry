@@ -81,4 +81,4 @@ The wardrobes are mirror images. In each one the outer column has adjustable she
 
 ![The finished wall: two birch ply wardrobes with the chimney breast between them](/images/blog/two-birch-ply-wardrobes-chiswick/finished.jpg#narrow)
 
-Every photo, the before and after slider and clips of the doors, drawers and lights are on the [job page for these wardrobes](/portfolio/two-birch-ply-wardrobes-chiswick). You can also open the [3D design the client picked from](/portfolio/two-birch-ply-wardrobes-chiswick#in-3d).
+Every photo, the before and after slider and clips of the doors, drawers and lights are on the [job page for these wardrobes](/portfolio/two-birch-ply-wardrobes-chiswick). You can also open the [wardrobes in 3D, as built](/portfolio/two-birch-ply-wardrobes-chiswick#in-3d).
