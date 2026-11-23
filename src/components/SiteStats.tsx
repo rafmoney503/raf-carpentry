@@ -229,8 +229,11 @@ export default function SiteStats() {
         sv: el.closest('[data-save]')?.getAttribute('data-save') || undefined,
         // the small card bottom left (RecentDesign.tsx): what it suggested ('app', 'post:<slug>' or 'recent')
         cd: el.closest('[data-card]')?.getAttribute('data-card') || undefined,
+        // a job page's Share button (ShareJob.tsx): how and which job, for the Job Kit's Jobs shared band
+        sh: el.closest('[data-share]')?.getAttribute('data-share') || undefined,
       });
-      if (goalOf(href, text)) send.current(); // a way to get in touch: don't risk losing it if the page changes
+      // a way to get in touch, or a job shared (WhatsApp or email may take the page away): don't risk losing it
+      if (goalOf(href, text) || el.closest('[data-share]')) send.current();
     };
 
     // a Stripe Payment Link (the PAX guide's Buy buttons) gets how this visit began, just before the browser follows it

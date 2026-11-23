@@ -1,9 +1,10 @@
 /* Where a visit came from, worked out from the referring address and ?utm_source=. No imports, so the visit counter
    (site-stats-server.ts) and the page both use it: the PAX guide's Buy button sends the same word to Stripe, so a
    sale says how its buyer found the page (19 Nov 2026). Links in posts carry ?utm_source=threads / youtube, because
-   those apps often send no referrer and the visit would read as typed in. */
+   those apps often send no referrer and the visit would read as typed in. A job page's Share button (23 Nov 2026,
+   ShareJob.tsx) tags its link share (the phone's share list), share-wa, share-copy or share-email. */
 
-export const CAMPAIGN_TAGS = /^(pwa|pwa-new|pwa-games|pwa-games-new|pwa-calc|beat|qr-[a-z0-9]{2,16}|email-[a-z0-9]{2,16}|quote|booked|invoice|review|launch-email|gbp|groups|ads-[a-z0-9]{2,16})$/;
+export const CAMPAIGN_TAGS = /^(pwa|pwa-new|pwa-games|pwa-games-new|pwa-calc|beat|qr-[a-z0-9]{2,16}|email-[a-z0-9]{2,16}|quote|booked|invoice|review|launch-email|gbp|groups|ads-[a-z0-9]{2,16}|share|share-(?:wa|copy|email))$/;
 
 /* Where a visit came from, from the referring address (or ?utm_source=). */
 export function sourceOf(ref: string, utm: string): { kind: string; host: string } {
