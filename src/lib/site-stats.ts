@@ -264,4 +264,6 @@ export const SOURCE_LABEL: Record<string, string> = {
   'share-wa': 'A job link someone sent on WhatsApp',
   'share-copy': 'A job link someone copied',
   'share-email': 'A job link someone emailed',
+  // rafcarpentry.com/quote, the link Raf sends new customers (26 Nov 2026)
+  'quote-link': 'Your quote link (rafcarpentry.com/quote)',
 };

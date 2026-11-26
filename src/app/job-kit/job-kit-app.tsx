@@ -113,6 +113,8 @@ import type { QuoteEdits, QuoteRead } from '@/lib/quote-sums';
 import { AgreedBox } from './agreed';
 import { agreedView, type Agreed } from '@/lib/job-agreed';
 import { dropboxBack } from './goodnotes';
+import { QuoteLinkBox } from './quote-link';
+import { QUOTE_LINK } from '@/lib/quote-link';
 import './job-kit.css';
 
 type Tab = SectionId | 'notes' | 'send';
@@ -1028,7 +1030,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   const waLinks = useCallback(
     (c: WaChat) => {
       const own = c.design && designs[c.design]?.code ? [{ label: 'Their 3D design', href: `https://www.rafcarpentry.com/d/${designs[c.design].code}` }] : [];
-      return [...own, { label: 'All 3D designs', href: 'https://www.rafcarpentry.com/designs' }, ...DESIGN_KINDS.slice(0, 5).map((k) => ({ label: k.short, href: `https://www.rafcarpentry.com/designs/${k.slug}` }))];
+      return [...own, { label: 'All 3D designs', href: 'https://www.rafcarpentry.com/designs' }, { label: 'The quote form', href: QUOTE_LINK }, ...DESIGN_KINDS.slice(0, 5).map((k) => ({ label: k.short, href: `https://www.rafcarpentry.com/designs/${k.slug}` }))];
     },
     [designs],
   );
@@ -2449,6 +2451,7 @@ function Home({
       <HomeBand sec="customers" menu={tsec('customers', '', Boolean(mailLine))} icon="person" label="Customers" right="ServiceM8">
         <div className="px-4 pb-1">
           {find}
+          <QuoteLinkBox />
           <HomeRow onClick={onDiary} title="Diary" line={diaryLine(sm8)} />
           <HomeRow onClick={onCurrent} title="Current jobs" line={currentLine(sm8, marks)} />
           <HomeRow onClick={onQuotes} title="Quotes" line={quotesLine(quotes, sm8, marks)} truncate />
