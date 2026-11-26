@@ -36,6 +36,8 @@ type SketchupPageData = {
   extensionUnits?: { name: string; image: string }[];
   extensionButtonLabel?: string;
   extensionButtonUrl?: string;
+  extensionWarehouseLabel?: string;
+  extensionWarehouseUrl?: string;
   extensionNote?: string;
   extensionTrademark?: string;
   comparisonTitle: string;
@@ -307,6 +309,11 @@ function ExtensionSection({ d }: { d: SketchupPageData }) {
               {d.extensionButtonUrl ? (
                 <a href={d.extensionButtonUrl} target="_blank" rel="noopener" className="btn xt-btn gap-2">
                   {d.extensionButtonLabel || 'See the extension'} <span aria-hidden="true">↗</span>
+                </a>
+              ) : null}
+              {d.extensionWarehouseUrl ? (
+                <a href={d.extensionWarehouseUrl} target="_blank" rel="noopener" className="xt-link" data-warehouse-link>
+                  {d.extensionWarehouseLabel || 'Get it on the Extension Warehouse'} <span aria-hidden="true">↗</span>
                 </a>
               ) : null}
               <Link href="/cabinetos" className="xt-link">
