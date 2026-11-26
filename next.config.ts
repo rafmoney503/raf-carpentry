@@ -13,11 +13,14 @@ const nextConfig: NextConfig = {
      The build still sees every file; only the traced copies are left out. */
   /* rafcarpentry.com/app and /games: the short addresses for the Workshop Tools app and Workshop Games on cards,
      QR codes and emails (?utm_source=... is passed on, so the Job Kit's Website stats show where each person came
-     from). The old Timber Stack page is one of the games now (25 Oct 2026). */
+     from). The old Timber Stack page is one of the games now (25 Oct 2026). rafcarpentry.com/quote is the link Raf
+     sends new customers for the quote form (26 Nov 2026, src/lib/quote-link.ts): it opens Plan your project's brief
+     on its first question and counts as "Your quote link" in Website stats. */
   async redirects() {
     return [
       { source: '/app', destination: '/tools/workshop', permanent: false },
       { source: '/games', destination: '/tools/games', permanent: false },
+      { source: '/quote', destination: '/how-it-works?utm_source=quote-link#brief', permanent: false },
       { source: '/tools/timber-stack', destination: '/tools/games/app#/stack', permanent: true },
     ];
   },

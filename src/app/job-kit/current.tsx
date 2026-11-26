@@ -19,6 +19,7 @@ import { CustomerSearch, indexClients, personName, SameCustomer, type Client, ty
 import { daysBetween, rowOf, rowWords, spanWords, timelineRows, todayKey } from '@/lib/job-timeline';
 import { isDrawingsOrder } from '@/lib/drawings-service';
 import { KitLink } from './kit-link';
+import { quoteLinkMessage } from '@/lib/quote-link';
 import { AGREE_FROM, type Agreed } from '@/lib/job-agreed';
 
 export { problemText };
@@ -1458,6 +1459,12 @@ export function CurrentView({
           <button type="button" className="btn btn-ghost w-full" onClick={onConcept}>
             Quick drawings with Claude (about a minute)
           </button>
+        ) : null}
+        {/* The quote form for an enquiry that didn't come through it (26 Nov 2026, src/lib/quote-link.ts). */}
+        {job.status === 'Quote' && job.mobile && !/From the website brief\.|Sent with Send to Raf\./.test(job.description) ? (
+          <a data-quote-link-job className="btn btn-ghost w-full" href={wa(job.mobile, quoteLinkMessage(job.first))} target="_blank" rel="noopener">
+            Send them the quote form on WhatsApp
+          </a>
         ) : null}
         <button type="button" className="btn btn-ghost w-full" onClick={onLibrary}>
           Send them a design from the library

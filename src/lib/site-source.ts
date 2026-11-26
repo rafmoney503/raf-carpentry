@@ -4,7 +4,7 @@
    those apps often send no referrer and the visit would read as typed in. A job page's Share button (23 Nov 2026,
    ShareJob.tsx) tags its link share (the phone's share list), share-wa, share-copy or share-email. */
 
-export const CAMPAIGN_TAGS = /^(pwa|pwa-new|pwa-games|pwa-games-new|pwa-calc|beat|qr-[a-z0-9]{2,16}|email-[a-z0-9]{2,16}|quote|booked|invoice|review|launch-email|gbp|groups|ads-[a-z0-9]{2,16}|share|share-(?:wa|copy|email))$/;
+export const CAMPAIGN_TAGS = /^(pwa|pwa-new|pwa-games|pwa-games-new|pwa-calc|beat|qr-[a-z0-9]{2,16}|email-[a-z0-9]{2,16}|quote|quote-link|booked|invoice|review|launch-email|gbp|groups|ads-[a-z0-9]{2,16}|share|share-(?:wa|copy|email))$/;
 
 /* Where a visit came from, from the referring address (or ?utm_source=). */
 export function sourceOf(ref: string, utm: string): { kind: string; host: string } {
