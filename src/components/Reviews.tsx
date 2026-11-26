@@ -80,7 +80,7 @@ export default function Reviews({ max = 3, job, homeHeading = false, ticker = fa
         <GoogleRating />
       </div>
       {ticker && list.length > 2 ? (
-        <ReviewTicker items={list.map((r) => ({ name: r.name, area: r.area, text: r.text, stars: r.stars, job: r.job }))} />
+        <ReviewTicker items={list.map((r) => ({ name: r.name, area: r.area, text: r.text, stars: r.stars, job: r.job, uri: r.uri, when: r.when }))} />
       ) : (
         <>
           <ul className="-mx-5 mt-10 flex items-start snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 pb-2 md:mx-0 md:items-stretch md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0">
@@ -91,7 +91,13 @@ export default function Reviews({ max = 3, job, homeHeading = false, ticker = fa
                 </span>
                 <blockquote className="mt-4 text-[16px] leading-relaxed text-ink">&ldquo;{r.text.trim()}&rdquo;</blockquote>
                 <div className="mt-auto flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pt-5">
-                  <span className="font-mono text-[13px] text-faint">{r.name}{r.area ? `, ${r.area}` : ''}</span>
+                  <span className="font-mono text-[13px] text-faint">
+          {r.uri ? (
+            <a href={r.uri} target="_blank" rel="noopener nofollow" className="underline-offset-2 hover:text-ink hover:underline">{r.name}</a>
+          ) : r.name}
+          {r.area ? `, ${r.area}` : ''}
+          {r.uri ? ' · on Google' : null}
+        </span>
                   {r.job ? (
                     <Link href={`/portfolio/${r.job}`} className="text-[14px] font-medium text-accent hover:underline">
                       See the job <span aria-hidden="true">→</span>

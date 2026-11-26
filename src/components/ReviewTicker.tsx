@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
    either way with a finger or the mouse (they carry on gently from where they were let go). Only moves while
    on screen. The second copy of the cards that makes the loop is hidden from screen readers and the keyboard.
    Reduced motion, or before the script runs: the cards sit in a row that scrolls sideways by hand. */
-export type TickerReview = { name: string; area?: string; text: string; stars?: number; job?: string };
+export type TickerReview = { name: string; area?: string; text: string; stars?: number; job?: string; uri?: string; when?: string };
 
 const SPEED = 34; // px a second
 const RESUME = 1400; // ms after a finger lets go
@@ -34,7 +34,13 @@ function Card({ r, copy }: { r: TickerReview; copy: boolean }) {
       </span>
       <blockquote className="mt-4 text-[16px] leading-relaxed text-ink">&ldquo;{r.text.trim()}&rdquo;</blockquote>
       <div className="mt-auto flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 pt-5">
-        <span className="font-mono text-[13px] text-faint">{r.name}{r.area ? `, ${r.area}` : ''}</span>
+        <span className="font-mono text-[13px] text-faint">
+          {r.uri ? (
+            <a href={r.uri} target="_blank" rel="noopener nofollow" tabIndex={copy ? -1 : undefined} className="underline-offset-2 hover:text-ink hover:underline">{r.name}</a>
+          ) : r.name}
+          {r.area ? `, ${r.area}` : ''}
+          {r.uri ? ' · on Google' : null}
+        </span>
         {r.job ? (
           <Link href={`/portfolio/${r.job}`} tabIndex={copy ? -1 : undefined} className="text-[14px] font-medium text-accent hover:underline">
             See the job <span aria-hidden="true">→</span>
