@@ -77,6 +77,7 @@ import type { InboxMail } from '@/lib/outlook';
 import { ConceptsBox, ConceptView, startConcept, type JobSource } from './concepts';
 import { ClaudeCreditView, creditLine, creditTodayLine, fetchCredit, useCredit } from './claude-credit';
 import { SalesView, salesLine, salesNewCount, salesTodayLines, useSales, useSalesRefresh } from './guide-sales';
+import { etsyBack, etsyLine, etsyNewCount, etsyTodayLines, useEtsy, useEtsyRefresh } from './etsy';
 import { binOnServer, conceptBriefFromMail, customerEmails, dropHere, EmailView, enquiryFromMail, putReplyDraft, fetchInbox, firstOf, freshUnread, INBOX_FRESH, InboxList, inboxLine, inboxTodayLine, lastWith, markReadHere, openedMail, putBackHere, savedInbox, unbinOnServer, whenSaid, type Inbox } from './inbox';
 import type { CurrentJob } from '@/lib/servicem8';
 import { StatsPageView, StatsView, statsLine } from './stats';
@@ -314,6 +315,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
   const [ready, setReady] = useState(false);
   const wide = useWide(); // a computer: the desktop layout (desktop.tsx)
   const personalNow = usePersonalToday(); // the personal to do's count in the computer's sidebar
+  const etsyNow = useEtsy(); // new Etsy orders, counted with the guide sales (etsy.tsx)
   const salesNow = useSales(); // guide sales not seen yet, for the sidebar's counts (guide-sales.tsx)
   const colourKey = useColourKey(ready);
   const [tint, setTint] = useTint();
@@ -620,8 +622,11 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     if (readPin()) checkClients(); // so the first search is instant
     // Back from connecting Instagram and Facebook or Threads: open Social with how it went, and take the ?social= off the address.
     const fromLogin = new URLSearchParams(window.location.search).get('social');
-    const first: Screen = fromLogin ? { name: 'social' } : loadScreen();
-    if (fromLogin === 'open') keepScreen(first); // a link to the Social screen (HQ's Ads section: Connect ads)
+    // Back from connecting Etsy (the Guide sales screen's Etsy box): that screen, with how it went in the box.
+    const fromEtsy = new URLSearchParams(window.location.search).get('etsy');
+    if (fromEtsy) etsyBack(fromEtsy);
+    const first: Screen = fromLogin ? { name: 'social' } : fromEtsy ? { name: 'sales' } : loadScreen();
+    if (fromLogin === 'open' || fromEtsy) keepScreen(first); // a link to the Social screen (HQ's Ads section: Connect ads)
     else if (fromLogin) {
       keepScreen(first);
       setSocialBack(
@@ -637,7 +642,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
     const fromDropbox = new URLSearchParams(window.location.search).get('dropbox');
     if (fromDropbox) dropboxBack(fromDropbox);
     setScreenState(first);
-    history.replaceState({ ...history.state, jk: first }, '', fromLogin || fromDropbox ? window.location.pathname : undefined);
+    history.replaceState({ ...history.state, jk: first }, '', fromLogin || fromDropbox || fromEtsy ? window.location.pathname : undefined);
     /* Opening the app starts at the top (18 Oct 2026, Raf: 'when I open jobkit ... first thing it does goes to search
        bar in customers, I'd like it to be at the top of the app'): the phone mustn't put back an old scroll position,
        and a search box that had the keyboard when the app went into the background is let go, so coming back doesn't
@@ -2018,7 +2023,7 @@ export default function JobKitApp({ done = {}, posts = [], models = [], kinds = 
         whatsapp: waChats.filter((c) => (c.live ? needsYou(c) : !c.sends.length)).length,
         social: newComments(social).length,
         personal: personalNow.due.length,
-        sales: salesNewCount(salesNow),
+        sales: salesNewCount(salesNow) + etsyNewCount(etsyNow),
         assistant: assistant ? assistant.items.filter((r) => r.at > assistant.seen).length : 0,
         review: (review?.days.find((d) => d.data?.review?.headline)?.data.review?.apps ?? []).flatMap((a) => a.ideas).filter((i) => !review?.marks?.[i.id]).length,
       }
@@ -2326,8 +2331,10 @@ function Home({
   // guide sales: a line for each one sold until Raf has seen it (guide-sales.tsx)
   const sales = useSales();
   useSalesRefresh(pin);
-  const salesLines = salesTodayLines(sales);
-  const salesNew = salesNewCount(sales);
+  const etsy = useEtsy();
+  useEtsyRefresh(pin);
+  const salesLines = [...salesTodayLines(sales), ...etsyTodayLines(etsy)];
+  const salesNew = salesNewCount(sales) + etsyNewCount(etsy);
   useEffect(() => {
     if (pin) void fetchCredit();
   }, [pin]);
@@ -2483,7 +2490,7 @@ function Home({
       <HomeBand sec="website" menu={tsec('website', salesNew ? `${salesNew} sold` : '', salesNew > 0)} icon="stats" label="Website" right="rafcarpentry.com">
         <div className="px-4">
           <HomeRow onClick={onStats} title="Website stats" line={webLine} />
-          <HomeRow onClick={onSales} title="Guide sales" line={salesLine(sales)} truncate />
+          <HomeRow onClick={onSales} title="Guide sales" line={[salesLine(sales), etsyLine(etsy)].filter(Boolean).join(' · ')} truncate />
           <a href={HQ_URL} target="_blank" rel="noopener" data-hq-link className="flex min-h-[60px] w-full items-center gap-3 py-2.5 text-left">
             <span className="min-w-0 flex-1">
               <span className="block font-semibold">All apps in HQ</span>
