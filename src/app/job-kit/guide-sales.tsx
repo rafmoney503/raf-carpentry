@@ -6,6 +6,7 @@ import type { TodayLine } from './current';
 import { label } from './parts';
 import { post } from './sm8-post';
 import { readPin } from './uploader';
+import { EtsyBox } from './etsy';
 
 /* Guide sales (Raf, 19 Nov 2026: 'Someone bought Ikea pax guide today morning. Yay. Can I get confirmation in jobkit
    about the sale and income'). Each guide sold on the website (rafsite.guide_sales, recorded by Stripe's webhook in
@@ -317,7 +318,7 @@ export function SalesView() {
     <div className="pt-7" data-guide-sales>
       <p className="kicker">Website · sold with Stripe</p>
       <h1 className="mt-1 font-display text-[34px] font-[680] leading-[1.02] tracking-[-0.025em]">Guide sales</h1>
-      <p className="mt-2 text-[15px] leading-relaxed text-muted">Every guide sold on rafcarpentry.com, and what it brings in.</p>
+      <p className="mt-2 text-[15px] leading-relaxed text-muted">Every guide sold on rafcarpentry.com, and what it brings in. Your Etsy shop is at the bottom.</p>
 
       {s?.error ? (
         <p role="status" className="mt-4 text-[14px] text-muted">
@@ -462,6 +463,7 @@ export function SalesView() {
           </p>
         </>
       ) : null}
+      <EtsyBox />
     </div>
   );
 }
