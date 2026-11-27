@@ -231,7 +231,7 @@ export default function HomePage() {
           and no visitor on a phone had reached it in 30 days). */}
       <section className={`sec reviews${hasReviews ? '' : ' sec-tight'}`} id="reviews">
         <div className="wrap">
-          <Reviews max={6} homeHeading ticker />
+          <Reviews homeHeading wall />
         </div>
       </section>
 

@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { GOOGLE_REVIEWS_URL } from '@/lib/site';
-import { getReviews, pickReviews, type JobForReviews } from '@/lib/reviews';
+import { getReviews, pickReviews, topicNames, type JobForReviews } from '@/lib/reviews';
+import { getProject } from '@/lib/projects';
 import { SectionHeading } from './ui';
-import ReviewTicker from './ReviewTicker';
+import ReviewWall, { type WallReview } from './ReviewWall';
 
 /* "What customers say": the Google rating with a link to the profile, and review cards.
    With no reviews typed in yet it shows only the rating line, so it never looks empty. */
@@ -14,6 +15,12 @@ function Star({ size = 15 }: { size?: number }) {
     </svg>
   );
 }
+
+/* The wall's cards stay about the same height: a long review is cut on a word (Google's link has the rest). */
+const shorten = (t: string, max = 240) => {
+  const s = t.trim().replace(/\s+/g, ' ');
+  return s.length <= max ? s : s.slice(0, s.lastIndexOf(' ', max)).replace(/[,.;:!?\s]+$/, '') + '…';
+};
 
 /* `inline` is the small line under the main buttons at the top of a page; `box` sits in the reviews section. */
 export function GoogleRating({ className = '', variant = 'box' }: { className?: string; variant?: 'box' | 'inline' }) {
@@ -56,10 +63,29 @@ export function GoogleRating({ className = '', variant = 'box' }: { className?: 
 }
 
 /* `job` (slug, type + title, tags) puts the reviews about that kind of work first.
-   `ticker` (home page): the cards run as a slow ticker that can be held and dragged (ReviewTicker). */
-export default function Reviews({ max = 3, job, homeHeading = false, ticker = false }: { max?: number; job?: JobForReviews; homeHeading?: boolean; ticker?: boolean }) {
+   `wall` (home page): every review on the review wall (ReviewWall), with filter chips and job photos. */
+export default function Reviews({ max = 3, job, homeHeading = false, wall = false }: { max?: number; job?: JobForReviews; homeHeading?: boolean; wall?: boolean }) {
   const d = getReviews();
   const list = pickReviews(d.reviews, max, job);
+
+  if (wall && d.reviews.length) {
+    const items: WallReview[] = d.reviews.map((r) => {
+      const p = r.job ? getProject(r.job) : undefined;
+      const topics = topicNames(r.text);
+      if (p) for (const t of topicNames(`${p.type} ${p.title}`)) if (!topics.includes(t)) topics.push(t);
+      return {
+        name: r.name,
+        area: r.area || undefined,
+        text: shorten(r.text),
+        stars: Math.max(1, Math.min(5, r.stars ?? 5)),
+        uri: r.uri,
+        when: r.when,
+        topics,
+        job: p ? { slug: p.slug, title: p.title, area: p.area, photo: p.cover } : undefined,
+      };
+    });
+    return <ReviewWall heading={d.heading} intro={d.intro} rating={d.googleRating} count={d.googleCount} googleUrl={GOOGLE_REVIEWS_URL} items={items} />;
+  }
 
   if (!list.length) {
     return (
@@ -79,10 +105,7 @@ export default function Reviews({ max = 3, job, homeHeading = false, ticker = fa
         </div>
         <GoogleRating />
       </div>
-      {ticker && list.length > 2 ? (
-        <ReviewTicker items={list.map((r) => ({ name: r.name, area: r.area, text: r.text, stars: r.stars, job: r.job, uri: r.uri, when: r.when }))} />
-      ) : (
-        <>
+      <>
           <ul className="-mx-5 mt-10 flex items-start snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 pb-2 md:mx-0 md:items-stretch md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0 md:pb-0">
             {list.map((r, i) => (
               <li key={i} className="flex w-[84%] flex-none snap-start flex-col rounded-sm border border-line-strong bg-mount p-6 md:w-auto">
@@ -108,8 +131,7 @@ export default function Reviews({ max = 3, job, homeHeading = false, ticker = fa
             ))}
           </ul>
           {list.length > 1 ? <p className="mt-3 font-mono text-[12px] text-faint md:hidden">Swipe for more <span aria-hidden="true">→</span></p> : null}
-        </>
-      )}
+      </>
     </div>
   );
 }

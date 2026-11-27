@@ -636,6 +636,14 @@ export const pageCollections: Collection[] = [
           { type: "string", name: "job", label: "Job page (optional)", description: "The end of the job's address, e.g. floating-walnut-desk-highbury" },
         ],
       },
+      {
+        type: "object", name: "googleJobs", label: "Google reviews: which job", list: true, ui: listItemUi,
+        description: "The Google reviews come in by themselves. Add a line for one to show that job's photo on its card and a See the job link.",
+        fields: [
+          { type: "string", name: "name", label: "Reviewer's name, as Google shows it", required: true },
+          { type: "string", name: "job", label: "Job page", description: "The end of the job's address, e.g. pax-wardrobes-haringey", required: true },
+        ],
+      },
     ],
   },
   {
