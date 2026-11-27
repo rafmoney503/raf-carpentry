@@ -33,8 +33,10 @@ const nextConfig: NextConfig = {
   /* The Job Kit asks which design requests have a page yet and where each stands (on /designs, built into a job);
      that route reads content/designs and the jobs at run time. */
   outputFileTracingIncludes: {
-    /* The daily reviews check compares Google with the reviews this build saved. */
-    "/api/reviews/refresh": ["./content/pages/google-reviews.json"],
+    /* Google's rating and reviews, saved by the build (scripts/google-reviews.mjs). Every page that shows reviews
+       reads them, and pages kept up to date hourly (the home page) read them again on the server, so every route
+       carries the file; the daily check compares Google with it. */
+    "/**": ["./content/pages/google-reviews.json"],
     "/api/job-kit/designs": ["./content/designs/*.json", "./content/projects/*.json", "./content/pages/*.json"],
     /* Send to Raf matches the brief to the job models (src/lib/design-library.ts reads these at run time). */
     "/api/brief": ["./content/projects/*.json", "./content/pages/*.json", "./content/designs/*.json"],

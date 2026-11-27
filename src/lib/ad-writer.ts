@@ -1,12 +1,11 @@
 import { randomInt } from 'crypto';
-import fs from 'fs';
-import path from 'path';
 import { listDrafts, putDrafts } from './ad-drafts';
 import type { AdDraft, Business } from './ads-types';
 import { noteClaude, REFUSED } from './ai-usage';
 import { costJob, VAT_RATE } from './cost-calculator';
 import { jpegOf } from './photo-jpeg';
 import { getAllProjects } from './projects';
+import { getReviews } from './reviews';
 
 /* Ads for HQ's Ads section, written by Claude from Raf's own job photos (Raf Carpentry) or CabinetOS's own screens
    (15 Nov 2026, Raf: 'Results + ready ads'). Raf taps Write ads in HQ; Claude looks at up to 8 pictures and the
@@ -71,7 +70,7 @@ const BF_END = Date.parse('2026-11-30T23:59:59Z');
 
 function rating(): { stars: string; count: string } | null {
   try {
-    const r = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'content/pages/reviews.json'), 'utf8')) as { googleRating?: string; googleCount?: string };
+    const r = getReviews();
     return r.googleRating && r.googleCount ? { stars: r.googleRating, count: r.googleCount } : null;
   } catch {
     return null;

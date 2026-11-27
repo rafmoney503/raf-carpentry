@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import SocialIcon, { networkOf } from '@/components/SocialIcon';
 import { readPageJson } from '@/lib/pages';
 import { GoogleRating } from '@/components/Reviews';
+import { getReviews } from '@/lib/reviews';
 import { RsMark } from '@/components/AlsoByMe';
 import { getAllProjects, type Project } from '@/lib/projects';
 import { getAllPosts } from '@/lib/blog';
@@ -312,7 +313,7 @@ function Kicker({ n, title }: { n: number; title: string }) {
 
 export default function MiniSite() {
   const d = readPageJson<MsPageData>('ms.json');
-  const reviews = readPageJson<{ googleRating?: string }>('reviews.json');
+  const reviews = getReviews();
   const projects = getAllProjects();
   const latest = projects[0];
   const jobs = (slugs: string[]) => slugs.map((s) => projects.find((p) => p.slug === s)).filter((p): p is Project => Boolean(p));
