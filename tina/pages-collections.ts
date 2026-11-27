@@ -427,6 +427,8 @@ export const pageCollections: Collection[] = [
       },
       { type: "string", name: "extensionButtonLabel", label: "Extension: button text" },
       { type: "string", name: "extensionButtonUrl", label: "Extension: button link (opens in a new tab)" },
+      { type: "string", name: "extensionWarehouseLabel", label: "Extension: Extension Warehouse link text" },
+      { type: "string", name: "extensionWarehouseUrl", label: "Extension: its Extension Warehouse page (opens in a new tab; empty = no link)" },
       { type: "string", name: "extensionNote", label: "Extension: note under the button" },
       { type: "string", name: "extensionTrademark", label: "Extension: trademark line", ui: { component: "textarea" } },
       { type: "string", name: "comparisonTitle", label: "Comparison title" },
