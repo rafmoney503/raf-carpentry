@@ -61,4 +61,4 @@ Made to measure still wins where PAX does not fit: shallow alcoves, sloping ceil
 
 Rough sizes are fine. Put your wall's width and height in the [brief](/how-it-works?wardrobe=pax#brief) with IKEA PAX built in picked, or, if you have designed it in IKEA's planner already, [send me your design code](/blog/where-to-find-your-ikea-pax-design-code). I measure properly on the free visit, send you a written quote, and nothing is cut until you have signed off the drawing.
 
-**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 22-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.
+**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 23-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.

@@ -72,4 +72,4 @@ Then a free visit to measure up, and your quote, free as well. Rough sizes are f
 
 Start with [which PAX height fits your ceiling](/blog/ikea-pax-height-for-your-ceiling) and [fitting PAX wall to wall](/blog/fitting-ikea-pax-wall-to-wall). Still deciding? [PAX or a made-to-measure wardrobe](/blog/ikea-pax-or-made-to-measure-wardrobe). Want to see one finished? [A five-door PAX wardrobe in Finchley](/blog/pax-wardrobe-finchley).
 
-**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 22-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.
+**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 23-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.

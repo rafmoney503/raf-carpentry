@@ -66,4 +66,4 @@ Mirror doors make a narrow room feel wider, and the cupboards above use space th
 
 Every photo, the before and after slider and a clip walking into the room are on the [job page for this wardrobe](/portfolio/pax-wardrobe-top-cupboards-bethnal-green), and you can turn the [whole wall round in 3D](/portfolio/pax-wardrobe-top-cupboards-bethnal-green#in-3d). If you are planning a PAX wardrobe of your own, [how tall PAX can go for your ceiling](/blog/ikea-pax-height-for-your-ceiling) is a good place to start.
 
-**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 22-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.
+**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 23-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.

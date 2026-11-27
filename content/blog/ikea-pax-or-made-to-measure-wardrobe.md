@@ -51,4 +51,4 @@ The brief on [Plan your project](/how-it-works) has a wardrobe planner with a sw
 
 Going the PAX way? Read [which PAX height fits your ceiling](/blog/ikea-pax-height-for-your-ceiling) next. Already designed it in IKEA's planner? [Where to find your design code](/blog/where-to-find-your-ikea-pax-design-code), and how to send it to me.
 
-**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 22-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.
+**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 23-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.

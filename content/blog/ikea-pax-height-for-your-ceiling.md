@@ -58,4 +58,4 @@ The wardrobe planner in the brief on [Plan your project](/how-it-works) does the
 
 Next: [how to work out the widths and fillers](/blog/fitting-ikea-pax-wall-to-wall). Or, if you are still deciding, [PAX or made to measure?](/blog/ikea-pax-or-made-to-measure-wardrobe) Already designed it in IKEA's planner? [Where to find your design code](/blog/where-to-find-your-ikea-pax-design-code).
 
-**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 22-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.
+**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 23-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.

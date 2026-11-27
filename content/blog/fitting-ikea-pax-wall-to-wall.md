@@ -60,4 +60,4 @@ The wardrobe planner in the brief on [Plan your project](/how-it-works) has a Fi
 
 Already designed it in IKEA's PAX planner? Send me the design code instead: [where to find it](/blog/where-to-find-your-ikea-pax-design-code). Want to see one finished? [A five-door PAX wardrobe in Finchley](/blog/pax-wardrobe-finchley).
 
-**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 22-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.
+**Doing it yourself?** [IKEA PAX, built in](/pax-guide) is my 23-page guide to the whole job: picking the frames, the fillers, the top boxes, the cut list and fitting it. £9.99 as a PDF.
